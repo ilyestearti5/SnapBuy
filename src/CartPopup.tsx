@@ -6,6 +6,7 @@ import {
   CardWait,
   CircleLoading,
   CircleTip,
+  EmptyComponent,
   Icon,
   Image,
   Line,
@@ -17,12 +18,19 @@ import {
   execAction,
   showBottomSheet,
   showPopup,
+  showToast,
   useAction,
   useCopyState,
   useUser,
 } from "biqpod/ui/hooks";
-import { ProductPopup, useFullCart } from "./ProductPopup";
-import { api } from "./apis";
+import {
+  addToCart,
+  deleteCart,
+  ProductPopup,
+  removeCart,
+  useFullCart,
+} from "./ProductPopup";
+import { api, useCurrentClient } from "./apis";
 import { ProdInfo } from "./ProdInfo";
 import { setDoc } from "./server";
 import { mapAsync } from "biqpod/ui/utils";
@@ -34,8 +42,9 @@ interface ProductMore {
 export const CartPopup = () => {
   const fullCart = useFullCart();
   const loading = useCopyState(false);
-  const products = useCopyState<ProductMore[]>([]);
+  const list = useCopyState<ProductMore[]>([]);
   const user = useUser();
+  const currentClient = useCurrentClient();
   useAction(
     "get-products-of-cart",
     async () => {
@@ -47,7 +56,7 @@ export const CartPopup = () => {
             count: item.count,
           };
         });
-        products.set(result);
+        list.set(result);
       }
     },
     [fullCart, user]
@@ -58,15 +67,36 @@ export const CartPopup = () => {
   }, [fullCart, user]);
 
   const total = useMemo(() => {
-    return products.get.reduce((acc, item) => {
+    return list.get.reduce((acc, item) => {
       return acc + (item.product?.price || 0) * item.count;
     }, 0);
-  }, [products.get]);
+  }, [list.get]);
+
+  useAction(
+    "creater-order",
+    async () => {
+      if (!currentClient) {
+        showToast("Client Need To Be Signin", "warning");
+        return;
+      }
+      const id = crypto.randomUUID();
+      const createdAt = Date.now();
+      await api.createOrder({
+        id,
+        createdAt,
+        status: "pending",
+      });
+      showToast("Order Created");
+    },
+    [currentClient]
+  );
 
   return (
-    <Card className="relative max-md:rounded-none w-1/2 max-md:w-full max-md:h-full md:max-md:max-h-[80vh] overflow-hidden">
-      <div className="flex justify-between gap-2 p-3">
-        <h1 className="font-bold text-3xl">Cart</h1>
+    <Card className="relative max-md:rounded-none w-1/2 max-md:w-full max-md:h-full">
+      <div className="flex justify-between items-center p-3">
+        <h1 className="font-bold text-3xl uppercase">
+          <Translate content="cart" />
+        </h1>
         <div>
           <CircleTip
             icon={allIcons.solid.faXmark}
@@ -78,72 +108,89 @@ export const CartPopup = () => {
       </div>
       <Line />
       <Scroll>
-        <div className="flex flex-col gap-2 p-3">
-          {products.get.map(({ product, ...item }, index) => {
-            const total = (product?.price || 0) * item.count;
+        <div className="flex flex-col gap-2">
+          {list.get?.map((record) => {
+            const photo = record?.product?.photos?.at(0);
             return (
-              <Card key={index} className="overflow-hidden cursor-pointer">
-                <div
-                  onClick={() => {
-                    showBottomSheet(<ProdInfo product={product!} />);
-                  }}
-                  className="flex justify-between items-center px-4 h-[50px] max-md"
-                >
-                  <div className="flex items-center gap-2 w-full">
+              <div
+                key={record?.product.id!}
+                className="flex justify-between items-center odd:bg-[--biqpod-primary-background] p-2"
+              >
+                <div className="flex items-center gap-2">
+                  <div>
                     <Image
-                      src={product?.photo}
-                      className="w-[40px] h-[40px]"
-                      alt={<Icon icon={allIcons.solid.faBox} />}
+                      className="bg-[--biqpod-gray-opacity] w-[40px] h-[40px]"
+                      src={photo}
+                      alt={<Icon icon={allIcons.solid.faImage} />}
                     />
-                    <span className="font-bold">{product?.name}</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <span className="font-bold text-[--biqpod-success] text-xl">
-                      {product?.price.toFixed(2)}
-                    </span>
-                    <span>
-                      <span className="inline-block bg-[--biqpod-primary-background] p-2 border border-[--biqpod-borders] border-solid rounded-lg">
-                        ({item.count})
-                      </span>
-                    </span>
-                    <span className="font-bold text-[--biqpod-success] text-xl">
-                      {total.toFixed(2)}
-                    </span>
+                  <div>{record?.product?.name}</div>
+                </div>
+                <div className="flex gap-1">
+                  <div className="flex items-center gap-2 bg-[--biqpod-gray-opacity] p-1 rounded-full">
+                    <CircleTip
+                      icon={allIcons.solid.faMinus}
+                      onClick={() => {
+                        if (record?.count && record.count > 1) {
+                          addToCart(record?.product.id!, record.count - 1);
+                        } else {
+                          addToCart(record?.product.id!, 0);
+                        }
+                      }}
+                    />
+                    <div>{record?.count}</div>
+                    <CircleTip
+                      icon={allIcons.solid.faPlus}
+                      onClick={() => {
+                        addToCart(
+                          record?.product.id!,
+                          (record?.count || 0) + 1
+                        );
+                      }}
+                    />
+                  </div>
+                  <div>
+                    <CircleTip
+                      icon={allIcons.solid.faTrashCan}
+                      onClick={() => {
+                        removeCart(record?.product.id!);
+                      }}
+                    />
                   </div>
                 </div>
-              </Card>
+              </div>
             );
           })}
         </div>
+        {list.get?.length === 0 && (
+          <div className="flex flex-col justify-center items-center gap-y-5 text-[--biqpod-gray-opacity-2] p-3 h-full">
+            <Icon
+              icon={allIcons.solid.faCartShopping}
+              iconClassName="text-7xl "
+            />
+            <div>
+              <h1 className="text-4xl capitalize">
+                <Translate content="empty cart" />
+              </h1>
+            </div>
+          </div>
+        )}
       </Scroll>
-      <Line />
-      <div className="p-3">
-        <Button
-          className="rounded-full"
-          onClick={async () => {
-            loading.set(true);
-            try {
-              const products: Record<string, number> = {};
-              fullCart.forEach((item) => {
-                products[item.prodId] = item.count;
-              });
-              await api.createOrder({
-                id: crypto.randomUUID(),
-                status: "pending",
-                clientId: "1",
-                products,
-              });
-            } catch {}
-            loading.set(false);
-          }}
-        >
-          <Translate content="send" /> {total.toFixed(2)}DA
-        </Button>
-      </div>
-      {loading.get && (
-        <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity]">
-          <CircleLoading />
-        </div>
+      {!!list.get?.length && (
+        <EmptyComponent>
+          <Line />
+          <div className="flex justify-end items-center gap-1 p-2">
+            <Button
+              onClick={async () => {
+                execAction("creater-order");
+              }}
+              className="w-full"
+              icon={allIcons.solid.faCartPlus}
+            >
+              <Translate content="send" />
+            </Button>
+          </div>
+        </EmptyComponent>
       )}
     </Card>
   );

@@ -1,21 +1,41 @@
 import { allIcons } from "biqpod/ui/apis";
 import {
-  CircleTip,
-  EmptyComponent,
-  Icon,
-  Line,
+  Card,
   MultiScreenPage,
+  EmptyComponent,
+  CircleTip,
+  Icon,
   Translate,
+  Line,
+  Button,
 } from "biqpod/ui/components";
-import { useCopyState } from "biqpod/ui/hooks";
-interface ProdInfoProps {
+import {
+  getTemp,
+  useColorMerge,
+  useCopyState,
+  showPopup,
+} from "biqpod/ui/hooks";
+import { tw } from "biqpod/ui/utils";
+import { useCartCount, removeCart, ProductPopup } from "./ProductPopup";
+
+export interface ProductRenderProps {
   product: SnapBuy.Product;
 }
-export const ProdInfo = ({ product }: ProdInfoProps) => {
+export const ClientProductRender = ({ product }: ProductRenderProps) => {
+  const isFullWidth = getTemp<boolean>("isFullWidth");
+  const cartCount = useCartCount(product.id);
+  const hasCart = cartCount > 0;
+  const colorMerge = useColorMerge();
   const focused = useCopyState(0);
   const photos = product.photos || [];
   return (
-    <div className="flex flex-col">
+    <Card
+      key={product.id}
+      className={tw(
+        "w-[calc(50%-4px)] overflow-hidden",
+        isFullWidth && "w-full"
+      )}
+    >
       <div className="relative flex justify-center items-center w-full h-[200px] cursor-pointer">
         <MultiScreenPage
           pages={photos.map((photo) => {
@@ -67,8 +87,8 @@ export const ProdInfo = ({ product }: ProdInfoProps) => {
             </div>
           </EmptyComponent>
         )}
-        {product.photos?.length == 0 && (
-          <Icon icon={allIcons.solid.faBoxOpen} />
+        {photos.length === 0 && (
+          <Icon iconClassName="text-6xl" icon={allIcons.solid.faImage} />
         )}
         {product.available && (
           <div className="top-0 right-0 absolute bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
@@ -77,29 +97,44 @@ export const ProdInfo = ({ product }: ProdInfoProps) => {
         )}
       </div>
       <Line />
-      <div className="bg-[--biqpod-primary-background] p-2">
-        <h1 className="text-2xl">{product.name}</h1>
+      <div className="max-md:p-1 md:p-2">
+        <span className="font-bold max-md:text-sm md:text-xl">
+          {product.name}
+        </span>
       </div>
       <Line />
-      <div className="p-2">
-        <p>{product.description}</p>
-        <p>
-          Price:{" "}
-          <span className="bg-[--biqpod-primary] px-3 rounded-full text-[--biqpod-primary-content]">
-            {product.price.toFixed(2)}DA
-          </span>
-        </p>
-        <p>Category: {product.category}</p>
+      <div className="max-md:p-1 md:p-2 font-bold text-[--biqpod-success] max-md:text-lg text-2xl text-right">
+        {product.price}
       </div>
       <Line />
-      <div className="p-2 capitalize">
-        <p>
-          <Translate content="available" />: {product.available ? "Yes" : "No"}
-        </p>
-        <p>
-          <Translate content="market" />: {product.market}
-        </p>
+      <div className="flex gap-2 p-2 max-md:p-1">
+        {hasCart && (
+          <Button
+            style={{
+              ...colorMerge("gray.opacity", {
+                color: "text.color",
+              }),
+            }}
+            onClick={() => {
+              removeCart(product.id);
+            }}
+            className="max-md:p-[1.5px] rounded-2xl"
+            icon={allIcons.solid.faTrash}
+          >
+            <Translate content="remove" />
+          </Button>
+        )}
+        <Button
+          onClick={() => {
+            showPopup(<ProductPopup product={product} />);
+          }}
+          icon={allIcons.solid.faShoppingCart}
+          className="max-md:p-[1.5px] rounded-2xl"
+        >
+          <Translate content={hasCart ? "modify" : "add"} />{" "}
+          {hasCart && `(${cartCount})`}
+        </Button>
       </div>
-    </div>
+    </Card>
   );
 };

@@ -6,6 +6,7 @@ import {
   Field,
   Button,
   Translate,
+  Icon,
 } from "biqpod/ui/components";
 import {
   closePopup,
@@ -49,22 +50,19 @@ export const useCartCount = (prodId: string) => {
     return carts?.[prodId] || 0;
   }, [carts, prodId]);
 };
+
 export const ProductPopup = ({ product }: ProductPopupProps) => {
-  const count = getFieldValue("prod-count");
+  const prod = product;
+  const currentCount = getFieldValue("prod-count");
   const cartCount = useCartCount(product.id);
   useEffect(() => {
     setFocused("prod-count");
     setFieldValue("prod-count", (cartCount || 1).toString());
   }, [cartCount]);
   return (
-    <Card className="max-md:rounded-none w-1/2 max-md:w-full max-md:h-full">
-      <div className="flex justify-between items-center gap-2 p-2">
-        <h1 className="text-2xl">
-          {product.name}
-          <sub className="ml-2 rounded-full text-xs italic">
-            {product.market}
-          </sub>
-        </h1>
+    <Card className="w-1/2 md:max-h-[70vh]">
+      <div className="flex justify-between items-center p-2">
+        <h1 className="md:text-xl text-2xl">{prod.name}</h1>
         <div>
           <CircleTip
             onClick={() => {
@@ -75,59 +73,44 @@ export const ProductPopup = ({ product }: ProductPopupProps) => {
         </div>
       </div>
       <Line />
-      <div className="flex justify-center items-center p-2 font-bold max-md:text-2xl text-4xl">
-        <span className="text-[--biqpod-success]">{product.price || 0}DA</span>
-      </div>{" "}
-      <Line />
-      <div className="flex flex-col justify-between p-2 h-full">
-        <div className="flex justify-center items-center gap-2 min-h-[100px]">
-          <CircleTip
-            icon={allIcons.solid.faMinus}
+      <div className="flex justify-center items-center gap-x-2 p-2">
+        <div>
+          <div
+            className="inline-flex justify-center items-center rounded-full w-[50px] h-[50px] font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background] text-xl cursor-pointer"
             onClick={() => {
-              const value = +(count || "1") - 1;
-              if (value > 0) {
-                setFieldValue("prod-count", value.toString());
-              }
+              const count = parseInt(currentCount || "") || 0;
+              setFieldValue("prod-count", Math.max(1, count - 1).toString());
             }}
-          />
-          <div className="w-1/3">
-            <Field
-              className="max-md:text-xl text-3xl text-center"
-              placeholder="Enter Count"
-              inputMode="numeric"
-              inputName="prod-count"
-              controls={{
-                "^[0-9]+$": {
-                  succ: "Valide Data",
-                  err: "Enter a valid number",
-                },
-              }}
-              controlsPosition="top"
-            />
+          >
+            <Icon icon={allIcons.solid.faMinus} />
           </div>
-          <CircleTip
-            icon={allIcons.solid.faPlus}
+        </div>
+        <Field
+          inputName="prod-count"
+          inputMode="numeric"
+          className="bg-[--biqpod-primary-background] border border-[--biqpod-borders] focus:border-[--biqpod-primary] border-solid rounded-2xl text-3xl text-center"
+        />
+        <div>
+          <div
+            className="inline-flex justify-center items-center rounded-full w-[50px] h-[50px] font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background] text-xl cursor-pointer"
             onClick={() => {
-              const value = +(count || "1") + 1;
-              setFieldValue("prod-count", value.toString());
+              const count = parseInt(currentCount || "") || 0;
+              setFieldValue("prod-count", (count + 1).toString());
             }}
-          />
+          >
+            <Icon icon={allIcons.solid.faPlus} />
+          </div>
         </div>
       </div>
       <Line />
-      <div className="flex justify-center items-center p-2 font-bold max-md:text-2xl text-4xl">
-        <span className="text-[--biqpod-success]">
-          {(product.price * +(count || "1")).toFixed(2)}DA
-        </span>
-      </div>
-      <Line />
-      <div className="p-2">
+      <div className="flex gap-2 p-2">
         <Button
+          icon={allIcons.solid.faPlus}
           onClick={() => {
-            addToCart(product.id, +(count || "1"));
+            const count = parseInt(currentCount || "") || 0;
+            addToCart(prod.id, count);
             closePopup();
           }}
-          icon={allIcons.solid.faShoppingCart}
         >
           <Translate content="add" />
         </Button>

@@ -2,6 +2,7 @@ import { allIcons, and, where } from "biqpod/ui/apis";
 import { include, mergeObject, tw } from "biqpod/ui/utils";
 import {
   Card,
+  CardWait,
   CircleTip,
   EmptyComponent,
   ExcelPopup,
@@ -17,6 +18,7 @@ import {
   execAction,
   getFieldValue,
   getTemp,
+  isLoading,
   isSuccess,
   openMenu,
   openPath,
@@ -55,9 +57,9 @@ const ProductRender = ({ product }: ProductRenderProps) => {
   const photos = product.photos || [];
   return (
     <Mouseable
-      onMoving={changePosition.set}
+      // onMoving={changePosition.set}
       onMovingEnd={() => {
-        changePosition.set({});
+        // changePosition.set({});
       }}
       style={{
         ...mergeObject(
@@ -137,7 +139,7 @@ const ProductRender = ({ product }: ProductRenderProps) => {
         <Line />
         <div className="p-2 max-md:p-1">{product.name}</div>
         <Line />
-        <div className="flex justify-between items-center px-2 md:py-2 max-md:py-1">
+        <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
           <span className="font-bold text-[--biqpod-success]">
             {product.price}
           </span>
@@ -287,6 +289,7 @@ export const Products = () => {
   }, [user]);
   const focused = useFocused();
   const canDelete = getTemp<string>("canDeleteProduct");
+  const loading = isLoading(action);
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center p-2">
@@ -317,29 +320,32 @@ export const Products = () => {
         </div>
       </div>
       <Line />
-      <Scroll>
-        <div className="flex flex-wrap items-center gap-2 p-2">
-          {filterProducts.map((product) => {
-            return <ProductRender product={product} key={product.id} />;
-          })}
-          {success && filterProducts.length === 0 && (
-            <div className="flex justify-center items-center w-full h-full">
-              <Card>
-                <div className="flex justify-center items-center p-2 h-full">
-                  <Icon
-                    icon={allIcons.solid.faBoxOpen}
-                    iconClassName="text-8xl text-[--biqpod-primary]"
-                  />
-                </div>
-                <Line />
-                <div className="flex justify-center items-center p-2 h-full">
-                  <Translate content="no products found" />
-                </div>
-              </Card>
-            </div>
-          )}
-        </div>
-      </Scroll>
+      {success && (
+        <Scroll>
+          <div className="flex flex-wrap items-center gap-2 p-2">
+            {filterProducts.map((product) => {
+              return <ProductRender product={product} key={product.id} />;
+            })}
+            {filterProducts.length === 0 && (
+              <div className="flex justify-center items-center w-full h-full">
+                <Card>
+                  <div className="flex justify-center items-center p-2 h-full">
+                    <Icon
+                      icon={allIcons.solid.faBoxOpen}
+                      iconClassName="text-8xl text-[--biqpod-primary]"
+                    />
+                  </div>
+                  <Line />
+                  <div className="flex justify-center items-center p-2 h-full">
+                    <Translate content="no products found" />
+                  </div>
+                </Card>
+              </div>
+            )}
+          </div>
+        </Scroll>
+      )}
+      {loading && <CardWait className="w-full h-full" />}
       <Card
         onClick={() => {
           showTools.set(!showTools.get);

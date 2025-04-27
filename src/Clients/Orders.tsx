@@ -69,7 +69,6 @@ export const Orders = () => {
     }
   }, [currentClient]);
 
-  const showTools = useCopyState(false);
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center p-2">

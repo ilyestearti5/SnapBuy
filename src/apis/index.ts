@@ -273,7 +273,7 @@ export const api = {
     }, 200);
     return () => clearInterval(timer);
   },
-  async createOrder(order: SnapBuy.Order) {
+  async createOrder(order:Omit< SnapBuy.Order, "clientId">) {
     const uid = await getCurrentAuth();
     const client = await this.getCurrentClient();
     if (!uid) throw "User not authenticated";
@@ -282,6 +282,7 @@ export const api = {
       {
         ...order,
         clientId: client?.client.id,
+        uid: client?.access.uid,
         createdAt: new Date().getTime(),
         updatedAt: new Date().getTime(),
       }

@@ -43,11 +43,6 @@ export const tabs = [
     link: "/producer/clients",
     photo: clientPhoto,
   },
-  {
-    name: "accounts",
-    link: "/producer/accounts",
-    photo: accountPhoto,
-  },
 ];
 const RedirectToLoginIfNeeded = () => {
   const user = useUser();
@@ -85,7 +80,7 @@ export const App = () => {
               <div className="flex flex-wrap justify-center items-center gap-2 w-full h-full">
                 {mainTabs.map((tab) => {
                   return (
-                    <Card className="overflow-hidden">
+                    <Card key={tab.link} className="overflow-hidden">
                       <ClickedView>
                         <Link to={tab.link}>
                           <div className="flex justify-center p-5">
@@ -140,10 +135,5 @@ const mainTabs = [
     name: "producer",
     link: "/producer/orders",
     photo: prodPhoto,
-  },
-  {
-    name: "account",
-    link: "/account",
-    photo: accountPhoto,
   },
 ];

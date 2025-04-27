@@ -6,6 +6,7 @@ import {
   DarkLightIcon,
   EmptyComponent,
   Icon,
+  Image,
   Translate,
   WindowControls,
 } from "biqpod/ui/components";
@@ -14,6 +15,7 @@ import {
   getTemp,
   openMenu,
   setSettingValue,
+  showProfile,
   useAction,
   useCopyState,
   useDeviceResolution,
@@ -160,6 +162,15 @@ export const HeaderContent = () => {
               icon={allIcons.solid.faEllipsisV}
             />
           </div>
+          {user?.uid && (
+            <Image
+              src={user.photo || undefined}
+              className="w-[35px] h-[35px] cursor-pointer"
+              onClick={() => {
+                showProfile();
+              }}
+            />
+          )}
         </div>
       </div>
       {isDesktop && <WindowControls />}

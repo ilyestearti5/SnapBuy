@@ -9,7 +9,7 @@ export const cloud = initMyCloud({
   appId: "1:911813185967:web:4447a361eeaddd00315f5a",
   measurementId: "G-8GB7LZPHVX",
   functions: {
-    devUri: (fnId) => `https://biqpod.netlify.app/.netlify/functions/${fnId}`,
+    devUri: (fnId) => `https://api.biqpod.com/.netlify/functions/${fnId}`,
   },
 });
 // this is needed in the project for default informations

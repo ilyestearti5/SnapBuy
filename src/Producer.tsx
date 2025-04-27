@@ -24,11 +24,11 @@ export const Producer = () => {
     <div className="flex flex-col justify-between h-full">
       <Scroll>
         <Switch>
-          <Route path="/producer/products">
-            <Products />
-          </Route>
           <Route path="/producer/orders">
             <Orders />
+          </Route>
+          <Route path="/producer/products">
+            <Products />
           </Route>
           <Route path="/producer/accounts">
             <Accounts />
@@ -56,7 +56,7 @@ export const Producer = () => {
                   ),
                 }}
               >
-                <img src={item.photo} className="w-[60px]" />
+                <img src={item.photo} className="w-[30px]" />
                 <span className="max-md:hidden">
                   <Translate content={item.name} />
                 </span>

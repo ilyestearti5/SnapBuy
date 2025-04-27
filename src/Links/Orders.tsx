@@ -1,40 +1,42 @@
-import { allIcons, and, where } from "biqpod/ui/apis";
+import { allIcons, and, orderBy, where } from "biqpod/ui/apis";
 import {
   Anchor,
+  AsyncComponent,
+  CardWait,
   CircleTip,
   EmptyComponent,
   Field,
   Icon,
   IconProps,
-  InfinityScroll,
   Line,
   Scroll,
 } from "biqpod/ui/components";
 import {
   getFieldValue,
-  getTempFromStore,
+  openMenu,
   showPopup,
   useCopyState,
   useUser,
 } from "biqpod/ui/hooks";
 import { include, tw } from "biqpod/ui/utils";
 import { useEffect, useMemo } from "react";
-import { OrderProducts } from "./OrderProducts/OrderProducts";
-import { Biqpod } from "biqpod/ui/types";
 import { getDoc, onCollectionSnapshot } from "../server";
-const colors: Record<string, string> = {
+import { ChangeStatus } from "../ChangeStatus";
+export const colors: Record<string, string> = {
   pending: "#F59E0B", // Yellow
   completed: "#10B981", // Green
   processing: "#3B82F6", // Blue
   done: "#047857", // Dark Green
   cancelled: "#EF4444", // Red
+  delivery: "#129999",
 };
-const icons: Record<string, IconProps["icon"]> = {
+export const icons: Record<string, IconProps["icon"]> = {
   pending: allIcons.solid.faClock,
   completed: allIcons.solid.faCheckCircle,
   processing: allIcons.solid.faCog,
   done: allIcons.solid.faCheckDouble,
   cancelled: allIcons.solid.faBan,
+  delivery: allIcons.solid.faCar,
 };
 export const Orders = () => {
   const searchOrder = getFieldValue("search-order");
@@ -62,6 +64,8 @@ export const Orders = () => {
         },
         {
           where: and(where("uid", "==", user.uid)),
+          order: orderBy("createdAt", "asc"),
+          limit: 6,
         }
       );
     }
@@ -94,7 +98,6 @@ export const Orders = () => {
       </div>
       <Line />
       <div className="flex justify-between items-center gap-2 p-2">
-        <span className="w-full">Order ID</span>
         <div className="w-full">
           <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
             <Icon icon={allIcons.solid.faTag} />
@@ -102,6 +105,7 @@ export const Orders = () => {
           </span>
         </div>
         <span className="w-full">Created At</span>
+        <span className="w-full">Client</span>
         <div>
           <CircleTip className="invisible" icon={allIcons.solid.faEllipsisV} />
         </div>
@@ -146,15 +150,6 @@ export const Orders = () => {
                 key={order.id}
                 className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2"
               >
-                <span className="w-full">
-                  <Anchor
-                    onClick={() => {
-                      showPopup(<OrderProducts order={order} />);
-                    }}
-                  >
-                    {order.id}
-                  </Anchor>
-                </span>
                 <div className="w-full">
                   <span
                     className="inline-flex items-center gap-2 p-2 rounded-2xl"
@@ -168,8 +163,53 @@ export const Orders = () => {
                   </span>
                 </div>
                 <span className="w-full">{timeAgo}</span>
+                <div className="w-full">
+                  <AsyncComponent
+                    deps={[order.clientId]}
+                    render={async () => {
+                      const client = await getDoc<SnapBuy.Client>([
+                        "projects",
+                        import.meta.env.VITE_PROJECT_ID,
+                        "clients",
+                        order.clientId,
+                      ]);
+                      return (
+                        <EmptyComponent>
+                          {client?.name} (
+                          <Anchor href={client?.phone}>{client?.phone}</Anchor>)
+                        </EmptyComponent>
+                      );
+                    }}
+                    loading={
+                      <CardWait className="rounded-full w-full h-full" />
+                    }
+                    error={<EmptyComponent>Oops!</EmptyComponent>}
+                  />
+                </div>
                 <div>
-                  <CircleTip icon={allIcons.solid.faEllipsisV} />
+                  <CircleTip
+                    icon={allIcons.solid.faEllipsisV}
+                    onClick={({ clientY, clientX }) => {
+                      openMenu({
+                        x: clientX,
+                        y: clientY,
+                        menu: [
+                          {
+                            label: "Copy ID",
+                            async click() {
+                              await navigator.clipboard.writeText(order.id);
+                            },
+                          },
+                          {
+                            label: "Change Status",
+                            async click() {
+                              showPopup(<ChangeStatus order={order} />);
+                            },
+                          },
+                        ],
+                      });
+                    }}
+                  />
                 </div>
               </div>
             );
