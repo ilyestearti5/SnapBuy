@@ -1,10 +1,7 @@
 import { allIcons } from "biqpod/ui/apis";
 import {
-  AsyncComponent,
   Button,
   Card,
-  CardWait,
-  CircleLoading,
   CircleTip,
   EmptyComponent,
   Icon,
@@ -16,23 +13,13 @@ import {
 import {
   closePopup,
   execAction,
-  showBottomSheet,
-  showPopup,
   showToast,
   useAction,
   useCopyState,
   useUser,
 } from "biqpod/ui/hooks";
-import {
-  addToCart,
-  deleteCart,
-  ProductPopup,
-  removeCart,
-  useFullCart,
-} from "./ProductPopup";
-import { api, useCurrentClient } from "./apis";
-import { ProdInfo } from "./ProdInfo";
-import { setDoc } from "./server";
+import { addToCart, removeCart, useCart, useFullCart } from "./ProductPopup";
+import { api, useCategorys, useCurrentClient } from "./apis";
 import { mapAsync } from "biqpod/ui/utils";
 import { useEffect, useMemo } from "react";
 interface ProductMore {
@@ -40,8 +27,8 @@ interface ProductMore {
   count: number;
 }
 export const CartPopup = () => {
+  const carts = useCart();
   const fullCart = useFullCart();
-  const loading = useCopyState(false);
   const list = useCopyState<ProductMore[]>([]);
   const user = useUser();
   const currentClient = useCurrentClient();
@@ -75,6 +62,10 @@ export const CartPopup = () => {
   useAction(
     "creater-order",
     async () => {
+      if (!carts) {
+        showToast("Cart Is Empty!");
+        return;
+      }
       if (!currentClient) {
         showToast("Client Need To Be Signin", "warning");
         return;
@@ -85,6 +76,7 @@ export const CartPopup = () => {
         id,
         createdAt,
         status: "pending",
+        products: carts,
       });
       showToast("Order Created");
     },

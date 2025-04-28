@@ -273,7 +273,7 @@ export const api = {
     }, 200);
     return () => clearInterval(timer);
   },
-  async createOrder(order:Omit< SnapBuy.Order, "clientId">) {
+  async createOrder(order: Omit<SnapBuy.Order, "clientId">) {
     const uid = await getCurrentAuth();
     const client = await this.getCurrentClient();
     if (!uid) throw "User not authenticated";
@@ -287,6 +287,33 @@ export const api = {
         updatedAt: new Date().getTime(),
       }
     );
+  },
+  async getOrderProducts(order: string | SnapBuy.Order) {
+    const result =
+      typeof order === "string"
+        ? await getDoc<SnapBuy.Order>([
+            "projects",
+            import.meta.env.VITE_PROJECT_ID,
+            "orders",
+            order,
+          ])
+        : order;
+    const products = result?.products || {};
+    console.log(products);
+    return await mapAsync(Object.entries(products), async (args) => {
+      const [prodId, count] = args;
+      const product = await getDoc<SnapBuy.Product>([
+        "projects",
+        import.meta.env.VITE_PROJECT_ID,
+        "products",
+        prodId,
+      ]);
+      return {
+        ...product,
+        id: prodId,
+        count,
+      };
+    });
   },
   // account config auth
   async siginAccount(code: string) {

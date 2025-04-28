@@ -2,6 +2,7 @@ import { allIcons, and, where } from "biqpod/ui/apis";
 import {
   Anchor,
   Card,
+  CardWait,
   CircleTip,
   ExcelPopup,
   Field,
@@ -9,33 +10,101 @@ import {
   IconProps,
   Line,
   Scroll,
+  Translate,
 } from "biqpod/ui/components";
 import {
+  closePopup,
   getFieldValue,
+  openMenu,
   openPath,
   showPopup,
   showToast,
+  useAsyncMemo,
   useCopyState,
   useUser,
 } from "biqpod/ui/hooks";
-import { include, tw } from "biqpod/ui/utils";
+import { include, range, tw } from "biqpod/ui/utils";
 import { useEffect, useMemo } from "react";
 import { onCollectionSnapshot } from "../server";
-import { useCurrentClient } from "../apis";
-const colors: Record<string, string> = {
-  pending: "#F59E0B", // Yellow
-  completed: "#10B981", // Green
-  processing: "#3B82F6", // Blue
-  done: "#047857", // Dark Green
-  cancelled: "#EF4444", // Red
+import { api, useCurrentClient } from "../apis";
+import { colors, icons } from "../Links/Orders";
+
+export interface OrderView {
+  order: SnapBuy.Order;
+}
+export const OrderView = ({ order }: OrderView) => {
+  const time = new Date(order.createdAt!);
+  const productsLengths = Object.keys(order.products || {}).length;
+
+  const currentClient = useCurrentClient();
+
+  const list = useAsyncMemo(async () => {
+    return api.getOrderProducts(order.id);
+  }, [currentClient]);
+
+  return (
+    <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+      <div className="flex justify-between items-center p-2">
+        <h1 className="md:text-xl text-2xl">{time.toLocaleString()}</h1>
+        <div>
+          <CircleTip
+            onClick={() => {
+              closePopup();
+            }}
+            icon={allIcons.solid.faXmark}
+          />
+        </div>
+      </div>
+      <Line />
+      <Scroll>
+        {list?.map((product) => {
+          return (
+            <div
+              key={product.id}
+              className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2"
+            >
+              <div className="w-full">
+                <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
+                  <span>{product.name}</span>
+                </span>
+              </div>
+              <span className="w-full">{product.price}</span>
+              <div>
+                <CircleTip
+                  icon={allIcons.solid.faEllipsisV}
+                  onClick={({ clientX, clientY }) => {
+                    openMenu({
+                      x: clientX,
+                      y: clientY,
+                      menu: [
+                        {
+                          label: "View Order",
+                          defaultIcon: allIcons.solid.faEye,
+                          click: () => {
+                            showPopup(<OrderView order={order} />);
+                          },
+                        },
+                      ],
+                    });
+                  }}
+                />
+              </div>
+            </div>
+          );
+        })}
+        {!list &&
+          range(productsLengths).map((index) => {
+            return (
+              <div className="mt-2 px-2" key={index}>
+                <CardWait className="rounded-2xl w-full h-[50px]" />
+              </div>
+            );
+          })}
+      </Scroll>
+    </Card>
+  );
 };
-const icons: Record<string, IconProps["icon"]> = {
-  pending: allIcons.solid.faClock,
-  completed: allIcons.solid.faCheckCircle,
-  processing: allIcons.solid.faCog,
-  done: allIcons.solid.faCheckDouble,
-  cancelled: allIcons.solid.faBan,
-};
+
 export const Orders = () => {
   const searchOrder = getFieldValue("search-order");
   const isFocused = useCopyState(false);
@@ -52,21 +121,21 @@ export const Orders = () => {
 
   const currentClient = useCurrentClient();
   useEffect(() => {
-    if (currentClient?.client.id) {
-      return onCollectionSnapshot<SnapBuy.Order>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
-        (snapshot) => {
-          const ordersData = snapshot.map((doc) => ({
-            ...doc.data,
-            id: doc.id,
-          }));
-          orders.set(ordersData);
-        },
-        {
-          where: and(where("clientId", "==", currentClient?.client.id)),
-        }
-      );
-    }
+    // if (currentClient?.client.id) {
+    return onCollectionSnapshot<SnapBuy.Order>(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
+      (snapshot) => {
+        const ordersData = snapshot.map((doc) => ({
+          ...doc.data,
+          id: doc.id,
+        }));
+        orders.set(ordersData);
+      },
+      {
+        // where: and(where("clientId", "==", currentClient?.client.id)),
+      }
+    );
+    // }
   }, [currentClient]);
 
   return (
@@ -97,7 +166,6 @@ export const Orders = () => {
       </div>
       <Line />
       <div className="flex justify-between items-center gap-2 p-2">
-        <span className="w-full">Order ID</span>
         <div className="w-full">
           <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
             <Icon icon={allIcons.solid.faTag} />
@@ -105,8 +173,8 @@ export const Orders = () => {
           </span>
         </div>
         <span className="w-full">Created At</span>
-        <div>
-          <CircleTip className="invisible" icon={allIcons.solid.faEllipsisV} />
+        <div className="invisible">
+          <CircleTip icon={allIcons.solid.faEllipsisV} />
         </div>
       </div>
       <Line />
@@ -149,9 +217,6 @@ export const Orders = () => {
                 key={order.id}
                 className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2"
               >
-                <span className="w-full">
-                  <Anchor onClick={() => {}}>{order.id}</Anchor>
-                </span>
                 <div className="w-full">
                   <span
                     className="inline-flex items-center gap-2 p-2 rounded-2xl"
@@ -166,7 +231,24 @@ export const Orders = () => {
                 </div>
                 <span className="w-full">{timeAgo}</span>
                 <div>
-                  <CircleTip icon={allIcons.solid.faEllipsisV} />
+                  <CircleTip
+                    icon={allIcons.solid.faEllipsisV}
+                    onClick={({ clientX, clientY }) => {
+                      openMenu({
+                        x: clientX,
+                        y: clientY,
+                        menu: [
+                          {
+                            label: "View Order",
+                            defaultIcon: allIcons.solid.faEye,
+                            click: () => {
+                              showPopup(<OrderView order={order} />);
+                            },
+                          },
+                        ],
+                      });
+                    }}
+                  />
                 </div>
               </div>
             );

@@ -26,6 +26,10 @@ export const addToCart = (prodId: string, count: number) => {
 export const removeCart = (prodId: string) => {
   setTemp("cart." + prodId, null);
 };
+export const useCart = () => {
+  const carts = getTemp<Record<string, number>>("cart");
+  return carts;
+};
 export const useFullCart = () => {
   const carts = getTemp<Record<string, number>>("cart");
   const result = useMemo(() => {
@@ -43,14 +47,12 @@ export const useFullCart = () => {
 export const deleteCart = () => {
   setTemp("cart", null);
 };
-
 export const useCartCount = (prodId: string) => {
   const carts = getTemp<Record<string, number>>("cart");
   return useMemo(() => {
     return carts?.[prodId] || 0;
   }, [carts, prodId]);
 };
-
 export const ProductPopup = ({ product }: ProductPopupProps) => {
   const prod = product;
   const currentCount = getFieldValue("prod-count");
