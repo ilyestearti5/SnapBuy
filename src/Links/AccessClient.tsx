@@ -10,6 +10,7 @@ import {
   Anchor,
   EmptyComponent,
   Field,
+  Icon,
 } from "biqpod/ui/components";
 import {
   useUser,
@@ -109,7 +110,7 @@ export const AccessClient = ({ client }: AccessClientProps) => {
                   }
                   closePopup();
                   showPopup(
-                    <Card className="md:w-1/2 max-md:w-4/5">
+                    <Card className="max-md:w-4/5 md:w-1/2">
                       <div className="flex justify-between items-center gap-2 p-3">
                         <div className="flex items-center gap-2">
                           <CircleTip
@@ -283,8 +284,9 @@ export const AccessClient = ({ client }: AccessClientProps) => {
             );
           })}
         {accessTokenDoc.get && accessTokenDoc.get.length === 0 && (
-          <div className="p-5 text-center">
-            <Translate content="no access tokens" />
+          <div className="flex flex-col justify-center items-center gap-5 p-5 h-full capitalize">
+            <Icon iconClassName="text-8xl" icon={allIcons.solid.faKey} />
+            <Translate content="no access tokens!" />
           </div>
         )}
       </Scroll>

@@ -127,10 +127,13 @@ const ProductRender = ({ product }: ProductRenderProps) => {
               </div>
             </EmptyComponent>
           )}
-          {product.photos?.length == 0 && (
-            <Icon icon={allIcons.solid.faBoxOpen} />
+          {photos.length == 0 && (
+            <Icon
+              iconClassName="text-8xl text-[--biqpod-gray-opacity]"
+              icon={allIcons.solid.faBoxOpen}
+            />
           )}
-          {product.available && (
+          {!!product.available && (
             <div className="top-0 right-0 absolute bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
               <Translate content="available" />
             </div>
@@ -141,7 +144,7 @@ const ProductRender = ({ product }: ProductRenderProps) => {
         <Line />
         <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
           <span className="font-bold text-[--biqpod-success]">
-            {product.price}
+            {product.price} DA
           </span>
           <CircleTip
             icon={allIcons.solid.faEllipsisVertical}
@@ -204,6 +207,8 @@ const ProductRender = ({ product }: ProductRenderProps) => {
                   {
                     label: "Delete Product",
                     click: async () => {
+                      await api.deleteProduct(product.id);
+                      execAction("get-products");
                       showToast("Product Deleted");
                     },
                     defaultIcon: allIcons.solid.faTrashCan,

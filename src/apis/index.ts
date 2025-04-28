@@ -7,6 +7,7 @@ import {
   useUser,
 } from "biqpod/ui/hooks";
 import {
+  deleteDoc,
   getCurrentAuth,
   getDoc,
   getDocs,
@@ -168,6 +169,11 @@ export const api = {
       );
     });
   },
+  async deleteProduct(productId: string) {
+    await deleteDoc(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "products", productId],
+    )
+  },
   // accounts
   async getAccounts() {
     const uid = await getCurrentAuth();
@@ -299,8 +305,7 @@ export const api = {
           ])
         : order;
     const products = result?.products || {};
-    console.log(products);
-    return await mapAsync(Object.entries(products), async (args) => {
+    const r =  await mapAsync(Object.entries(products), async (args) => {
       const [prodId, count] = args;
       const product = await getDoc<SnapBuy.Product>([
         "projects",
@@ -314,6 +319,12 @@ export const api = {
         count,
       };
     });
+    return r.sort((a, b) => {
+      if(!a.name) return 1;
+      if(!b.name) return -1;
+      return a.name.localeCompare(b.name);
+    })
+
   },
   // account config auth
   async siginAccount(code: string) {

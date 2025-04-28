@@ -10,6 +10,7 @@ import {
   IconProps,
   Line,
   Scroll,
+  Translate,
 } from "biqpod/ui/components";
 import {
   getFieldValue,
@@ -22,6 +23,7 @@ import { include, tw } from "biqpod/ui/utils";
 import { useEffect, useMemo } from "react";
 import { getDoc, onCollectionSnapshot } from "../server";
 import { ChangeStatus } from "../ChangeStatus";
+import { OrderView } from "../Clients/Orders";
 export const colors: Record<string, string> = {
   pending: "#F59E0B", // Yellow
   completed: "#10B981", // Green
@@ -98,16 +100,24 @@ export const Orders = () => {
       </div>
       <Line />
       <div className="flex justify-between items-center gap-2 p-2">
-        <div className="w-full">
-          <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
-            <Icon icon={allIcons.solid.faTag} />
-            <span>Status</span>
-          </span>
-        </div>
-        <span className="w-full">Created At</span>
-        <span className="w-full">Client</span>
-        <div>
-          <CircleTip className="invisible" icon={allIcons.solid.faEllipsisV} />
+        <span className="inline-flex items-center gap-2 w-full capitalize">
+          <Icon icon={allIcons.solid.faUser} />
+          <Translate content="client" />
+        </span>
+        <span className="inline-flex items-center gap-2 w-full capitalize">
+          <Icon icon={allIcons.solid.faCalendarAlt} />
+          <Translate content="created at" />
+        </span>
+        <span className="inline-flex items-center gap-2 w-full capitalize">
+          <Icon icon={allIcons.solid.faBox} />
+          <Translate content="products" />
+        </span>
+        <span className="inline-flex items-center gap-2 w-full capitalize">
+          <Icon icon={allIcons.solid.faTag} />
+          <Translate content="status" />
+        </span>
+        <div className="invisible">
+          <CircleTip icon={allIcons.solid.faEllipsisV} />
         </div>
       </div>
       <Line />
@@ -145,24 +155,13 @@ export const Orders = () => {
               const years = Math.floor(timeDifference / 29030400);
               timeAgo = `${years} year${years > 1 ? "s" : ""} ago`;
             }
+            const { products = {} } = order;
+            const productCount = Object.keys(products).length;
             return (
               <div
                 key={order.id}
                 className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2"
               >
-                <div className="w-full">
-                  <span
-                    className="inline-flex items-center gap-2 p-2 rounded-2xl"
-                    style={{
-                      color: colors[order.status],
-                      backgroundColor: `${colors[order.status]}20`,
-                    }}
-                  >
-                    <Icon icon={icons[order.status]} />
-                    <span>{order.status}</span>
-                  </span>
-                </div>
-                <span className="w-full">{timeAgo}</span>
                 <div className="w-full">
                   <AsyncComponent
                     deps={[order.clientId]}
@@ -186,6 +185,24 @@ export const Orders = () => {
                     error={<EmptyComponent>Oops!</EmptyComponent>}
                   />
                 </div>
+                <span className="w-full">{timeAgo}</span>
+                <span className="w-full">
+                  <span className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]">
+                    {productCount}
+                  </span>
+                </span>
+                <div className="w-full">
+                  <span
+                    className="inline-flex items-center gap-2 p-2 rounded-2xl"
+                    style={{
+                      color: colors[order.status],
+                      backgroundColor: `${colors[order.status]}20`,
+                    }}
+                  >
+                    <Icon icon={icons[order.status]} />
+                    <span>{order.status}</span>
+                  </span>
+                </div>
                 <div>
                   <CircleTip
                     icon={allIcons.solid.faEllipsisV}
@@ -195,16 +212,25 @@ export const Orders = () => {
                         y: clientY,
                         menu: [
                           {
+                            label: "View Order",
+                            defaultIcon: allIcons.solid.faEye,
+                            click: () => {
+                              showPopup(<OrderView order={order} />);
+                            },
+                          },
+                          {
                             label: "Copy ID",
                             async click() {
                               await navigator.clipboard.writeText(order.id);
                             },
+                            defaultIcon: allIcons.regular.faCopy,
                           },
                           {
                             label: "Change Status",
                             async click() {
                               showPopup(<ChangeStatus order={order} />);
                             },
+                            defaultIcon: allIcons.solid.faCheck,
                           },
                         ],
                       });

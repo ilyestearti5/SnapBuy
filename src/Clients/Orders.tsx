@@ -1,13 +1,11 @@
-import { allIcons, and, where } from "biqpod/ui/apis";
+import { allIcons } from "biqpod/ui/apis";
 import {
-  Anchor,
   Card,
   CardWait,
   CircleTip,
-  ExcelPopup,
   Field,
   Icon,
-  IconProps,
+  Image,
   Line,
   Scroll,
   Translate,
@@ -16,9 +14,7 @@ import {
   closePopup,
   getFieldValue,
   openMenu,
-  openPath,
   showPopup,
-  showToast,
   useAsyncMemo,
   useCopyState,
   useUser,
@@ -28,22 +24,18 @@ import { useEffect, useMemo } from "react";
 import { onCollectionSnapshot } from "../server";
 import { api, useCurrentClient } from "../apis";
 import { colors, icons } from "../Links/Orders";
-
 export interface OrderView {
   order: SnapBuy.Order;
 }
 export const OrderView = ({ order }: OrderView) => {
   const time = new Date(order.createdAt!);
   const productsLengths = Object.keys(order.products || {}).length;
-
   const currentClient = useCurrentClient();
-
   const list = useAsyncMemo(async () => {
     return api.getOrderProducts(order.id);
   }, [currentClient]);
-
   return (
-    <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full">
       <div className="flex justify-between items-center p-2">
         <h1 className="md:text-xl text-2xl">{time.toLocaleString()}</h1>
         <div>
@@ -57,46 +49,64 @@ export const OrderView = ({ order }: OrderView) => {
       </div>
       <Line />
       <Scroll>
-        {list?.map((product) => {
+        {list?.map((product, index) => {
+          const photos = product.photos || [];
+          const photo = photos.at(0);
+          const total = (product.price || 0) * product.count;
           return (
             <div
               key={product.id}
-              className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2"
+              className="odd:bg-[--biqpod-primary-background] mx-3 my-1 rounded-xl"
             >
-              <div className="w-full">
-                <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
-                  <span>{product.name}</span>
-                </span>
-              </div>
-              <span className="w-full">{product.price}</span>
-              <div>
-                <CircleTip
-                  icon={allIcons.solid.faEllipsisV}
-                  onClick={({ clientX, clientY }) => {
-                    openMenu({
-                      x: clientX,
-                      y: clientY,
-                      menu: [
-                        {
-                          label: "View Order",
-                          defaultIcon: allIcons.solid.faEye,
-                          click: () => {
-                            showPopup(<OrderView order={order} />);
-                          },
-                        },
-                      ],
-                    });
-                  }}
-                />
+              <div className="flex items-center gap-4 p-2 h-[120px]">
+                <div>
+                  <Image
+                    src={photo}
+                    className="bg-[--biqpod-gray-opacity] rounded-2xl w-[60px] h-[60px] cursor-pointer"
+                    alt={<Icon icon={allIcons.solid.faImage} />}
+                    onClick={() => {
+                      // show image gareile
+                    }}
+                  />
+                </div>
+                <div className="flex flex-col gap-2 w-full">
+                  <p>{product.name}</p>
+                  <div
+                    className={tw(
+                      "flex justify-between items-center  bg-[--biqpod-gray-opacity] px-4 py-1 rounded-xl"
+                    )}
+                  >
+                    <span className="font-bold text-[--biqpod-success] text-right">
+                      {product.price}
+                    </span>
+                    <div className="bg-[--biqpod-secondary-background] px-2 rounded-md">
+                      {product.count}
+                    </div>
+                    <span className="font-bold text-[--biqpod-success] text-right">
+                      {total}
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
           );
         })}
+        {list?.length === 0 && (
+          <div className="flex flex-col justify-center items-center gap-3 p-5 h-full">
+            <Icon iconClassName="text-8xl" icon={allIcons.solid.faStore} />
+            <span>
+              <Translate content="Empty Order !" />
+            </span>
+          </div>
+        )}
         {!list &&
           range(productsLengths).map((index) => {
             return (
-              <div className="mt-2 px-2" key={index}>
-                <CardWait className="rounded-2xl w-full h-[50px]" />
+              <div
+                className="odd:bg-[--biqpod-primary-background] mx-3 my-1 rounded-xl h-[120px]"
+                key={index}
+              >
+                <CardWait className="rounded-2xl w-full" />
               </div>
             );
           })}
@@ -104,7 +114,6 @@ export const OrderView = ({ order }: OrderView) => {
     </Card>
   );
 };
-
 export const Orders = () => {
   const searchOrder = getFieldValue("search-order");
   const isFocused = useCopyState(false);
@@ -118,7 +127,6 @@ export const Orders = () => {
   }, []);
   const orders = useCopyState<SnapBuy.Order[]>([]); // Replace with your actual orders data
   const user = useUser();
-
   const currentClient = useCurrentClient();
   useEffect(() => {
     // if (currentClient?.client.id) {
@@ -137,7 +145,6 @@ export const Orders = () => {
     );
     // }
   }, [currentClient]);
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center p-2">
@@ -166,13 +173,18 @@ export const Orders = () => {
       </div>
       <Line />
       <div className="flex justify-between items-center gap-2 p-2">
-        <div className="w-full">
-          <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
-            <Icon icon={allIcons.solid.faTag} />
-            <span>Status</span>
-          </span>
-        </div>
-        <span className="w-full">Created At</span>
+        <span className="inline-flex items-center gap-2 w-full capitalize">
+          <Icon icon={allIcons.solid.faUser} />
+          <Translate content="client" />
+        </span>
+        <span className="inline-flex items-center gap-2 w-full capitalize">
+          <Icon icon={allIcons.solid.faCalendarAlt} />
+          <Translate content="created at" />
+        </span>
+        <span className="inline-flex items-center gap-2 w-full capitalize">
+          <Icon icon={allIcons.solid.faBox} />
+          <Translate content="products" />
+        </span>
         <div className="invisible">
           <CircleTip icon={allIcons.solid.faEllipsisV} />
         </div>
@@ -212,6 +224,8 @@ export const Orders = () => {
               const years = Math.floor(timeDifference / 29030400);
               timeAgo = `${years} year${years > 1 ? "s" : ""} ago`;
             }
+            const { products = {} } = order;
+            const productCount = Object.keys(products).length;
             return (
               <div
                 key={order.id}
@@ -230,6 +244,11 @@ export const Orders = () => {
                   </span>
                 </div>
                 <span className="w-full">{timeAgo}</span>
+                <span className="w-full">
+                  <span className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]">
+                    {productCount}
+                  </span>
+                </span>
                 <div>
                   <CircleTip
                     icon={allIcons.solid.faEllipsisV}

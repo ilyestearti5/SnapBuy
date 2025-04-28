@@ -63,7 +63,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
     }
   }, []);
   return (
-    <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+    <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-2">
         <div className="flex items-center gap-2">
           {view && (
@@ -74,7 +74,9 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
               }}
             />
           )}
-          <h1 className="font-bold text-2xl">Filter Products</h1>
+          <h1 className="font-bold text-2xl">
+            <Translate content="filter products" />
+          </h1>
         </div>
         <div>
           <CircleTip
@@ -112,7 +114,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
         </Scroll>
         <div
           className={tw(
-            "absolute inset-y-0 bg-[--biqpod-primary-background] border-[--biqpod-borders] border-l border-solid w-full transition-transform translate-x-full duration-500",
+            "absolute inset-y-0 bg-[--biqpod-primary-background] border-y-[--biqpod-borders] border-l-transparent border-r-[--biqpod-borders] border-l border-solid w-full transition-transform translate-x-full duration-500",
             view && "translate-x-[0%]"
           )}
         >
@@ -120,7 +122,9 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
             <div className="flex flex-col justify-center items-center gap-2 h-full">
               <Card>
                 <div className="p-2 text-center">
-                  <h1 className="font-bold text-2xl">Available</h1>
+                  <h1 className="font-bold text-2xl capitalize">
+                    <Translate content="available" />
+                  </h1>
                 </div>
                 <Line />
                 <div className="flex justify-center items-center p-2">
@@ -141,7 +145,9 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
             <div className="flex flex-col justify-center items-center gap-2 h-full">
               <Card>
                 <div className="p-2 text-center">
-                  <h1 className="font-bold text-2xl">Market</h1>
+                  <h1 className="font-bold text-2xl capitalize">
+                    <Translate content="market" />
+                  </h1>
                 </div>
                 <Line />
                 <div className="p-2">
@@ -166,7 +172,9 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
             <div className="flex flex-col justify-center items-center gap-2 h-full">
               <Card>
                 <div className="p-2 text-center">
-                  <h1 className="font-bold text-2xl">Category</h1>
+                  <h1 className="font-bold text-2xl capitalize">
+                    <Translate content="category" />
+                  </h1>
                 </div>
                 <Line />
                 <div className="p-2">

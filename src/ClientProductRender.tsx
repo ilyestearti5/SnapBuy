@@ -104,7 +104,7 @@ export const ClientProductRender = ({ product }: ProductRenderProps) => {
       </div>
       <Line />
       <div className="max-md:p-1 md:p-2 font-bold text-[--biqpod-success] max-md:text-lg text-2xl text-right">
-        {product.price}
+        {product.price} DA
       </div>
       <Line />
       <div className="flex gap-2 p-2 max-md:p-1">
