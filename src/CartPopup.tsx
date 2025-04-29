@@ -26,6 +26,58 @@ interface ProductMore {
   product: SnapBuy.Product;
   count: number;
 }
+
+// card line for load products easily
+const CartLine = () => {
+  const photo = record?.product?.photos?.at(0);
+  return (
+    <div
+      key={record?.product.id!}
+      className="flex justify-between items-center odd:bg-[--biqpod-primary-background] p-2"
+    >
+      <div className="flex items-center gap-2">
+        <div>
+          <Image
+            className="bg-[--biqpod-gray-opacity] w-[40px] h-[40px]"
+            src={photo}
+            alt={<Icon icon={allIcons.solid.faImage} />}
+          />
+        </div>
+        <div>{record?.product?.name}</div>
+      </div>
+      <div className="flex gap-1">
+        <div className="flex items-center gap-2 bg-[--biqpod-gray-opacity] p-1 rounded-full">
+          <CircleTip
+            icon={allIcons.solid.faMinus}
+            onClick={() => {
+              if (record?.count && record.count > 1) {
+                addToCart(record?.product.id!, record.count - 1);
+              } else {
+                addToCart(record?.product.id!, 0);
+              }
+            }}
+          />
+          <div>{record?.count}</div>
+          <CircleTip
+            icon={allIcons.solid.faPlus}
+            onClick={() => {
+              addToCart(record?.product.id!, (record?.count || 0) + 1);
+            }}
+          />
+        </div>
+        <div>
+          <CircleTip
+            icon={allIcons.solid.faTrashCan}
+            onClick={() => {
+              removeCart(record?.product.id!);
+            }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export const CartPopup = () => {
   const carts = useCart();
   const fullCart = useFullCart();
@@ -48,17 +100,14 @@ export const CartPopup = () => {
     },
     [fullCart, user]
   );
-
   useEffect(() => {
     execAction("get-products-of-cart");
   }, [fullCart, user]);
-
   const total = useMemo(() => {
     return list.get.reduce((acc, item) => {
       return acc + (item.product?.price || 0) * item.count;
     }, 0);
   }, [list.get]);
-
   useAction(
     "creater-order",
     async () => {
@@ -82,7 +131,6 @@ export const CartPopup = () => {
     },
     [currentClient]
   );
-
   return (
     <Card className="relative max-md:rounded-none w-1/2 max-md:w-full max-md:h-full">
       <div className="flex justify-between items-center p-3">
@@ -101,57 +149,8 @@ export const CartPopup = () => {
       <Line />
       <Scroll>
         <div className="flex flex-col gap-2">
-          {list.get?.map((record) => {
-            const photo = record?.product?.photos?.at(0);
-            return (
-              <div
-                key={record?.product.id!}
-                className="flex justify-between items-center odd:bg-[--biqpod-primary-background] p-2"
-              >
-                <div className="flex items-center gap-2">
-                  <div>
-                    <Image
-                      className="bg-[--biqpod-gray-opacity] w-[40px] h-[40px]"
-                      src={photo}
-                      alt={<Icon icon={allIcons.solid.faImage} />}
-                    />
-                  </div>
-                  <div>{record?.product?.name}</div>
-                </div>
-                <div className="flex gap-1">
-                  <div className="flex items-center gap-2 bg-[--biqpod-gray-opacity] p-1 rounded-full">
-                    <CircleTip
-                      icon={allIcons.solid.faMinus}
-                      onClick={() => {
-                        if (record?.count && record.count > 1) {
-                          addToCart(record?.product.id!, record.count - 1);
-                        } else {
-                          addToCart(record?.product.id!, 0);
-                        }
-                      }}
-                    />
-                    <div>{record?.count}</div>
-                    <CircleTip
-                      icon={allIcons.solid.faPlus}
-                      onClick={() => {
-                        addToCart(
-                          record?.product.id!,
-                          (record?.count || 0) + 1
-                        );
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <CircleTip
-                      icon={allIcons.solid.faTrashCan}
-                      onClick={() => {
-                        removeCart(record?.product.id!);
-                      }}
-                    />
-                  </div>
-                </div>
-              </div>
-            );
+          {list.get?.map((record, index) => {
+            return <CartLine key={index} />;
           })}
         </div>
         {list.get?.length === 0 && (
@@ -179,7 +178,7 @@ export const CartPopup = () => {
               className="w-full"
               icon={allIcons.solid.faCartPlus}
             >
-              <Translate content="send" />
+              <Translate content="send" /> {total}
             </Button>
           </div>
         </EmptyComponent>

@@ -14,6 +14,7 @@ import {
   useColorMerge,
   useCopyState,
   showPopup,
+  showToast,
 } from "biqpod/ui/hooks";
 import { tw } from "biqpod/ui/utils";
 import { useCartCount, removeCart, ProductPopup } from "./ProductPopup";
@@ -126,6 +127,10 @@ export const ClientProductRender = ({ product }: ProductRenderProps) => {
         )}
         <Button
           onClick={() => {
+            if (!product.available) {
+              showToast("Product Not Available", "warning");
+              return;
+            }
             showPopup(<ProductPopup product={product} />);
           }}
           icon={allIcons.solid.faShoppingCart}
