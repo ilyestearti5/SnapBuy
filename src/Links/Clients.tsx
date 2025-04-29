@@ -31,7 +31,7 @@ import { deleteDoc, getDocs } from "../server";
 import { AddClient } from "./AddClient";
 import { PopupClient } from "./PopupClient";
 import { AccessClient } from "./AccessClient";
-interface RenderQr {
+export interface RenderQr {
   value: string;
 }
 export const RenderQr = ({ value }: RenderQr) => {

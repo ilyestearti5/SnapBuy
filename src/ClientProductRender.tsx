@@ -18,7 +18,6 @@ import {
 } from "biqpod/ui/hooks";
 import { tw } from "biqpod/ui/utils";
 import { useCartCount, removeCart, ProductPopup } from "./ProductPopup";
-
 export interface ProductRenderProps {
   product: SnapBuy.Product;
 }
@@ -91,7 +90,7 @@ export const ClientProductRender = ({ product }: ProductRenderProps) => {
         {photos.length === 0 && (
           <Icon iconClassName="text-6xl" icon={allIcons.solid.faImage} />
         )}
-        {product.available && (
+        {!!product.available && (
           <div className="top-0 right-0 absolute bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
             <Translate content="available" />
           </div>

@@ -23,7 +23,7 @@ import { include, tw } from "biqpod/ui/utils";
 import { useEffect, useMemo } from "react";
 import { getDoc, onCollectionSnapshot } from "../server";
 import { ChangeStatus } from "../ChangeStatus";
-import { OrderView } from "../Clients/Orders";
+import { OrderView } from "../Clients/OrderView";
 export const colors: Record<string, string> = {
   pending: "#F59E0B", // Yellow
   completed: "#10B981", // Green

@@ -86,7 +86,7 @@ export const HeaderContent = () => {
   return (
     <EmptyComponent>
       <div className="flex justify-between items-center px-4 w-full">
-        <div className="flex items-center gap-x-4">
+        <div className="flex items-center gap-x-1">
           {!!hist.length && (
             <CircleTip
               icon={allIcons.solid.faChevronLeft}
@@ -97,7 +97,7 @@ export const HeaderContent = () => {
           )}
           {isClientTab && (
             <EmptyComponent>
-              <h1 className="text-3xl capitalize">
+              <h1 className="max-md:text-xl text-3xl capitalize">
                 Hi, {currentClient?.client?.name}
               </h1>
             </EmptyComponent>
@@ -105,7 +105,9 @@ export const HeaderContent = () => {
           {selectedTab && (
             <EmptyComponent>
               <Icon iconClassName="text-2xl" icon={selectedTab?.icon} />
-              <h1 className="text-3xl capitalize">{selectedTab?.name}</h1>
+              <h1 className="max-md:text-xl text-3xl capitalize">
+                {selectedTab?.name}
+              </h1>
             </EmptyComponent>
           )}
         </div>

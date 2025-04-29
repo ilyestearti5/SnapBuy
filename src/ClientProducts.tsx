@@ -28,6 +28,7 @@ import { getDocs } from "./server";
 import { useFullCart } from "./ProductPopup";
 import { CartPopup } from "./CartPopup";
 import { ClientProductRender } from "./ClientProductRender";
+import { fuzzyRankedSearch } from "./utils";
 export const ClientProducts = () => {
   const user = useUser();
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
@@ -35,6 +36,22 @@ export const ClientProducts = () => {
   const action = useAction(
     "get-client-products",
     async () => {
+      if (import.meta.env.DEV) {
+        if (!user?.uid) return;
+        const snapshot = await getDocs<SnapBuy.Product>([
+          "projects",
+          import.meta.env.VITE_PROJECT_ID,
+          "products",
+        ]);
+        const productsData = snapshot?.map((doc) => ({
+          ...doc.data,
+          id: doc.id,
+        }));
+        setTemp("client-productsList", productsData);
+        setTemp("client-productsRecived", true);
+        productsData && products.set(productsData);
+        return;
+      }
       if (!currentClient?.access!.uid) {
         return;
       }
@@ -57,9 +74,7 @@ export const ClientProducts = () => {
   );
   const success = isSuccess(action);
   useEffect(() => {
-    if (currentClient) {
-      execAction("get-client-products");
-    }
+    execAction("get-client-products");
   }, [currentClient]);
   const isFullWidth = useTemp("isFullWidth");
   useEffect(() => {
@@ -67,10 +82,10 @@ export const ClientProducts = () => {
   }, [user]);
   const search = getFieldValue("search-prod");
   const filterProducts = useMemo(() => {
-    return products.get.filter((product) => {
-      const fullData = `${product.name}`;
-      return include(fullData, search);
-    });
+    if (!search) {
+      return products.get;
+    }
+    return fuzzyRankedSearch(search, products.get, "name");
   }, [products.get, search]);
   const cart = useFullCart();
   return (

@@ -17,6 +17,7 @@ import {
 import {
   execAction,
   getFieldValue,
+  getPosition,
   getTemp,
   isLoading,
   isSuccess,
@@ -38,6 +39,7 @@ import { api, useCategorys, useFocused, useMarkets } from "../apis";
 import { Biqpod } from "biqpod/ui/types";
 import { PopupProduct } from "./PopupProduct";
 import { PopupFilter } from "./PopupFilter";
+import { fuzzyRankedSearch } from "../utils";
 interface ProductRenderProps {
   product: SnapBuy.Product;
 }
@@ -258,12 +260,12 @@ export const Products = () => {
   const isFullWidth = useTemp("isFullWidth");
   const showTools = useCopyState(false);
   // categorys
-  const positionCategory = positionsHooks.getOne("prod-category-layout");
+  const positionCategory = getPosition("prod-category-layout");
   const typesCategory = getFieldValue("prod-category");
   const categorys = useCategorys();
   // market
   const typedMarket = getFieldValue("prod-category");
-  const positionMark = positionsHooks.getOne("prod-market-layout");
+  const positionMark = getPosition("prod-market-layout");
   const markets = useMarkets();
   // filtring
   const filterdMarkets = useMemo(() => {
@@ -282,12 +284,10 @@ export const Products = () => {
     return filteredCategorys;
   }, [typesCategory, categorys]);
   const filterProducts = useMemo(() => {
-    if (!products.get) return [];
-    const filteredProducts = products.get.filter((product) => {
-      const fullData = `${product.category} ${product.market} ${product.name} ${product.description}  `;
-      return include(fullData, search);
-    });
-    return filteredProducts;
+    if (!search) {
+      return products.get;
+    }
+    return fuzzyRankedSearch(search, products.get, "name");
   }, [search, products.get]);
   useEffect(() => {
     if (user?.uid) return api.onCategoryAndMarketChange(user?.uid);

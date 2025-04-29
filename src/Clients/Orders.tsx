@@ -1,8 +1,9 @@
-import { allIcons } from "biqpod/ui/apis";
+import { allIcons, and, where } from "biqpod/ui/apis";
 import {
   Card,
   CardWait,
   CircleTip,
+  EmptyComponent,
   Field,
   Icon,
   Image,
@@ -24,96 +25,8 @@ import { useEffect, useMemo } from "react";
 import { onCollectionSnapshot } from "../server";
 import { api, useCurrentClient } from "../apis";
 import { colors, icons } from "../Links/Orders";
-export interface OrderView {
-  order: SnapBuy.Order;
-}
-export const OrderView = ({ order }: OrderView) => {
-  const time = new Date(order.createdAt!);
-  const productsLengths = Object.keys(order.products || {}).length;
-  const currentClient = useCurrentClient();
-  const list = useAsyncMemo(async () => {
-    return api.getOrderProducts(order.id);
-  }, [currentClient]);
-  return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full">
-      <div className="flex justify-between items-center p-2">
-        <h1 className="md:text-xl text-2xl">{time.toLocaleString()}</h1>
-        <div>
-          <CircleTip
-            onClick={() => {
-              closePopup();
-            }}
-            icon={allIcons.solid.faXmark}
-          />
-        </div>
-      </div>
-      <Line />
-      <Scroll>
-        {list?.map((product, index) => {
-          const photos = product.photos || [];
-          const photo = photos.at(0);
-          const total = (product.price || 0) * product.count;
-          return (
-            <div
-              key={product.id}
-              className="odd:bg-[--biqpod-primary-background] mx-3 my-1 rounded-xl"
-            >
-              <div className="flex items-center gap-4 p-2 h-[120px]">
-                <div>
-                  <Image
-                    src={photo}
-                    className="bg-[--biqpod-gray-opacity] rounded-2xl w-[60px] h-[60px] cursor-pointer"
-                    alt={<Icon icon={allIcons.solid.faImage} />}
-                    onClick={() => {
-                      // show image gareile
-                    }}
-                  />
-                </div>
-                <div className="flex flex-col gap-2 w-full">
-                  <p>{product.name}</p>
-                  <div
-                    className={tw(
-                      "flex justify-between items-center  bg-[--biqpod-gray-opacity] px-4 py-1 rounded-xl"
-                    )}
-                  >
-                    <span className="font-bold text-[--biqpod-success] text-right">
-                      {product.price}
-                    </span>
-                    <div className="bg-[--biqpod-secondary-background] px-2 rounded-md">
-                      {product.count}
-                    </div>
-                    <span className="font-bold text-[--biqpod-success] text-right">
-                      {total}
-                    </span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
-        {list?.length === 0 && (
-          <div className="flex flex-col justify-center items-center gap-3 p-5 h-full">
-            <Icon iconClassName="text-8xl" icon={allIcons.solid.faStore} />
-            <span>
-              <Translate content="Empty Order !" />
-            </span>
-          </div>
-        )}
-        {!list &&
-          range(productsLengths).map((index) => {
-            return (
-              <div
-                className="odd:bg-[--biqpod-primary-background] mx-3 my-1 rounded-xl h-[120px]"
-                key={index}
-              >
-                <CardWait className="rounded-2xl w-full" />
-              </div>
-            );
-          })}
-      </Scroll>
-    </Card>
-  );
-};
+import { OrderView } from "./OrderView";
+
 export const Orders = () => {
   const searchOrder = getFieldValue("search-order");
   const isFocused = useCopyState(false);
@@ -126,24 +39,43 @@ export const Orders = () => {
     return new Date();
   }, []);
   const orders = useCopyState<SnapBuy.Order[]>([]); // Replace with your actual orders data
-  const user = useUser();
   const currentClient = useCurrentClient();
+  const quickLoading = useCopyState(false);
   useEffect(() => {
-    // if (currentClient?.client.id) {
-    return onCollectionSnapshot<SnapBuy.Order>(
-      ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
-      (snapshot) => {
-        const ordersData = snapshot.map((doc) => ({
-          ...doc.data,
-          id: doc.id,
-        }));
-        orders.set(ordersData);
-      },
-      {
-        // where: and(where("clientId", "==", currentClient?.client.id)),
-      }
-    );
-    // }
+    if (import.meta.env.DEV) {
+      quickLoading.set(false);
+      orders.set([]);
+      return onCollectionSnapshot<SnapBuy.Order>(
+        ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
+        (snapshot) => {
+          quickLoading.set(true);
+
+          const ordersData = snapshot.map((doc) => ({
+            ...doc.data,
+            id: doc.id,
+          }));
+          orders.set(ordersData);
+        }
+      );
+    }
+    if (currentClient?.client.id) {
+      quickLoading.set(false);
+      orders.set([]);
+      return onCollectionSnapshot<SnapBuy.Order>(
+        ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
+        (snapshot) => {
+          quickLoading.set(true);
+          const ordersData = snapshot.map((doc) => ({
+            ...doc.data,
+            id: doc.id,
+          }));
+          orders.set(ordersData);
+        },
+        {
+          where: and(where("clientId", "==", currentClient?.client.id)),
+        }
+      );
+    }
   }, [currentClient]);
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -174,8 +106,8 @@ export const Orders = () => {
       <Line />
       <div className="flex justify-between items-center gap-2 p-2">
         <span className="inline-flex items-center gap-2 w-full capitalize">
-          <Icon icon={allIcons.solid.faUser} />
-          <Translate content="client" />
+          <Icon icon={allIcons.solid.faTag} />
+          <Translate content="status" />
         </span>
         <span className="inline-flex items-center gap-2 w-full capitalize">
           <Icon icon={allIcons.solid.faCalendarAlt} />
@@ -191,6 +123,7 @@ export const Orders = () => {
       </div>
       <Line />
       <Scroll>
+        {!quickLoading.get && <CardWait className="h-[100vh]" />}
         {orders.get
           .filter((order) => {
             return include(`${order.id} @status ${order.status}`, searchOrder);
@@ -229,7 +162,7 @@ export const Orders = () => {
             return (
               <div
                 key={order.id}
-                className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2"
+                className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2 h-[50px]"
               >
                 <div className="w-full">
                   <span

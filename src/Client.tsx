@@ -1,11 +1,10 @@
 import { allIcons } from "biqpod/ui/apis";
 import { Button, Line, Scroll, Translate } from "biqpod/ui/components";
-import { useColorMerge, useTemp } from "biqpod/ui/hooks";
+import { useColorMerge } from "biqpod/ui/hooks";
 import { Route, Switch, useLocation } from "react-router";
 import { Link } from "react-router-dom";
 import { Orders } from "./Clients/Orders";
-import { api, listenClient, useCurrentClient } from "./apis";
-import { useEffect } from "react";
+import { listenClient } from "./apis";
 import { ChangeClient } from "./ChangeClient";
 import { ClientProducts } from "./ClientProducts";
 const clientTabs: Tab[] = [

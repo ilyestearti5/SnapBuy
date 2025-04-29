@@ -30,7 +30,11 @@ export const useCart = () => {
   const carts = getTemp<Record<string, number>>("cart");
   return carts;
 };
-export const useFullCart = () => {
+export interface FullCartResult {
+  prodId: string;
+  count: number;
+}
+export const useFullCart = (): FullCartResult[] => {
   const carts = getTemp<Record<string, number>>("cart");
   const result = useMemo(() => {
     return Object.entries(carts || {})

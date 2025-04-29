@@ -1,5 +1,5 @@
-import React, { useEffect } from "react";
-import { onCollectionSnapshot } from "./server";
+import { useEffect } from "react";
+import { getDoc, onCollectionSnapshot } from "./server";
 import { useCopyState, useUser } from "biqpod/ui/hooks";
 import {
   AsyncComponent,
@@ -7,14 +7,16 @@ import {
   CardWait,
   CircleLoading,
   CircleTip,
+  EmptyComponent,
+  Icon,
+  Image,
   Scroll,
-  Translate,
 } from "biqpod/ui/components";
 import { api } from "./apis";
 import { allIcons, and, where } from "biqpod/ui/apis";
 import { range } from "biqpod/ui/utils";
 import { Link } from "react-router-dom";
-
+import { Biqpod } from "biqpod/ui/types";
 export const ChangeClient = () => {
   const user = useUser();
   const accessTokens = useCopyState<null | SnapBuy.AccessToken[]>(null);
@@ -32,9 +34,7 @@ export const ChangeClient = () => {
         }
       );
   }, []);
-
   const loading = useCopyState(false);
-
   return (
     <div className="relative flex flex-col h-full">
       <Scroll>
@@ -58,7 +58,26 @@ export const ChangeClient = () => {
                         }}
                         className="flex justify-between items-center px-3 h-[50px]"
                       >
-                        <div className="font-bold text-lg">{client?.name}</div>
+                        <div className="flex items-center gap-2">
+                          <AsyncComponent
+                            render={async () => {
+                              const user = await getDoc<Biqpod.Account.User>([
+                                "users",
+                                access.uid!,
+                              ]);
+                              return (
+                                <Image
+                                  className="w-[40px] h-[40px]"
+                                  src={user?.photo || undefined}
+                                  alt={<Icon icon={allIcons.solid.faImage} />}
+                                />
+                              );
+                            }}
+                          />
+                          <div className="font-bold text-lg">
+                            {client?.name}
+                          </div>
+                        </div>
                         <div>
                           <CircleTip icon={allIcons.solid.faChevronRight} />
                         </div>
