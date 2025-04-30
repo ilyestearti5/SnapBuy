@@ -170,9 +170,12 @@ export const api = {
     });
   },
   async deleteProduct(productId: string) {
-    await deleteDoc(
-      ["projects", import.meta.env.VITE_PROJECT_ID, "products", productId],
-    )
+    await deleteDoc([
+      "projects",
+      import.meta.env.VITE_PROJECT_ID,
+      "products",
+      productId,
+    ]);
   },
   // accounts
   async getAccounts() {
@@ -305,8 +308,9 @@ export const api = {
           ])
         : order;
     const products = result?.products || {};
-    const r =  await mapAsync(Object.entries(products), async (args) => {
-      const [prodId, count] = args;
+    const r = await mapAsync(Object.entries(products), async (args) => {
+      const [prodId, r] = args;
+      const { count = 0, price = 0 } = r || {};
       const product = await getDoc<SnapBuy.Product>([
         "projects",
         import.meta.env.VITE_PROJECT_ID,
@@ -317,14 +321,14 @@ export const api = {
         ...product,
         id: prodId,
         count,
+        price,
       };
     });
     return r.sort((a, b) => {
-      if(!a.name) return 1;
-      if(!b.name) return -1;
+      if (!a.name) return 1;
+      if (!b.name) return -1;
       return a.name.localeCompare(b.name);
-    })
-
+    });
   },
   // account config auth
   async siginAccount(code: string) {

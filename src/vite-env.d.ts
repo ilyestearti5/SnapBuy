@@ -24,7 +24,7 @@ declare namespace SnapBuy {
     id: string;
     createdAt?: number;
     updatedAt?: number;
-    products?: Record<string, number>;
+    products?: Partial<Record<string, { count?: number; price?: number }>>;
     clientId: string;
     // needed
     storeId?: string;

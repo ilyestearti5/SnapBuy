@@ -16,6 +16,7 @@ import {
   getFieldValue,
   openMenu,
   showPopup,
+  showToast,
   useCopyState,
   useUser,
 } from "biqpod/ui/hooks";
@@ -93,9 +94,6 @@ export const Orders = () => {
             placeholder="Search Order"
             className="rounded-xl"
           />
-        </div>
-        <div>
-          <CircleTip icon={allIcons.solid.faFilter} />
         </div>
       </div>
       <Line />
@@ -222,6 +220,7 @@ export const Orders = () => {
                             label: "Copy ID",
                             async click() {
                               await navigator.clipboard.writeText(order.id);
+                              showToast("Order ID Copyed");
                             },
                             defaultIcon: allIcons.regular.faCopy,
                           },

@@ -30,7 +30,7 @@ export const OrderView = ({ order }: OrderView) => {
     }, 0);
   }, [list]);
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full">
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:h-[80vh]">
       <div className="flex justify-between items-center p-2">
         <h1 className="md:text-xl text-2xl">{time.toLocaleString()}</h1>
         <div>
@@ -44,10 +44,10 @@ export const OrderView = ({ order }: OrderView) => {
       </div>
       <Line />
       <Scroll>
-        {list?.map((product, index) => {
+        {list?.map((product) => {
           const photos = product.photos || [];
           const photo = photos.at(0);
-          const total = (product.price || 0) * product.count;
+          const total = (product.price || 0) * (product.count || 0);
           return (
             <div
               key={product.id}
@@ -107,9 +107,14 @@ export const OrderView = ({ order }: OrderView) => {
           })}
       </Scroll>
       <Line />
-      <div className="p-4 text-xl text-center">
-        Total :{" "}
-        <span className="font-bold text-[--biqpod-success]">{total}</span>
+      <div className="flex justify-center items-center gap-1 p-4 text-xl">
+        <span>Total :</span>
+        {!!list && (
+          <span className="font-bold text-[--biqpod-success]">{total}</span>
+        )}
+        {!list && (
+          <CardWait className="inline-block rounded-full w-[100px] h-[20px]" />
+        )}
       </div>
     </Card>
   );

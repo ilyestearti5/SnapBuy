@@ -1,4 +1,4 @@
-import { and, where, allIcons, getUserFunction } from "biqpod/ui/apis";
+import { and, where, allIcons } from "biqpod/ui/apis";
 import {
   Card,
   Translate,
@@ -8,8 +8,6 @@ import {
   CircleLoading,
   Button,
   Anchor,
-  EmptyComponent,
-  Field,
   Icon,
 } from "biqpod/ui/components";
 import {
@@ -19,18 +17,16 @@ import {
   showPopup,
   showToast,
   openMenu,
-  setFieldValue,
-  openDialog,
   confirm,
   useColorMerge,
 } from "biqpod/ui/hooks";
 import { OpenMenuProps } from "biqpod/ui/types";
-import { setFocused, tw } from "biqpod/ui/utils";
+import { tw } from "biqpod/ui/utils";
 import { useEffect } from "react";
 import { onCollectionSnapshot, setDoc, deleteDoc } from "../server";
 import { RenderQr } from "./Clients";
 import { api } from "../apis";
-interface AccessClientProps {
+export interface AccessClientProps {
   client: SnapBuy.Client;
 }
 export const AccessClient = ({ client }: AccessClientProps) => {
@@ -48,13 +44,12 @@ export const AccessClient = ({ client }: AccessClientProps) => {
         }
       );
   }, [user]);
-  const isAdd = useCopyState(false);
-  const addToken = async (name: string) => {
+  const addToken = async () => {
     if (!user?.uid) {
       return;
     }
     const value = crypto.randomUUID();
-    const id = name;
+    const id = crypto.randomUUID();
     await setDoc(
       ["projects", import.meta.env.VITE_PROJECT_ID, "client-access", id],
       {
@@ -66,11 +61,6 @@ export const AccessClient = ({ client }: AccessClientProps) => {
       }
     );
   };
-  useEffect(() => {
-    if (isAdd.get) {
-      setFocused("access-token-name");
-    }
-  }, [isAdd.get]);
   const loading = useCopyState(false);
   const colorMerge = useColorMerge();
   return (
@@ -96,7 +86,7 @@ export const AccessClient = ({ client }: AccessClientProps) => {
           </div>
         )}
         {accessTokenDoc.get &&
-          accessTokenDoc.get.map(({ id, value, usedBy }) => {
+          accessTokenDoc.get.map(({ id, value, usedBy }, index) => {
             const tools: OpenMenuProps["menu"] = [
               {
                 defaultIcon: allIcons.solid.faKey,
@@ -226,7 +216,7 @@ export const AccessClient = ({ client }: AccessClientProps) => {
             ];
             return (
               <div
-                key={id}
+                key={index}
                 className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background]"
               >
                 <div className="flex items-center gap-2 p-2">
@@ -239,8 +229,7 @@ export const AccessClient = ({ client }: AccessClientProps) => {
                     />
                   </div>
                   <div>
-                    <span className="text-lg">{id}</span>
-                    <sub className="bg-[--biqpod-gray-opacity] ml-2 px-2 border border-[--biqpod-borders] border-solid rounded-full">
+                    <span className="bg-[--biqpod-gray-opacity] ml-2 px-2 border border-[--biqpod-borders] border-solid rounded-full">
                       <Anchor
                         onClick={async () => {
                           // copy
@@ -250,7 +239,7 @@ export const AccessClient = ({ client }: AccessClientProps) => {
                       >
                         {value}
                       </Anchor>
-                    </sub>
+                    </span>
                   </div>
                 </div>
                 <div className="max-md:hidden flex p-2">
@@ -291,37 +280,19 @@ export const AccessClient = ({ client }: AccessClientProps) => {
         )}
       </Scroll>
       <Line />
-      {isAdd.get && (
-        <EmptyComponent>
-          <div className="p-2">
-            <Field
-              inputName="access-token-name"
-              placeholder="Access Token Name"
-              className="rounded-xl"
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  addToken(e.currentTarget.value);
-                  setFieldValue("access-token-name", "");
-                  isAdd.set(false);
-                }
-              }}
-            />
-          </div>
-          <Line />
-        </EmptyComponent>
-      )}
       <div className="p-2">
         <Button
           onClick={async () => {
-            isAdd.set(!isAdd.get);
+            const response = await confirm({
+              title: "Add Access Token",
+              message: "Are you sure want to add access token?",
+              type: "warning",
+            });
+            response && addToken();
           }}
           icon={allIcons.solid.faPlus}
-          iconClassName={tw(
-            "transition-transform",
-            isAdd.get ? "rotate-45" : "rotate-0"
-          )}
         >
-          <Translate content={isAdd.get ? "cancel" : "add access token"} />
+          <Translate content={"add access token"} />
         </Button>
       </div>
       {loading.get && (

@@ -32,7 +32,7 @@ export const ClientProductRender = ({ product }: ProductRenderProps) => {
     <Card
       key={product.id}
       className={tw(
-        "w-[calc(50%-4px)] overflow-hidden",
+        "w-[calc(50%-4px)] transition-[width] duration-700 overflow-hidden",
         isFullWidth && "w-full"
       )}
     >

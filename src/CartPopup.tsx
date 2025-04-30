@@ -23,15 +23,16 @@ import {
   useAsyncMemo,
 } from "biqpod/ui/hooks";
 import {
-  addToCart,
   deleteCart,
   FullCartResult,
   removeCart,
   useCart,
   useFullCart,
 } from "./ProductPopup";
+import { addToCart } from "./addToCart";
 import { api, useCurrentClient } from "./apis";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { mapAsync } from "biqpod/ui/utils";
 export interface ProductMore {
   product: SnapBuy.Product;
   count: number;
@@ -43,19 +44,21 @@ export interface CartLineProps {
 export const CartLine = ({ data }: CartLineProps) => {
   const product = useAsyncMemo(async () => {
     var prod = await api.getProduct(data.prodId);
-    setTemp(
-      "cart-count-prices." + data.prodId,
-      data.count * (prod?.price || 0)
-    );
     return prod;
   }, []);
   const photo = product?.photos?.at(0);
   const count = data.count;
+  const total = useMemo(() => {
+    return data.count * (product?.price! || 0);
+  }, [product]);
+  useEffect(() => {
+    setTemp("cart-count-prices." + data.prodId, total);
+  }, [total]);
   return (
     <EmptyComponent>
       {product && (
-        <div className="flex justify-between items-center odd:bg-[--biqpod-primary-background] px-2 h-[60px]">
-          <div className="flex items-center gap-2">
+        <Card className="odd:bg-[--biqpod-primary-background] mx-1 mt-1 h-[120px]">
+          <div className="flex items-center gap-2 px-4 py-2">
             <div>
               <Image
                 className="bg-[--biqpod-gray-opacity] w-[40px] h-[40px]"
@@ -65,40 +68,54 @@ export const CartLine = ({ data }: CartLineProps) => {
             </div>
             <div>{product.name}</div>
           </div>
-          <div className="flex gap-1">
-            <div className="flex items-center gap-2 bg-[--biqpod-gray-opacity] p-1 rounded-full">
-              <CircleTip
-                icon={allIcons.solid.faMinus}
-                onClick={() => {
-                  if (count && count > 1) {
-                    addToCart(product.id!, count - 1);
-                  } else {
-                    addToCart(product.id!, 0);
-                  }
-                }}
-              />
-              <div>{count}</div>
-              <CircleTip
-                icon={allIcons.solid.faPlus}
-                onClick={() => {
-                  addToCart(product.id!, (count || 0) + 1);
-                }}
-              />
-            </div>
-            <div>
-              <CircleTip
-                icon={allIcons.solid.faTrashCan}
-                onClick={() => {
-                  removeCart(product.id!);
-                }}
-              />
+          <div>
+            <Line />
+          </div>
+          <div className="flex justify-between items-center px-4 py-2">
+            <span>
+              (
+              <span className="font-bold text-[--biqpod-success]">
+                {product.price}
+              </span>
+              ) / (
+              <span className="font-bold text-[--biqpod-success]">{total}</span>
+              )
+            </span>
+            <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2 bg-[--biqpod-gray-opacity] p-1 rounded-full">
+                <CircleTip
+                  icon={allIcons.solid.faMinus}
+                  onClick={() => {
+                    if (count && count > 1) {
+                      addToCart(product.id!, count - 1);
+                    } else {
+                      addToCart(product.id!, 0);
+                    }
+                  }}
+                />
+                <div>{count}</div>
+                <CircleTip
+                  icon={allIcons.solid.faPlus}
+                  onClick={() => {
+                    addToCart(product.id!, (count || 0) + 1);
+                  }}
+                />
+              </div>
+              <div>
+                <CircleTip
+                  icon={allIcons.solid.faTrashCan}
+                  onClick={() => {
+                    removeCart(product.id!);
+                  }}
+                />
+              </div>
             </div>
           </div>
-        </div>
+        </Card>
       )}
       {!product && (
-        <div className="flex justify-between items-center odd:bg-[--biqpod-primary-background] h-[60px]">
-          <CardWait className="rounded-xl h-[50px]" />
+        <div className="flex justify-between items-center odd:bg-[--biqpod-primary-background] mx-1 mt-1 h-[120px]">
+          <CardWait className="rounded-xl h-[80px]" />
         </div>
       )}
     </EmptyComponent>
@@ -127,11 +144,21 @@ export const CartPopup = () => {
       }
       const id = crypto.randomUUID();
       const createdAt = Date.now();
+      var products: SnapBuy.Order["products"] = {};
+      await mapAsync(Object.entries(carts), async ([prodId, value]) => {
+        const prod = await api.getProduct(prodId);
+        if (prod && products) {
+          products[prodId] = {
+            count: value?.count,
+            price: prod.price,
+          };
+        }
+      });
       await api.createOrder({
         id,
         createdAt,
         status: "pending",
-        products: carts,
+        products,
       });
       closePopup();
       showToast("Order Created");
@@ -141,7 +168,7 @@ export const CartPopup = () => {
   );
   const loading = isLoading(orderCreationAction);
   return (
-    <Card className="relative max-md:rounded-none w-1/2 max-md:w-full max-md:h-full">
+    <Card className="relative max-md:rounded-none w-1/2 max-md:w-full max-md:h-full overflow-hidden">
       <div className="flex justify-between items-center p-3">
         <h1 className="font-bold text-3xl uppercase">
           <Translate content="cart" />
@@ -193,7 +220,7 @@ export const CartPopup = () => {
         </EmptyComponent>
       )}
       {loading && (
-        <div className="flex justify-center items-center w-full h-full">
+        <div className="absolute inset-0 flex justify-center items-center">
           <CircleLoading />
         </div>
       )}

@@ -93,7 +93,7 @@ export const ClientProducts = () => {
       <div className="flex justify-between items-center gap-2 p-2">
         <div className="flex justify-center w-full">
           <Field
-            className="rounded-2xl w-1/2 focus:w-full transition-[width] duration-500"
+            className="rounded-2xl w-1/2 transition-[width] duration-500"
             placeholder="Search Product"
             inputName="search-prod"
           />

@@ -17,17 +17,17 @@ import {
 } from "biqpod/ui/hooks";
 import { setFocused } from "biqpod/ui/utils";
 import { useEffect, useMemo } from "react";
-interface ProductPopupProps {
+export interface ProductPopupProps {
   product: SnapBuy.Product;
 }
 export const addToCart = (prodId: string, count: number) => {
-  setTemp("cart." + prodId, count);
+  setTemp(`cart.${prodId}.count`, count);
 };
 export const removeCart = (prodId: string) => {
   setTemp("cart." + prodId, null);
 };
 export const useCart = () => {
-  const carts = getTemp<Record<string, number>>("cart");
+  const carts = getTemp<SnapBuy.Order["products"]>("cart");
   return carts;
 };
 export interface FullCartResult {
@@ -35,16 +35,15 @@ export interface FullCartResult {
   count: number;
 }
 export const useFullCart = (): FullCartResult[] => {
-  const carts = getTemp<Record<string, number>>("cart");
+  const carts = useCart();
   const result = useMemo(() => {
-    return Object.entries(carts || {})
-      .filter(([_, count]) => typeof count === "number")
-      .map(([prodId, count]) => {
-        return {
-          prodId,
-          count,
-        };
-      });
+    return Object.entries(carts || {}).map(([prodId, r]) => {
+      const count = r?.count || 0;
+      return {
+        prodId,
+        count,
+      };
+    });
   }, [carts]);
   return result;
 };
@@ -52,9 +51,15 @@ export const deleteCart = () => {
   setTemp("cart", null);
 };
 export const useCartCount = (prodId: string) => {
-  const carts = getTemp<Record<string, number>>("cart");
+  const carts = useCart();
   return useMemo(() => {
-    return carts?.[prodId] || 0;
+    return carts?.[prodId]?.count || 0;
+  }, [carts, prodId]);
+};
+export const useCartLine = (prodId: string) => {
+  const carts = useCart();
+  return useMemo(() => {
+    return carts?.[prodId];
   }, [carts, prodId]);
 };
 export const ProductPopup = ({ product }: ProductPopupProps) => {

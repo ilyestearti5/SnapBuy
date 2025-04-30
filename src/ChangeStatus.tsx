@@ -56,11 +56,14 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
               style={{
                 color: colors[singleStatus],
                 backgroundColor: `${colors[singleStatus]}${
-                  isSelected ? 50 : 20
+                  isSelected ? 80 : 20
                 }`,
               }}
               key={singleStatus}
-              className={tw("px-3 py-2 cursor-pointer", isSelected && "px-8")}
+              className={tw(
+                "px-3 py-2 transition-[padding] duration-300 cursor-pointer",
+                isSelected && "px-8 capitalize"
+              )}
             >
               <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
                 <Icon icon={icons[singleStatus]} />
@@ -70,32 +73,23 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
           );
         })}
       </Scroll>
-      {order.status !== selectOne && (
-        <EmptyComponent>
-          <Line />
-          <div className="p-2">
-            <Button
-              className="rounded-full"
-              onClick={async () => {
-                await setDoc(
-                  [
-                    "projects",
-                    import.meta.env.VITE_PROJECT_ID,
-                    "orders",
-                    order.id,
-                  ],
-                  {
-                    status: selectOne,
-                  }
-                );
-                closePopup();
-              }}
-            >
-              <Translate content={`change to ${selectOne}`} />
-            </Button>
-          </div>
-        </EmptyComponent>
-      )}
+      <Line />
+      <div className="p-2">
+        <Button
+          className="rounded-full"
+          onClick={async () => {
+            await setDoc(
+              ["projects", import.meta.env.VITE_PROJECT_ID, "orders", order.id],
+              {
+                status: selectOne,
+              }
+            );
+            closePopup();
+          }}
+        >
+          <Translate content={`change to ${selectOne}`} />
+        </Button>
+      </div>
     </Card>
   );
 };

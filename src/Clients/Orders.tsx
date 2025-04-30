@@ -1,29 +1,23 @@
 import { allIcons, and, where } from "biqpod/ui/apis";
 import {
-  Card,
   CardWait,
   CircleTip,
-  EmptyComponent,
   Field,
   Icon,
-  Image,
   Line,
   Scroll,
   Translate,
 } from "biqpod/ui/components";
 import {
-  closePopup,
   getFieldValue,
   openMenu,
   showPopup,
-  useAsyncMemo,
   useCopyState,
-  useUser,
 } from "biqpod/ui/hooks";
-import { include, range, tw } from "biqpod/ui/utils";
+import { include, tw } from "biqpod/ui/utils";
 import { useEffect, useMemo } from "react";
 import { onCollectionSnapshot } from "../server";
-import { api, useCurrentClient } from "../apis";
+import { useCurrentClient } from "../apis";
 import { colors, icons } from "../Links/Orders";
 import { OrderView } from "./OrderView";
 
@@ -98,9 +92,6 @@ export const Orders = () => {
             placeholder="Search Order"
             className="rounded-xl"
           />
-        </div>
-        <div>
-          <CircleTip icon={allIcons.solid.faFilter} />
         </div>
       </div>
       <Line />
