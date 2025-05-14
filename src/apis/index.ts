@@ -3,28 +3,57 @@ import {
   getTempFromStore,
   setTemp,
   useAsyncMemo,
-  useTemp,
-  useUser,
-} from "biqpod/ui/hooks";
+} from "@biqpod/app/ui/hooks";
 import {
   deleteDoc,
   getCurrentAuth,
   getDoc,
   getDocs,
-  onCollectionSnapshot,
+  getDownloadURL,
   onDocSnapshot,
   setDoc,
+  uploadFile,
 } from "../server";
-import { Biqpod } from "biqpod/ui/types";
-import { and, getUserFunction, where } from "biqpod/ui/apis";
-import { mapAsync, unpackPromise } from "biqpod/ui/utils";
-import { useEffect } from "react";
+import { Biqpod } from "@biqpod/app/ui/types";
+import {
+  and,
+  getFunction,
+  getUserFunction,
+  orderBy,
+  where,
+} from "@biqpod/app/ui/apis";
+import {
+  delay,
+  mapAsync,
+  mergeArray,
+  unpackPromise,
+} from "@biqpod/app/ui/utils";
+export interface OverviewProps {
+  orders: number;
+  customers: number;
+  totalSales: number;
+}
+export interface PlanRecord {
+  duration: {
+    week: number;
+    month: number;
+    year: number;
+  };
+  features: string[];
+}
+export interface Plan {
+  basic: PlanRecord;
+  pro: PlanRecord;
+  company: PlanRecord;
+}
+export interface CreateOrderOptions {
+  products: SnapBuy.Order["products"];
+  client: SnapBuy.Client;
+  key: string;
+}
+export type Duration = keyof PlanRecord["duration"];
 export const api = {
   async getProduct(productId: string) {
-    const uid = await getCurrentAuth();
-    if (!uid) {
-      return null;
-    }
     const product = getTempFromStore<SnapBuy.Product>("products." + productId);
     if (!product) {
       const doc = await getDoc<SnapBuy.Product>([
@@ -53,6 +82,61 @@ export const api = {
       products?.map((product) => ({ ...product.data, id: product.id })) || []
     );
   },
+  async follow(followed: string) {
+    const doFollow = await getUserFunction<{
+      followed: string;
+    }>("snapbuy-follow");
+    await doFollow?.({
+      followed,
+    });
+  },
+  async unfollow(followed: string) {
+    const doUnfollow = await getUserFunction<{
+      followed: string;
+    }>("snapbuy-unfollow");
+    await doUnfollow?.({
+      followed,
+    });
+  },
+  async isFollowing(followed: string) {
+    const isFollowing = await getUserFunction<boolean>("snapbuy-is-following");
+    return isFollowing?.({
+      followed,
+    });
+  },
+  async getOrder(orderId: string) {
+    const fn = await getUserFunction<SnapBuy.Order>("snapbuy-get-order");
+    const order = await fn?.({
+      orderId,
+    });
+    return order;
+  },
+  async getFollowed(limit?: number, from?: SnapBuy.Follow | null) {
+    var uid = await getCurrentAuth();
+    if (!uid) {
+      throw "User not authenticated";
+    }
+    const follows = await getDocs<SnapBuy.Follow>(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "follows"],
+      {
+        where: and(where("follower", "==", uid), where("follow", "==", true)),
+        limit,
+        startAt: from?.followed && mergeArray(from?.followed),
+        orders: [orderBy("followed", "desc")],
+      }
+    );
+    return mapAsync(follows || [], async (follow) => {
+      const followed = follow.data.followed;
+      const user = await getDoc<Biqpod.Account.User>(["users", followed]);
+      if (user) {
+        setTemp("users." + followed, user);
+      }
+      return {
+        user,
+        follow: follow.data,
+      };
+    });
+  },
   async upsertProducts(
     products: Partial<SnapBuy.Product>[],
     onBeforeStart?: (
@@ -68,31 +152,65 @@ export const api = {
       "projects",
       import.meta.env.VITE_PROJECT_ID,
     ]);
-    const markets = projectInfo?.markets || [];
     const categorys = projectInfo?.categorys || [];
     await mapAsync(products, async (product, index) => {
+      var {
+        available = false,
+        category = null,
+        colors = [],
+        description = null,
+        id: prodId,
+        keys = [],
+        limited = false,
+        photos: images = [],
+        quantity = null,
+        sizes = [],
+        theme = {},
+        type = "single",
+        ...rest
+      } = product;
       await unpackPromise(() => {
         return onBeforeStart?.(product, index);
       });
-      const prodId = product.id;
-      if (!product.market) throw "Market is required";
-      if (!product.category) throw "Category is required";
-      const market = product.market;
-      const category = product.category;
-      !markets.includes(market) && markets.push(market);
-      !categorys.includes(category) && categorys.push(market);
+      !categorys.includes(category) && categorys.push(category);
+      const photos = await mapAsync(images, async (photo) => {
+        if (photo.startsWith("data:")) {
+          const blob = await fetch(photo).then((s) => s.blob());
+          const ref = [
+            "projects",
+            import.meta.env.VITE_PROJECT_ID,
+            "products",
+            product.id + " " + Date.now(),
+          ];
+          await uploadFile(ref, blob);
+          const result = await getDownloadURL(ref);
+          return result!;
+        } else {
+          return photo;
+        }
+      });
       await setDoc(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products", prodId],
         {
-          ...product,
+          ...rest,
+          available,
+          category,
+          colors,
+          description,
           id: prodId,
+          keys,
+          limited,
+          photos,
+          quantity,
+          sizes,
+          theme,
+          type,
           uid,
         }
       );
     });
     await setDoc(["users", uid, "projects", import.meta.env.VITE_PROJECT_ID], {
       categorys,
-      markets,
     });
   },
   onCategoryAndMarketChange(uid: string) {
@@ -109,286 +227,158 @@ export const api = {
       }
     );
   },
-  async getAllClients() {
-    const uid = await getCurrentAuth();
-    if (!uid) throw "User not authenticated";
-    const clients = await getDocs<SnapBuy.Client>(
-      ["projects", import.meta.env.VITE_PROJECT_ID, "clients"],
-      {
-        where: and(where("uid", "==", uid)),
-      }
-    );
-    var object: Record<string, SnapBuy.Client> = {};
-    clients?.forEach(({ id, data }) => {
-      object[id] = data;
-    });
-    setTemp("clients", object);
-    return clients?.map((client) => client.data) || [];
-  },
-  async getClient(clientId: string) {
-    const user = getTempFromStore<Biqpod.Account.User>("user-info");
-    if (!user?.uid) {
-      return null;
-    }
-    const client = getTempFromStore<SnapBuy.Client>("clients." + clientId);
-    if (!client) {
-      const doc = await getDoc<SnapBuy.Client>([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "clients",
-        clientId,
-      ]);
-      if (doc) {
-        setTemp("clients." + clientId, doc);
-      }
-      return doc;
-    }
-    return client;
-  },
-  async upsertClients(
-    clients: Partial<SnapBuy.Client>[],
-    onBeforeStart?: (
-      client: Partial<SnapBuy.Client>,
-      index: number
-    ) => void | Promise<void>
-  ) {
-    const uid = await getCurrentAuth();
-    if (!uid) throw "User not authenticated";
-    await mapAsync(clients, async (client, index) => {
-      await unpackPromise(() => {
-        return onBeforeStart?.(client, index);
-      });
-      const prodId = client.id;
-      await setDoc(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "clients", prodId],
-        {
-          ...client,
-          id: prodId,
-          uid,
-        }
-      );
-    });
-  },
   async deleteProduct(productId: string) {
-    await deleteDoc([
-      "projects",
-      import.meta.env.VITE_PROJECT_ID,
-      "products",
-      productId,
-    ]);
-  },
-  // accounts
-  async getAccounts() {
-    const uid = await getCurrentAuth();
-    if (!uid) throw "User not authenticated";
-    const accounts = await getDocs<SnapBuy.Account>(
-      ["projects", import.meta.env.VITE_PROJECT_ID, "accounts"],
-      {
-        where: and(where("uid", "==", uid)),
-      }
-    );
-    var object: Record<string, SnapBuy.Account> = {};
-    accounts?.forEach(({ id, data }) => {
-      object[id] = data;
+    const deleteProduct = await getUserFunction("snapbuy-delete-product");
+    await deleteProduct?.({
+      id: productId,
     });
-    setTemp("accounts", object);
-    return accounts?.map((account) => account.data) || [];
   },
-  async getAccount(accountId: string) {
-    const user = getTempFromStore<Biqpod.Account.User>("user-info");
-    if (!user?.uid) {
-      return null;
-    }
-    const account = getTempFromStore<SnapBuy.Account>("accounts." + accountId);
-    if (!account) {
-      const doc = await getDoc<SnapBuy.Account>([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "accounts",
-        accountId,
-      ]);
-      if (doc) {
-        setTemp("accounts." + accountId, doc);
-      }
-      return doc;
-    }
-    return account;
+  async createOrder(order: CreateOrderOptions) {
+    const createOrder = await getUserFunction("snapbuy-create-order");
+    await createOrder?.(order);
   },
-  onAccountsChange(
-    uid: string,
-    callback?: (accounts: SnapBuy.Account[]) => void
-  ) {
-    if (!uid) {
-      return () => {};
+  async getOrderProducts(orderId: string) {
+    interface ProductsResult extends SnapBuy.Product {
+      count: number;
+      price: number;
     }
-    return onCollectionSnapshot<SnapBuy.Account>(
-      ["projects", import.meta.env.VITE_PROJECT_ID, "accounts"],
-      (records) => {
-        callback?.(records.map((r) => ({ ...r.data, id: r.id })));
-      },
-      {
-        where: and(where("uid", "==", uid)),
-      }
+    const fn = await getUserFunction<ProductsResult[]>(
+      "snapbuy-get-order-products"
     );
+    const products = await fn?.({
+      orderId,
+    });
+    return products;
   },
-  // client config auth
-  async siginClient(code: string) {
-    const siginClient = await getUserFunction<{ token: string }>(
-      "snapbuy-signin-client"
+  async todayOrdersCount() {
+    const fn = await getUserFunction<number>("snapbuy-get-today-orders-count");
+    const result = await fn?.({});
+    return result;
+  },
+  async getPlans() {
+    const getPlans = await getFunction<Plan>("snapbuy-get-plans");
+    const result = await getPlans?.({});
+    return result;
+  },
+  async subscribe(plan: keyof Plan, duration: Duration) {
+    const snapbuySub = await getUserFunction<{ url: string }>(
+      "snapbuy-subscribe"
     );
-    const result = await siginClient?.({ code });
-    if (result?.token) {
-      await setClientAuthToken(result.token);
+    const result = await snapbuySub?.({
+      plan,
+      duration,
+    });
+    if (result?.url) {
+      const a = document.createElement("a");
+      a.href = result.url;
+      a.target = "_blank";
+      a.click();
     }
   },
-  async siginClientByAccessId(accessId: string) {
-    const siginClient = await getUserFunction<{ token: string }>(
-      "snapbuy-signin-client-by-accessId"
+  async isSubscribed() {
+    const snapbuySub = await getUserFunction<{
+      isSubscribed: boolean;
+    }>("check-user-subscribed");
+    const result = await snapbuySub?.({
+      projectId: import.meta.env.VITE_PROJECT_ID,
+    });
+    return !!result?.isSubscribed;
+  },
+  async getSales() {
+    const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
+    const getSales = await getUserFunction<number[]>(
+      "snapbuy-get-sales-of-week"
     );
-    const result = await siginClient?.({ accessId });
-    if (result?.token) {
-      await setClientAuthToken(result.token);
-    }
-  },
-  async getCurrentClient() {
-    const token = await getClientAuthToken();
-    const getClient = await getUserFunction<ClientResult>("snapbuy-get-client");
-    const client = await getClient?.({ token });
-    return client;
-  },
-  async getAccess(accessId: string) {
-    const getUser = await getUserFunction<SnapBuy.AccessToken>(
-      "snapbuy-get-access"
-    );
-    const user = getUser?.({ accessId });
-    return user;
-  },
-  async generateClientAuth(acccessId: string) {
-    const getAuth = await getUserFunction<{ url: string }>(
-      "snapbuy-generate-client-auth"
-    );
-    const response = await getAuth?.({ acccessId });
-    return response?.url;
-  },
-  onClientAccessChange(callback: (client: ClientResult | null) => void) {
-    var token: string | null = null;
-    const timer = setInterval(async () => {
-      const currentToken = await getClientAuthToken();
-      if (currentToken != token) {
-        token = currentToken;
-        const client = await api.getCurrentClient();
-        callback(client || null);
-      }
-    }, 200);
-    return () => clearInterval(timer);
-  },
-  async createOrder(order: Omit<SnapBuy.Order, "clientId">) {
-    const uid = await getCurrentAuth();
-    const client = await this.getCurrentClient();
-    if (!uid) throw "User not authenticated";
-    await setDoc(
-      ["projects", import.meta.env.VITE_PROJECT_ID, "orders", order.id],
-      {
-        ...order,
-        clientId: client?.client.id,
-        uid: client?.access.uid,
-        createdAt: new Date().getTime(),
-        updatedAt: new Date().getTime(),
-      }
-    );
-  },
-  async getOrderProducts(order: string | SnapBuy.Order) {
-    const result =
-      typeof order === "string"
-        ? await getDoc<SnapBuy.Order>([
-            "projects",
-            import.meta.env.VITE_PROJECT_ID,
-            "orders",
-            order,
-          ])
-        : order;
-    const products = result?.products || {};
-    const r = await mapAsync(Object.entries(products), async (args) => {
-      const [prodId, r] = args;
-      const { count = 0, price = 0 } = r || {};
-      const product = await getDoc<SnapBuy.Product>([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "products",
-        prodId,
-      ]);
+    const sales = await getSales?.({});
+    return sales?.map((s, index) => {
       return {
-        ...product,
-        id: prodId,
-        count,
-        price,
+        day: days[index],
+        sales: s,
       };
     });
-    return r.sort((a, b) => {
-      if (!a.name) return 1;
-      if (!b.name) return -1;
-      return a.name.localeCompare(b.name);
-    });
+  },
+  async getOverview(): Promise<OverviewProps | undefined> {
+    await delay(1500);
+    const getOverview = await getUserFunction<OverviewProps>(
+      "snapbuy-get-overview"
+    );
+    const result = await getOverview?.({});
+    return result || undefined;
+  },
+  async getCategories() {
+    return [
+      {
+        category: "Food",
+        emoji: "🍔",
+      },
+      {
+        category: "Travel",
+        emoji: "✈️",
+      },
+      {
+        category: "Technology",
+        emoji: "💻",
+      },
+      {
+        category: "Sports",
+        emoji: "⚽",
+      },
+      {
+        category: "Music",
+        emoji: "🎵",
+      },
+      {
+        category: "Books",
+        emoji: "📚",
+      },
+      {
+        category: "Movies",
+        emoji: "🎬",
+      },
+      {
+        category: "Fashion",
+        emoji: "👗",
+      },
+      {
+        category: "Health",
+        emoji: "⚕️",
+      },
+      {
+        category: "Animals",
+        emoji: "🐶",
+      },
+      {
+        category: "Home",
+        emoji: "🏠",
+      },
+      {
+        category: "Work",
+        emoji: "💼",
+      },
+      {
+        category: "Finance",
+        emoji: "💰",
+      },
+      {
+        category: "Games",
+        emoji: "🎮",
+      },
+      {
+        category: "Gardening",
+        emoji: "🪴",
+      },
+    ];
   },
   // account config auth
-  async siginAccount(code: string) {
-    const siginAccount = await getUserFunction<{ token: string }>(
-      "snapbuy-signin-account"
-    );
-    const result = await siginAccount?.({ code });
-    if (result?.token) {
-      await setAccountAuthToken(result.token);
-    }
-  },
-  async getCurrentAccount() {
-    const token = await getAccountAuthToken();
-    const getAccount = await getUserFunction<SnapBuy.Account>(
-      "snapbuy-get-account"
-    );
-    const account = getAccount?.({ token });
-    return account;
-  },
-  async generateAccountAuth(clientId: string) {
-    const getAuth = await getUserFunction<{ url: string }>(
-      "snapbuy-get-account"
-    );
-    const url = await getAuth?.({ clientId });
-    return url;
-  },
 };
-export const getClientAuthToken = async () => {
-  return localStorage.getItem("client-auth");
-};
-export const setClientAuthToken = async (token: string | null) => {
-  return token
-    ? localStorage.setItem("client-auth", token)
-    : localStorage.removeItem("client-auth");
-};
-export const getAccountAuthToken = async () => {
-  return localStorage.getItem("account-auth");
-};
-export const setAccountAuthToken = async (token: string | null) => {
-  return token
-    ? localStorage.setItem("account-auth", token)
-    : localStorage.removeItem("account-auth");
-};
-export const useCategorys = () => {
-  return getTemp<string[]>("categorys");
+export const useCategories = () => {
+  return useAsyncMemo(async () => {
+    return api.getCategories();
+  }, []);
 };
 export const useMarkets = () => {
   return getTemp<string[]>("markets");
 };
 export const useFocused = () => {
   return getTemp<string>("input.focused");
-};
-export const listenClient = () => {
-  useEffect(() => {
-    return api.onClientAccessChange((client) => {
-      setTemp("current-client", client);
-    });
-  }, []);
-};
-export const useCurrentClient = () => {
-  const client = getTemp<ClientResult | null>("current-client");
-  return client;
 };

@@ -1,4 +1,4 @@
-import { allIcons } from "biqpod/ui/apis";
+import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Card,
   CircleTip,
@@ -8,22 +8,20 @@ import {
   Translate,
   CardWait,
   Image,
-} from "biqpod/ui/components";
-import { useAsyncMemo, closePopup } from "biqpod/ui/hooks";
-import { tw, range } from "biqpod/ui/utils";
-import { useCurrentClient, api } from "../apis";
+} from "@biqpod/app/ui/components";
+import { useAsyncMemo, closePopup } from "@biqpod/app/ui/hooks";
+import { tw, range } from "@biqpod/app/ui/utils";
+import { api } from "../apis";
 import { useMemo } from "react";
-
 export interface OrderView {
   order: SnapBuy.Order;
 }
 export const OrderView = ({ order }: OrderView) => {
   const time = new Date(order.createdAt!);
   const productsLengths = Object.keys(order.products || {}).length;
-  const currentClient = useCurrentClient();
   const list = useAsyncMemo(async () => {
     return api.getOrderProducts(order.id);
-  }, [currentClient]);
+  }, []);
   const total = useMemo(() => {
     return list?.reduce((acc, current) => {
       return acc + (current.price || 0) * (current.count || 0);

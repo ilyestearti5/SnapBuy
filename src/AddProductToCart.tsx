@@ -1,4 +1,4 @@
-import { allIcons } from "biqpod/ui/apis";
+import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Card,
   CircleTip,
@@ -7,35 +7,40 @@ import {
   Button,
   Translate,
   Icon,
-} from "biqpod/ui/components";
+} from "@biqpod/app/ui/components";
 import {
   closePopup,
   getFieldValue,
   getTemp,
+  getTempFromStore,
   setFieldValue,
   setTemp,
-} from "biqpod/ui/hooks";
-import { setFocused } from "biqpod/ui/utils";
+} from "@biqpod/app/ui/hooks";
+import { setFocused } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
+import { ImageSlider } from "./Links/ImageSlider";
+import { getPrice } from "./CartPopup";
 export interface ProductPopupProps {
   product: SnapBuy.Product;
 }
-export const addToCart = (prodId: string, count: number) => {
-  setTemp(`cart.${prodId}.count`, count);
+export const addToCart = (uid: string, prodId: string, count: number) => {
+  setTemp(`cart.${uid}.${prodId}.count`, count);
 };
-export const removeCart = (prodId: string) => {
-  setTemp("cart." + prodId, null);
+export const removeCart = (uid: string, prodId: string) => {
+  var fullCart = getTempFromStore<SnapBuy.Order["products"]>("cart." + uid);
+  var { [prodId]: _, ...rest } = fullCart || {};
+  setTemp("cart", rest);
 };
-export const useCart = () => {
-  const carts = getTemp<SnapBuy.Order["products"]>("cart");
+export const useCart = (uid: string) => {
+  const carts = getTemp<SnapBuy.Order["products"]>("cart." + uid);
   return carts;
 };
 export interface FullCartResult {
   prodId: string;
   count: number;
 }
-export const useFullCart = (): FullCartResult[] => {
-  const carts = useCart();
+export const useFullCart = (uid: string): FullCartResult[] => {
+  const carts = useCart(uid);
   const result = useMemo(() => {
     return Object.entries(carts || {}).map(([prodId, r]) => {
       const count = r?.count || 0;
@@ -47,31 +52,34 @@ export const useFullCart = (): FullCartResult[] => {
   }, [carts]);
   return result;
 };
-export const deleteCart = () => {
-  setTemp("cart", null);
+export const deleteCart = (uid: string) => {
+  setTemp("cart." + uid, {});
 };
-export const useCartCount = (prodId: string) => {
-  const carts = useCart();
+export const useCartCount = (uid: string, prodId: string) => {
+  const carts = useCart(uid);
   return useMemo(() => {
     return carts?.[prodId]?.count || 0;
   }, [carts, prodId]);
 };
-export const useCartLine = (prodId: string) => {
-  const carts = useCart();
+export const useCartLine = (uid: string, prodId: string) => {
+  const carts = useCart(uid);
   return useMemo(() => {
     return carts?.[prodId];
   }, [carts, prodId]);
 };
-export const ProductPopup = ({ product }: ProductPopupProps) => {
+export const AddProductInCart = ({ product }: ProductPopupProps) => {
   const prod = product;
+  const uid = product.uid!;
   const currentCount = getFieldValue("prod-count");
-  const cartCount = useCartCount(product.id);
+  const cartCount = useCartCount(uid, product.id);
   useEffect(() => {
     setFocused("prod-count");
     setFieldValue("prod-count", (cartCount || 1).toString());
   }, [cartCount]);
+  var photos = product.photos || [];
+  const priceDetected = getPrice(prod, +(currentCount || ""));
   return (
-    <Card className="w-1/2 md:max-h-[70vh]">
+    <Card className="max-md:w-10/12 md:w-1/2 md:max-h-[70vh]">
       <div className="flex justify-between items-center p-2">
         <h1 className="md:text-xl text-2xl">{prod.name}</h1>
         <div>
@@ -82,6 +90,16 @@ export const ProductPopup = ({ product }: ProductPopupProps) => {
             icon={allIcons.solid.faXmark}
           />
         </div>
+      </div>
+      <Line />
+      <div className="h-[300px]">
+        <ImageSlider photos={photos} />
+      </div>
+      <Line />
+      <div className="p-2 text-center">
+        <span className="font-bold text-[--biqpod-success] text-2xl">
+          {priceDetected} DA
+        </span>
       </div>
       <Line />
       <div className="flex justify-center items-center gap-x-2 p-2">
@@ -119,7 +137,7 @@ export const ProductPopup = ({ product }: ProductPopupProps) => {
           icon={allIcons.solid.faPlus}
           onClick={() => {
             const count = parseInt(currentCount || "") || 0;
-            addToCart(prod.id, count);
+            addToCart(uid, prod.id, count);
             closePopup();
           }}
         >

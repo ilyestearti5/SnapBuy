@@ -2,19 +2,11 @@ import {
   createMainWindow,
   setUpAppEnv,
   startApplicationForDesktop,
-} from "biqpod/electron";
-import express from "express";
-let port = 2020;
-const devUrl = "http://localhost:" + 3000;
-const prodUrl = "http://localhost:" + port;
-if (import.meta.env.DEV) {
-  const app = express();
-  app.use(express.static("dist"));
-  app.listen(port);
-}
+} from "@biqpod/app/electron";
+import project from "../project.json";
 setUpAppEnv({
-  devUrl,
-  prodUrl,
+  devUrl: `http://localhost:${project.development.port}`,
+  prodUrl: project.production.url,
 });
 export var mainWindow: Electron.BrowserWindow | null = null;
 startApplicationForDesktop(async () => {

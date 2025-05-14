@@ -1,288 +1,262 @@
-import { allIcons, and, where } from "biqpod/ui/apis";
-import { include, mergeObject, tw } from "biqpod/ui/utils";
+import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
 import {
+  delay,
+  include,
+  mergeArray,
+  mergeObject,
+  tw,
+} from "@biqpod/app/ui/utils";
+import {
+  BooleanFeild,
+  Button,
   Card,
-  CardWait,
   CircleTip,
-  EmptyComponent,
   ExcelPopup,
   Field,
   Icon,
   Line,
-  Mouseable,
-  MultiScreenPage,
   Scroll,
   Translate,
-} from "biqpod/ui/components";
+} from "@biqpod/app/ui/components";
 import {
+  closePopup,
   execAction,
   getFieldValue,
   getPosition,
   getTemp,
   isLoading,
   isSuccess,
-  openMenu,
   openPath,
-  positionsHooks,
-  setTemp,
   showPopup,
   showToast,
   useAction,
   useCopyState,
   useTemp,
   useUser,
-} from "biqpod/ui/hooks";
+} from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo } from "react";
 import { getDocs } from "../server";
-import { UpsertProduct } from "./AddProduct";
-import { api, useCategorys, useFocused, useMarkets } from "../apis";
-import { Biqpod } from "biqpod/ui/types";
+import { api, useFocused } from "../apis";
 import { PopupProduct } from "./PopupProduct";
-import { PopupFilter } from "./PopupFilter";
 import { fuzzyRankedSearch } from "../utils";
-interface ProductRenderProps {
-  product: SnapBuy.Product;
+import { PostNewProduct } from "./NewProduct/NewProduct";
+import { ProductRender } from "./ProductRender";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+const productKeys: (keyof SnapBuy.Product)[] = [
+  "available",
+  "colors",
+  "createdAt",
+  "description",
+  "id",
+  "limited",
+  "name",
+  "photos",
+  "quantity",
+  "theme",
+  "type",
+  "sizes",
+];
+interface KeyLineProps {
+  prodKey: keyof SnapBuy.Product;
+  value: boolean;
+  onChange: (value: boolean) => void;
 }
-const ProductRender = ({ product }: ProductRenderProps) => {
-  const isFullWidth = getTemp<boolean>("isFullWidth");
-  const changePosition = useCopyState<Partial<Biqpod.Types.Axis>>({});
-  const isStartChange = useMemo(() => {
-    return (
-      typeof changePosition.get.x == "number" &&
-      typeof changePosition.get.y == "number"
-    );
-  }, [changePosition.get]);
+export const KeyLine = ({ prodKey, onChange, value }: KeyLineProps) => {
+  const state = useCopyState<null | boolean>(value);
   useEffect(() => {
-    setTemp("canDeleteProduct", isStartChange ? product.id : null);
-  }, [isStartChange]);
-  const focused = useCopyState(0);
-  const photos = product.photos || [];
+    if (state.get != value) {
+      onChange(!!state.get);
+    }
+  }, [state.get]);
   return (
-    <Mouseable
-      // onMoving={changePosition.set}
-      onMovingEnd={() => {
-        // changePosition.set({});
-      }}
-      style={{
-        ...mergeObject(
-          isStartChange && {
-            left: changePosition.get.x,
-            top: changePosition.get.y,
-          }
-        ),
-      }}
-      className={tw(
-        isStartChange && "fixed",
-        "w-[calc(50%-4px)]",
-        isFullWidth && "w-full"
-      )}
-    >
-      <Card key={product.id} className="w-full overflow-hidden">
-        <div className="relative flex justify-center items-center w-full h-[200px] cursor-pointer">
-          <MultiScreenPage
-            pages={photos.map((photo) => {
-              return (
-                <div className="relative flex justify-center items-center h-full overflow-hidden cursor-pointer">
-                  <img
-                    draggable="false"
-                    src={photo}
-                    className="absolute inset-0 opacity-20 blur-lg object-cover"
-                  />
-                  <img
-                    draggable="false"
-                    src={photo}
-                    className="w-full h-full object-contain"
-                  />
-                </div>
-              );
-            })}
-            focused={focused.get}
-          />
-          {photos.length > 1 && (
-            <EmptyComponent>
-              <div className="top-1/2 left-2 absolute -translate-y-1/2 transform">
-                <CircleTip
-                  icon={allIcons.solid.faChevronLeft}
-                  onClick={() => {
-                    if (focused.get <= 0) {
-                      focused.set(photos.length - 1);
-                      return;
-                    }
-                    focused.set(focused.get - 1);
-                  }}
-                />
-              </div>
-              <div className="top-1/2 right-2 absolute -translate-y-1/2 transform">
-                <CircleTip
-                  icon={allIcons.solid.faChevronRight}
-                  onClick={() => {
-                    if (focused.get >= photos.length - 1) {
-                      focused.set(0);
-                      return;
-                    }
-                    focused.set(focused.get + 1);
-                  }}
-                />
-              </div>
-              <div className="bottom-2 left-1/2 absolute text-black -translate-x-1/2 transform">
-                {focused.get + 1} / {photos.length}
-              </div>
-            </EmptyComponent>
-          )}
-          {photos.length == 0 && (
-            <Icon
-              iconClassName="text-8xl text-[--biqpod-gray-opacity]"
-              icon={allIcons.solid.faBoxOpen}
-            />
-          )}
-          {!!product.available && (
-            <div className="top-0 right-0 absolute bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
-              <Translate content="available" />
-            </div>
-          )}
-        </div>
-        <Line />
-        <div className="p-2 max-md:p-1">{product.name}</div>
-        <Line />
-        <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
-          <span className="font-bold text-[--biqpod-success]">
-            {product.price} DA
-          </span>
-          <CircleTip
-            icon={allIcons.solid.faEllipsisVertical}
-            onClick={({ clientX, clientY }) => {
-              openMenu({
-                x: clientX,
-                y: clientY,
-                menu: [
-                  {
-                    label: "Copy Name",
-                    click: async () => {
-                      await navigator.clipboard.writeText(product.name);
-                      showToast("Name Copyed :)");
-                    },
-                  },
-                  {
-                    label: "Copy Price",
-                    click: async () => {
-                      await navigator.clipboard.writeText(
-                        product.price.toString()
-                      );
-                      showToast("Price Copyed :)");
-                    },
-                  },
-                  {
-                    label: "Copy Category",
-                    click: async () => {
-                      await navigator.clipboard.writeText(
-                        product.category || ""
-                      );
-                      showToast("Category Copyed :)");
-                    },
-                  },
-                  {
-                    label: "Copy Market",
-                    click: async () => {
-                      await navigator.clipboard.writeText(product.market || "");
-                      showToast("Market Copyed :)");
-                    },
-                  },
-                  {
-                    label: "Copy Description",
-                    click: async () => {
-                      await navigator.clipboard.writeText(
-                        product.description || ""
-                      );
-                      showToast("Description Copyed :)");
-                    },
-                  },
-                  {
-                    type: "separator",
-                  },
-                  {
-                    label: "Edit Product",
-                    click: () => {
-                      showPopup(<UpsertProduct product={product} />);
-                    },
-                    defaultIcon: allIcons.solid.faPenToSquare,
-                  },
-                  {
-                    label: "Delete Product",
-                    click: async () => {
-                      await api.deleteProduct(product.id);
-                      execAction("get-products");
-                      showToast("Product Deleted");
-                    },
-                    defaultIcon: allIcons.solid.faTrashCan,
-                  },
-                ],
-              });
-            }}
-          />
-        </div>
-      </Card>
-    </Mouseable>
+    <div className="flex items-center gap-2 p-2">
+      <BooleanFeild state={state} id={`${prodKey}-key`} />
+      <span className="text-xl capitalize">{prodKey}</span>
+    </div>
   );
 };
+export const ExportExcelPopupProducts = () => {
+  var keys = useCopyState<(keyof SnapBuy.Product)[]>([]);
+  var action = useAction(
+    "export-products",
+    async () => {
+      var products = await api.getAllProducts();
+      await exportExcel(products, keys.get);
+    },
+    [keys.get]
+  );
+  var loading = isLoading(action);
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
+      <div className="flex justify-between items-center p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="export products" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex flex-col h-full">
+        {productKeys.map((prod) => {
+          return (
+            <KeyLine
+              onChange={(value) => {
+                if (value) {
+                  keys.set((prev) => [...prev, prod]);
+                } else {
+                  keys.set((prev) => prev.filter((p) => p != prod));
+                }
+              }}
+              key={prod}
+              value={keys.get.includes(prod)}
+              prodKey={prod}
+            />
+          );
+        })}
+      </div>
+      <Line />
+      <div className="p-3">
+        <Button
+          onClick={() => {
+            execAction("export-products");
+          }}
+          icon={
+            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faFileExcel
+          }
+          iconClassName={tw(loading && "animate-spin")}
+        >
+          <Translate content="export products" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
+const exportExcel = async (
+  products: SnapBuy.Product[],
+  keys: (keyof SnapBuy.Product)[]
+) => {
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet("Products");
+  // Add header
+  worksheet.columns = keys.map((key) => ({
+    header: key,
+    key: key,
+  }));
+  // Add rows
+  products.forEach((product) => {
+    var option: Partial<SnapBuy.Product> = {};
+    keys.forEach((key) => {
+      var value = product[key];
+      if (value === undefined) {
+        switch (key) {
+          case "available":
+            value = false;
+            break;
+          case "limited":
+            value = false;
+            break;
+          case "quantity":
+            value = 0;
+            break;
+        }
+      }
+      option[key] = value;
+    });
+    worksheet.addRow(option);
+  });
+  const buffer = await workbook.xlsx.writeBuffer();
+  const blob = new Blob([buffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+  saveAs(blob, "products.xlsx");
+};
+export const loadFromExcel = async (file: string) => {
+  showPopup(
+    <ExcelPopup
+      uri={file}
+      options={[
+        "id",
+        "name",
+        "description",
+        "category",
+        "available",
+        "limited",
+        "themeId",
+        "price",
+        "quantity",
+      ]}
+      onChange={(json) => {
+        showPopup(
+          <PopupProduct
+            products={json.map(({ price, ...all }) => {
+              return {
+                ...all,
+                single: {
+                  price,
+                },
+                type: "single",
+                photos: [],
+              };
+            })}
+            file={file}
+          />
+        );
+      }}
+      title="Excel File"
+    />
+  );
+};
+const PAGE_SIZE = 20;
 export const Products = () => {
   const user = useUser();
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
-  const productsRecived = getTemp<boolean>("productsRecived");
-  const productsList = getTemp<SnapBuy.Product[]>("productsList");
+  const lastDoc = useCopyState<SnapBuy.Product | null>(null);
+  const hasMore = useCopyState(true);
   const action = useAction(
-    "get-products",
-    async () => {
+    "fetch-products",
+    async (next = false) => {
       if (!user?.uid) return;
-      if (!productsRecived && productsList) {
-        products.set(productsList);
-        return;
-      }
-      const snapshot = await getDocs<SnapBuy.Product>(
+      await delay(300);
+      const newProducts = await getDocs<SnapBuy.Product>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
         {
           where: and(where("uid", "==", user.uid)),
+          orders: mergeArray(orderBy("id", "asc")),
+          limit: PAGE_SIZE,
+          startAt: next && lastDoc.get?.id && mergeArray(lastDoc.get?.id),
         }
       );
-      const productsData = snapshot?.map((doc) => ({
-        ...doc.data,
-        id: doc.id,
+      if (!newProducts) {
+        return;
+      }
+      const list = newProducts.map((order) => ({
+        ...order.data,
+        id: order.id,
       }));
-      setTemp("productsList", productsData);
-      setTemp("productsRecived", true);
-      productsData && products.set(productsData);
+      products.set((prev) => (next ? [...prev, ...list] : list));
+      const lastDocRef = newProducts.at(-1)?.data;
+      lastDoc.set(lastDocRef ? lastDocRef : null);
+      hasMore.set(newProducts.length === PAGE_SIZE);
     },
-    [user, productsRecived]
+    [user?.uid]
   );
   const success = isSuccess(action);
   useEffect(() => {
-    execAction("get-products");
+    execAction("fetch-products");
   }, [user]);
   const isFullWidth = useTemp("isFullWidth");
   const showTools = useCopyState(false);
   // categorys
-  const positionCategory = getPosition("prod-category-layout");
-  const typesCategory = getFieldValue("prod-category");
-  const categorys = useCategorys();
   // market
   const typedMarket = getFieldValue("prod-category");
   const positionMark = getPosition("prod-market-layout");
-  const markets = useMarkets();
   // filtring
-  const filterdMarkets = useMemo(() => {
-    if (!markets) return [];
-    const filteredMarkets = markets.filter((market) => {
-      return include(market, typedMarket);
-    });
-    return filteredMarkets;
-  }, [typedMarket, markets]);
   const search = getFieldValue("producer-search-product");
-  const filterdCategorys = useMemo(() => {
-    if (!categorys) return [];
-    const filteredCategorys = categorys.filter((category) => {
-      return include(category, typesCategory);
-    });
-    return filteredCategorys;
-  }, [typesCategory, categorys]);
   const filterProducts = useMemo(() => {
     if (!search) {
       return products.get;
@@ -306,12 +280,12 @@ export const Products = () => {
           />
         </div>
         <div className="flex">
-          <CircleTip
+          {/* <CircleTip
             icon={allIcons.solid.faFilter}
             onClick={() => {
               showPopup(<PopupFilter />);
             }}
-          />
+          /> */}
           <CircleTip
             icon={
               isFullWidth.get
@@ -321,36 +295,52 @@ export const Products = () => {
             onClick={() => {
               isFullWidth.set(!isFullWidth.get);
             }}
+            iconClassName={tw(
+              "rotate-0 transition-transform duration-500",
+              isFullWidth.get && "rotate-90"
+            )}
           />
         </div>
       </div>
       <Line />
-      {success && (
-        <Scroll>
-          <div className="flex flex-wrap items-center gap-2 p-2">
-            {filterProducts.map((product) => {
-              return <ProductRender product={product} key={product.id} />;
-            })}
-            {filterProducts.length === 0 && (
-              <div className="flex justify-center items-center w-full h-full">
-                <Card>
-                  <div className="flex justify-center items-center p-2 h-full">
-                    <Icon
-                      icon={allIcons.solid.faBoxOpen}
-                      iconClassName="text-8xl text-[--biqpod-primary]"
-                    />
-                  </div>
-                  <Line />
-                  <div className="flex justify-center items-center p-2 h-full">
-                    <Translate content="no products found" />
-                  </div>
-                </Card>
-              </div>
-            )}
-          </div>
-        </Scroll>
-      )}
-      {loading && <CardWait className="w-full h-full" />}
+      <Scroll>
+        <div className="flex flex-wrap items-center gap-2 p-2">
+          {filterProducts.map((product) => {
+            return <ProductRender product={product} key={product.id} />;
+          })}
+          {success && filterProducts.length === 0 && (
+            <div className="flex justify-center items-center w-full h-full">
+              <Card>
+                <div className="flex justify-center items-center p-2 h-full">
+                  <Icon
+                    icon={allIcons.solid.faBoxOpen}
+                    iconClassName="text-8xl text-[--biqpod-primary]"
+                  />
+                </div>
+                <Line />
+                <div className="flex justify-center items-center p-2 h-full">
+                  <Translate content="no products found" />
+                </div>
+              </Card>
+            </div>
+          )}
+          {hasMore.get && (
+            <Card className="justify-center items-center w-full h-[180px]">
+              <CircleTip
+                iconClassName={tw(loading && "animate-spin")}
+                icon={
+                  loading
+                    ? allIcons.solid.faCircleNotch
+                    : allIcons.solid.faChevronRight
+                }
+                onClick={() => {
+                  execAction("fetch-products", true);
+                }}
+              />
+            </Card>
+          )}
+        </div>
+      </Scroll>
       <Card
         onClick={() => {
           showTools.set(!showTools.get);
@@ -370,25 +360,7 @@ export const Products = () => {
               showToast("Please select a file");
               return;
             }
-            showPopup(
-              <ExcelPopup
-                uri={file!}
-                options={[
-                  "id",
-                  "name",
-                  "price",
-                  "photo",
-                  "description",
-                  "category",
-                  "available",
-                  "market",
-                ]}
-                onChange={(json) => {
-                  showPopup(<PopupProduct products={json} file={file} />);
-                }}
-                title="Excel File"
-              />
-            );
+            loadFromExcel(file);
           }}
         />
         <CircleTip
@@ -398,8 +370,19 @@ export const Products = () => {
             !showTools.get && "w-[0px] h-[0px]"
           )}
           onClick={async () => {
-            showPopup(<UpsertProduct />);
+            showPopup(<PostNewProduct />);
           }}
+        />
+        <CircleTip
+          className={tw(
+            "transition-[width,height]",
+            !showTools.get && "w-[0px] h-[0px]"
+          )}
+          onClick={() => {
+            // export excel file (upload)
+            showPopup(<ExportExcelPopupProducts />);
+          }}
+          icon={allIcons.solid.faFileExcel}
         />
         <CircleTip
           icon={allIcons.solid.faPlus}
@@ -409,28 +392,6 @@ export const Products = () => {
           )}
         />
       </Card>
-      {positionMark && focused == "prod-market" && typedMarket && (
-        <Card
-          className="z-[5000000000000000000000000000000] fixed"
-          style={{
-            ...mergeObject(
-              positionMark.x && { left: positionMark.x },
-              positionMark.y &&
-                positionMark.height && {
-                  top: positionMark.y + positionMark.height,
-                }
-            ),
-          }}
-        >
-          {filterdMarkets?.map((mrk) => {
-            return (
-              <div key={mrk} className="uppercase">
-                {mrk}
-              </div>
-            );
-          })}
-        </Card>
-      )}
       <div
         className={tw(
           "bottom-0 z-[10000] absolute inset-x-0 flex justify-center items-center bg-gradient-to-t to-[--biqpod-transparent] opacity-0 from-[--biqpod-shadow-color] p-2 transition-[transform,opacity] translate-y-full duration-500 pointer-events-none transform",

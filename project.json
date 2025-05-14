@@ -1,0 +1,11 @@
+{
+  "projectId": "74510af6-4dc2-47b3-b5d5-b07b559aede7",
+  "appId": "snapbuy",
+  "appName": "snapbuy",
+  "development": {
+    "port": 4593
+  },
+  "production": {
+    "url": "https://snapshots.biqpod.com"
+  }
+}

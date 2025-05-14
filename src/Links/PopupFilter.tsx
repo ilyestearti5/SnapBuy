@@ -1,21 +1,20 @@
-import { allIcons } from "biqpod/ui/apis";
+import { allIcons } from "@biqpod/app/ui/apis";
 import {
   BooleanFeild,
   Button,
   Card,
   CircleTip,
-  EmptyComponent,
   EnumFeild,
   Icon,
   Line,
   Scroll,
   Translate,
-} from "biqpod/ui/components";
-import { closePopup, useCopyState } from "biqpod/ui/hooks";
-import { Nothing } from "biqpod/ui/types";
-import { tw } from "biqpod/ui/utils";
+} from "@biqpod/app/ui/components";
+import { closePopup, useCopyState } from "@biqpod/app/ui/hooks";
+import { Nothing } from "@biqpod/app/ui/types";
+import { tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
-import { useCategorys, useMarkets } from "../apis";
+import { useCategories, useMarkets } from "../apis";
 const filterFields = [
   {
     label: "Category",
@@ -35,10 +34,15 @@ const filterFields = [
     icon: allIcons.solid.faCheck,
     description: "Is For Getting The Available Product",
   },
+  {
+    label: "Promoted",
+    value: "promoted",
+    icon: allIcons.solid.faTag,
+    description: "Is For Getting The Promoted Product",
+  },
 ];
 interface P {
   category: string | null;
-  market: string | null;
   available: boolean | null;
 }
 interface PopupFilterProps {
@@ -52,13 +56,11 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
   }, [viewId.get]);
   const isAvailable = useCopyState<boolean | null>(false);
   const category = useCopyState<string | Nothing>("");
-  const market = useCopyState<string | Nothing>("");
-  const markets = useMarkets();
-  const categorys = useCategorys();
+  const promoted = useCopyState<string | Nothing>("");
+  const categories = useCategories();
   useEffect(() => {
     if (value) {
       category.set(value.category);
-      market.set(value.market);
       isAvailable.set(value.available);
     }
   }, []);
@@ -75,7 +77,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
             />
           )}
           <h1 className="font-bold text-2xl">
-            <Translate content="filter products" />
+            <Translate content="Filter Products" />
           </h1>
         </div>
         <div>
@@ -150,20 +152,6 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
                   </h1>
                 </div>
                 <Line />
-                <div className="p-2">
-                  <EnumFeild
-                    state={market}
-                    config={{
-                      list: markets?.map((market) => ({
-                        value: market,
-                        content: market,
-                      })),
-                      search: !!(markets?.length && markets?.length > 10),
-                    }}
-                    id="market"
-                  />
-                </div>
-                <Line />
                 <div className="p-2">{view.description}</div>
               </Card>
             </div>
@@ -181,13 +169,49 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
                   <EnumFeild
                     state={category}
                     config={{
-                      list: categorys?.map((category) => ({
-                        value: category,
-                        content: category,
-                      })),
-                      search: !!(categorys?.length && categorys?.length > 10),
+                      list: (categories || []).map(({ category, emoji }) => {
+                        return {
+                          value: category,
+                          content: category + " " + emoji,
+                        };
+                      }),
+                      search: !!(categories?.length && categories?.length > 10),
                     }}
                     id="category"
+                  />
+                </div>
+                <Line />
+                <div className="p-2">{view.description}</div>
+              </Card>
+            </div>
+          )}
+          {view?.value === "promoted" && (
+            <div className="flex flex-col justify-center items-center gap-2 h-full">
+              <Card>
+                <div className="p-2 text-center">
+                  <h1 className="font-bold text-2xl capitalize">
+                    <Translate content="promoted" />
+                  </h1>
+                </div>
+                <Line />
+                <div className="p-2">
+                  <EnumFeild
+                    state={promoted}
+                    config={{
+                      list: ["promoted", "no promoted", "all"].map((status) => {
+                        const emojie =
+                          status === "promoted"
+                            ? "📢"
+                            : status === "no promoted"
+                            ? "🚫"
+                            : "📋";
+                        return {
+                          value: status,
+                          content: status.toUpperCase() + " " + emojie,
+                        };
+                      }),
+                    }}
+                    id="promoted"
                   />
                 </div>
                 <Line />
@@ -203,11 +227,9 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
           onClick={() => {
             onChange?.({
               category: category.get || null,
-              market: market.get || null,
               available: isAvailable.get || null,
             });
             category.set("");
-            market.set("");
             isAvailable.set(false);
             closePopup();
           }}

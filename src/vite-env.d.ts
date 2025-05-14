@@ -20,29 +20,31 @@ declare namespace SnapBuy {
   }
   interface Order {
     status: OrderStatus;
-    uid: string;
     id: string;
     createdAt?: number;
     updatedAt?: number;
     products?: Partial<Record<string, { count?: number; price?: number }>>;
-    clientId: string;
+    client: Client;
+    key?: string;
     // needed
     storeId?: string;
     uid?: string;
   }
-  interface AccessToken {
-    id: string;
-    clientId: string;
-    value: string;
-    usedBy?: string;
-    // needed
-    storeId?: string;
-    uid?: string;
+  interface Follow {
+    follow: boolean;
+    updatedAt: number;
+    followed: string;
+    follower: string;
   }
   interface Client {
     id: string;
-    name: string;
+    firstname?: string;
+    lastname?: string;
     phone: string;
+    place: {
+      address: string;
+      wilaya: string;
+    };
     // needed
     storeId?: string;
     uid?: string;
@@ -50,36 +52,33 @@ declare namespace SnapBuy {
   interface Product {
     id: string;
     name: string;
-    price: number;
-    photos?: string[];
-    description?: string;
-    category?: string;
+    description: string;
+    photos: string[];
+    uid?: string;
+    createdAt?: number;
+    quantity: number;
+    sizes?: string[];
+    colors?: string[];
+    keys?: string[];
     available?: boolean;
-    market?: string;
-    metadata?: {
-      [key: string]: string;
+    category?: string | Nothing;
+    theme?: Partial<Record<import("@biqpod/app/ui/hooks").ColorIds, string>>;
+    type?: "single" | "multiple";
+    limited?: boolean;
+    single?: {
+      price?: number;
     };
-    // needed
-    storeId?: string;
-    uid?: string;
-  }
-  interface Account {
-    name: string;
-    email: string;
-    phone: string;
-    id: string;
-    // needed
-    storeId?: string;
-    uid?: string;
+    multiple?: {
+      prices?: {
+        quantity: number;
+        price: number;
+      }[];
+    };
   }
 }
 declare interface SnapBuyApi {
   markets: string[];
   categorys: string[];
-}
-declare interface ClientResult {
-  client: SnapBuy.Client;
-  access: SnapBuy.AccessToken;
 }
 declare interface AddClientActionProps {
   exists?: SnapBuy.Client[];
@@ -88,4 +87,9 @@ declare interface AddClientActionProps {
 declare interface AddProductActionProps {
   exists?: SnapBuy.Product[];
   news?: SnapBuy.Product[];
+}
+declare module "html2pdf.js" {
+  // You can add more specific type definitions here as you explore the library's API.
+  const html2pdf: any;
+  export default html2pdf;
 }

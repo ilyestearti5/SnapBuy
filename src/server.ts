@@ -1,4 +1,4 @@
-import { initMyCloud } from "biqpod/ui/apis";
+import { initMyCloud } from "@biqpod/app/ui/apis";
 export const cloud = initMyCloud({
   apiKey: "AIzaSyB0XSUnBSOaIWp-37u2N4ib5bY8-09Zeq0",
   authDomain: "water-fetch.firebaseapp.com",
@@ -9,12 +9,12 @@ export const cloud = initMyCloud({
   appId: "1:911813185967:web:4447a361eeaddd00315f5a",
   measurementId: "G-8GB7LZPHVX",
   functions: {
-    devUri: (fnId) => `https://api.biqpod.com/.netlify/functions/${fnId}`,
+    devUri: (fnId) => `http://localhost:9000/invoke/${fnId}`,
   },
 });
 // this is needed in the project for default informations
 cloud.setAsMain();
-export const { nosql: db, auth, storage } = cloud.app;
+export const { nosql: db, auth, storage, ai } = cloud.app;
 export const {
   getDoc,
   getDocs,

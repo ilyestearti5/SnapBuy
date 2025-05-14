@@ -1,5 +1,6 @@
-import { allIcons, and, where } from "biqpod/ui/apis";
+import { allIcons, orderBy } from "@biqpod/app/ui/apis";
 import {
+  Button,
   CardWait,
   CircleTip,
   Field,
@@ -7,20 +8,22 @@ import {
   Line,
   Scroll,
   Translate,
-} from "biqpod/ui/components";
+} from "@biqpod/app/ui/components";
 import {
+  execAction,
   getFieldValue,
+  isLoading,
   openMenu,
   showPopup,
+  useAction,
   useCopyState,
-} from "biqpod/ui/hooks";
-import { include, tw } from "biqpod/ui/utils";
+} from "@biqpod/app/ui/hooks";
+import { include, mergeArray, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
-import { onCollectionSnapshot } from "../server";
-import { useCurrentClient } from "../apis";
+import { getDocs } from "../server";
 import { colors, icons } from "../Links/Orders";
 import { OrderView } from "./OrderView";
-
+const PAGE_SIZE = 10;
 export const Orders = () => {
   const searchOrder = getFieldValue("search-order");
   const isFocused = useCopyState(false);
@@ -33,44 +36,34 @@ export const Orders = () => {
     return new Date();
   }, []);
   const orders = useCopyState<SnapBuy.Order[]>([]); // Replace with your actual orders data
-  const currentClient = useCurrentClient();
-  const quickLoading = useCopyState(false);
-  useEffect(() => {
-    if (import.meta.env.DEV) {
-      quickLoading.set(false);
-      orders.set([]);
-      return onCollectionSnapshot<SnapBuy.Order>(
+  const lastDoc = useCopyState<SnapBuy.Order | null>(null);
+  const hasMore = useCopyState(true);
+  useAction(
+    "fetch-client-orders",
+    async (next = false) => {
+      const newOrders = await getDocs<SnapBuy.Order>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
-        (snapshot) => {
-          quickLoading.set(true);
-
-          const ordersData = snapshot.map((doc) => ({
-            ...doc.data,
-            id: doc.id,
-          }));
-          orders.set(ordersData);
-        }
-      );
-    }
-    if (currentClient?.client.id) {
-      quickLoading.set(false);
-      orders.set([]);
-      return onCollectionSnapshot<SnapBuy.Order>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
-        (snapshot) => {
-          quickLoading.set(true);
-          const ordersData = snapshot.map((doc) => ({
-            ...doc.data,
-            id: doc.id,
-          }));
-          orders.set(ordersData);
-        },
         {
-          where: and(where("clientId", "==", currentClient?.client.id)),
+          orders: mergeArray(orderBy("createdAt", "asc")),
+          limit: PAGE_SIZE,
+          startAt: mergeArray(lastDoc.get?.createdAt),
         }
       );
-    }
-  }, [currentClient]);
+      if (!newOrders) {
+        return;
+      }
+      var list = newOrders.map((order) => ({ ...order.data, id: order.id }));
+      orders.set((prev) => (next ? [...prev, ...list] : list));
+      const lastDocRef = newOrders.at(-1)?.data;
+      lastDoc.set(lastDocRef ? lastDocRef : null);
+      hasMore.set(newOrders.length === PAGE_SIZE);
+    },
+    [lastDoc.get]
+  );
+  var loading = isLoading("fetch-client-orders");
+  useEffect(() => {
+    execAction("fetch-client-orders");
+  }, []);
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center p-2">
@@ -114,7 +107,7 @@ export const Orders = () => {
       </div>
       <Line />
       <Scroll>
-        {!quickLoading.get && <CardWait className="h-[100vh]" />}
+        {loading && <CardWait className="h-[100vh]" />}
         {orders.get
           .filter((order) => {
             return include(`${order.id} @status ${order.status}`, searchOrder);
@@ -196,6 +189,33 @@ export const Orders = () => {
               </div>
             );
           })}
+        {hasMore.get && (
+          <div className="flex justify-center items-center gap-2 p-2">
+            <span>
+              <Button
+                onClick={() => {
+                  execAction("fetch-client-orders", true);
+                }}
+                icon={
+                  loading
+                    ? allIcons.solid.faCircleNotch
+                    : allIcons.solid.faPaperPlane
+                }
+                className="rounded-full"
+                iconClassName={tw(loading && "animate-spin")}
+              >
+                <span
+                  className={tw("transition-[font-family] duration-200")}
+                  style={{
+                    font: loading ? "0px" : "8px",
+                  }}
+                >
+                  <Translate content="fetch more" />
+                </span>
+              </Button>
+            </span>
+          </div>
+        )}
       </Scroll>
     </div>
   );

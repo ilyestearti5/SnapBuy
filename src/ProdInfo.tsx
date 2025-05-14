@@ -1,75 +1,16 @@
-import { allIcons } from "biqpod/ui/apis";
-import {
-  CircleTip,
-  EmptyComponent,
-  Icon,
-  Line,
-  MultiScreenPage,
-  Translate,
-} from "biqpod/ui/components";
-import { useCopyState } from "biqpod/ui/hooks";
+import { Line, Translate } from "@biqpod/app/ui/components";
+import { getPrice } from "./CartPopup";
+import { ImageSlider } from "./Links/ImageSlider";
 interface ProdInfoProps {
   product: SnapBuy.Product;
 }
 export const ProdInfo = ({ product }: ProdInfoProps) => {
-  const focused = useCopyState(0);
   const photos = product.photos || [];
+  const price = getPrice(product);
   return (
     <div className="flex flex-col">
       <div className="relative flex justify-center items-center w-full h-[200px] cursor-pointer">
-        <MultiScreenPage
-          pages={photos.map((photo) => {
-            return (
-              <div className="relative flex justify-center items-center h-full overflow-hidden cursor-pointer">
-                <img
-                  draggable="false"
-                  src={photo}
-                  className="absolute inset-0 opacity-20 blur-lg object-cover"
-                />
-                <img
-                  draggable="false"
-                  src={photo}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            );
-          })}
-          focused={focused.get}
-        />
-        {photos.length > 1 && (
-          <EmptyComponent>
-            <div className="top-1/2 left-2 absolute -translate-y-1/2 transform">
-              <CircleTip
-                icon={allIcons.solid.faChevronLeft}
-                onClick={() => {
-                  if (focused.get <= 0) {
-                    focused.set(photos.length - 1);
-                    return;
-                  }
-                  focused.set(focused.get - 1);
-                }}
-              />
-            </div>
-            <div className="top-1/2 right-2 absolute -translate-y-1/2 transform">
-              <CircleTip
-                icon={allIcons.solid.faChevronRight}
-                onClick={() => {
-                  if (focused.get >= photos.length - 1) {
-                    focused.set(0);
-                    return;
-                  }
-                  focused.set(focused.get + 1);
-                }}
-              />
-            </div>
-            <div className="bottom-2 left-1/2 absolute text-black -translate-x-1/2 transform">
-              {focused.get + 1} / {photos.length}
-            </div>
-          </EmptyComponent>
-        )}
-        {product.photos?.length == 0 && (
-          <Icon icon={allIcons.solid.faBoxOpen} />
-        )}
+        <ImageSlider photos={photos} />
         {product.available && (
           <div className="top-0 right-0 absolute bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
             <Translate content="available" />
@@ -86,7 +27,7 @@ export const ProdInfo = ({ product }: ProdInfoProps) => {
         <p>
           Price:{" "}
           <span className="bg-[--biqpod-primary] px-3 rounded-full text-[--biqpod-primary-content]">
-            {product.price.toFixed(2)}DA
+            {price.toFixed(2)}DA
           </span>
         </p>
         <p>Category: {product.category}</p>
@@ -97,7 +38,7 @@ export const ProdInfo = ({ product }: ProdInfoProps) => {
           <Translate content="available" />: {product.available ? "Yes" : "No"}
         </p>
         <p>
-          <Translate content="market" />: {product.market}
+          <Translate content="market" />: {product.category}
         </p>
       </div>
     </div>

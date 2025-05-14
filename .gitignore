@@ -28,3 +28,7 @@ yarn-error.log*
 .eslintcache
 /dist/
 /.firebase/
+package-lock.json
+android
+ios
+dist-electron

@@ -1,33 +1,22 @@
-import { allIcons } from "biqpod/ui/apis";
-import {
-  Card,
-  MultiScreenPage,
-  EmptyComponent,
-  CircleTip,
-  Icon,
-  Translate,
-  Line,
-  Button,
-} from "biqpod/ui/components";
-import {
-  getTemp,
-  useColorMerge,
-  useCopyState,
-  showPopup,
-  showToast,
-} from "biqpod/ui/hooks";
-import { tw } from "biqpod/ui/utils";
-import { useCartCount, removeCart, ProductPopup } from "./ProductPopup";
+import { allIcons } from "@biqpod/app/ui/apis";
+import { Card, Icon, Translate, Line, Button } from "@biqpod/app/ui/components";
+import { getTemp, showPopup } from "@biqpod/app/ui/hooks";
+import { tw } from "@biqpod/app/ui/utils";
+import { useCartCount, removeCart, AddProductInCart } from "./AddProductToCart";
+import { ImageSlider } from "./Links/ImageSlider";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
 }
 export const ClientProductRender = ({ product }: ProductRenderProps) => {
+  const uid = product.uid!;
   const isFullWidth = getTemp<boolean>("isFullWidth");
-  const cartCount = useCartCount(product.id);
+  const cartCount = useCartCount(uid, product.id);
   const hasCart = cartCount > 0;
-  const colorMerge = useColorMerge();
-  const focused = useCopyState(0);
   const photos = product.photos || [];
+  // pour promostion
+  const isPromotion = product.type === "multiple";
+  const prices = product.multiple?.prices || [];
+  const price = product.single?.price || 0;
   return (
     <Card
       key={product.id}
@@ -37,62 +26,13 @@ export const ClientProductRender = ({ product }: ProductRenderProps) => {
       )}
     >
       <div className="relative flex justify-center items-center w-full h-[200px] cursor-pointer">
-        <MultiScreenPage
-          pages={photos.map((photo) => {
-            return (
-              <div className="relative flex justify-center items-center h-full overflow-hidden cursor-pointer">
-                <img
-                  draggable="false"
-                  src={photo}
-                  className="absolute inset-0 opacity-20 blur-lg object-cover"
-                />
-                <img
-                  draggable="false"
-                  src={photo}
-                  className="w-full h-full object-contain"
-                />
-              </div>
-            );
-          })}
-          focused={focused.get}
-        />
-        {photos.length > 1 && (
-          <EmptyComponent>
-            <div className="top-1/2 left-2 absolute -translate-y-1/2 transform">
-              <CircleTip
-                icon={allIcons.solid.faChevronLeft}
-                onClick={() => {
-                  if (focused.get <= 0) {
-                    focused.set(photos.length - 1);
-                    return;
-                  }
-                  focused.set(focused.get - 1);
-                }}
-              />
-            </div>
-            <div className="top-1/2 right-2 absolute -translate-y-1/2 transform">
-              <CircleTip
-                icon={allIcons.solid.faChevronRight}
-                onClick={() => {
-                  if (focused.get >= photos.length - 1) {
-                    focused.set(0);
-                    return;
-                  }
-                  focused.set(focused.get + 1);
-                }}
-              />
-            </div>
-            <div className="bottom-2 left-1/2 absolute text-black -translate-x-1/2 transform">
-              {focused.get + 1} / {photos.length}
-            </div>
-          </EmptyComponent>
-        )}
-        {photos.length === 0 && (
-          <Icon iconClassName="text-6xl" icon={allIcons.solid.faImage} />
-        )}
-        {!!product.available && (
-          <div className="top-0 right-0 absolute bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
-            <Translate content="available" />
+        <ImageSlider photos={photos} />
+        {isPromotion && (
+          <div className="inline-flex top-0 left-0 absolute items-center gap-2 bg-red-600 px-3 py-1 rounded-ee-2xl text-white capitalize">
+            <Icon icon={allIcons.solid.faTag} />
+            <span>
+              <Translate content="promotion" />
+            </span>
           </div>
         )}
       </div>
@@ -103,22 +43,45 @@ export const ClientProductRender = ({ product }: ProductRenderProps) => {
         </span>
       </div>
       <Line />
-      <div className="max-md:p-1 md:p-2 font-bold text-[--biqpod-success] max-md:text-lg text-2xl text-right">
-        {product.price} DA
+      <div className="max-md:p-1 md:p-2 text-right">
+        {!isPromotion && (
+          <span className="font-bold text-[--biqpod-success] max-md:text-lg text-2xl">
+            {price} DA
+          </span>
+        )}
+        {isPromotion && (
+          <div className="flex flex-wrap gap-2">
+            {prices
+              .sort((price1, price2) => {
+                return price1.quantity - price2.quantity;
+              })
+              .map((price, index) => {
+                return (
+                  <div
+                    key={index}
+                    className="bg-[--biqpod-gray-opacity] px-3 py-1 rounded-full max-md:text-md text-xl"
+                  >
+                    <span className="text-[--biqpod-success]">
+                      {price.price} DA
+                    </span>{" "}
+                    <sub>
+                      {"<"}
+                      {price.quantity}
+                    </sub>
+                  </div>
+                );
+              })}
+          </div>
+        )}
       </div>
       <Line />
       <div className="flex gap-2 p-2 max-md:p-1">
         {hasCart && (
           <Button
-            style={{
-              ...colorMerge("gray.opacity", {
-                color: "text.color",
-              }),
-            }}
             onClick={() => {
-              removeCart(product.id);
+              removeCart(uid, product.id);
             }}
-            className="max-md:p-[1.5px] rounded-2xl"
+            className="bg-[--biqpod-gray-opacity] max-md:p-[1.5px] rounded-2xl text-[--biqpod-text-color]"
             icon={allIcons.solid.faTrash}
           >
             <Translate content="remove" />
@@ -126,11 +89,7 @@ export const ClientProductRender = ({ product }: ProductRenderProps) => {
         )}
         <Button
           onClick={() => {
-            if (!product.available) {
-              showToast("Product Not Available", "warning");
-              return;
-            }
-            showPopup(<ProductPopup product={product} />);
+            showPopup(<AddProductInCart product={product} />);
           }}
           icon={allIcons.solid.faShoppingCart}
           className="max-md:p-[1.5px] rounded-2xl"

@@ -1,7 +1,7 @@
 import "./index.css";
-import "biqpod/ui/biqpod.css";
+import "@biqpod/app/ui/style.css";
 import "./server";
-import { startApplication } from "biqpod/ui/app";
+import { startApplication } from "@biqpod/app/ui/app";
 import { App } from "./App";
 import { BrowserRouter } from "react-router-dom";
 startApplication(
@@ -9,7 +9,6 @@ startApplication(
     <App />
   </BrowserRouter>,
   {
-    onPrepare() {},
     isDev: import.meta.env.DEV,
   }
 );

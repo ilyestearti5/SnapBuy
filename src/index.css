@@ -2,3 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 @tailwind variants;
+
+[aria-label="theme"] * {
+  @apply transition-colors duration-500;
+}

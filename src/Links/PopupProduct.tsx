@@ -1,4 +1,4 @@
-import { allIcons } from "biqpod/ui/apis";
+import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Card,
   CircleTip,
@@ -8,7 +8,7 @@ import {
   BooleanFeild,
   Icon,
   Button,
-} from "biqpod/ui/components";
+} from "@biqpod/app/ui/components";
 import {
   useCopyState,
   useUser,
@@ -16,10 +16,13 @@ import {
   closePopup,
   showPopup,
   execAction,
-} from "biqpod/ui/hooks";
-import { doubleFilter } from "biqpod/ui/utils";
-import { useEffect, useMemo } from "react";
+  openDialog,
+  confirm,
+} from "@biqpod/app/ui/hooks";
+import { doubleFilter } from "@biqpod/app/ui/utils";
+import { useMemo } from "react";
 import { api } from "../apis";
+import { loadFromExcel } from "./Products";
 interface PopupProductProps {
   products: SnapBuy.Product[];
   file?: string;
@@ -42,33 +45,17 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
     return [exists, news];
   }, [allProducts.get]);
 
+  const isAvailable = useCopyState<null | boolean>(false);
+
   return (
-    <Card className="md:w-1/2 max-md:w-10/12">
+    <Card className="max-md:w-10/12 md:w-1/2">
       <div className="flex justify-between items-center p-2">
         <div className="flex items-center gap-2">
           {file && (
             <CircleTip
               onClick={() => {
                 closePopup();
-                showPopup(
-                  <ExcelPopup
-                    uri={file!}
-                    options={[
-                      "id",
-                      "name",
-                      "price",
-                      "photo",
-                      "description",
-                      "category",
-                      "available",
-                      "market",
-                    ]}
-                    onChange={(json) => {
-                      showPopup(<PopupProduct products={json} file={file} />);
-                    }}
-                    title="Excel File"
-                  />
-                );
+                loadFromExcel(file);
               }}
               icon={allIcons.solid.faChevronLeft}
             />
@@ -118,16 +105,38 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
             <span className="font-bold text-xl">({news.length})</span>
           )}
         </div>
+        <div className="flex items-center gap-2 p-2">
+          <BooleanFeild id="available-by-default" state={newsState} />
+          <span className="text-xl capitalize">
+            <Translate content="always available" />
+          </span>
+        </div>
       </div>
       <Line />
       <div className="p-2">
         <Button
           className="rounded-full"
-          onClick={() => {
+          onClick={async () => {
             const options: AddProductActionProps = {
-              exists: exists ?? undefined,
-              news: news ?? undefined,
+              exists:
+                exists?.map((prod) => ({
+                  ...prod,
+                  id: encodeURIComponent(prod.id),
+                })) ?? undefined,
+              news:
+                news?.map((prod) => ({
+                  ...prod,
+                  id: encodeURIComponent(prod.id),
+                  available: !!isAvailable.get,
+                })) ?? undefined,
             };
+            var isYes = confirm({
+              title: "add products",
+              message: "are you sure you want to add these products ?",
+            });
+            if (!isYes) {
+              return;
+            }
             execAction("add-products", options);
             closePopup();
           }}

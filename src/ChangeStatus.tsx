@@ -1,24 +1,27 @@
-import { allIcons } from "biqpod/ui/apis";
+import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Button,
   Card,
   CircleTip,
-  EmptyComponent,
   Icon,
   Line,
   Scroll,
   Translate,
-} from "biqpod/ui/components";
-import { closePopup, getTemp, setTemp } from "biqpod/ui/hooks";
+} from "@biqpod/app/ui/components";
+import {
+  closePopup,
+  confirm,
+  getTemp,
+  openDialog,
+  setTemp,
+} from "@biqpod/app/ui/hooks";
 import { colors, icons } from "./Links/Orders";
-import { setDoc } from "./server";
-import { tw } from "biqpod/ui/utils";
-
-interface ChangeStatusProps {
+import { deleteDoc, setDoc } from "./server";
+import { tw } from "@biqpod/app/ui/utils";
+export interface ChangeStatusProps {
   order: SnapBuy.Order;
 }
-
-const status: SnapBuy.OrderStatus[] = [
+export const allStatus: SnapBuy.OrderStatus[] = [
   "pending",
   "cancelled",
   "processing",
@@ -26,7 +29,6 @@ const status: SnapBuy.OrderStatus[] = [
   "delivery",
   "done",
 ];
-
 export const ChangeStatus = ({ order }: ChangeStatusProps) => {
   const selectOne = getTemp<SnapBuy.OrderStatus>("selected-status");
   return (
@@ -46,7 +48,7 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
       </div>
       <Line />
       <Scroll>
-        {status.map((singleStatus) => {
+        {allStatus.map((singleStatus) => {
           const isSelected = singleStatus === selectOne;
           return (
             <div
@@ -78,6 +80,22 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
         <Button
           className="rounded-full"
           onClick={async () => {
+            if (selectOne === "done") {
+              const response = await confirm({
+                title: "Are you sure?",
+                message: "This will delete the order",
+                type: "warning",
+              });
+              if (response) {
+                await deleteDoc([
+                  "projects",
+                  import.meta.env.VITE_PROJECT_ID,
+                  "orders",
+                  order.id,
+                ]);
+              }
+              return;
+            }
             await setDoc(
               ["projects", import.meta.env.VITE_PROJECT_ID, "orders", order.id],
               {
