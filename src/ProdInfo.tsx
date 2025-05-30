@@ -6,7 +6,7 @@ interface ProdInfoProps {
 }
 export const ProdInfo = ({ product }: ProdInfoProps) => {
   const photos = product.photos || [];
-  const price = getPrice(product);
+  const { price } = getPrice(product);
   return (
     <div className="flex flex-col">
       <div className="relative flex justify-center items-center w-full h-[200px] cursor-pointer">
@@ -27,7 +27,7 @@ export const ProdInfo = ({ product }: ProdInfoProps) => {
         <p>
           Price:{" "}
           <span className="bg-[--biqpod-primary] px-3 rounded-full text-[--biqpod-primary-content]">
-            {price.toFixed(2)}DA
+            {price?.toFixed(2)}DA
           </span>
         </p>
         <p>Category: {product.category}</p>

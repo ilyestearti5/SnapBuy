@@ -18,7 +18,7 @@ import {
   Field,
   Icon,
   IconProps,
-  ImageFeild,
+  ImageField,
   Line,
   Scroll,
   Translate,
@@ -168,7 +168,7 @@ export const DocumentRecord = ({ data }: DocumentRecordProps) => {
                         }
                       />
                     )}
-                    <ImageFeild
+                    <ImageField
                       state={state}
                       config={{
                         hidden: true,
@@ -215,7 +215,6 @@ export const Integrations = () => {
     }
     return docs.filter((doc) => include(doc.name, searchDocValue));
   }, [documents, searchDocValue]);
-  const enumState = useCopyState<string | Nothing>(null);
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="p-3">

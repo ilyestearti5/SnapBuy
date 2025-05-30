@@ -21,17 +21,17 @@ import {
   useTemp,
 } from "@biqpod/app/ui/hooks";
 import { SettingValueType } from "@biqpod/app/ui/types";
-import { mergeArray, range, tw } from "@biqpod/app/ui/utils";
+import { range, tw } from "@biqpod/app/ui/utils";
 import { ProductInfo } from "./Infor";
 import { useEffect, useMemo } from "react";
-import { PostChoiseTheme } from "./Views/ChoiseTheme";
+import { ProductChoosThemeStyle } from "./Views/ChoiseTheme";
 import { PostDataBeforePost } from "./Views/DataBeforePost";
 import { ProductDescription } from "./Views/Description";
 import { PostDescriptionMarkDown } from "./Views/DescriptionMarkDown";
-import { PostImages } from "./Views/Image";
+import { ProductImages } from "./Views/Image";
 import { PostMoreInfo } from "./Views/MoreInfors";
 import { PostInforPrice } from "./Views/ProductInforPrice";
-import { PostType } from "./Views/ProductType";
+import { ProductPricingType } from "./Views/ProductType";
 export interface ProductFormSectionProps {
   product?: Partial<SnapBuy.Product>;
 }
@@ -44,13 +44,13 @@ const buttonContents: Record<number, string | undefined> = {
 };
 const pages = [
   { name: "Product Info", component: ProductInfo },
-  { name: "Images", component: PostImages },
-  { name: "Type", component: PostType },
+  { name: "Images", component: ProductImages },
+  { name: "Type", component: ProductPricingType },
   { name: "Price Info", component: PostInforPrice },
   { name: "Description", component: ProductDescription },
   { name: "Description (Markdown)", component: PostDescriptionMarkDown },
   { name: "More Info", component: PostMoreInfo },
-  { name: "Theme Choice", component: PostChoiseTheme },
+  { name: "Theme Choice", component: ProductChoosThemeStyle },
   { name: "Data Before Post", component: PostDataBeforePost },
 ];
 const pagesOnly = pages.map((page) => page.component);
@@ -73,37 +73,11 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
   const colorsState = useTemp<string[]>("post-colors");
   const sizesState = useTemp<SettingValueType["filter"]>("post-sizes");
   const keysState = useTemp<SettingValueType["array"]>("post-keys");
-  const extraInformation = useTemp<SettingValueType["filter"]>(
-    "post-extrainformation"
-  );
   const isAvailable = useTemp<boolean>("product-form-available");
   const type = useTemp<"single" | "multiple">("post-type");
   const postMarketAction = actionHooks.getOne("post-market");
   const postActionStatus = actionHooks.getOneFeild("post-market", "status");
   const postIsLoading = isLoading(postMarketAction);
-  useEffect(() => {
-    setFieldValue("product-form-description", product?.description || "");
-    setFieldValue("product-form-name", product?.name || "");
-    price.set(product?.single?.price || 0);
-    setTemp("product-prices", product?.multiple?.prices);
-    category.set(product?.category);
-    images.set(product?.photos || []);
-    setTemp("product-choised-theme", product?.theme);
-    extraInformation.set(
-      mergeArray(
-        product?.keys?.length && "keys",
-        product?.colors?.length && "colors",
-        product?.sizes?.length && "sizes"
-      )
-    );
-    type.set(product?.type || null);
-    limited.set(product?.limited || null);
-    colorsState.set(product?.colors || []);
-    sizesState.set(product?.sizes || []);
-    keysState.set(product?.keys || []);
-    isAvailable.set(product?.available || false);
-    quantity.set(product?.quantity || undefined);
-  }, [product]);
   useEffect(() => {
     if (postMarketAction?.status === "success") {
       showToast("Posted Successfully", "success");
@@ -111,6 +85,26 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
   }, [postMarketAction?.status]);
   const focusedSection = useTemp<number>("post-focused");
   const focused = useMemo(() => focusedSection.get || 0, [focusedSection.get]);
+  useEffect(() => {
+    focusedSection.set(0);
+  }, []);
+
+  useEffect(() => {
+    setFieldValue("product-form-name", product?.name || "");
+    setFieldValue("product-form-description", product?.description || "");
+    setTemp("product-images", product?.photos || []);
+    setTemp("product-limited", product?.limited || false);
+    setTemp("post-colors", product?.colors || []);
+    setTemp("post-sizes", product?.sizes || []);
+    setTemp("post-keys", product?.keys || []);
+    setTemp("post-quantity", product?.quantity || 0);
+    setTemp("product-form-available", product?.available || false);
+    setTemp("post-type", product?.type || "single");
+    setTemp("post-category", product?.category || "");
+    setTemp("product-price", product?.single?.price || 0);
+    setTemp("product-prices", product?.multiple?.prices || []);
+  }, [product]);
+
   return (
     <EmptyComponent>
       {product !== null && postActionStatus != "loading" && (
@@ -198,7 +192,7 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
             {focused == pages.length - 1 && (
               <Button
                 onClick={async () => {
-                  var options = {
+                  const options = {
                     ...product,
                     category: category.get || null,
                     photos: images.get || [],
@@ -219,7 +213,6 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
                     limited: limited.get || null,
                     available: isAvailable.get || null,
                   };
-                  console.log(options);
                   if (!product?.id) {
                     options.id = encodeURIComponent(crypto.randomUUID());
                   }

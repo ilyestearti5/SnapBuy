@@ -1,19 +1,20 @@
-import React, { useEffect, useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  BooleanFeild,
+  BooleanField,
   CircleTip,
   EmptyComponent,
   Icon,
   Line,
-  NumberFeild,
+  NumberField,
   Tip,
   TitleView,
   Translate,
 } from "@biqpod/app/ui/components";
 import { getTemp, useColorMerge, useTemp } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
-export const PostInforPrice = () => {
+import { ProductFormSectionProps } from "../NewProduct";
+export const PostInforPrice = ({ product }: ProductFormSectionProps) => {
   const postType = getTemp<"multiple" | "single">("post-type");
   const quantity = useTemp<number | null | undefined>("post-quantity");
   const tempPrice = useTemp<number | null | undefined>("temp-price");
@@ -21,12 +22,23 @@ export const PostInforPrice = () => {
   const limited = useTemp<boolean>("product-limited");
   const price = useTemp<number | undefined>("product-price");
   const colorMerge = useColorMerge();
+  const pricesList =
+    useTemp<Required<SnapBuy.Product>["multiple"]["prices"]>("product-prices");
+  useEffect(() => {
+    quantity.set(product?.quantity);
+    limited.set(product?.limited || null);
+    if (product?.type === "multiple") {
+      pricesList.set(product?.multiple?.prices);
+    }
+    if (product?.type === "single") {
+      price.set(product.single?.price);
+    }
+  }, []);
   const [isSingle, isMultiple] = useMemo(() => {
     var isSingle = postType === "single";
     return [isSingle, !isSingle];
   }, [postType]);
-  const pricesList =
-    useTemp<Required<SnapBuy.Product>["multiple"]["prices"]>("product-prices");
+
   const maxCount = useMemo(() => {
     return Math.min(
       ...(pricesList.get?.map(({ quantity }) => {
@@ -45,7 +57,7 @@ export const PostInforPrice = () => {
             <Translate content="limited" /> :
           </label>
           <div className="w-full">
-            <BooleanFeild
+            <BooleanField
               state={limited}
               config={{
                 style: "switch",
@@ -69,7 +81,7 @@ export const PostInforPrice = () => {
                 <Translate content="quantity" /> :
               </label>
               <div className="relative w-full">
-                <NumberFeild
+                <NumberField
                   state={quantity}
                   config={{
                     placeholder: "Enter Quantity",
@@ -91,7 +103,7 @@ export const PostInforPrice = () => {
               <Translate content="price" /> :
             </label>
             <div className="relative w-full">
-              <NumberFeild
+              <NumberField
                 state={price}
                 config={{
                   placeholder: "Enter Price",
@@ -155,7 +167,7 @@ export const PostInforPrice = () => {
                   <Translate content="quantity" /> :
                 </label>
                 <div className="relative w-full">
-                  <NumberFeild
+                  <NumberField
                     state={tempQuantity}
                     config={{
                       autoChange: true,
@@ -174,7 +186,7 @@ export const PostInforPrice = () => {
                   <Translate content="price for one" /> :
                 </label>
                 <div className="relative w-full">
-                  <NumberFeild
+                  <NumberField
                     state={tempPrice}
                     config={{
                       placeholder: "Enter Price",

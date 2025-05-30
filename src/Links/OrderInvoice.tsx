@@ -1,13 +1,11 @@
 import { closePopup, useAsyncMemo, useUser } from "@biqpod/app/ui/hooks";
 import React, { useMemo } from "react";
-import { api } from "../apis";
+import { snapbuyApi } from "../apis";
 import {
   Button,
   Card,
   CircleLoading,
   CircleTip,
-  EmptyComponent,
-  Icon,
   Line,
   Scroll,
   Translate,
@@ -15,14 +13,25 @@ import {
 import { allIcons } from "@biqpod/app/ui/apis";
 import { QRCodeSVG } from "qrcode.react";
 import html2pdf from "html2pdf.js";
+import { getDoc } from "../server";
 interface OrderInvoiceProps {
   order: SnapBuy.Order;
 }
 export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
   const invoiceRef = React.useRef<HTMLDivElement>(null);
-  var user = useUser();
+  const user = useUser();
+
+  const store = useAsyncMemo(async () => {
+    return getDoc<SnapBuy.Store>([
+      "projects",
+      import.meta.env.VITE_PROJECT_ID,
+      "stores",
+      order.storeId,
+    ]);
+  }, []);
+
   const list = useAsyncMemo(async () => {
-    return api.getOrderProducts(order.id);
+    return snapbuyApi.getOrderProducts(order.id);
   }, []);
 
   const handleDownloadPDF = async () => {
@@ -72,9 +81,9 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
             {/* Invoice Header */}
             <div className="flex justify-between items-start p-2">
               <div>
-                {user?.photo ? (
+                {store?.photo ? (
                   <img
-                    src={user.photo}
+                    src={store.photo}
                     alt="Business Logo"
                     className="mb-2 h-16"
                   />
@@ -85,7 +94,7 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
                 )}
                 <div>
                   <p>{user?.email}</p>
-                  <p>{user?.phone}</p>
+                  <p>{store?.phone}</p>
                   <p>
                     <Translate content={order.status} />
                   </p>
@@ -129,11 +138,11 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
                       <span className="text-[--biqpod-success]">
                         {item.price.toFixed(0)}DA
                       </span>{" "}
-                      *
+                      *{" "}
                       <span className="text-[--biqpod-success]">
                         {item.quantity}
-                      </span>
-                      =
+                      </span>{" "}
+                      ={" "}
                       <span className="text-[--biqpod-success]">
                         {(item.price * item.count).toFixed(0)}DA
                       </span>

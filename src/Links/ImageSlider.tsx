@@ -61,6 +61,41 @@ export const ImageSlider: React.FC<SliderProps> = ({
       handleMouseUp();
     }
   };
+  const handleTouchStart = (e: TouchEvent) => {
+    setIsDragging(true);
+    setStartX(e.touches[0].clientX);
+    setTranslateX(0);
+    setAnimation(false);
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+    }
+  };
+  const handleTouchMove = (e: TouchEvent) => {
+    if (!isDragging) return;
+    const deltaX = e.touches[0].clientX - startX;
+    setTranslateX(deltaX);
+  };
+  const handleTouchEnd = () => {
+    if (!isDragging) return;
+    setIsDragging(false);
+    const sensitivity = 0.3;
+    if (Math.abs(translateX) > window.innerWidth * sensitivity) {
+      if (translateX > 0) {
+        prevSlide();
+      } else {
+        nextSlide();
+      }
+    } else {
+      setTranslateX(0);
+      setAnimation(true);
+    }
+    setTranslateX(0);
+  };
+  const handleTouchCancel = () => {
+    if (isDragging) {
+      handleTouchEnd();
+    }
+  };
   useEffect(() => {
     const trackRef = sliderRef.current;
     if (trackRef) {
@@ -68,11 +103,21 @@ export const ImageSlider: React.FC<SliderProps> = ({
       trackRef.addEventListener("mousemove", handleMouseMove);
       trackRef.addEventListener("mouseup", handleMouseUp);
       trackRef.addEventListener("mouseleave", handleMouseLeave);
+      // Touch events for mobile
+      trackRef.addEventListener("touchstart", handleTouchStart);
+      trackRef.addEventListener("touchmove", handleTouchMove);
+      trackRef.addEventListener("touchend", handleTouchEnd);
+      trackRef.addEventListener("touchcancel", handleTouchCancel);
       return () => {
         trackRef.removeEventListener("mousedown", handleMouseDown);
         trackRef.removeEventListener("mousemove", handleMouseMove);
         trackRef.removeEventListener("mouseup", handleMouseUp);
         trackRef.removeEventListener("mouseleave", handleMouseLeave);
+        // Remove touch events
+        trackRef.removeEventListener("touchstart", handleTouchStart);
+        trackRef.removeEventListener("touchmove", handleTouchMove);
+        trackRef.removeEventListener("touchend", handleTouchEnd);
+        trackRef.removeEventListener("touchcancel", handleTouchCancel);
       };
     }
   }, [isDragging, startX, translateX]);

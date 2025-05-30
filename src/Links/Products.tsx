@@ -1,13 +1,7 @@
 import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
+import { delay, mergeArray, tw } from "@biqpod/app/ui/utils";
 import {
-  delay,
-  include,
-  mergeArray,
-  mergeObject,
-  tw,
-} from "@biqpod/app/ui/utils";
-import {
-  BooleanFeild,
+  BooleanField,
   Button,
   Card,
   CircleTip,
@@ -22,7 +16,6 @@ import {
   closePopup,
   execAction,
   getFieldValue,
-  getPosition,
   getTemp,
   isLoading,
   isSuccess,
@@ -36,13 +29,14 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo } from "react";
 import { getDocs } from "../server";
-import { api, useFocused } from "../apis";
+import { snapbuyApi } from "../apis";
 import { PopupProduct } from "./PopupProduct";
 import { fuzzyRankedSearch } from "../utils";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRender } from "./ProductRender";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { getStoreId, useStoreId } from "../App";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
   "colors",
@@ -71,17 +65,17 @@ export const KeyLine = ({ prodKey, onChange, value }: KeyLineProps) => {
   }, [state.get]);
   return (
     <div className="flex items-center gap-2 p-2">
-      <BooleanFeild state={state} id={`${prodKey}-key`} />
+      <BooleanField state={state} id={`${prodKey}-key`} />
       <span className="text-xl capitalize">{prodKey}</span>
     </div>
   );
 };
 export const ExportExcelPopupProducts = () => {
   var keys = useCopyState<(keyof SnapBuy.Product)[]>([]);
-  var action = useAction(
+  const action = useAction(
     "export-products",
     async () => {
-      var products = await api.getAllProducts();
+      var products = await snapbuyApi.getAllProducts();
       await exportExcel(products, keys.get);
     },
     [keys.get]
@@ -176,56 +170,67 @@ const exportExcel = async (
   saveAs(blob, "products.xlsx");
 };
 export const loadFromExcel = async (file: string) => {
-  showPopup(
-    <ExcelPopup
-      uri={file}
-      options={[
-        "id",
-        "name",
-        "description",
-        "category",
-        "available",
-        "limited",
-        "themeId",
-        "price",
-        "quantity",
-      ]}
-      onChange={(json) => {
-        showPopup(
-          <PopupProduct
-            products={json.map(({ price, ...all }) => {
-              return {
-                ...all,
-                single: {
-                  price,
-                },
-                type: "single",
-                photos: [],
-              };
-            })}
-            file={file}
-          />
-        );
-      }}
-      title="Excel File"
-    />
-  );
+  const storeId = getStoreId();
+  if (storeId)
+    showPopup(
+      <ExcelPopup
+        uri={file}
+        options={[
+          "id",
+          "name",
+          "description",
+          "category",
+          "available",
+          "limited",
+          "themeId",
+          "price",
+          "quantity",
+        ]}
+        onChange={(json) => {
+          showPopup(
+            <PopupProduct
+              products={json.map(({ price, ...all }) => {
+                return {
+                  ...all,
+                  single: {
+                    price,
+                  },
+                  type: "single",
+                  photos: [],
+                  storeId,
+                };
+              })}
+              file={file}
+            />
+          );
+        }}
+        title="Excel File"
+      />
+    );
 };
+
 const PAGE_SIZE = 20;
 export const Products = () => {
   const user = useUser();
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
   const lastDoc = useCopyState<SnapBuy.Product | null>(null);
   const hasMore = useCopyState(true);
+  const storeId = useStoreId();
   const action = useAction(
     "fetch-products",
     async (next = false) => {
+      if (!storeId) {
+        return;
+      }
       if (!user?.uid) return;
       await delay(300);
       const newProducts = await getDocs<SnapBuy.Product>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
         {
-          where: and(where("uid", "==", user.uid)),
+          where: and(
+            where("uid", "==", user.uid),
+            where("storeId", "==", storeId) // Assuming storeId is the same as uid
+          ),
           orders: mergeArray(orderBy("id", "asc")),
           limit: PAGE_SIZE,
           startAt: next && lastDoc.get?.id && mergeArray(lastDoc.get?.id),
@@ -243,7 +248,7 @@ export const Products = () => {
       lastDoc.set(lastDocRef ? lastDocRef : null);
       hasMore.set(newProducts.length === PAGE_SIZE);
     },
-    [user?.uid]
+    [user?.uid, storeId]
   );
   const success = isSuccess(action);
   useEffect(() => {
@@ -253,8 +258,6 @@ export const Products = () => {
   const showTools = useCopyState(false);
   // categorys
   // market
-  const typedMarket = getFieldValue("prod-category");
-  const positionMark = getPosition("prod-market-layout");
   // filtring
   const search = getFieldValue("producer-search-product");
   const filterProducts = useMemo(() => {
@@ -264,9 +267,8 @@ export const Products = () => {
     return fuzzyRankedSearch(search, products.get, "name");
   }, [search, products.get]);
   useEffect(() => {
-    if (user?.uid) return api.onCategoryAndMarketChange(user?.uid);
+    if (user?.uid) return snapbuyApi.onCategoryAndMarketChange(user?.uid);
   }, [user]);
-  const focused = useFocused();
   const canDelete = getTemp<string>("canDeleteProduct");
   const loading = isLoading(action);
   return (

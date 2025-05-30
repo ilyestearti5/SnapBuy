@@ -72,12 +72,12 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
   const uid = product.uid!;
   const currentCount = getFieldValue("prod-count");
   const cartCount = useCartCount(uid, product.id);
+  const photos = product.photos || [];
+  const priceDetected = getPrice(prod, +(currentCount || ""));
   useEffect(() => {
     setFocused("prod-count");
     setFieldValue("prod-count", (cartCount || 1).toString());
   }, [cartCount]);
-  var photos = product.photos || [];
-  const priceDetected = getPrice(prod, +(currentCount || ""));
   return (
     <Card className="max-md:w-10/12 md:w-1/2 md:max-h-[70vh]">
       <div className="flex justify-between items-center p-2">
@@ -98,7 +98,10 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
       <Line />
       <div className="p-2 text-center">
         <span className="font-bold text-[--biqpod-success] text-2xl">
-          {priceDetected} DA
+          {priceDetected.total} DA{" "}
+          {priceDetected.choised && (
+            <sub>/ {priceDetected.choised.price} DA</sub>
+          )}
         </span>
       </div>
       <Line />

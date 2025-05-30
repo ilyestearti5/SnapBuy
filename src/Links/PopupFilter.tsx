@@ -1,10 +1,10 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  BooleanFeild,
+  BooleanField,
   Button,
   Card,
   CircleTip,
-  EnumFeild,
+  EnumField,
   Icon,
   Line,
   Scroll,
@@ -14,7 +14,7 @@ import { closePopup, useCopyState } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
-import { useCategories, useMarkets } from "../apis";
+import { useCategories } from "../apis";
 const filterFields = [
   {
     label: "Category",
@@ -130,7 +130,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
                 </div>
                 <Line />
                 <div className="flex justify-center items-center p-2">
-                  <BooleanFeild
+                  <BooleanField
                     state={isAvailable}
                     config={{
                       style: "checkbox",
@@ -166,7 +166,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
                 </div>
                 <Line />
                 <div className="p-2">
-                  <EnumFeild
+                  <EnumField
                     state={category}
                     config={{
                       list: (categories || []).map(({ category, emoji }) => {
@@ -195,7 +195,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
                 </div>
                 <Line />
                 <div className="p-2">
-                  <EnumFeild
+                  <EnumField
                     state={promoted}
                     config={{
                       list: ["promoted", "no promoted", "all"].map((status) => {

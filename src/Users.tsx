@@ -21,7 +21,7 @@ import { Link } from "react-router-dom";
 import { getDocs } from "./server";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { delay, mergeArray, tw } from "@biqpod/app/ui/utils";
-import { api } from "./apis";
+import { snapbuyApi } from "./apis";
 interface UserLineProps {
   user: Biqpod.Account.User;
 }
@@ -30,7 +30,7 @@ export const UserLine = ({ user }: UserLineProps) => {
   const isFollow = useCopyState<null | boolean>(null);
   useAsyncEffect(async () => {
     await delay(300);
-    const result = uid ? await api.isFollowing(uid) : false;
+    const result = uid ? await snapbuyApi.isFollowing(uid) : false;
     isFollow.set(!!result);
   }, []);
   return (
@@ -65,10 +65,10 @@ export const UserLine = ({ user }: UserLineProps) => {
               var state = isFollow.get;
               if (state) {
                 isFollow.set(null);
-                await api.unfollow(uid);
+                await snapbuyApi.unfollow(uid);
               } else {
                 isFollow.set(null);
-                await api.follow(uid);
+                await snapbuyApi.follow(uid);
               }
               await delay(300);
               isFollow.set(!state);
@@ -122,9 +122,11 @@ export const Users = () => {
   var action = useAction(
     "fetch-users",
     async (next = false) => {
-      console.log("fetch-users", next);
       if (hasMoreFollowes.get) {
-        const followes = await api.getFollowed(PAGE_SIZE, followesLastDoc.get);
+        const followes = await snapbuyApi.getFollowed(
+          PAGE_SIZE,
+          followesLastDoc.get
+        );
         if (!followes) {
           return;
         }

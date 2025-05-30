@@ -6,6 +6,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import {
   deleteDoc,
+  functions,
   getCurrentAuth,
   getDoc,
   getDocs,
@@ -15,13 +16,7 @@ import {
   uploadFile,
 } from "../server";
 import { Biqpod } from "@biqpod/app/ui/types";
-import {
-  and,
-  getFunction,
-  getUserFunction,
-  orderBy,
-  where,
-} from "@biqpod/app/ui/apis";
+import { and, orderBy, Path, where } from "@biqpod/app/ui/apis";
 import {
   delay,
   mapAsync,
@@ -51,8 +46,44 @@ export interface CreateOrderOptions {
   client: SnapBuy.Client;
   key: string;
 }
+
+export const buildFunction = (name: string) => {
+  return {
+    getUserFunction: async <T, R = any>(fnId: string) => {
+      return await functions.getUserFunction<T, R>([name, fnId].join("-"));
+    },
+    getFunction: async <T, R = any>(fnId: string) => {
+      return await functions.getFunction<T, R>([name, fnId].join("-"));
+    },
+  };
+};
+
+const { getUserFunction, getFunction } = buildFunction("snapbuy");
+
+const uploadFiles = async (
+  images: string[],
+  collection: (index: number) => Path
+) => {
+  const photos = await mapAsync(images, async (photo, index) => {
+    if (photo.startsWith("data:")) {
+      const blob = await fetch(photo).then((s) => s.blob());
+      const ref = [
+        "projects",
+        import.meta.env.VITE_PROJECT_ID,
+        collection(index),
+      ];
+      await uploadFile(ref, blob);
+      const result = await getDownloadURL(ref);
+      return result!;
+    } else {
+      return photo;
+    }
+  });
+  return photos;
+};
+
 export type Duration = keyof PlanRecord["duration"];
-export const api = {
+export const snapbuyApi = {
   async getProduct(productId: string) {
     const product = getTempFromStore<SnapBuy.Product>("products." + productId);
     if (!product) {
@@ -82,10 +113,108 @@ export const api = {
       products?.map((product) => ({ ...product.data, id: product.id })) || []
     );
   },
+  async addStore(store: SnapBuy.Store) {
+    const { address = null, name = null, phone = null, photo = null } = store;
+    const uid = await getCurrentAuth();
+    if (!uid) throw "User not authenticated";
+    var image: string | null = null;
+    if (photo) {
+      const [file] = await uploadFiles([photo], () => {
+        return [
+          "projects",
+          import.meta.env.VITE_PROJECT_ID,
+          "stores",
+          store.id,
+        ];
+      });
+      image = file;
+    }
+    await setDoc(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "stores", store.id],
+      {
+        id: store.id,
+        address,
+        name,
+        phone,
+        photo: image,
+        uid,
+      }
+    );
+  },
+  deleteStore: async (id: string) => {
+    const fn = await getUserFunction("delete-store");
+    await fn?.({
+      id,
+    });
+  },
+  async deleteAccount(accountId: string) {
+    await deleteDoc([
+      "projects",
+      import.meta.env.VITE_PROJECT_ID,
+      "accounts",
+      accountId,
+    ]);
+  },
+  async updateStore(storeId: string, store: Partial<SnapBuy.Store>) {
+    const { address = null, name = null, phone = null, photo = null } = store;
+    const uid = await getCurrentAuth();
+    if (!uid) throw "User not authenticated";
+    var image: string | null = null;
+    if (photo) {
+      const [file] = await uploadFiles([photo], () => {
+        return ["projects", import.meta.env.VITE_PROJECT_ID, "stores", storeId];
+      });
+      image = file;
+    }
+    await setDoc(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "stores", storeId],
+      {
+        id: storeId,
+        address,
+        name,
+        phone,
+        photo: image,
+        uid,
+      }
+    );
+  },
+  async upsertAccount(account: SnapBuy.Account) {
+    const uid = await getCurrentAuth();
+    if (!uid) throw "User not authenticated";
+    const { id = crypto.randomUUID(), ...rest } = account;
+    await setDoc(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "accounts", id],
+      {
+        ...rest,
+        id,
+        uid,
+      }
+    );
+  },
+  async getStores() {
+    const uid = await getCurrentAuth();
+    if (!uid) throw "User not authenticated";
+    const stores = await getDocs<SnapBuy.Store>(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "stores"],
+      {
+        where: and(where("uid", "==", uid)),
+      }
+    );
+    return stores?.map((store) => ({ ...store.data, id: store.id })) || [];
+  },
+  async getStoresOf(uid: string) {
+    const stores = await getDocs<SnapBuy.Store>(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "stores"],
+      {
+        where: and(where("uid", "==", uid)),
+      }
+    );
+    return stores?.map((store) => ({ ...store.data, id: store.id })) || [];
+  },
   async follow(followed: string) {
     const doFollow = await getUserFunction<{
       followed: string;
-    }>("snapbuy-follow");
+    }>("follow");
     await doFollow?.({
       followed,
     });
@@ -93,19 +222,19 @@ export const api = {
   async unfollow(followed: string) {
     const doUnfollow = await getUserFunction<{
       followed: string;
-    }>("snapbuy-unfollow");
+    }>("unfollow");
     await doUnfollow?.({
       followed,
     });
   },
   async isFollowing(followed: string) {
-    const isFollowing = await getUserFunction<boolean>("snapbuy-is-following");
+    const isFollowing = await getUserFunction<boolean>("is-following");
     return isFollowing?.({
       followed,
     });
   },
   async getOrder(orderId: string) {
-    const fn = await getUserFunction<SnapBuy.Order>("snapbuy-get-order");
+    const fn = await getUserFunction<SnapBuy.Order>("get-order");
     const order = await fn?.({
       orderId,
     });
@@ -138,6 +267,7 @@ export const api = {
     });
   },
   async upsertProducts(
+    storeId: string,
     products: Partial<SnapBuy.Product>[],
     onBeforeStart?: (
       product: Partial<SnapBuy.Product>,
@@ -173,21 +303,8 @@ export const api = {
         return onBeforeStart?.(product, index);
       });
       !categorys.includes(category) && categorys.push(category);
-      const photos = await mapAsync(images, async (photo) => {
-        if (photo.startsWith("data:")) {
-          const blob = await fetch(photo).then((s) => s.blob());
-          const ref = [
-            "projects",
-            import.meta.env.VITE_PROJECT_ID,
-            "products",
-            product.id + " " + Date.now(),
-          ];
-          await uploadFile(ref, blob);
-          const result = await getDownloadURL(ref);
-          return result!;
-        } else {
-          return photo;
-        }
+      const photos = await uploadFiles(images, (index) => {
+        return ["products", prodId + " " + Date.now(), "photos", "" + index];
       });
       await setDoc(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products", prodId],
@@ -206,6 +323,7 @@ export const api = {
           theme,
           type,
           uid,
+          storeId,
         }
       );
     });
@@ -228,13 +346,13 @@ export const api = {
     );
   },
   async deleteProduct(productId: string) {
-    const deleteProduct = await getUserFunction("snapbuy-delete-product");
+    const deleteProduct = await getUserFunction("delete-product");
     await deleteProduct?.({
       id: productId,
     });
   },
   async createOrder(order: CreateOrderOptions) {
-    const createOrder = await getUserFunction("snapbuy-create-order");
+    const createOrder = await getFunction("create-order");
     await createOrder?.(order);
   },
   async getOrderProducts(orderId: string) {
@@ -242,28 +360,26 @@ export const api = {
       count: number;
       price: number;
     }
-    const fn = await getUserFunction<ProductsResult[]>(
-      "snapbuy-get-order-products"
-    );
+    const fn = await getUserFunction<ProductsResult[]>("get-order-products");
     const products = await fn?.({
       orderId,
     });
     return products;
   },
-  async todayOrdersCount() {
-    const fn = await getUserFunction<number>("snapbuy-get-today-orders-count");
-    const result = await fn?.({});
+  async todayOrdersCount(storeId: string) {
+    const fn = await getUserFunction<number>("get-today-orders-count");
+    const result = await fn?.({
+      storeId,
+    });
     return result;
   },
   async getPlans() {
-    const getPlans = await getFunction<Plan>("snapbuy-get-plans");
+    const getPlans = await getFunction<Plan>("get-plans");
     const result = await getPlans?.({});
     return result;
   },
   async subscribe(plan: keyof Plan, duration: Duration) {
-    const snapbuySub = await getUserFunction<{ url: string }>(
-      "snapbuy-subscribe"
-    );
+    const snapbuySub = await getUserFunction<{ url: string }>("subscribe");
     const result = await snapbuySub?.({
       plan,
       duration,
@@ -276,20 +392,26 @@ export const api = {
     }
   },
   async isSubscribed() {
-    const snapbuySub = await getUserFunction<{
+    const uid = await getCurrentAuth();
+    if (!uid) {
+      return undefined;
+    }
+    const snapbuySub = await functions.getUserFunction<{
       isSubscribed: boolean;
+      label?: string;
+      duration?: number;
     }>("check-user-subscribed");
     const result = await snapbuySub?.({
       projectId: import.meta.env.VITE_PROJECT_ID,
     });
-    return !!result?.isSubscribed;
+    return result;
   },
-  async getSales() {
+  async getSales(storeId: string) {
     const days = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
-    const getSales = await getUserFunction<number[]>(
-      "snapbuy-get-sales-of-week"
-    );
-    const sales = await getSales?.({});
+    const getSales = await getUserFunction<number[]>("get-sales-of-week");
+    const sales = await getSales?.({
+      storeId,
+    });
     return sales?.map((s, index) => {
       return {
         day: days[index],
@@ -297,12 +419,12 @@ export const api = {
       };
     });
   },
-  async getOverview(): Promise<OverviewProps | undefined> {
+  async getOverview(storeId: string): Promise<OverviewProps | undefined> {
     await delay(1500);
-    const getOverview = await getUserFunction<OverviewProps>(
-      "snapbuy-get-overview"
-    );
-    const result = await getOverview?.({});
+    const getOverview = await getUserFunction<OverviewProps>("get-overview");
+    const result = await getOverview?.({
+      storeId,
+    });
     return result || undefined;
   },
   async getCategories() {
@@ -373,7 +495,7 @@ export const api = {
 };
 export const useCategories = () => {
   return useAsyncMemo(async () => {
-    return api.getCategories();
+    return snapbuyApi.getCategories();
   }, []);
 };
 export const useMarkets = () => {

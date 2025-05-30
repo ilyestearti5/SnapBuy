@@ -20,7 +20,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@biqpod/app": "^0.0.3",
+    "@biqpod/app": "^0.0.8",
     "@capacitor-community/camera-preview": "^7.0.1",
     "@capacitor/android": "^7.2.0",
     "@capacitor/app": "^7.0.1",
@@ -30,6 +30,7 @@
     "@capacitor/core": "^7.2.0",
     "@capacitor/device": "^7.0.1",
     "@capacitor/geolocation": "^7.1.2",
+    "@capacitor/ios": "^7.2.0",
     "@capacitor/status-bar": "^7.0.1",
     "@capgo/capacitor-navigation-bar": "^7.1.8",
     "@tanstack/react-virtual": "^3.13.8",

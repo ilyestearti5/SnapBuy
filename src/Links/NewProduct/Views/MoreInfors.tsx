@@ -1,20 +1,21 @@
-import React, { useMemo } from "react";
+import { createRef, useEffect, useMemo } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  ArrayFeild,
+  ArrayField,
   CircleTip,
   EmptyComponent,
-  FilterFeild,
   Line,
   Scroll,
   Translate,
+  FilterField,
 } from "@biqpod/app/ui/components";
 import { useColorMerge, useCopyState, useTemp } from "@biqpod/app/ui/hooks";
 import { SettingValueType } from "@biqpod/app/ui/types";
 import { delay } from "@biqpod/app/ui/utils";
-export const PostMoreInfo = () => {
+import { ProductFormSectionProps } from "../NewProduct";
+export const PostMoreInfo = ({ product }: ProductFormSectionProps) => {
   const exts = useTemp<SettingValueType["filter"]>("post-extrainformation");
-  const extraInformation = React.useMemo(
+  const extraInformation = useMemo(
     () => (exts.get ? exts.get : []),
     [exts.get]
   );
@@ -24,7 +25,29 @@ export const PostMoreInfo = () => {
   const colors = useMemo(() => colorsState.get || [], [colorsState.get]);
   const colorMerge = useColorMerge();
   const choisedColor = useCopyState<string | null>(null);
-  const inputColorElement = React.createRef<HTMLInputElement>();
+  const inputColorElement = createRef<HTMLInputElement>();
+  useEffect(() => {
+    var fullListFilter: string[] = [];
+    if (product?.colors?.length) {
+      colorsState.set(product.colors);
+      fullListFilter.push("colors");
+    } else {
+      colorsState.set([]);
+    }
+    if (product?.sizes?.length) {
+      sizesState.set(product.sizes);
+      fullListFilter.push("sizes");
+    } else {
+      sizesState.set([]);
+    }
+    if (product?.keys?.length) {
+      keysState.set(product.keys);
+      fullListFilter.push("keys");
+    } else {
+      keysState.set([]);
+    }
+    exts.set(fullListFilter);
+  }, []);
   return (
     <div className="flex flex-col overflow-hidden">
       <div className="flex flex-col gap-1 p-1">
@@ -36,7 +59,7 @@ export const PostMoreInfo = () => {
             <Translate content="extra information" /> :
           </label>
           <div className="relative w-full">
-            <FilterFeild
+            <FilterField
               state={exts}
               config={{
                 list: [
@@ -153,7 +176,7 @@ export const PostMoreInfo = () => {
                 <Translate content="Sizes" /> :
               </label>
               <div className="relative w-full">
-                <FilterFeild
+                <FilterField
                   state={sizesState}
                   id="post-sizes"
                   config={{
@@ -201,7 +224,7 @@ export const PostMoreInfo = () => {
                 <Translate content="Keys" /> :
               </label>
               <div className="relative w-full h-fit">
-                <ArrayFeild state={keysState} config={{}} id="post-keys" />
+                <ArrayField state={keysState} config={{}} id="post-keys" />
               </div>
             </div>
           </EmptyComponent>

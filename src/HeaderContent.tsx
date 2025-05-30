@@ -1,7 +1,6 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import { isDesktop } from "@biqpod/app/ui/app";
 import {
-  Anchor,
   AsyncComponent,
   CardWait,
   CircleTip,
@@ -9,52 +8,57 @@ import {
   EmptyComponent,
   Icon,
   Image,
-  JoinComponentBy,
   Translate,
   WindowControls,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
   execAction,
-  getTemp,
   openMenu,
   setSettingValue,
   setTemp,
   showProfile,
+  showSetting,
+  showToast,
   useAction,
   useAsyncMemo,
   useCopyState,
+  useDeviceResolution,
   useSettingValue,
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { cloud, getDoc } from "./server";
 import { useHistory, useLocation } from "react-router";
-import { api } from "./apis";
+import { snapbuyApi } from "./apis";
 import { useEffect, useMemo } from "react";
 import { delay, mergeArray, tw } from "@biqpod/app/ui/utils";
 import { Biqpod, OpenMenuProps } from "@biqpod/app/ui/types";
 import { Link } from "react-router-dom";
-export const useIsSubed = () => {
-  return getTemp<boolean>("is-subed");
-};
+import { useStoreId } from "./App";
+import { initStoreIdSave } from "./utils";
 export const HeaderContent = () => {
+  initStoreIdSave();
   const user = useUser();
   const isDark = useSettingValue("window/dark.boolean");
   const productAddText = useCopyState("");
   const loc = useLocation();
+  const storeId = useStoreId();
   useAction(
     "add-products",
     async ({ exists = [], news = [] }: AddProductActionProps) => {
-      console.log({ exists, news });
+      if (!storeId) {
+        showToast("Store not found");
+        return;
+      }
       closePopup();
       productAddText.set("Adding News products...");
-      await api.upsertProducts(news, (product, index) => {
+      await snapbuyApi.upsertProducts(storeId, news, (product, index) => {
         productAddText.set(
           `Adding ${product.name?.slice(0, 10)} ${index + 1}/${news.length} ...`
         );
       });
       productAddText.set("Adding Exists products...");
-      await api.upsertProducts(exists, (product, index) => {
+      await snapbuyApi.upsertProducts(storeId, exists, (product, index) => {
         productAddText.set(
           `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
             exists.length
@@ -64,7 +68,7 @@ export const HeaderContent = () => {
       productAddText.set("");
       execAction("fetch-products");
     },
-    []
+    [storeId]
   );
   const hist = useHistory();
   const selectedTab = useMemo(() => {
@@ -83,15 +87,13 @@ export const HeaderContent = () => {
   const isProduct = useMemo(() => {
     return loc.pathname.startsWith("/product");
   }, [loc.pathname]);
-
-  const isSubed = useAsyncMemo(() => {
-    return api.isSubscribed();
+  const subed = useAsyncMemo(() => {
+    return snapbuyApi.isSubscribed();
   }, [user]);
-
   useEffect(() => {
-    setTemp("is-subed", isSubed);
-  }, [isSubed]);
-
+    setTemp("subed", subed);
+  }, [subed]);
+  const { isMobile } = useDeviceResolution();
   return (
     <EmptyComponent>
       <div className="flex justify-between items-center px-4 w-full">
@@ -178,7 +180,7 @@ export const HeaderContent = () => {
                       },
                       defaultIcon: allIcons.solid.faMoneyBill,
                     },
-                    {
+                    user && {
                       defaultIcon: allIcons.solid.faSignOutAlt,
                       label: "Logout",
                       click() {
@@ -186,14 +188,28 @@ export const HeaderContent = () => {
                       },
                     },
                     {
+                      label: "Send Feedback",
+                      click() {
+                        document.getElementById("feedback")?.click();
+                      },
+                      defaultIcon: allIcons.solid.faComment,
+                    },
+                    isMobile && {
                       type: "separator",
                     },
-                    {
-                      label: "Dark Mode",
+                    isMobile && {
+                      label: "Dark / Light",
                       checked: !!isDark,
                       click() {
                         setSettingValue("window/dark.boolean", !isDark);
                       },
+                    },
+                    {
+                      label: "Choos Language",
+                      click() {
+                        showSetting("window/lang.enum");
+                      },
+                      defaultIcon: allIcons.solid.faEarth,
                     }
                   ),
                 });
@@ -208,7 +224,8 @@ export const HeaderContent = () => {
               }}
               className={tw(
                 "relative rounded-full w-[35px] h-[35px] overflow-hidden cursor-pointer",
-                isSubed && "outline-4 outline-offset-0 outline-red-500"
+                subed?.isSubscribed &&
+                  "outline-4 outline-offset-0 outline-red-500"
               )}
             >
               <Image
@@ -222,6 +239,7 @@ export const HeaderContent = () => {
       {isDesktop && <WindowControls />}
       <Link to="/profile" id="home" />
       <Link to="/plans" id="plans" />
+      <Link to="/feedbacks" id="feedback" />
     </EmptyComponent>
   );
 };

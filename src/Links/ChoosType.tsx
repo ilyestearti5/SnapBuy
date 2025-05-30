@@ -7,12 +7,7 @@ import {
   Line,
   Translate,
 } from "@biqpod/app/ui/components";
-import {
-  closePopup,
-  showToast,
-  useColorMerge,
-  useCopyState,
-} from "@biqpod/app/ui/hooks";
+import { closePopup, showToast, useCopyState } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
 import { tw } from "@biqpod/app/ui/utils";
 export interface ChoosTypeProps {

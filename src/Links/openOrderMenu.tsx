@@ -1,13 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  EmptyComponent,
-  Translate,
-  Line,
-  JoinComponentBy,
-  Icon,
-  Button,
-} from "@biqpod/app/ui/components";
-import {
   openMenu,
   showBottomSheet,
   showPopup,
@@ -17,6 +9,7 @@ import { ChangeStatus } from "../ChangeStatus";
 import { OrderView } from "../Clients/OrderView";
 import { OrderInvoice } from "./OrderInvoice";
 import { mergeArray } from "@biqpod/app/ui/utils";
+import { ViewClient } from "./ViewClient";
 interface OpenOrderMenuOptions {
   x: number;
   y: number;
@@ -31,53 +24,7 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
         label: "View Client",
         defaultIcon: allIcons.solid.faUser,
         click() {
-          var address = order.client?.place.address
-            .split(",")
-            .map((item) => item.trim())
-            .reverse();
-          showBottomSheet(
-            <EmptyComponent>
-              <div className="p-4">
-                <h1 className="text-2xl">
-                  {order.client?.firstname} {order.client?.lastname}
-                </h1>
-                <div className="flex flex-col gap-2">
-                  <span>
-                    <Translate content="phone" />: {order.client?.phone}
-                  </span>
-                </div>
-              </div>
-              <Line />
-              <div className="flex flex-wrap items-center gap-2 p-4">
-                <JoinComponentBy
-                  list={address.map((add) => {
-                    return (
-                      <span className="bg-[--biqpod-gray-opacity] px-4 py-1 rounded-full">
-                        {add}
-                      </span>
-                    );
-                  })}
-                  joinComponent={<Icon icon={allIcons.solid.faEllipsisH} />}
-                />
-              </div>
-              <Line />
-              <div className="p-4">
-                <Button
-                  onClick={async () => {
-                    var a = document.createElement("a");
-                    var address = order.client?.place.address;
-                    // open google map for specific address
-                    a.href = `https://www.google.com/maps/search/?api=1&query=${address}`;
-                    a.target = "_blank";
-                    a.click();
-                  }}
-                  icon={allIcons.solid.faMapLocationDot}
-                >
-                  <Translate content="open in maps" />
-                </Button>
-              </div>
-            </EmptyComponent>
-          );
+          showBottomSheet(<ViewClient order={order} />);
         },
       },
       {
@@ -108,7 +55,7 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
       },
       {
         defaultIcon: allIcons.solid.faPrint,
-        label: "print",
+        label: "Print",
         click: () => {
           showPopup(<OrderInvoice order={order} />);
         },

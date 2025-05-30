@@ -3,7 +3,7 @@ import {
   Button,
   CardWait,
   EmptyComponent,
-  FilterFeild,
+  FilterField,
   Line,
   MarkDown,
   Scroll,
@@ -20,7 +20,7 @@ import {
 import { tw } from "@biqpod/app/ui/utils";
 import { Nothing } from "@biqpod/app/ui/types";
 import { useParams } from "react-router";
-import { api } from "../apis";
+import { snapbuyApi } from "../apis";
 import { AddProductInCart, useCartCount } from "../AddProductToCart";
 import { CartPopup } from "../CartPopup";
 import { ImageSlider } from "./ImageSlider";
@@ -28,11 +28,10 @@ import { FormSection } from "./FormSection";
 export const ProductRoute = () => {
   const colorMerge = useColorMerge();
   const sizes = useCopyState<string[] | Nothing>([]);
-  const keys = useCopyState<string[] | Nothing>([]);
   const colors = useCopyState<string[] | Nothing>([]);
   const prodId = useParams<{ prodId: string }>().prodId;
   const product = useAsyncMemo(async () => {
-    return await api.getProduct(prodId);
+    return await snapbuyApi.getProduct(prodId);
   }, [prodId]);
   const cart = useCartCount(product?.uid || "", product?.id || "");
   useAsyncEffect(async () => {
@@ -52,7 +51,9 @@ export const ProductRoute = () => {
       {product && (
         <EmptyComponent>
           <Scroll>
-            <ImageSlider photos={product?.photos || []} />
+            <div className="h-[40vh]">
+              <ImageSlider photos={product?.photos || []} />
+            </div>
             <FormSection title="description : " />
             <div className="p-4">
               <MarkDown
@@ -68,18 +69,7 @@ export const ProductRoute = () => {
                       const isSelected =
                         colors.get && colors.get.includes(color);
                       return (
-                        <div
-                          key={index}
-                          onClick={() => {
-                            // if (isSelected) {
-                            //   colors.set((clrs) =>
-                            //     clrs.filter((clr) => clr != color)
-                            //   );
-                            // } else {
-                            //   colors.set((prv) => [...prv, color]);
-                            // }
-                          }}
-                        >
+                        <div key={index} onClick={() => {}}>
                           <div
                             className={tw(
                               "rounded-full outline-1 outline-solid outline-offset-2 w-[20px] h-[20px] transition-[outline-width] cursor-pointer",
@@ -108,30 +98,11 @@ export const ProductRoute = () => {
               <EmptyComponent>
                 <FormSection title="sizes" />
                 <div className="flex flex-wrap justify-center gap-2 p-2">
-                  <FilterFeild
+                  <FilterField
                     state={sizes}
                     id="sizes-request"
                     config={{
                       list: product.sizes.map((size) => {
-                        return {
-                          content: size.toUpperCase(),
-                          value: size,
-                        };
-                      }),
-                    }}
-                  />
-                </div>
-              </EmptyComponent>
-            )}
-            {!!product?.keys?.length && (
-              <EmptyComponent>
-                <FormSection title="keys" />
-                <div className="flex flex-wrap justify-center gap-2 p-2">
-                  <FilterFeild
-                    state={keys}
-                    id="keys-request"
-                    config={{
-                      list: product.keys.map((size) => {
                         return {
                           content: size.toUpperCase(),
                           value: size,

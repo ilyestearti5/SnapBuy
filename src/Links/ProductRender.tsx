@@ -23,36 +23,84 @@ import {
 import { Biqpod } from "@biqpod/app/ui/types";
 import { mapAsync, mergeObject, tw } from "@biqpod/app/ui/utils";
 import { useMemo, useEffect } from "react";
-import { api } from "../apis";
-import { getPrice } from "../CartPopup";
+import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
-import { isDesktop } from "@biqpod/app/ui/app";
 import { ImageSlider } from "./ImageSlider";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
 }
+const sharSocialMedia = [
+  {
+    name: "Facebook",
+    icon: allIcons.brands.faFacebook,
+    link: "https://web.facebook.com/share_channel/?type=reshare&link={link}&app_id=87741124305&source_surface=external_reshare&display=popup&hashtag#",
+  },
+  {
+    name: "Twitter",
+    icon: allIcons.brands.faTwitter,
+    link: "https://twitter.com/intent/tweet?url={link}",
+  },
+  {
+    name: "LinkedIn",
+    icon: allIcons.brands.faLinkedin,
+    link: "https://www.linkedin.com/shareArticle?mini=true&url={link}",
+  },
+  {
+    name: "WhatsApp",
+    icon: allIcons.brands.faWhatsapp,
+    link: "https://api.whatsapp.com/send?text={link}",
+  },
+  {
+    name: "Telegram",
+    icon: allIcons.brands.faTelegram,
+    link: "https://t.me/share/url?url={link}",
+  },
+  {
+    name: "Instagram",
+    icon: allIcons.brands.faInstagram,
+    link: "https://www.instagram.com/?url={link}",
+  },
+  {
+    name: "Snapchat",
+    icon: allIcons.brands.faSnapchatGhost,
+    link: "https://snapchat.com/share?text={link}",
+  },
+  {
+    name: "Pinterest",
+    icon: allIcons.brands.faPinterest,
+    link: "https://pinterest.com/pin/create/button/?url={link}",
+  },
+];
 const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
   const available = useCopyState(false);
-  var colors = useMemo(() => {
-    return Object.entries(product.theme || {}).map(([name, color]) => {
-      return {
-        name,
-        color,
-      };
-    });
-  }, []);
+  var uri = new URL(location.href);
+  uri.pathname = "/product/" + product.id;
   return (
     <EmptyComponent>
       <div className="p-2 font-bold text-3xl uppercase">
         <Translate content="actions" />
       </div>
       <Line />
-      <div className="p-2">
-        {colors.map(({ name, color }) => {
+      <div className="flex gap-2 p-2 overflow-x-auto">
+        {sharSocialMedia.map(({ name, icon, link }) => {
+          const u = link.replace("{link}", encodeURIComponent(uri.href));
           return (
             <div
               key={name}
-              className="inline-flex items-center gap-2 hover:bg-[--biqpod-gray-opacity] p-2 rounded-lg cursor-pointer"
+              className="inline-flex justify-center items-center gap-2 bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-solid rounded-lg w-[50px] h-[50px] text-2xl cursor-pointer"
+              onClick={() => {
+                window.open(u, "_blank");
+              }}
+            >
+              <Icon icon={icon} />
+            </div>
+          );
+        })}
+        {/* {colors.map(({ name, color }) => {
+          return (
+            <div
+              key={name}
+              className="inline-flex items-center gap-2 active:bg-[--biqpod-gray-opacity] p-2 rounded-lg cursor-pointer"
               onClick={() => {
                 navigator.clipboard.writeText(color);
                 showToast("Color Copied :)");
@@ -67,7 +115,7 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
             </div>
           );
         })}
-        {colors.length == 0 && <Translate content="no colors ther is" />}
+        {colors.length == 0 && <Translate content="no colors ther is" />} */}
       </div>
       <Line />
       {[
@@ -75,11 +123,10 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           label: "Share",
           defaultIcon: allIcons.solid.faShare,
           async click() {
-            var url = location.origin + "/product/" + product.id;
             await navigator.share({
               title: product.name,
               text: product.description || "",
-              url,
+              url: uri.href,
             });
           },
         },
@@ -87,9 +134,7 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           label: "Link",
           defaultIcon: allIcons.regular.faCopy,
           click: async () => {
-            await navigator.clipboard.writeText(
-              location.origin + "/product/" + product.id
-            );
+            await navigator.clipboard.writeText(uri.href);
             showToast("Link Copied :)");
           },
         },
@@ -116,7 +161,7 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           label: product.available ? "Set Unavailable" : "Set Available",
           click: async () => {
             var isAvailable = !available.get;
-            await api.upsertProducts([
+            await snapbuyApi.upsertProducts(product.storeId, [
               {
                 id: product.id,
                 available: isAvailable,
@@ -141,7 +186,7 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
         {
           label: "Delete Product",
           click: async () => {
-            await api.deleteProduct(product.id);
+            await snapbuyApi.deleteProduct(product.id);
             execAction("fetch-products");
             showToast("Product Deleted");
           },
@@ -164,7 +209,9 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
               icon={defaultIcon || allIcons.solid.faHiking}
               iconClassName={tw(!defaultIcon && "invisible")}
             />
-            <span>{label}</span>
+            <span>
+              <Translate content={label || ""} />
+            </span>
           </div>
         );
       })}
@@ -194,8 +241,10 @@ export const ProductRender = ({ product }: ProductRenderProps) => {
     setTemp("canDeleteProduct", isStartChange ? product.id : null);
   }, [isStartChange]);
   const photos = product.photos || [];
-  const price = getPrice(product);
+  const prices = product.multiple?.prices || [];
+  const price = product.single?.price || 0;
   const isFullWidth = getTemp<boolean>("isFullWidth");
+  const isPromotion = product.type === "multiple";
   return (
     <Mouseable
       // onMoving={changePosition.set}
@@ -256,6 +305,14 @@ export const ProductRender = ({ product }: ProductRenderProps) => {
               <Translate content="available" />
             </div>
           )}
+          {isPromotion && (
+            <div className="inline-flex top-0 left-0 absolute items-center gap-2 bg-red-600 px-3 py-1 rounded-ee-2xl text-white capitalize">
+              <Icon icon={allIcons.solid.faTag} />
+              <span>
+                <Translate content="promotion" />
+              </span>
+            </div>
+          )}
           {product.type === "multiple" && (
             <div className="inline-flex top-0 left-0 absolute items-center gap-1 bg-red-700 px-3 py-1 rounded-ee-2xl text-white capitalize">
               <Icon icon={allIcons.solid.faTag} />
@@ -269,7 +326,35 @@ export const ProductRender = ({ product }: ProductRenderProps) => {
         <div className="p-2 max-md:p-1">{product.name}</div>
         <Line />
         <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
-          <span className="font-bold text-[--biqpod-success]">{price} DA</span>
+          {!isPromotion && (
+            <span className="font-bold text-[--biqpod-success] max-md:text-lg text-2xl">
+              {price} DA
+            </span>
+          )}
+          {isPromotion && (
+            <div className="flex flex-wrap gap-2">
+              {prices
+                .sort((price1, price2) => {
+                  return price1.quantity - price2.quantity;
+                })
+                .map((price, index) => {
+                  return (
+                    <div
+                      key={index}
+                      className="bg-[--biqpod-gray-opacity] px-3 py-1 rounded-full max-md:text-md text-xl"
+                    >
+                      <span className="text-[--biqpod-success]">
+                        {price.price} DA
+                      </span>{" "}
+                      <sub>
+                        {"<"}
+                        {price.quantity}
+                      </sub>
+                    </div>
+                  );
+                })}
+            </div>
+          )}
           <CircleTip
             icon={allIcons.solid.faEllipsisVertical}
             onClick={() => {

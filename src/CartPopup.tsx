@@ -29,9 +29,9 @@ import {
   visibilityTemp,
 } from "@biqpod/app/ui/hooks";
 import { deleteCart, useCart, useFullCart } from "./AddProductToCart";
-import { api, CreateOrderOptions } from "./apis";
+import { snapbuyApi, CreateOrderOptions } from "./apis";
 import { useEffect, useMemo } from "react";
-import { mapAsync, setFocused, tw } from "@biqpod/app/ui/utils";
+import { mapAsync, mergeArray, setFocused, tw } from "@biqpod/app/ui/utils";
 import { Nothing } from "@biqpod/app/ui/types";
 import { CartLine } from "./CartLine";
 export interface ProductMore {
@@ -39,20 +39,37 @@ export interface ProductMore {
   count: number;
 }
 export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
+  var total = 0;
+  var choised:
+    | null
+    | Required<Required<SnapBuy.Product>["multiple"]>["prices"][number] = null;
+  var price: null | number = null;
   if (!product) {
-    return 0;
+    return {
+      total,
+      choised,
+      price,
+    };
   }
   if (product.type === "multiple") {
-    const prices = Array.from(product.multiple?.prices || []);
-    const price = prices
-      ?.sort((a, b) => {
-        return a.quantity - b.quantity;
-      })
-      ?.find((price) => price.quantity <= count);
-    return (price?.price || 0) * count;
+    var prices = mergeArray(product.multiple?.prices).flat();
+    choised =
+      prices
+        ?.sort((a, b) => {
+          return b.quantity - a.quantity;
+        })
+        ?.find((price) => price.quantity <= count) || null;
+    price = choised?.price || 0;
+    total = price * count;
   } else {
-    return (product.single?.price || 0) * count;
+    price = product.single?.price || 0;
+    total = price * count;
   }
+  return {
+    total,
+    price,
+    choised,
+  };
 };
 async function getAddressFromCoords(lat: number, lon: number) {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=fr`;
@@ -160,12 +177,12 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
       }
       const products: SnapBuy.Order["products"] = {};
       await mapAsync(Object.entries(carts), async ([prodId, value]) => {
-        const prod = await api.getProduct(prodId);
+        const prod = await snapbuyApi.getProduct(prodId);
         const price = getPrice(prod, value?.count);
         if (prod && products) {
           products[prodId] = {
             count: value?.count,
-            price: price,
+            price: price.total,
           };
         }
       });
@@ -183,7 +200,7 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
         },
         key: key || "",
       };
-      await api.createOrder(options);
+      await snapbuyApi.createOrder(options);
       closePopup();
       showToast("Order Created", "success");
       deleteCart(uid);

@@ -2,10 +2,9 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Card,
   CircleTip,
-  ExcelPopup,
   Translate,
   Line,
-  BooleanFeild,
+  BooleanField,
   Icon,
   Button,
 } from "@biqpod/app/ui/components";
@@ -14,27 +13,27 @@ import {
   useUser,
   useAsyncEffect,
   closePopup,
-  showPopup,
   execAction,
-  openDialog,
   confirm,
 } from "@biqpod/app/ui/hooks";
 import { doubleFilter } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
-import { api } from "../apis";
+import { snapbuyApi } from "../apis";
 import { loadFromExcel } from "./Products";
+import { useStoreId } from "../App";
 interface PopupProductProps {
   products: SnapBuy.Product[];
   file?: string;
 }
 export const PopupProduct = ({ products, file }: PopupProductProps) => {
+  const storeId = useStoreId();
   const existsState = useCopyState<null | boolean>(false);
   const newsState = useCopyState<null | boolean>(false);
   const user = useUser();
   const allProducts = useCopyState<SnapBuy.Product[] | null>(null);
   useAsyncEffect(async () => {
     if (!user?.uid) return allProducts.set(null);
-    const newProducts = await api.getAllProducts();
+    const newProducts = await snapbuyApi.getAllProducts();
     allProducts.set(newProducts);
   }, [user?.uid]);
   const [exists, news] = useMemo(() => {
@@ -76,7 +75,7 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
       <Line />
       <div>
         <div className="flex items-center gap-2 p-2">
-          <BooleanFeild id="exists-clients" state={existsState} />
+          <BooleanField id="exists-clients" state={existsState} />
           <span className="text-xl capitalize">
             <Translate content="exists" />
           </span>
@@ -91,7 +90,7 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
           )}
         </div>
         <div className="flex items-center gap-2 p-2">
-          <BooleanFeild id="exists-clients" state={newsState} />
+          <BooleanField id="exists-clients" state={newsState} />
           <span className="text-xl capitalize">
             <Translate content="news" />
           </span>
@@ -106,7 +105,7 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
           )}
         </div>
         <div className="flex items-center gap-2 p-2">
-          <BooleanFeild id="available-by-default" state={newsState} />
+          <BooleanField id="available-by-default" state={newsState} />
           <span className="text-xl capitalize">
             <Translate content="always available" />
           </span>
@@ -117,6 +116,9 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
         <Button
           className="rounded-full"
           onClick={async () => {
+            if (!storeId) {
+              return;
+            }
             const options: AddProductActionProps = {
               exists:
                 exists?.map((prod) => ({

@@ -3,7 +3,7 @@ import {
   Button,
   Card,
   CircleTip,
-  EnumFeild,
+  EnumField,
   Line,
   PinField,
   Translate,
@@ -12,6 +12,7 @@ import {
   closePopup,
   execAction,
   getTemp,
+  getTempFromStore,
   isLoading,
   setTemp,
   useAction,
@@ -21,10 +22,11 @@ import { Nothing } from "@biqpod/app/ui/types";
 import { allStatus } from "../ChangeStatus";
 import { useEffect } from "react";
 import { delay, tw } from "@biqpod/app/ui/utils";
-interface FilterOrdersProps {
+export interface FilterOrdersProps {
   status?: string;
   time?: string;
   phone?: string;
+  orderBy?: string;
 }
 export const useFilterState = () => {
   return getTemp<FilterOrdersProps>("filter-orders-state");
@@ -32,15 +34,29 @@ export const useFilterState = () => {
 export const setFilterState = (state: FilterOrdersProps | null = null) => {
   setTemp("filter-orders-state", state);
 };
+export const updateFilterState = (
+  state: Partial<FilterOrdersProps> | null = null
+) => {
+  const filterState = getTempFromStore<FilterOrdersProps>(
+    "filter-orders-state"
+  );
+  if (state) {
+    setTemp("filter-orders-state", { ...filterState, ...state });
+  } else {
+    setTemp("filter-orders-state", null);
+  }
+};
 export const FilterOrders = () => {
   const filterStatusState = useCopyState<string | Nothing>(null);
   const filterTimeState = useCopyState<string | Nothing>(null);
   const filterPhoneState = useCopyState<string | Nothing>(null);
+  const filterOrderByState = useCopyState<string | Nothing>(null);
   const filterState = useFilterState();
   useEffect(() => {
     filterStatusState.set(filterState?.status);
     filterTimeState.set(filterState?.time || null);
     filterPhoneState.set(filterState?.phone || null);
+    filterOrderByState.set(filterState?.orderBy || null);
   }, [filterState]);
   const action = useAction(
     "apply-filter-orders",
@@ -49,12 +65,18 @@ export const FilterOrders = () => {
         status: filterStatusState.get || undefined,
         time: filterTimeState.get || undefined,
         phone: filterPhoneState.get || undefined,
+        orderBy: filterOrderByState.get || undefined,
       });
       await delay(1000);
       closePopup();
       execAction("fetch-orders", {});
     },
-    []
+    [
+      filterStatusState.get,
+      filterTimeState.get,
+      filterPhoneState.get,
+      filterOrderByState.get,
+    ]
   );
   const loading = isLoading(action);
   return (
@@ -63,7 +85,16 @@ export const FilterOrders = () => {
         <h1 className="text-2xl uppercase">
           <Translate content="filter" />
         </h1>
-        <div>
+        <div className="flex">
+          <CircleTip
+            icon={allIcons.solid.faRotateBack}
+            onClick={() => {
+              filterOrderByState.set(null);
+              filterPhoneState.set(null);
+              filterStatusState.set(null);
+              filterTimeState.set(null);
+            }}
+          />
           <CircleTip
             icon={allIcons.solid.faXmark}
             onClick={() => {
@@ -78,7 +109,7 @@ export const FilterOrders = () => {
           <label className="text-xl capitalize" htmlFor="filter-orders">
             <Translate content="status" /> :
           </label>
-          <EnumFeild
+          <EnumField
             config={{
               list: allStatus.map((status) => {
                 return {
@@ -111,7 +142,7 @@ export const FilterOrders = () => {
           <label className="text-xl capitalize" htmlFor="filter-time">
             <Translate content="time" /> :
           </label>
-          <EnumFeild
+          <EnumField
             state={filterTimeState}
             id="filter-time"
             config={{
@@ -126,6 +157,38 @@ export const FilterOrders = () => {
                 { name: "last week", emojie: "⏪🗓️" },
                 { name: "last month", emojie: "⏪📆" },
                 { name: "last year", emojie: "⏪🎉" },
+              ].map((time) => {
+                var capitalizedName = time.name
+                  .split(" ")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ");
+                return {
+                  content: `${capitalizedName} ${time.emojie}`,
+                  value: time.name,
+                };
+              }),
+            }}
+          />
+        </div>
+        <div className="flex flex-col gap-4">
+          <label className="text-xl capitalize" htmlFor="filter-time">
+            <Translate content="order by" /> :
+          </label>
+          <EnumField
+            state={filterOrderByState}
+            id="filter-order-by"
+            config={{
+              placeholder: "select order by",
+              nullable: true,
+              list: [
+                {
+                  name: "Ascending",
+                  emojie: "⬆️",
+                },
+                {
+                  name: "Descending",
+                  emojie: "⬇️",
+                },
               ].map((time) => {
                 var capitalizedName = time.name
                   .split(" ")
@@ -162,7 +225,6 @@ export const FilterOrders = () => {
           <Button
             onClick={() => {
               setFilterState();
-              closePopup();
               execAction("fetch-orders", {});
             }}
             className="bg-[--biqpod-gray-opacity] rounded-full text-[--biqpod-text-color]"

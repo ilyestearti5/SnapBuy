@@ -1,4 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
+import { motion } from "framer-motion";
 import {
   Scroll,
   Card,
@@ -18,12 +19,13 @@ import {
   useAction,
   useAsyncMemo,
   useCopyState,
+  useUser,
 } from "@biqpod/app/ui/hooks";
-import { useMemo } from "react";
-import { api, Duration, Plan, PlanRecord } from "./apis";
+import { snapbuyApi, Duration, Plan, PlanRecord } from "./apis";
 import { Nothing } from "@biqpod/app/ui/types";
 import { range, tw } from "@biqpod/app/ui/utils";
-import { useIsSubed } from "./HeaderContent";
+import { useSub } from "./initStoreIdSave";
+import { getStringTimeLeave } from "./utils";
 interface SelectedPlanProps {
   name: string;
   plan: PlanRecord;
@@ -99,17 +101,18 @@ interface UpgradePlanProps {
 }
 export const Plans = () => {
   const plans = useAsyncMemo(async () => {
-    return api.getPlans();
+    return snapbuyApi.getPlans();
   }, []);
+  const user = useUser();
   useAction(
     "upgrade-plan",
     async ({ duration, plan }: UpgradePlanProps) => {
-      await api.subscribe(plan, duration);
+      await snapbuyApi.subscribe(plan, duration);
       closePopup();
     },
     []
   );
-  const isSubed = useIsSubed();
+  const subed = useSub();
   return (
     <Scroll>
       <div className="flex flex-wrap gap-2 p-2">
@@ -157,7 +160,21 @@ export const Plans = () => {
                       </div>
                     )}
                   </div>
-                  {isSubed === false && (
+                  {user && subed?.isSubscribed === undefined && (
+                    <EmptyComponent>
+                      <Line />
+                      <div className="p-2">
+                        <Button
+                          className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+                          icon={allIcons.solid.faCircleNotch}
+                          iconClassName="animate-spin"
+                        >
+                          <Translate content="loading" />
+                        </Button>
+                      </div>
+                    </EmptyComponent>
+                  )}
+                  {subed?.isSubscribed === false && (
                     <EmptyComponent>
                       <Line />
                       <div className="p-2">
@@ -172,6 +189,156 @@ export const Plans = () => {
                       </div>
                     </EmptyComponent>
                   )}
+                  {subed?.isSubscribed &&
+                    subed.subscription?.label === name && (
+                      <EmptyComponent>
+                        <Line />
+                        <div className="p-2">
+                          <Button
+                            onClick={() => {
+                              if (
+                                subed.subscription?.duration &&
+                                subed.payedAt
+                              ) {
+                                const payedAtTimed = new Date(subed.payedAt!);
+                                const doneAt = new Date(
+                                  payedAtTimed.getTime() +
+                                    subed.subscription.duration *
+                                      1000 *
+                                      60 *
+                                      60 *
+                                      24
+                                );
+                                const currentDate = new Date();
+                                const timeDuration =
+                                  doneAt.getTime() - payedAtTimed.getTime();
+                                const timeLeaved =
+                                  doneAt.getTime() - currentDate.getTime();
+                                const percent =
+                                  100 -
+                                  Math.floor((timeLeaved / timeDuration) * 100);
+                                showPopup(
+                                  <Card className="w-[300px] min-h-[200px]">
+                                    <div className="flex justify-between items-center p-2">
+                                      <h1 className="text-2xl">
+                                        {payedAtTimed.toLocaleDateString()}
+                                      </h1>
+                                      <CircleTip
+                                        icon={allIcons.solid.faXmark}
+                                        onClick={() => {
+                                          closePopup();
+                                        }}
+                                      />
+                                    </div>
+                                    <Line />
+                                    <div className="flex flex-col items-center gap-2 p-2">
+                                      <span>
+                                        {payedAtTimed.toLocaleDateString()}
+                                      </span>
+                                      <div className="flex flex-col">
+                                        <div className="relative">
+                                          <div className="relative bg-[--biqpod-gray-opacity] rounded-full w-[20px] h-[230px]">
+                                            <motion.div
+                                              className="top-0 absolute inset-x-0 bg-[--biqpod-primary] rounded-full"
+                                              style={{
+                                                height: `${percent}%`,
+                                              }}
+                                              initial={{ height: 0 }}
+                                              animate={{
+                                                height: `${percent}%`,
+                                                transition: {
+                                                  duration: 0.5,
+                                                  type: "spring",
+                                                  bounce: 0.2,
+                                                  stiffness: 100,
+                                                  damping: 20,
+                                                },
+                                              }}
+                                              exit={{
+                                                height: 0,
+                                                transition: {
+                                                  duration: 0.5,
+                                                  type: "spring",
+                                                  bounce: 0.2,
+                                                  stiffness: 100,
+                                                  damping: 20,
+                                                },
+                                              }}
+                                            >
+                                              <span className="top-1/2 left-full absolute ml-3 text-nowrap -translate-y-1/2">
+                                                {getStringTimeLeave(
+                                                  payedAtTimed,
+                                                  currentDate
+                                                )}{" "}
+                                                ago
+                                              </span>
+                                            </motion.div>
+                                            <motion.div
+                                              className="absolute inset-x-0"
+                                              style={{
+                                                top: `${percent}%`,
+                                                height: `${100 - percent}%`,
+                                              }}
+                                              initial={{ height: 0 }}
+                                              animate={{
+                                                height: `${100 - percent}%`,
+                                                transition: {
+                                                  duration: 0.5,
+                                                  type: "spring",
+                                                  bounce: 0.2,
+                                                  stiffness: 100,
+                                                  damping: 20,
+                                                },
+                                              }}
+                                              exit={{
+                                                height: 0,
+                                                transition: {
+                                                  duration: 0.5,
+                                                  type: "spring",
+                                                  bounce: 0.2,
+                                                  stiffness: 100,
+                                                  damping: 20,
+                                                },
+                                              }}
+                                            >
+                                              <span className="top-1/2 right-full absolute mr-3 text-nowrap -translate-y-1/2">
+                                                {getStringTimeLeave(
+                                                  currentDate,
+                                                  doneAt
+                                                )}{" "}
+                                                rest
+                                              </span>
+                                            </motion.div>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <span>{doneAt.toLocaleDateString()}</span>
+                                    </div>
+                                    <Line />
+                                    <div className="p-2">
+                                      <Button
+                                        onClick={() => {
+                                          closePopup();
+                                        }}
+                                      >
+                                        <Translate content="done" />
+                                      </Button>
+                                    </div>
+                                  </Card>,
+                                  {
+                                    type: "blur",
+                                  }
+                                );
+                              }
+                            }}
+                            icon={allIcons.solid.faCheckCircle}
+                            className="bg-[--biqpod-success]"
+                          >
+                            <Translate content="current plan" />
+                          </Button>
+                        </div>
+                      </EmptyComponent>
+                    )}
                 </Card>
               );
             }

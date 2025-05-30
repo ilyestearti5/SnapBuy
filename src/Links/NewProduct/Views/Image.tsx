@@ -2,7 +2,7 @@ import { useEffect } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
   CircleTip,
-  ImageFeild,
+  ImageField,
   Scroll,
   Tip,
   TitleView,
@@ -14,7 +14,8 @@ import {
   useColorMerge,
 } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
-export const PostImages = () => {
+import { ProductFormSectionProps } from "../NewProduct";
+export const ProductImages = ({ product }: ProductFormSectionProps) => {
   const images = useTemp<string[]>("product-images");
   const currentImageState = useCopyState<string | Nothing>(null);
   useEffect(() => {
@@ -27,6 +28,13 @@ export const PostImages = () => {
       currentImageState.set(null);
     }
   }, [currentImageState.get, images.get]);
+
+  useEffect(() => {
+    if (product?.photos) {
+      images.set(product.photos);
+    }
+  }, [product?.photos]);
+
   const colorMerge = useColorMerge();
   return (
     <div className="flex flex-col h-full">
@@ -76,7 +84,7 @@ export const PostImages = () => {
           })}
         </div>
       </Scroll>
-      <ImageFeild
+      <ImageField
         state={currentImageState}
         id="post-image"
         config={{ hidden: true }}

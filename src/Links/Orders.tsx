@@ -14,12 +14,12 @@ import {
   EmptyComponent,
   Field,
   Icon,
-  IconProps,
   Line,
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
 import {
+  confirm,
   execAction,
   getFieldValue,
   showPopup,
@@ -28,6 +28,7 @@ import {
   useAsyncEffect,
   useCopyState,
   useDeviceResolution,
+  useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { include, mergeArray, range, tw } from "@biqpod/app/ui/utils";
@@ -36,25 +37,16 @@ import { cloud, onCollectionSnapshot } from "../server";
 import { OrderView } from "../Clients/OrderView";
 import { useActionStatus } from "../CartPopup";
 import { useLocation } from "react-router-dom";
-import { api } from "../apis";
-import { FilterOrders, useFilterState } from "./FilterOrders";
+import { snapbuyApi } from "../apis";
+import {
+  FilterOrders,
+  FilterOrdersProps,
+  setFilterState,
+  useFilterState,
+} from "./FilterOrders";
 import { openOrderMenu } from "./openOrderMenu";
-export const colors: Record<string, string> = {
-  pending: "#F59E0B", // Yellow
-  completed: "#10B981", // Green
-  processing: "#3B82F6", // Blue
-  done: "#047857", // Dark Green
-  cancelled: "#EF4444", // Red
-  delivery: "#129999",
-};
-export const icons: Record<string, IconProps["icon"]> = {
-  pending: allIcons.solid.faClock,
-  completed: allIcons.solid.faCheckCircle,
-  processing: allIcons.solid.faCog,
-  done: allIcons.solid.faCheckDouble,
-  cancelled: allIcons.solid.faBan,
-  delivery: allIcons.solid.faCar,
-};
+import { useStoreId } from "../App";
+import { colors, getImageByPlatform, icons } from "../utils";
 const PAGE_SIZE = 40;
 interface StatusUiProps {
   status: SnapBuy.OrderStatus;
@@ -69,7 +61,9 @@ export const StatusUi = ({ status }: StatusUiProps) => {
       }}
     >
       <Icon icon={icons[status]} />
-      <span>{status}</span>
+      <span>
+        <Translate content={status} />
+      </span>
     </span>
   );
 };
@@ -81,30 +75,64 @@ export const Orders = () => {
       isFocused.set(false);
     };
   }, []);
-  const orders = useCopyState<SnapBuy.Order[]>([]); // Replace with your actual orders data
+  const orders = useTemp<SnapBuy.Order[]>("orders-list"); // Replace with your actual orders data
   const user = useUser();
   const lastDoc = useCopyState<SnapBuy.Order | null>(null);
   const hasMore = useCopyState(true);
-  var loc = useLocation();
+  const loc = useLocation();
   useAsyncEffect(async () => {
-    const search = new URLSearchParams(loc.search).get("order");
-    if (search) {
-      var order = await api.getOrder(search);
+    const searcher = new URLSearchParams(loc.search);
+    const orderId = searcher.get("order");
+    if (orderId) {
+      const order = await snapbuyApi.getOrder(orderId);
       if (order) {
         showPopup(<OrderView order={order} />);
       } else {
         showToast("Order not found", "error");
       }
+      return;
     }
+    const status = searcher.get("status");
+    const clientPhone = searcher.get("phone");
+    const time = searcher.get("time");
+    var options: FilterOrdersProps = {};
+    if (status) {
+      if (status === "all") {
+        options.status = undefined;
+      } else {
+        options.status = status;
+      }
+    }
+    if (time) {
+      if (time === "all") {
+        options.time = undefined;
+      } else {
+        options.time = time;
+      }
+    }
+    if (clientPhone) {
+      if (clientPhone === "none") {
+        options.phone = undefined;
+      } else {
+        options.phone = clientPhone;
+      }
+    }
+    setFilterState(options);
+    execAction("fetch-orders", {});
   }, [loc.search]);
-  var filterState = useFilterState();
-  var action = useAction(
+  const filterState = useFilterState();
+  const selectedStoreId = useStoreId();
+  const action = useAction(
     "fetch-orders",
     async ({ next = false }) => {
+      if (!selectedStoreId) {
+        return;
+      }
       if (!user?.uid) {
         return;
       }
       const currentTime = new Date();
+      currentTime.setHours(23, 59, 59, 999);
       var subTime: Date | null = null;
       switch (filterState?.time) {
         case "today":
@@ -134,27 +162,30 @@ export const Orders = () => {
           where("uid", "==", user?.uid),
           filterState?.phone && where("client.phone", "==", filterState.phone),
           subTime && where("createdAt", ">=", subTime.getTime()),
-          filterState?.status && where("status", "==", filterState.status)
+          filterState?.status && where("status", "==", filterState.status),
+          where("storeId", "==", selectedStoreId)
         ),
-        orders: mergeArray(orderBy("createdAt", "asc")),
+        orders: mergeArray(
+          orderBy("createdAt", filterState?.orderBy === "desc" ? "desc" : "asc")
+        ),
         limit: PAGE_SIZE,
         startAt:
           next && lastDoc.get?.createdAt ? [lastDoc.get?.createdAt] : undefined,
       };
       const newOrders = await cloud.app.nosql.getDocs<SnapBuy.Order>(
-        ["projects", "74510af6-4dc2-47b3-b5d5-b07b559aede7", "orders"],
+        ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
         selection
       );
       if (!newOrders) {
         return;
       }
       const list = newOrders.map((order) => ({ ...order.data, id: order.id }));
-      orders.set((prev) => (next ? [...prev, ...list] : list));
+      orders.set((prev) => (next && prev ? [...prev, ...list] : list));
       const lastDocRef = newOrders.at(-1)?.data;
       lastDoc.set(lastDocRef || null);
       hasMore.set(newOrders.length === PAGE_SIZE);
     },
-    [user?.uid, lastDoc.get, filterState]
+    [user?.uid, lastDoc.get, filterState, selectedStoreId]
   );
   useEffect(() => {
     if (user) {
@@ -162,48 +193,54 @@ export const Orders = () => {
     }
   }, [user]);
   const { isLoading } = useActionStatus(action);
-  const { isMobile } = useDeviceResolution();
+  const { isMobile, isTablet } = useDeviceResolution();
+  const isSmallView = isMobile || isTablet;
   const ordersState = useMemo(() => {
     const currentTime = new Date();
-    return orders.get
-      .filter((order) => {
-        return include(`${order.id} @status ${order.status}`, searchOrder);
-      })
-      .map((order) => {
-        const time = new Date(order.createdAt!);
-        const timeDifference = Math.floor(
-          (currentTime.getTime() - time.getTime()) / 1000
-        );
-        let timeAgo = "";
-        if (timeDifference < 60) {
-          timeAgo = `${timeDifference} sec${timeDifference > 1 ? "s" : ""} ago`;
-        } else if (timeDifference < 3600) {
-          const minutes = Math.floor(timeDifference / 60);
-          timeAgo = `${minutes} min${minutes > 1 ? "s" : ""} ago`;
-        } else if (timeDifference < 86400) {
-          const hours = Math.floor(timeDifference / 3600);
-          timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
-        } else if (timeDifference < 604800) {
-          const days = Math.floor(timeDifference / 86400);
-          timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
-        } else if (timeDifference < 2419200) {
-          const weeks = Math.floor(timeDifference / 604800);
-          timeAgo = `${weeks} week${weeks > 1 ? "s" : ""} ago`;
-        } else if (timeDifference < 29030400) {
-          const months = Math.floor(timeDifference / 2419200);
-          timeAgo = `${months} month${months > 1 ? "s" : ""} ago`;
-        } else {
-          const years = Math.floor(timeDifference / 29030400);
-          timeAgo = `${years} year${years > 1 ? "s" : ""} ago`;
-        }
-        const { products = {} } = order;
-        const productCount = Object.keys(products).length;
-        return {
-          order,
-          timeAgo,
-          productCount,
-        };
-      });
+    return (
+      orders.get &&
+      orders.get
+        .filter((order) => {
+          return include(`${order.id} @status ${order.status}`, searchOrder);
+        })
+        .map((order) => {
+          const time = new Date(order.createdAt!);
+          const timeDifference = Math.floor(
+            (currentTime.getTime() - time.getTime()) / 1000
+          );
+          let timeAgo = "";
+          if (timeDifference < 60) {
+            timeAgo = `${timeDifference} sec${
+              timeDifference > 1 ? "s" : ""
+            } ago`;
+          } else if (timeDifference < 3600) {
+            const minutes = Math.floor(timeDifference / 60);
+            timeAgo = `${minutes} min${minutes > 1 ? "s" : ""} ago`;
+          } else if (timeDifference < 86400) {
+            const hours = Math.floor(timeDifference / 3600);
+            timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
+          } else if (timeDifference < 604800) {
+            const days = Math.floor(timeDifference / 86400);
+            timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
+          } else if (timeDifference < 2419200) {
+            const weeks = Math.floor(timeDifference / 604800);
+            timeAgo = `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+          } else if (timeDifference < 29030400) {
+            const months = Math.floor(timeDifference / 2419200);
+            timeAgo = `${months} month${months > 1 ? "s" : ""} ago`;
+          } else {
+            const years = Math.floor(timeDifference / 29030400);
+            timeAgo = `${years} year${years > 1 ? "s" : ""} ago`;
+          }
+          const { products = {} } = order;
+          const productCount = Object.keys(products).length;
+          return {
+            order,
+            timeAgo,
+            productCount,
+          };
+        })
+    );
   }, [searchOrder, orders.get]);
   const hasNews = useCopyState<SnapBuy.Order[]>([]);
   useEffect(() => {
@@ -226,18 +263,25 @@ export const Orders = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-2">
-        <Field
-          propositions={["@status"]}
-          onFocus={() => {
-            isFocused.set(true);
-          }}
-          onBlur={() => {
-            isFocused.set(false);
-          }}
-          inputName="search-order"
-          placeholder="Search Order"
-          className="rounded-xl"
-        />
+        <div className="relative w-full">
+          <Field
+            propositions={["@status"]}
+            onFocus={() => {
+              isFocused.set(true);
+            }}
+            onBlur={() => {
+              isFocused.set(false);
+            }}
+            inputName="search-order"
+            placeholder="Search Order"
+            className="rounded-xl"
+          />
+          {ordersState && (
+            <span className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 transform">
+              / {ordersState?.length || "NO Orders"}
+            </span>
+          )}
+        </div>
         <div>
           <CircleTip
             icon={allIcons.solid.faFilter}
@@ -248,7 +292,7 @@ export const Orders = () => {
         </div>
       </div>
       <Line />
-      {!isMobile && (
+      {!isSmallView && (
         <EmptyComponent>
           <div className="flex justify-between items-center gap-2 p-2">
             <span className="inline-flex items-center gap-2 w-full capitalize">
@@ -268,6 +312,10 @@ export const Orders = () => {
               <Translate content="status" />
             </span>
             <span className="inline-flex items-center gap-2 w-full capitalize">
+              <Icon icon={allIcons.solid.faDashboard} />
+              <Translate content="ads" />
+            </span>
+            <span className="inline-flex items-center gap-2 w-full capitalize">
               <Icon icon={allIcons.solid.faEllipsisV} />
               <Translate content="key" />
             </span>
@@ -283,7 +331,9 @@ export const Orders = () => {
                   icon={allIcons.solid.faArrowUp}
                   className="rounded-full w-fit"
                   onClick={() => {
-                    orders.set((prev) => [...hasNews.get, ...prev]);
+                    orders.set((prev) =>
+                      prev ? [...hasNews.get, ...prev] : hasNews.get
+                    );
                     hasNews.set([]);
                   }}
                 >
@@ -291,11 +341,11 @@ export const Orders = () => {
                 </Button>
               </div>
             )}
-            {ordersState.map(({ order, timeAgo, productCount }) => {
+            {ordersState?.map(({ order, timeAgo, productCount }) => {
               return (
                 <div
                   key={order.id}
-                  className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-2"
+                  className="flex justify-between items-center gap-2 odd:bg-[--biqpod-secondary-background] p-2"
                 >
                   <div className="w-full">
                     {order.client?.firstname} {order.client?.lastname} (
@@ -313,6 +363,15 @@ export const Orders = () => {
                   <div className="w-full">
                     <StatusUi status={order.status} />
                   </div>
+                  <span className="flex items-center gap-1 py-2 w-full overflow-hidden">
+                    <span className="inline-block w-[35px] h-[35px]">
+                      <img
+                        className="w-full h-full object-cover"
+                        src={getImageByPlatform(order.platform)}
+                      />
+                    </span>
+                    <span className="capitalize">{order.platform}</span>
+                  </span>
                   <span className="py-2 w-full overflow-hidden">
                     {order.key && (
                       <span className="bg-[--biqpod-gray-opacity] border-[--biqpod-gray-opacity-2] px-2 py-1 border border-solid rounded-full truncate">
@@ -363,7 +422,7 @@ export const Orders = () => {
           </Scroll>
         </EmptyComponent>
       )}
-      {isMobile && (
+      {isSmallView && (
         <Scroll className="relative">
           {hasNews.get.length > 0 && (
             <div className="top-0 z-[10] absolute inset-x-0 flex justify-center items-center gap-2 p-3">
@@ -371,7 +430,9 @@ export const Orders = () => {
                 icon={allIcons.solid.faArrowUp}
                 className="rounded-full w-fit"
                 onClick={() => {
-                  orders.set((prev) => [...hasNews.get, ...prev]);
+                  orders.set((prev) =>
+                    prev ? [...hasNews.get, ...prev] : hasNews.get
+                  );
                   hasNews.set([]);
                 }}
               >
@@ -380,35 +441,57 @@ export const Orders = () => {
             </div>
           )}
           <div className="flex flex-col gap-2 p-2">
-            {ordersState.map(({ order, timeAgo, productCount }, index) => {
-              var fullName = `${order.client?.firstname || ""} ${
+            {ordersState?.map(({ order, timeAgo, productCount }, index) => {
+              const fullName = `${order.client?.firstname || ""} ${
                 order.client?.lastname || ""
               }`;
-              var googleMap = `https://www.google.com/maps/search/?api=1&query=${order.client?.place.address}`;
+              const googleMap = `https://www.google.com/maps/search/?api=1&query=${order.client?.place.address}`;
               return (
-                <Card key={index} className="w-full">
-                  <div className="flex justify-between items-center p-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]">
-                        {productCount}
-                      </span>
-                      <span className="text-xl">{fullName}</span>
-                    </div>
-                    <span className="bg-[--biqpod-gray-opacity] border-[--biqpod-gray-opacity-2] px-2 py-1 border border-solid rounded-full truncate">
-                      <Anchor>
+                <Card
+                  key={index}
+                  className="bg-gradient-to-r to-[--biqpod-primary-background] backdrop-blur-sm from-[--biqpod-borders] w-full overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 p-2">
+                    <span className="inline-block w-[40px] h-[40px]">
+                      <img
+                        className="w-full h-full object-cover"
+                        src={getImageByPlatform(order.platform)}
+                      />
+                    </span>
+                    <span className="text-xl">{fullName}</span>
+                  </div>
+                  <Line />
+                  <div className="flex justify-between items-center p-2 overflow-hidden">
+                    <div />
+                    <span className="bg-[--biqpod-gray-opacity] border-[--biqpod-gray-opacity-2] px-2 py-1 border border-solid rounded-full text-xs truncate">
+                      <Anchor
+                        onClick={async () => {
+                          const response = await confirm({
+                            message: "Filter All Orders By This Key",
+                            title: "Filter By Keys",
+                          });
+                          if (response) {
+                          }
+                        }}
+                      >
                         {order.key || <Translate content="No Key Ther Is" />}
                       </Anchor>
                     </span>
                   </div>
                   <Line />
                   <div className="flex justify-between items-center p-2">
-                    <StatusUi status={order.status} />
+                    <div className="flex items-center gap-2">
+                      <span className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]">
+                        {productCount}
+                      </span>
+                      <StatusUi status={order.status} />
+                    </div>
                     <span className="text-sm">{timeAgo}</span>
                   </div>
                   <Line />
                   <div className="flex justify-between items-center p-2">
                     <span className="italic">{order.client.place.wilaya}</span>
-                    <div className="flex">
+                    <div className="flex items-center">
                       <CircleTip
                         icon={allIcons.solid.faPhone}
                         onClick={() => {

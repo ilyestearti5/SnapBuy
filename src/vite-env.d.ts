@@ -16,8 +16,33 @@ declare namespace SnapBuy {
     id: string;
     name: string;
     photo?: string;
-    uid: string;
+    uid?: string;
+    phone: string;
+    address?: {
+      latitude: number;
+      longitude: number;
+    };
   }
+  type Platform =
+    | "facebook"
+    | "messenger"
+    | "instagram"
+    | "tiktok"
+    | "snapchat"
+    | "twitter"
+    | "reddit"
+    | "discord"
+    | "telegram"
+    | "linkedin"
+    | "pinterest"
+    | "youtube"
+    | "wechat"
+    | "edge"
+    | "opera"
+    | "chrome"
+    | "safari"
+    | "firefox"
+    | "unknown";
   interface Order {
     status: OrderStatus;
     id: string;
@@ -29,6 +54,30 @@ declare namespace SnapBuy {
     // needed
     storeId?: string;
     uid?: string;
+    platform?: Platform;
+  }
+
+  export type DeliveryCompanyRole =
+    | "merchant"
+    | "customer"
+    | "admin"
+    | "support"
+    | "warehouse_operator"
+    | "delivery_agent"
+    | "finance"
+    | "franchise_partner";
+
+  interface Account {
+    id?: string;
+    firstname?: string;
+    lastname?: string;
+    email?: string;
+    phone?: string;
+    address?: {
+      city?: string;
+    };
+    role?: DeliveryCompanyRole;
+    createdAt?: number;
   }
   interface Follow {
     follow: boolean;
@@ -50,6 +99,7 @@ declare namespace SnapBuy {
     uid?: string;
   }
   interface Product {
+    storeId: string;
     id: string;
     name: string;
     description: string;

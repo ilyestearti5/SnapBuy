@@ -8,6 +8,8 @@ import {
 import { allIcons } from "@biqpod/app/ui/apis";
 import { mergeObject } from "@biqpod/app/ui/utils";
 import { ChromePicker as ColorPicker } from "react-color";
+import { ProductFormSectionProps } from "../NewProduct";
+import { useEffect } from "react";
 export interface Colors {
   colorId: ColorIds;
   name: string;
@@ -34,13 +36,11 @@ export var colors: Colors[] = [
     name: "Text",
   },
 ];
-
 interface ChoosColorProps {
   onChange: (color: string) => void;
   color?: string;
   colorId: ColorIds;
 }
-
 export const ChoosColor = ({ color, colorId, onChange }: ChoosColorProps) => {
   const colorMerge = useColorMerge();
   const show = useCopyState(false);
@@ -77,12 +77,18 @@ export const ChoosColor = ({ color, colorId, onChange }: ChoosColorProps) => {
     </div>
   );
 };
-
-export const PostChoiseTheme = () => {
+export const ProductChoosThemeStyle = ({
+  product,
+}: ProductFormSectionProps) => {
   const colorMerge = useColorMerge();
   const colorsState = useTemp<SnapBuy.Product["theme"]>(
     "product-choised-theme"
   );
+  useEffect(() => {
+    if (product?.theme) {
+      colorsState.set(product.theme);
+    }
+  }, []);
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div
@@ -101,7 +107,7 @@ export const PostChoiseTheme = () => {
       <Line />
       <div>
         {colors.map(({ colorId, name }) => {
-          var selectedColor = colorsState.get?.[colorId];
+          const selectedColor = colorsState.get?.[colorId];
           const id = colorId.replace(".", "_");
           return (
             <div className="flex items-center gap-4 p-3" key={id}>

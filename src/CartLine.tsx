@@ -10,26 +10,25 @@ import {
 } from "@biqpod/app/ui/components";
 import { useAsyncMemo, setTemp, openDialog } from "@biqpod/app/ui/hooks";
 import { useMemo, useEffect } from "react";
-import { api } from "./apis";
+import { snapbuyApi } from "./apis";
 import { getPrice } from "./CartPopup";
 import { FullCartResult, addToCart, removeCart } from "./AddProductToCart";
-import { useParams } from "react-router";
 export interface CartLineProps {
   data: FullCartResult;
 }
 // card line for load products easily
 export const CartLine = ({ data }: CartLineProps) => {
   const product = useAsyncMemo(async () => {
-    var prod = await api.getProduct(data.prodId);
+    var prod = await snapbuyApi.getProduct(data.prodId);
     return prod;
   }, []);
   const photo = product?.photos?.at(0);
   const count = data.count;
   const [price, total] = useMemo(() => {
-    var price = getPrice(product!, count);
-    var total = price * count;
+    const price = getPrice(product!, count);
+    const total = price.total;
     return [price, total];
-  }, [product]);
+  }, [product, count]);
   useEffect(() => {
     setTemp("cart-count-prices." + data.prodId, total);
   }, [total]);
@@ -53,7 +52,9 @@ export const CartLine = ({ data }: CartLineProps) => {
           <div className="flex justify-between items-center px-4 py-2">
             <span>
               (
-              <span className="font-bold text-[--biqpod-success]">{price}</span>
+              <span className="font-bold text-[--biqpod-success]">
+                {price.price}
+              </span>
               ) / (
               <span className="font-bold text-[--biqpod-success]">{total}</span>
               )

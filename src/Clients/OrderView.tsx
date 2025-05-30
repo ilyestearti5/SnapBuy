@@ -11,7 +11,7 @@ import {
 } from "@biqpod/app/ui/components";
 import { useAsyncMemo, closePopup } from "@biqpod/app/ui/hooks";
 import { tw, range } from "@biqpod/app/ui/utils";
-import { api } from "../apis";
+import { snapbuyApi } from "../apis";
 import { useMemo } from "react";
 export interface OrderView {
   order: SnapBuy.Order;
@@ -20,7 +20,7 @@ export const OrderView = ({ order }: OrderView) => {
   const time = new Date(order.createdAt!);
   const productsLengths = Object.keys(order.products || {}).length;
   const list = useAsyncMemo(async () => {
-    return api.getOrderProducts(order.id);
+    return snapbuyApi.getOrderProducts(order.id);
   }, []);
   const total = useMemo(() => {
     return list?.reduce((acc, current) => {

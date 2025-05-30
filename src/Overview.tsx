@@ -9,7 +9,7 @@ import {
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
-import { useAsyncMemo } from "@biqpod/app/ui/hooks";
+import { showToast, useAsyncMemo } from "@biqpod/app/ui/hooks";
 import {
   LineChart,
   Line as RechartsLine,
@@ -19,9 +19,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { api } from "./apis";
+import { snapbuyApi } from "./apis";
 import { range } from "@biqpod/app/ui/utils";
-
+import { Link } from "react-router-dom";
+import { useStoreId } from "./App";
 const titlesOveviews: Record<string, string> = {
   totalSales: "Total Sales",
   orders: "Orders",
@@ -38,17 +39,19 @@ const iconsColors: Record<string, string> = {
   customers: "#6366F1", // Changed to indigo
 };
 export function Overview() {
+  const storeId = useStoreId();
   const todayOrders = useAsyncMemo(async () => {
-    return api.todayOrdersCount();
-  }, []);
+    if (!storeId) return null;
+    return snapbuyApi.todayOrdersCount(storeId);
+  }, [storeId]);
   const salesData = useAsyncMemo(async () => {
-    return api.getSales();
-  }, []);
-
+    if (!storeId) return null;
+    return snapbuyApi.getSales(storeId);
+  }, [storeId]);
   const overview = useAsyncMemo(async () => {
-    return api.getOverview();
-  }, []);
-
+    if (!storeId) return null;
+    return snapbuyApi.getOverview(storeId);
+  }, [storeId]);
   return (
     <Scroll>
       <div className="flex flex-wrap gap-4 p-2">
@@ -58,10 +61,26 @@ export function Overview() {
             const icon = iconsOveviews[name];
             const color = iconsColors[name];
             return (
-              <Card key={name} className="flex-1 p-3 min-w-[200px] h-[70px]">
+              <Card
+                onClick={() => {
+                  if (name === "orders") {
+                    document.getElementById("pending-orders")?.click();
+                  } else if (name === "totalSales") {
+                    if (content == "0") {
+                      showToast("No sales yet");
+                      return;
+                    }
+                    document.getElementById("completed-orders")?.click();
+                  }
+                }}
+                key={name}
+                className="flex-1 p-3 min-w-[200px] h-[70px] cursor-pointer"
+              >
                 <div className="flex justify-between items-center gap-4 h-full">
                   <div>
-                    <p className="text-gray-500 text-sm">{title}</p>
+                    <p className="text-gray-500 text-sm">
+                      <Translate content={title} />
+                    </p>
                     <p className="font-semibold text-xl">{content}</p>
                   </div>
                   <span
@@ -100,7 +119,19 @@ export function Overview() {
                 <LineChart data={salesData}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="day" />
-                  <YAxis />
+                  <YAxis
+                    width={120}
+                    tickFormatter={(value) => {
+                      const amount = +value.toString();
+                      const result = amount
+                        .toLocaleString("en-US", {
+                          style: "currency",
+                          currency: "DZD",
+                        })
+                        .replace(/\.[0-9]+/gi, "");
+                      return result;
+                    }}
+                  />
                   <Tooltip
                     contentStyle={{
                       backgroundColor: "var(--biqpod-gray-opacity)",
@@ -124,13 +155,40 @@ export function Overview() {
           <CardWait className="rounded-2xl w-full h-[150px]" />
         )}
         {todayOrders !== null && (
-          <Card className="flex flex-col justify-evenly p-3 md:w-1/3 h-[150px]">
-            <h2 className="mb-2 font-semibold text-lg">Today's Orders</h2>
-            <p className="font-bold text-blue-600 text-5xl">{todayOrders}</p>
-            <p className="mt-2 text-gray-500 text-sm">Orders placed today</p>
+          <Card
+            onClick={() => {
+              if (todayOrders == 0) {
+                showToast("No orders yet");
+                return;
+              }
+              document.getElementById("today-orders")?.click();
+            }}
+            className="flex flex-col justify-evenly active:bg-[--biqpod-gray-opacity] p-3 md:w-1/3 h-[150px] cursor-pointer"
+          >
+            <h2 className="mb-2 font-semibold text-lg capitalize">
+              <Translate content="today's orders" />
+            </h2>
+            <p className="font-bold text-[--biqpod-primary] text-5xl">
+              {todayOrders}
+            </p>
+            <p className="mt-2 text-gray-500 text-sm">
+              <Translate content="orders placed today" />
+            </p>
           </Card>
         )}
       </div>
+      <Link
+        id="pending-orders"
+        to={`/store/${storeId}/orders?time=all&status=pending&phone=none`}
+      />
+      <Link
+        id="today-orders"
+        to={`/store/${storeId}/orders?time=today&status=all&phone=none`}
+      />
+      <Link
+        id="completed-orders"
+        to={`/store/${storeId}/orders?time=today&status=completed&phone=none`}
+      />
     </Scroll>
   );
 }

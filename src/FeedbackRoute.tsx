@@ -42,6 +42,11 @@ export const FeedbackRoute = () => {
                   icon: allIcons.brands.faDiscord,
                   link: "https://discord.gg/Nb6wwXyj",
                 },
+                {
+                  name: "Snapchat",
+                  icon: allIcons.brands.faSnapchatGhost,
+                  link: "https://www.snapchat.com/add/tiartiilyes",
+                },
               ].map(({ name, icon, link }) => {
                 return {
                   label: name,

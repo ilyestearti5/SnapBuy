@@ -12,12 +12,12 @@ import {
   closePopup,
   confirm,
   getTemp,
-  openDialog,
+  getTempFromStore,
   setTemp,
 } from "@biqpod/app/ui/hooks";
-import { colors, icons } from "./Links/Orders";
+import { colors, icons } from "./utils";
 import { deleteDoc, setDoc } from "./server";
-import { tw } from "@biqpod/app/ui/utils";
+import { mergeArray, tw } from "@biqpod/app/ui/utils";
 export interface ChangeStatusProps {
   order: SnapBuy.Order;
 }
@@ -80,6 +80,9 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
         <Button
           className="rounded-full"
           onClick={async () => {
+            if (!selectOne) {
+              return;
+            }
             if (selectOne === "done") {
               const response = await confirm({
                 title: "Are you sure?",
@@ -102,6 +105,24 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
                 status: selectOne,
               }
             );
+            const allOredrs = getTempFromStore<SnapBuy.Order[]>("orders-list");
+            const findedIndex = allOredrs?.findIndex(
+              (item) => item.id === order.id
+            );
+            const finded =
+              findedIndex !== undefined && allOredrs?.[findedIndex];
+            if (finded && findedIndex !== undefined) {
+              var props = {
+                ...finded,
+                status: selectOne,
+              };
+              const result = mergeArray(
+                allOredrs?.slice(0, findedIndex),
+                [props],
+                allOredrs?.slice(findedIndex + 1, allOredrs.length)
+              ).flat();
+              setTemp("orders-list", result);
+            }
             closePopup();
           }}
         >

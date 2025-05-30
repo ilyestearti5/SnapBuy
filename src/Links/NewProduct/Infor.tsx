@@ -1,8 +1,8 @@
 import { useEffect } from "react";
 import {
-  BooleanFeild,
+  BooleanField,
   EmptyComponent,
-  EnumFeild,
+  EnumField,
   Field,
   Translate,
 } from "@biqpod/app/ui/components";
@@ -46,11 +46,7 @@ export const ProductInfo = ({ product }: ProductFormSectionProps) => {
         >
           <Translate content="name" /> :
         </label>
-        <Field
-          className="text-md"
-          inputName="product-form-name"
-          placeholder="Enter Name"
-        />
+        <Field inputName="product-form-name" placeholder="Enter Name" />
       </div>
       <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
         <label
@@ -60,7 +56,7 @@ export const ProductInfo = ({ product }: ProductFormSectionProps) => {
           <Translate content="category" /> :
         </label>
         <div className="w-full">
-          <EnumFeild
+          <EnumField
             id="product-form-category"
             state={category}
             config={{
@@ -83,7 +79,7 @@ export const ProductInfo = ({ product }: ProductFormSectionProps) => {
           <Translate content="avilable" /> :
         </label>
         <div className="w-full">
-          <BooleanFeild id="product-form-available" state={isAvailable} />
+          <BooleanField id="product-form-available" state={isAvailable} />
         </div>
       </div>
     </EmptyComponent>

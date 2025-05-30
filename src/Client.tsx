@@ -1,14 +1,9 @@
 import { allIcons } from "@biqpod/app/ui/apis";
-import { Button, Line, Scroll, Translate } from "@biqpod/app/ui/components";
-import { useColorMerge } from "@biqpod/app/ui/hooks";
-import { Redirect, Route, Switch, useLocation } from "react-router";
-import { Link } from "react-router-dom";
-import { Orders } from "./Clients/Orders";
+import { Scroll } from "@biqpod/app/ui/components";
+import { Redirect, Route, Switch } from "react-router";
 import { ClientProducts } from "./ClientProducts";
 import { Users } from "./Users";
-import { tw } from "@biqpod/app/ui/utils";
 import { PageNotFound } from "./PageNotFound";
-import { ProductRoute } from "./Links/ProductRoute";
 export const clientTabs: Tab[] = [
   {
     name: "orders",
@@ -22,8 +17,6 @@ export const clientTabs: Tab[] = [
   },
 ];
 export const Client = () => {
-  const colorMerge = useColorMerge();
-  const loc = useLocation();
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Scroll>

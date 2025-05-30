@@ -28,7 +28,7 @@ import {
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo } from "react";
-import { api } from "./apis";
+import { snapbuyApi } from "./apis";
 import { getDoc, getDocs } from "./server";
 import { useFullCart } from "./AddProductToCart";
 import { CartPopup } from "./CartPopup";
@@ -77,7 +77,7 @@ export const ClientProducts = () => {
   }, [uid]);
   const isFullWidth = useTemp<boolean>("isFullWidth");
   useEffect(() => {
-    if (user?.uid) return api.onCategoryAndMarketChange(user?.uid);
+    if (user?.uid) return snapbuyApi.onCategoryAndMarketChange(user?.uid);
   }, [user]);
   const search = getFieldValue("search-prod");
   const filterProducts = useMemo(() => {
@@ -94,7 +94,7 @@ export const ClientProducts = () => {
   const colorMerge = useColorMerge();
   useEffect(() => {
     if (user?.uid && storeUser?.uid) {
-      api.isFollowing(storeUser.uid).then((isYes) => {
+      snapbuyApi.isFollowing(storeUser.uid).then((isYes) => {
         if (!isYes) {
           showPopup(
             <Card
@@ -143,7 +143,7 @@ export const ClientProducts = () => {
                   className="rounded-full"
                   onClick={async () => {
                     closePopup();
-                    await api.follow(storeUser?.uid!);
+                    await snapbuyApi.follow(storeUser?.uid!);
                   }}
                 >
                   <Translate content="follow" />

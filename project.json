@@ -6,6 +6,6 @@
     "port": 4593
   },
   "production": {
-    "url": "https://snapshots.biqpod.com"
+    "url": "https://snapbuy.biqpod.com"
   }
 }

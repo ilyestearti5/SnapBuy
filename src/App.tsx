@@ -8,54 +8,87 @@ import {
   Window,
 } from "@biqpod/app/ui/layouts";
 import { Redirect, Route, Switch } from "react-router";
-import { PayoutRoute } from "@biqpod/app/ui/routes";
+import { AuthRoute, PayoutRoute } from "@biqpod/app/ui/routes";
 import { HeaderContent } from "./HeaderContent";
-import prodPhoto from "../public/products.png";
-import clientPhoto from "../public/clients.png";
-import shoppingPhoto from "../public/shopping.png";
-import feedbackPhoto from "../public/feedback.png";
-import overviewPhoto from "../public/overview.png";
-import unpaidPhoto from "../public/unpaied.jpg";
-import integrationsPhoto from "../public/integrations.png";
+import productsPhoto from "./assets/products.png";
+import storePhoto from "./assets/store.png";
+import clientPhoto from "./assets/clients.png";
+import shoppingPhoto from "./assets/shopping.png";
+import feedbackPhoto from "./assets/feedback.png";
+import offersPhoto from "./assets/offers.png";
+import overviewPhoto from "./assets/overview.png";
+import unpaidPhoto from "./assets/unpaied.jpg";
+// import integrationsPhoto from "./assets/integrations.png";
+import deliveryPhoto from "./assets/delivery.png";
 import {
   Line,
   Translate,
   Card,
   ClickedView,
   Button,
+  EmptyComponent,
 } from "@biqpod/app/ui/components";
 import { Link } from "react-router-dom";
-import { Producer } from "./Producer";
+import { Store } from "./Store";
 import { Client } from "./Client";
 import { FeedbackRoute } from "./FeedbackRoute";
-import { RedirectToLoginIfNeeded } from "./RedirectToLoginIfNeeded";
+import { Redirections } from "./RedirectToLoginIfNeeded";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Plans } from "./Plans";
 import { PageNotFound } from "./PageNotFound";
 import { ProductRoute } from "./Links/ProductRoute";
-import payChecked from "../public/payment-checked.png";
+import payChecked from "./assets/payment-checked.png";
+import { getTemp, getTempFromStore, useUser } from "@biqpod/app/ui/hooks";
+import { Stores } from "./Stores";
+import { OffersPage } from "./OffersPage";
+import { Deliveries } from "./Deliveries";
 export const userTabs = [
   {
     name: "overview",
-    link: "/producer/overview",
+    link: `/store/{storeId}/overview`,
     photo: overviewPhoto,
   },
   {
     name: "products",
-    link: "/producer/products",
-    photo: prodPhoto,
+    link: `/store/{storeId}/products`,
+    photo: productsPhoto,
   },
   {
     name: "orders",
-    link: "/producer/orders",
+    link: `/store/{storeId}/orders`,
     photo: shoppingPhoto,
   },
+  // {
+  //   name: "integrations",
+  //   link: `/store/{storeId}/integrations`,
+  //   photo: integrationsPhoto,
+  // },
   {
-    name: "integrations",
-    link: "/producer/integrations",
-    photo: integrationsPhoto,
+    name: "Stores",
+    link: `/store/{storeId}/stores`,
+    photo: storePhoto,
   },
 ];
+interface ProfileProps {
+  children?: JSX.Element;
+}
+export const Profile = ({ children }: ProfileProps) => {
+  const userLoaded = getTemp<boolean>("userLoaded");
+  const user = useUser();
+  return (
+    <EmptyComponent>
+      {userLoaded && user && children}
+      <Redirections />
+    </EmptyComponent>
+  );
+};
+export const useStoreId = () => {
+  return getTemp<string>("storeId");
+};
+export const getStoreId = () => {
+  return getTempFromStore<string>("storeId");
+};
+
 export const App = () => {
   return (
     <div className="flex flex-col h-full">
@@ -66,6 +99,15 @@ export const App = () => {
         <LeftSide />
         <Container>
           <Switch>
+            <Route path="/__/auth">
+              <AuthRoute
+                successComponent={
+                  <Profile>
+                    <Redirect to="/profile" />
+                  </Profile>
+                }
+              />
+            </Route>
             <Route path="/__/payment" exact>
               <PayoutRoute
                 successComponent={
@@ -132,33 +174,74 @@ export const App = () => {
               <Plans />
             </Route>
             <Route path="/profile" exact>
-              <div className="flex flex-wrap justify-center items-center gap-2 w-full h-full">
-                {mainTabs.map((tab) => {
-                  return (
-                    <Card key={tab.link} className="overflow-hidden">
-                      <ClickedView>
-                        <Link to={tab.link}>
-                          <div className="flex justify-center p-5">
-                            <img
-                              src={tab.photo}
-                              className="w-[100px] object-cover"
-                            />
-                          </div>
-                          <Line />
-                          <div className="p-2 text-xl text-center capitalize">
-                            <Translate content={tab.name} />
-                          </div>
-                        </Link>
-                      </ClickedView>
-                    </Card>
-                  );
-                })}
+              <div className="flex flex-col w-full h-full">
+                <div className="flex justify-center items-center p-4">
+                  <h1 className="bg-clip-text bg-gradient-to-r from-[--biqpod-primary] to-[--biqpod-secondary] font-bold text-transparent text-3xl text-center capitalize">
+                    <Translate content="who are you" />
+                  </h1>
+                </div>
+                <div className="flex flex-wrap justify-center items-center gap-2 w-full">
+                  {tabServices.map((tab) => {
+                    return (
+                      <Card key={tab.link} className="overflow-hidden">
+                        <ClickedView>
+                          <Link to={tab.link}>
+                            <div className="flex justify-center p-5">
+                              <img
+                                src={tab.photo}
+                                className="w-[100px] object-cover"
+                              />
+                            </div>
+                            <Line />
+                            <div className="p-2 text-xl text-center capitalize">
+                              <Translate content={tab.name} />
+                            </div>
+                          </Link>
+                        </ClickedView>
+                      </Card>
+                    );
+                  })}
+                </div>
+                <div className="flex justify-center items-center p-4">
+                  <h1 className="bg-clip-text bg-gradient-to-r from-[--biqpod-primary] to-[--biqpod-secondary] font-bold text-transparent text-3xl text-center capitalize">
+                    <Translate content="more" />
+                  </h1>
+                </div>
+                <div className="flex flex-wrap justify-center items-center gap-2 w-full">
+                  {extraTabs.map((tab) => {
+                    return (
+                      <Card key={tab.link} className="overflow-hidden">
+                        <ClickedView>
+                          <Link to={tab.link}>
+                            <div className="flex justify-center p-5">
+                              <img
+                                src={tab.photo}
+                                className="w-[100px] object-cover"
+                              />
+                            </div>
+                            <Line />
+                            <div className="p-2 text-xl text-center capitalize">
+                              <Translate content={tab.name} />
+                            </div>
+                          </Link>
+                        </ClickedView>
+                      </Card>
+                    );
+                  })}
+                </div>
               </div>
-              <RedirectToLoginIfNeeded />
             </Route>
-            <Route path="/producer">
-              <Producer />
-              <RedirectToLoginIfNeeded />
+            <Route path="/store">
+              <Profile>
+                <Switch>
+                  <Route path="/store" exact>
+                    <Stores />
+                  </Route>
+                  <Route path="/store/:storeId">
+                    <Store />
+                  </Route>
+                </Switch>
+              </Profile>
             </Route>
             <Route path="/product/:prodId">
               <ProductRoute />
@@ -169,12 +252,22 @@ export const App = () => {
             <Route path="/feedbacks" exact>
               <FeedbackRoute />
             </Route>
+            <Route path="/offers">
+              <OffersPage />
+            </Route>
             <Route exact path="/">
-              <RedirectToLoginIfNeeded onDone={<Redirect to="/profile" />} />
+              <Profile>
+                <Redirect to="/profile" />
+              </Profile>
             </Route>
             <Route exact path="/auth/login">
+              <Profile>
+                <Redirect to="/profile" />
+              </Profile>
               <ProfileView />
-              <RedirectToLoginIfNeeded onDone={<Redirect to="/profile" />} />
+            </Route>
+            <Route path="/deliveries">
+              <Deliveries />
             </Route>
             <Route path="*">
               <PageNotFound />
@@ -187,16 +280,28 @@ export const App = () => {
     </div>
   );
 };
-const mainTabs = [
+const tabServices = [
   {
-    name: "client",
+    name: "Stores",
+    link: "/store",
+    photo: storePhoto,
+  },
+  {
+    name: "Client",
     link: "/client",
     photo: clientPhoto,
   },
   {
-    name: "producer",
-    link: "/producer/orders",
-    photo: prodPhoto,
+    name: "Deliveries",
+    link: "/deliveries",
+    photo: deliveryPhoto,
+  },
+];
+const extraTabs = [
+  {
+    name: "offers",
+    link: "/offers",
+    photo: offersPhoto,
   },
   {
     name: "feedbacks",

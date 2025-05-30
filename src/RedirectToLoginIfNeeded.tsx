@@ -1,20 +1,36 @@
-import { AsyncComponent, EmptyComponent } from "@biqpod/app/ui/components";
-import { useUser } from "@biqpod/app/ui/hooks";
-import { Redirect } from "react-router";
+import {
+  AsyncComponent,
+  BlurOverlay,
+  CircleLoading,
+} from "@biqpod/app/ui/components";
+import { setTemp, useAsyncEffect, useUser } from "@biqpod/app/ui/hooks";
 import { getCurrentAuth } from "./server";
-export const RedirectToLoginIfNeeded = ({ onDone = <EmptyComponent /> }) => {
-  const user = useUser();
+import { delay } from "@biqpod/app/ui/utils";
+import { Link } from "react-router-dom";
+export const Redirections = () => {
   return (
     <AsyncComponent
-      deps={[user]}
+      loading={
+        <BlurOverlay className="bg-[--biqpod-primary-background] backdrop-blur-lg">
+          <CircleLoading />
+        </BlurOverlay>
+      }
       render={async () => {
-        const uid = await getCurrentAuth();
-        if (uid) {
-          return onDone;
-        } else {
-          return <Redirect to={"/auth/login"} />;
-        }
+        await delay(1000);
+        return <RedirectorChildren />;
       }}
     />
   );
+};
+export const RedirectorChildren = () => {
+  const user = useUser();
+  useAsyncEffect(async () => {
+    const authUid = await getCurrentAuth();
+    if (authUid) {
+      setTemp("userLoaded", true);
+      return;
+    }
+    document.getElementById("auth-login")?.click();
+  }, [user]);
+  return <Link id="auth-login" to="/auth/login" />;
 };

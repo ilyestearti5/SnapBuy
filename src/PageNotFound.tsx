@@ -1,5 +1,5 @@
 import { Button, Card, Line, Translate } from "@biqpod/app/ui/components";
-import pageNotFound from "../public/page-not-found.png";
+import pageNotFound from "./assets/page-not-found.png";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Link, useLocation } from "react-router-dom";
 export const PageNotFound = () => {
