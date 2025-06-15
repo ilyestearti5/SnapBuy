@@ -1,5 +1,5 @@
 import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
-import { delay, mergeArray, tw } from "@biqpod/app/ui/utils";
+import { delay, filterFuzzySearch, mergeArray, tw } from "@biqpod/app/ui/utils";
 import {
   BooleanField,
   Button,
@@ -31,12 +31,12 @@ import { useEffect, useMemo } from "react";
 import { getDocs } from "../server";
 import { snapbuyApi } from "../apis";
 import { PopupProduct } from "./PopupProduct";
-import { fuzzyRankedSearch } from "../utils";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRender } from "./ProductRender";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { getStoreId, useStoreId } from "../App";
+import { UpsertPack } from "./UpsertPack";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
   "colors",
@@ -185,18 +185,19 @@ export const loadFromExcel = async (file: string) => {
           "themeId",
           "price",
           "quantity",
+          "photo",
         ]}
         onChange={(json) => {
           showPopup(
             <PopupProduct
-              products={json.map(({ price, ...all }) => {
+              products={json.map(({ price, photo, ...all }) => {
                 return {
                   ...all,
                   single: {
                     price,
                   },
                   type: "single",
-                  photos: [],
+                  photos: photo ? [photo] : [],
                   storeId,
                 };
               })}
@@ -208,11 +209,10 @@ export const loadFromExcel = async (file: string) => {
       />
     );
 };
-
 const PAGE_SIZE = 20;
 export const Products = () => {
   const user = useUser();
-  const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
+  const products = useTemp<SnapBuy.Product[]>("fetched-products"); // Replace with your actual product data
   const lastDoc = useCopyState<SnapBuy.Product | null>(null);
   const hasMore = useCopyState(true);
   const storeId = useStoreId();
@@ -243,7 +243,7 @@ export const Products = () => {
         ...order.data,
         id: order.id,
       }));
-      products.set((prev) => (next ? [...prev, ...list] : list));
+      products.set((prev) => (next ? [...(prev || []), ...list] : list));
       const lastDocRef = newProducts.at(-1)?.data;
       lastDoc.set(lastDocRef ? lastDocRef : null);
       hasMore.set(newProducts.length === PAGE_SIZE);
@@ -264,7 +264,7 @@ export const Products = () => {
     if (!search) {
       return products.get;
     }
-    return fuzzyRankedSearch(search, products.get, "name");
+    return filterFuzzySearch(products.get || [], search, "name");
   }, [search, products.get]);
   useEffect(() => {
     if (user?.uid) return snapbuyApi.onCategoryAndMarketChange(user?.uid);
@@ -307,10 +307,12 @@ export const Products = () => {
       <Line />
       <Scroll>
         <div className="flex flex-wrap items-center gap-2 p-2">
-          {filterProducts.map((product) => {
-            return <ProductRender product={product} key={product.id} />;
+          {filterProducts?.map((product, index) => {
+            return (
+              <ProductRender index={index} product={product} key={product.id} />
+            );
           })}
-          {success && filterProducts.length === 0 && (
+          {success && filterProducts?.length === 0 && (
             <div className="flex justify-center items-center w-full h-full">
               <Card>
                 <div className="flex justify-center items-center p-2 h-full">
@@ -341,6 +343,7 @@ export const Products = () => {
               />
             </Card>
           )}
+          <div className="w-full h-[100px]" />
         </div>
       </Scroll>
       <Card
@@ -349,6 +352,16 @@ export const Products = () => {
         }}
         className="right-4 bottom-4 z-[5000000000000000000000000000000] absolute flex flex-col items-center p-3 rounded-3xl"
       >
+        <CircleTip
+          icon={allIcons.solid.faBoxesPacking}
+          className={tw(
+            "transition-[width,height]",
+            !showTools.get && "w-[0px] h-[0px]"
+          )}
+          onClick={async () => {
+            showPopup(<UpsertPack />);
+          }}
+        />
         <CircleTip
           icon={allIcons.regular.faFileExcel}
           className={tw(

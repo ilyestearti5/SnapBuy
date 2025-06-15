@@ -104,12 +104,6 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
             <span className="font-bold text-xl">({news.length})</span>
           )}
         </div>
-        <div className="flex items-center gap-2 p-2">
-          <BooleanField id="available-by-default" state={newsState} />
-          <span className="text-xl capitalize">
-            <Translate content="always available" />
-          </span>
-        </div>
       </div>
       <Line />
       <div className="p-2">
@@ -132,7 +126,7 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
                   available: !!isAvailable.get,
                 })) ?? undefined,
             };
-            var isYes = confirm({
+            var isYes = await confirm({
               title: "add products",
               message: "are you sure you want to add these products ?",
             });

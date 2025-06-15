@@ -14,7 +14,6 @@ import {
   showPopup,
   useAsyncEffect,
   useAsyncMemo,
-  useColorMerge,
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
@@ -26,18 +25,18 @@ import { CartPopup } from "../CartPopup";
 import { ImageSlider } from "./ImageSlider";
 import { FormSection } from "./FormSection";
 export const ProductRoute = () => {
-  const colorMerge = useColorMerge();
   const sizes = useCopyState<string[] | Nothing>([]);
   const colors = useCopyState<string[] | Nothing>([]);
   const prodId = useParams<{ prodId: string }>().prodId;
   const product = useAsyncMemo(async () => {
     return await snapbuyApi.getProduct(prodId);
   }, [prodId]);
-  const cart = useCartCount(product?.uid || "", product?.id || "");
+
+  const cart = useCartCount(product?.storeId || "", product?.id || "");
   useAsyncEffect(async () => {
     if (product?.theme) {
       for (const themeName in product.theme) {
-        var color = product.theme?.[themeName as keyof typeof product.theme];
+        const color = product.theme?.[themeName as keyof typeof product.theme];
         if (color) {
           setColorFor(themeName, color, "default");
           setColorFor(themeName, "", "dark");
@@ -72,18 +71,11 @@ export const ProductRoute = () => {
                         <div key={index} onClick={() => {}}>
                           <div
                             className={tw(
-                              "rounded-full outline-1 outline-solid outline-offset-2 w-[20px] h-[20px] transition-[outline-width] cursor-pointer",
-                              isSelected && "outline-4"
+                              "rounded-full outline-1 outline-[--biqpod-borders] outline-solid outline-offset-2 w-[20px] h-[20px] transition-[outline-width] cursor-pointer",
+                              isSelected &&
+                                "outline-4 outline-[--biqpod-primary]"
                             )}
                             style={{
-                              ...colorMerge(
-                                {
-                                  outlineColor: "borders",
-                                },
-                                isSelected && {
-                                  outlineColor: "primary",
-                                }
-                              ),
                               backgroundColor: color,
                             }}
                           />
@@ -132,7 +124,7 @@ export const ProductRoute = () => {
               <Button
                 icon={allIcons.solid.faPaperPlane}
                 onClick={() => {
-                  showPopup(<CartPopup uid={product.uid!} />);
+                  showPopup(<CartPopup storeId={product.storeId!} />);
                 }}
                 className={tw("bg-[--biqpod-secondary]")}
               >

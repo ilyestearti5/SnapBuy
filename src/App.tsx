@@ -7,19 +7,11 @@ import {
   RightSide,
   Window,
 } from "@biqpod/app/ui/layouts";
-import { Redirect, Route, Switch } from "react-router";
+import { Redirect, Route, Switch, useLocation } from "react-router";
 import { AuthRoute, PayoutRoute } from "@biqpod/app/ui/routes";
 import { HeaderContent } from "./HeaderContent";
-import productsPhoto from "./assets/products.png";
-import storePhoto from "./assets/store.png";
-import clientPhoto from "./assets/clients.png";
-import shoppingPhoto from "./assets/shopping.png";
-import feedbackPhoto from "./assets/feedback.png";
-import offersPhoto from "./assets/offers.png";
-import overviewPhoto from "./assets/overview.png";
 import unpaidPhoto from "./assets/unpaied.jpg";
 // import integrationsPhoto from "./assets/integrations.png";
-import deliveryPhoto from "./assets/delivery.png";
 import {
   Line,
   Translate,
@@ -38,37 +30,19 @@ import { Plans } from "./Plans";
 import { PageNotFound } from "./PageNotFound";
 import { ProductRoute } from "./Links/ProductRoute";
 import payChecked from "./assets/payment-checked.png";
-import { getTemp, getTempFromStore, useUser } from "@biqpod/app/ui/hooks";
+import {
+  getTemp,
+  getTempFromStore,
+  setSettingValue,
+  useUser,
+} from "@biqpod/app/ui/hooks";
 import { Stores } from "./Stores";
 import { OffersPage } from "./OffersPage";
 import { Deliveries } from "./Deliveries";
-export const userTabs = [
-  {
-    name: "overview",
-    link: `/store/{storeId}/overview`,
-    photo: overviewPhoto,
-  },
-  {
-    name: "products",
-    link: `/store/{storeId}/products`,
-    photo: productsPhoto,
-  },
-  {
-    name: "orders",
-    link: `/store/{storeId}/orders`,
-    photo: shoppingPhoto,
-  },
-  // {
-  //   name: "integrations",
-  //   link: `/store/{storeId}/integrations`,
-  //   photo: integrationsPhoto,
-  // },
-  {
-    name: "Stores",
-    link: `/store/{storeId}/stores`,
-    photo: storePhoto,
-  },
-];
+import { appTabs, extraTabs, tabServices } from "./utils";
+import { isAndroid, isIos, isWeb } from "@biqpod/app/ui/app";
+import { useEffect } from "react";
+import { PackRoute } from "./Links/PackRoute";
 interface ProfileProps {
   children?: JSX.Element;
 }
@@ -88,10 +62,36 @@ export const useStoreId = () => {
 export const getStoreId = () => {
   return getTempFromStore<string>("storeId");
 };
-
+interface SectionProps {
+  text: string;
+}
+const Section = ({ text }: SectionProps) => {
+  return (
+    <div className="flex justify-center items-center p-4">
+      <h1 className="bg-clip-text bg-gradient-to-r from-red-500 to-blue-400 drop-shadow-md font-extrabold text-transparent text-4xl text-center capitalize">
+        <Translate content={text} />
+      </h1>
+    </div>
+  );
+};
 export const App = () => {
+  const loc = useLocation();
+  useEffect(() => {
+    const searchParams = new URLSearchParams(loc.search);
+    const lang = searchParams.get("lang");
+    const dark = searchParams.get("dark");
+    lang && setSettingValue("window/lang.enum", lang);
+    typeof dark === "string" &&
+      setSettingValue("window/dark.boolean", dark === "true");
+  }, [loc.search]);
   return (
     <div className="flex flex-col h-full">
+      {isAndroid && (
+        <div className="z-[100000000000000000000000000000000000000000000000] h-[24px]" />
+      )}
+      {isIos && (
+        <div className="z-[100000000000000000000000000000000000000000000000] h-[40px]" />
+      )}
       <Header>
         <HeaderContent />
       </Header>
@@ -175,11 +175,7 @@ export const App = () => {
             </Route>
             <Route path="/profile" exact>
               <div className="flex flex-col w-full h-full">
-                <div className="flex justify-center items-center p-4">
-                  <h1 className="bg-clip-text bg-gradient-to-r from-[--biqpod-primary] to-[--biqpod-secondary] font-bold text-transparent text-3xl text-center capitalize">
-                    <Translate content="who are you" />
-                  </h1>
-                </div>
+                <Section text="service for" />
                 <div className="flex flex-wrap justify-center items-center gap-2 w-full">
                   {tabServices.map((tab) => {
                     return (
@@ -202,11 +198,7 @@ export const App = () => {
                     );
                   })}
                 </div>
-                <div className="flex justify-center items-center p-4">
-                  <h1 className="bg-clip-text bg-gradient-to-r from-[--biqpod-primary] to-[--biqpod-secondary] font-bold text-transparent text-3xl text-center capitalize">
-                    <Translate content="more" />
-                  </h1>
-                </div>
+                <Section text="more" />
                 <div className="flex flex-wrap justify-center items-center gap-2 w-full">
                   {extraTabs.map((tab) => {
                     return (
@@ -229,6 +221,33 @@ export const App = () => {
                     );
                   })}
                 </div>
+                {isWeb && (
+                  <EmptyComponent>
+                    <Section text="apps" />
+                    <div className="flex flex-wrap justify-center items-center gap-2 w-full">
+                      {appTabs.map((tab) => {
+                        return (
+                          <Card key={tab.url} className="overflow-hidden">
+                            <ClickedView>
+                              <a target="_blank" href={tab.url}>
+                                <div className="flex justify-center p-5">
+                                  <img
+                                    src={tab.photo}
+                                    className="w-[100px] object-cover"
+                                  />
+                                </div>
+                                <Line />
+                                <div className="p-2 text-xl text-center capitalize">
+                                  <Translate content={tab.name} />
+                                </div>
+                              </a>
+                            </ClickedView>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  </EmptyComponent>
+                )}
               </div>
             </Route>
             <Route path="/store">
@@ -245,6 +264,9 @@ export const App = () => {
             </Route>
             <Route path="/product/:prodId">
               <ProductRoute />
+            </Route>
+            <Route path="/pack/:packId">
+              <PackRoute />
             </Route>
             <Route path="/client">
               <Client />
@@ -280,32 +302,3 @@ export const App = () => {
     </div>
   );
 };
-const tabServices = [
-  {
-    name: "Stores",
-    link: "/store",
-    photo: storePhoto,
-  },
-  {
-    name: "Client",
-    link: "/client",
-    photo: clientPhoto,
-  },
-  {
-    name: "Deliveries",
-    link: "/deliveries",
-    photo: deliveryPhoto,
-  },
-];
-const extraTabs = [
-  {
-    name: "offers",
-    link: "/offers",
-    photo: offersPhoto,
-  },
-  {
-    name: "feedbacks",
-    link: "/feedbacks",
-    photo: feedbackPhoto,
-  },
-];

@@ -1,13 +1,29 @@
-import { Scroll, Button } from "@biqpod/app/ui/components";
-import { setTemp, useColorMerge } from "@biqpod/app/ui/hooks";
-import { useEffect } from "react";
-import { Switch, Route, useLocation, useParams } from "react-router";
+import { Button, Card, Scroll, Translate } from "@biqpod/app/ui/components";
 import { Link } from "react-router-dom";
-import { userTabs } from "./App";
 import { Orders } from "./Links/Orders";
-import { Products } from "./Links/Products";
 import { Overview } from "./Overview";
+import { Products } from "./Links/Products";
+import { Route, Switch, useLocation, useParams } from "react-router";
+import { setTemp, useColorMerge } from "@biqpod/app/ui/hooks";
 import { Stores } from "./Stores";
+import { useEffect } from "react";
+import { userTabs } from "./utils";
+function Page() {
+  return (
+    <div className="flex justify-center items-center p-2 h-full">
+      <Card>
+        <div className="flex flex-col justify-center items-center gap-3 p-8">
+          <h1 className="bg-clip-text bg-gradient-to-r from-red-500 to-blue-400 drop-shadow-md font-extrabold text-transparent text-2xl text-center capitalize">
+            <Translate content="This feature will be available soon" />
+          </h1>
+          <span className="text-[--biqpod-gray-opacity-2] text-base">
+            <Translate content="We are working hard to provide this feature for you. Stay tuned!" />
+          </span>
+        </div>
+      </Card>
+    </div>
+  );
+}
 export const Store = () => {
   const colorMerge = useColorMerge();
   const loc = useLocation();
@@ -69,6 +85,10 @@ export const Store = () => {
             <Route path={createRoute("overview")}>
               <Overview />
             </Route>
+            <Route path={createRoute("forms")}>
+              <Page />
+            </Route>
+
             {/* <Route path={createRoute("settings")}>
               <SettingsPage />
             </Route> */}

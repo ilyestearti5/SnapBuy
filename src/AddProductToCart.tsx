@@ -15,6 +15,7 @@ import {
   getTempFromStore,
   setFieldValue,
   setTemp,
+  useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { setFocused } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
@@ -23,24 +24,24 @@ import { getPrice } from "./CartPopup";
 export interface ProductPopupProps {
   product: SnapBuy.Product;
 }
-export const addToCart = (uid: string, prodId: string, count: number) => {
-  setTemp(`cart.${uid}.${prodId}.count`, count);
+export const addToCart = (storeId: string, prodId: string, count: number) => {
+  setTemp(`cart.${storeId}.${prodId}.count`, count);
 };
-export const removeCart = (uid: string, prodId: string) => {
-  var fullCart = getTempFromStore<SnapBuy.Order["products"]>("cart." + uid);
+export const removeCart = (storeId: string, prodId: string) => {
+  var fullCart = getTempFromStore<SnapBuy.Order["products"]>("cart." + storeId);
   var { [prodId]: _, ...rest } = fullCart || {};
-  setTemp("cart", rest);
+  setTemp("cart." + storeId, rest);
 };
-export const useCart = (uid: string) => {
-  const carts = getTemp<SnapBuy.Order["products"]>("cart." + uid);
+export const useCart = (storeId: string) => {
+  const carts = getTemp<SnapBuy.Order["products"]>("cart." + storeId);
   return carts;
 };
 export interface FullCartResult {
   prodId: string;
   count: number;
 }
-export const useFullCart = (uid: string): FullCartResult[] => {
-  const carts = useCart(uid);
+export const useFullCart = (storeId: string): FullCartResult[] => {
+  const carts = useCart(storeId);
   const result = useMemo(() => {
     return Object.entries(carts || {}).map(([prodId, r]) => {
       const count = r?.count || 0;
@@ -52,11 +53,11 @@ export const useFullCart = (uid: string): FullCartResult[] => {
   }, [carts]);
   return result;
 };
-export const deleteCart = (uid: string) => {
-  setTemp("cart." + uid, {});
+export const deleteCart = (storeId: string) => {
+  setTemp("cart." + storeId, null);
 };
-export const useCartCount = (uid: string, prodId: string) => {
-  const carts = useCart(uid);
+export const useCartCount = (storeId: string, prodId: string) => {
+  const carts = useCart(storeId);
   return useMemo(() => {
     return carts?.[prodId]?.count || 0;
   }, [carts, prodId]);
@@ -67,11 +68,28 @@ export const useCartLine = (uid: string, prodId: string) => {
     return carts?.[prodId];
   }, [carts, prodId]);
 };
+export function initCart() {
+  const fullCarts = getTemp("cart");
+  const cartsLoaded = useCopyState(false);
+  useEffect(() => {
+    const cart = localStorage.getItem("cart");
+    try {
+      const parsedCart = cart ? JSON.parse(cart) : {};
+      setTemp("cart", parsedCart);
+    } catch {}
+    cartsLoaded.set(true);
+  }, []);
+  useEffect(() => {
+    if (cartsLoaded.get) {
+      localStorage.setItem("cart", JSON.stringify(fullCarts));
+    }
+  }, [fullCarts, cartsLoaded.get]);
+}
 export const AddProductInCart = ({ product }: ProductPopupProps) => {
   const prod = product;
-  const uid = product.uid!;
+  const storeId = product.storeId!;
   const currentCount = getFieldValue("prod-count");
-  const cartCount = useCartCount(uid, product.id);
+  const cartCount = useCartCount(storeId, product.id);
   const photos = product.photos || [];
   const priceDetected = getPrice(prod, +(currentCount || ""));
   useEffect(() => {
@@ -120,7 +138,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
         <Field
           inputName="prod-count"
           inputMode="numeric"
-          className="bg-[--biqpod-primary-background] border border-[--biqpod-borders] focus:border-[--biqpod-primary] border-solid rounded-2xl text-3xl text-center"
+          className="focus:border-[--biqpod-primary] border-solid rounded-2xl text-3xl text-center"
         />
         <div>
           <div
@@ -140,7 +158,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
           icon={allIcons.solid.faPlus}
           onClick={() => {
             const count = parseInt(currentCount || "") || 0;
-            addToCart(uid, prod.id, count);
+            addToCart(storeId, prod.id, count);
             closePopup();
           }}
         >

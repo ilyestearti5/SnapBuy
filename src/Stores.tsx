@@ -14,6 +14,7 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import {
+  closePopup,
   confirm,
   execAction,
   getFieldValue,
@@ -22,6 +23,7 @@ import {
   openMenu,
   setFieldValue,
   setTemp,
+  showBottomSheet,
   showPopup,
   showToast,
   useAction,
@@ -35,7 +37,9 @@ import notFoundPhoto from "./assets/nothing.png";
 import { Link } from "react-router-dom";
 import { UpsertStore } from "./EditStoreBottomSheet";
 import { useStoreId } from "./App";
-import { toId } from "./utils";
+import { isMobile } from "@biqpod/app/ui/app";
+import { motion } from "framer-motion";
+import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";
 export const Stores = () => {
   const storeId = useStoreId();
   const storesState = useCopyState<SnapBuy.Store[]>([]);
@@ -50,8 +54,11 @@ export const Stores = () => {
   const storeName = getFieldValue("store-name");
   const storePhone = getFieldValue("store-phone");
   const storePhoto = getTemp<string>("store-photo");
+  const deliveryPrice = getTemp<number | null | undefined>(
+    "store-delivery-price"
+  );
   useAction(
-    "upsert-new-store",
+    "upsert-store",
     async (id?: string) => {
       if (!storeName) {
         showToast("Please enter store name", "error");
@@ -64,9 +71,16 @@ export const Stores = () => {
       const store: SnapBuy.Store = {
         name: storeName,
         phone: storePhone,
+        id: id || Date.now().toString(),
         photo: storePhoto || undefined,
-        id: id || toId(storeName),
+        deliveryPrice: deliveryPrice || undefined,
       };
+      if (storePhoto) {
+        store.photo = storePhoto;
+      }
+      if (typeof deliveryPrice == "number") {
+        store.deliveryPrice = deliveryPrice;
+      }
       await delay(1000);
       if (id) {
         await snapbuyApi.updateStore(id, store);
@@ -75,12 +89,14 @@ export const Stores = () => {
         await snapbuyApi.addStore(store);
         showToast("Store added successfully", "success");
       }
+      closePopup();
       setFieldValue("store-name", "");
       setFieldValue("store-phone", "");
       setTemp("store-photo", null);
+      setTemp("store-delivery-price", null);
       execAction("print-stores");
     },
-    [storeName, storePhone, storePhoto]
+    [storeName, storePhone, storePhoto, deliveryPrice]
   );
   const actionLoading = isLoading(action);
   const user = useUser();
@@ -106,145 +122,165 @@ export const Stores = () => {
       <div className="flex flex-wrap items-center gap-2 p-2">
         {!actionLoading && (
           <EmptyComponent>
-            {storesState.get.map((store) => {
+            {storesState.get.map((store, idx) => {
               const linkId = `store-${store.id}`;
               const choosed = storeId === store.id;
               return (
-                <Card
+                <motion.div
                   key={store.id}
-                  className="relative max-md:w-full md:min-w-[400px] overflow-hidden"
+                  initial={
+                    isMobile
+                      ? { opacity: 0, y: 40 }
+                      : { opacity: 0, scale: 0.95 }
+                  }
+                  animate={
+                    isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1 }
+                  }
+                  transition={{
+                    duration: 0.3,
+                    delay: idx * 0.05,
+                  }}
+                  className="max-md:w-full md:min-w-[400px]"
                 >
-                  <div className="flex justify-between items-center gap-4 p-4">
-                    <div className="flex items-center gap-2">
-                      <Image
-                        className="w-[60px] h-[60px]"
-                        src={store.photo}
-                        alt={
-                          <div className="flex justify-center items-center">
-                            <Icon
-                              icon={allIcons.solid.faStore}
-                              iconClassName="text-2xl"
-                            />
-                          </div>
-                        }
-                      />
-                      <div>
-                        <p className="font-bold text-lg truncate">
-                          {store.name}
-                        </p>
-                        <p>
-                          <Anchor href={`tel:${store.phone}`}>
-                            {store.phone}
-                          </Anchor>
-                        </p>
+                  <Card className="relative w-full overflow-hidden">
+                    <div className="flex justify-between items-center gap-4 p-4">
+                      <div className="flex items-center gap-2">
+                        <div>
+                          <Image
+                            className="bg-[--biqpod-gray-opacity] rounded-xl w-[60px] h-[60px]"
+                            src={store.photo}
+                            alt={
+                              <div className="flex justify-center items-center">
+                                <Icon
+                                  icon={allIcons.solid.faStore}
+                                  iconClassName="text-2xl"
+                                />
+                              </div>
+                            }
+                          />
+                        </div>
+                        <div>
+                          <p className="font-bold max-md:text-base md:text-lg text-wrap">
+                            {store.name}
+                          </p>
+                          <p className="max-md:text-xs">
+                            <Anchor href={`tel:${store.phone}`}>
+                              {store.phone}
+                            </Anchor>
+                          </p>
+                        </div>
+                      </div>
+                      <div className="flex justify-center items-center">
+                        <CircleTip
+                          icon={allIcons.solid.faChevronRight}
+                          onClick={async () => {
+                            if (choosed) {
+                              showToast(
+                                "You are already in this store",
+                                "info",
+                                {
+                                  id: "already-in-store",
+                                }
+                              );
+                              return;
+                            }
+                            if (storeId) {
+                              const response = await confirm({
+                                message:
+                                  "Are you sure you want to switch store?",
+                                title: "Switch Store",
+                              });
+                              if (!response) return;
+                            }
+                            document.getElementById(linkId)?.click();
+                          }}
+                          className="text-2xl"
+                          iconClassName="text-2xl"
+                        />
+                        <CircleTip
+                          icon={allIcons.solid.faEllipsisVertical}
+                          onClick={({ clientX, clientY }) => {
+                            openMenu({
+                              x: clientX,
+                              y: clientY,
+                              menu: [
+                                {
+                                  label: "Copy Link",
+                                  defaultIcon: allIcons.solid.faLink,
+                                  click: async () => {
+                                    showBottomSheet(
+                                      <CopyStoreLinkBottomSheet
+                                        storeId={store.id}
+                                      />
+                                    );
+                                  },
+                                },
+                                // {
+                                //   label: "Invite",
+                                //   defaultIcon: allIcons.solid.faShare,
+                                //   async click() {
+                                //     showPopup(
+                                //       <Card>
+                                //         <div className="flex justify-between items-center gap-2 p-3">
+                                //           <h1 className="font-bold text-3xl">
+                                //     rounded-full        <Translate content="invite to store" />
+                                //           </h1>
+                                //           <CircleTip
+                                //             icon={allIcons.solid.faXmark}
+                                //             onClick={() => {
+                                //               closePopup();
+                                //             }}
+                                //           />
+                                //         </div>
+                                //       </Card>
+                                //     );
+                                //   },
+                                // },
+                                {
+                                  label: "Edit",
+                                  defaultIcon: allIcons.solid.faPen,
+                                  click: () => {
+                                    showPopup(<UpsertStore store={store} />, {
+                                      type: "blur",
+                                    });
+                                  },
+                                },
+                                {
+                                  label: "Delete",
+                                  defaultIcon: allIcons.solid.faTrash,
+                                  click: async () => {
+                                    const response = await confirm({
+                                      title: "Delete Store",
+                                      message:
+                                        "Are you sure you want to delete this store?",
+                                      detail:
+                                        "All data related to this store will be removed (Products / Orders).",
+                                    });
+                                    if (response) {
+                                      execAction("delete-store", store.id);
+                                    }
+                                  },
+                                },
+                              ],
+                            });
+                          }}
+                        />
                       </div>
                     </div>
-                    <div className="flex justify-center items-center">
-                      <CircleTip
-                        icon={allIcons.solid.faChevronRight}
-                        onClick={async () => {
-                          if (choosed) {
-                            showToast("You are already in this store", "info", {
-                              id: "already-in-store",
-                            });
-                            return;
-                          }
-                          if (storeId) {
-                            const response = await confirm({
-                              message: "Are you sure you want to switch store?",
-                              title: "Switch Store",
-                            });
-                            if (!response) return;
-                          }
-                          document.getElementById(linkId)?.click();
-                        }}
-                        className="text-2xl"
-                        iconClassName="text-2xl"
-                      />
-                      <CircleTip
-                        icon={allIcons.solid.faEllipsisVertical}
-                        onClick={({ clientX, clientY }) => {
-                          openMenu({
-                            x: clientX,
-                            y: clientY,
-                            menu: [
-                              {
-                                label: "Copy Link",
-                                defaultIcon: allIcons.solid.faLink,
-                                click: async () => {
-                                  const url = new URL(window.location.href);
-                                  url.pathname = `/stores/${store.id}`;
-                                  await navigator.clipboard.writeText(
-                                    url.toString()
-                                  );
-                                  showToast("Link copied to clipboard");
-                                },
-                              },
-                              // {
-                              //   label: "Invite",
-                              //   defaultIcon: allIcons.solid.faShare,
-                              //   async click() {
-                              //     showPopup(
-                              //       <Card>
-                              //         <div className="flex justify-between items-center gap-2 p-3">
-                              //           <h1 className="font-bold text-3xl">
-                              //             <Translate content="invite to store" />
-                              //           </h1>
-                              //           <CircleTip
-                              //             icon={allIcons.solid.faXmark}
-                              //             onClick={() => {
-                              //               closePopup();
-                              //             }}
-                              //           />
-                              //         </div>
-                              //       </Card>
-                              //     );
-                              //   },
-                              // },
-                              {
-                                label: "Edit",
-                                defaultIcon: allIcons.solid.faPen,
-                                click: () => {
-                                  showPopup(<UpsertStore store={store} />, {
-                                    type: "blur",
-                                  });
-                                },
-                              },
-                              {
-                                label: "Delete",
-                                defaultIcon: allIcons.solid.faTrash,
-                                click: async () => {
-                                  const response = await confirm({
-                                    title: "Delete Store",
-                                    message:
-                                      "Are you sure you want to delete this store?",
-                                    detail:
-                                      "All data related to this store will be removed (Products / Orders).",
-                                  });
-                                  if (response) {
-                                    execAction("delete-store", store.id);
-                                  }
-                                },
-                              },
-                            ],
-                          });
-                        }}
-                      />
-                    </div>
-                  </div>
-                  {choosed && (
-                    <span className="left-1 absolute inset-y-2 bg-[--biqpod-primary] rounded-full w-[8px]"></span>
-                  )}
-                  <Link to={`/store/${store.id}/overview`} id={linkId} />
-                  {deletionStore === store.id && (
-                    <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] backdrop-blur-md">
-                      <CircleLoading />
-                    </div>
-                  )}
-                </Card>
+                    {choosed && (
+                      <span className="left-1 absolute inset-y-2 bg-[--biqpod-primary] rounded-full w-[8px]"></span>
+                    )}
+                    <Link to={`/store/${store.id}/overview`} id={linkId} />
+                    {deletionStore === store.id && (
+                      <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] backdrop-blur-md">
+                        <CircleLoading />
+                      </div>
+                    )}
+                  </Card>
+                </motion.div>
               );
             })}
-            {!!storesState.get.length && (
+            {!!storesState.get.length && storesState.get.length < 5 && (
               <Card
                 className="flex justify-center items-center rounded-2xl max-md:w-full min-w-[200px] h-[80px]"
                 onClick={() => {

@@ -65,15 +65,24 @@ export const CartLine = ({ data }: CartLineProps) => {
                   icon={allIcons.solid.faMinus}
                   onClick={() => {
                     if (count && count > 1) {
-                      addToCart(product.uid!, product.id!, count - 1);
+                      addToCart(product.storeId!, product.id!, count - 1);
                     }
                   }}
                 />
-                <div>{count}</div>
+                <input
+                  type="number"
+                  min={1}
+                  value={count}
+                  onChange={(e) => {
+                    const newCount = Math.max(1, Number(e.target.value));
+                    addToCart(product.storeId!, product.id!, newCount);
+                  }}
+                  className="bg-transparent border-none outline-none w-10 text-center"
+                />
                 <CircleTip
                   icon={allIcons.solid.faPlus}
                   onClick={() => {
-                    addToCart(product.uid!, product.id!, (count || 0) + 1);
+                    addToCart(product.storeId!, product.id!, (count || 0) + 1);
                   }}
                 />
               </div>
@@ -101,7 +110,7 @@ export const CartLine = ({ data }: CartLineProps) => {
                         return;
                       }
                     }
-                    removeCart(product.uid!, product.id!);
+                    removeCart(product.storeId!, product.id!);
                   }}
                 />
               </div>

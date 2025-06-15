@@ -70,13 +70,13 @@ export const OrderView = ({ order }: OrderView) => {
                     )}
                   >
                     <span className="font-bold text-[--biqpod-success] text-right">
-                      {product.price}
+                      {product.price}DA
                     </span>
                     <div className="bg-[--biqpod-secondary-background] px-2 rounded-md">
                       {product.count}
                     </div>
                     <span className="font-bold text-[--biqpod-success] text-right">
-                      {total}
+                      {total}DA
                     </span>
                   </div>
                 </div>
@@ -108,7 +108,9 @@ export const OrderView = ({ order }: OrderView) => {
       <div className="flex justify-center items-center gap-1 p-4 text-xl">
         <span>Total :</span>
         {!!list && (
-          <span className="font-bold text-[--biqpod-success]">{total}</span>
+          <span className="font-bold text-[--biqpod-success]">
+            {order.totalPrice || total}DA
+          </span>
         )}
         {!list && (
           <CardWait className="inline-block rounded-full w-[100px] h-[20px]" />

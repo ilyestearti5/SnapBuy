@@ -1,5 +1,6 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
+  BooleanField,
   Button,
   Card,
   CircleLoading,
@@ -23,8 +24,11 @@ import {
   isSuccess,
   setFieldValue,
   setTemp,
+  showPopup,
   showToast,
   useAction,
+  useAsyncMemo,
+  useCopyState,
   useUser,
   visibilityTemp,
 } from "@biqpod/app/ui/hooks";
@@ -34,6 +38,9 @@ import { useEffect, useMemo } from "react";
 import { mapAsync, mergeArray, setFocused, tw } from "@biqpod/app/ui/utils";
 import { Nothing } from "@biqpod/app/ui/types";
 import { CartLine } from "./CartLine";
+import { Carts } from "./ClientStores";
+import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
+import { isWeb } from "@biqpod/app/ui/app";
 export interface ProductMore {
   product: SnapBuy.Product;
   count: number;
@@ -102,10 +109,11 @@ export function useActionStatus(actionName?: string | Action) {
   };
 }
 interface CartPopupProps {
-  uid: string;
+  storeId: string;
+  backToCarts?: boolean;
 }
-export const CartPopup = ({ uid }: CartPopupProps) => {
-  const fullCart = useFullCart(uid);
+export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
+  const fullCart = useFullCart(storeId);
   const counts = getTemp<Record<string, number>>("cart-count-prices");
   const total = useMemo(() => {
     return Object.values(counts || {}).reduce((acc, total) => {
@@ -113,13 +121,17 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
     }, 0);
   }, [counts]);
   const clientForm = visibilityTemp.getTemp<boolean>("client-form");
-  const carts = useCart(uid);
+  const carts = useCart(storeId);
   const firstname = getFieldValue("client-firstname");
   const lastname = getFieldValue("client-lastname");
   const phone = getFieldValue("client-phone");
   const address = getFieldValue("client-address");
   const wilaya = getFieldValue("client-wilaya");
   const key = getFieldValue("client-key");
+  const deliveryState = useCopyState<boolean | null>(false);
+  const store = useAsyncMemo(() => {
+    return snapbuyApi.getStore(storeId);
+  }, []);
   const orderCreationAction = useAction(
     "create-order",
     async () => {
@@ -177,15 +189,11 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
       }
       const products: SnapBuy.Order["products"] = {};
       await mapAsync(Object.entries(carts), async ([prodId, value]) => {
-        const prod = await snapbuyApi.getProduct(prodId);
-        const price = getPrice(prod, value?.count);
-        if (prod && products) {
-          products[prodId] = {
-            count: value?.count,
-            price: price.total,
-          };
-        }
+        products[prodId] = {
+          count: value?.count,
+        };
       });
+      localStorage.setItem("phone", phone);
       const options: CreateOrderOptions = {
         products,
         client: {
@@ -198,26 +206,62 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
             wilaya,
           },
         },
+        delivery: deliveryState.get || false,
         key: key || "",
       };
       await snapbuyApi.createOrder(options);
       closePopup();
       showToast("Order Created", "success");
-      deleteCart(uid);
+      deleteCart(storeId);
     },
-    [phone, address, wilaya, firstname, key, uid]
+    [phone, address, wilaya, firstname, deliveryState.get, key, storeId]
   );
   const action = useAction(
     "auto-detect-location",
     () => {
-      return new Promise((resolve, reject) => {
-        navigator.geolocation.getCurrentPosition(async (position) => {
-          const { latitude: lat, longitude: lon } = position.coords;
-          const { fullAddress, wilaya } = await getAddressFromCoords(lat, lon);
-          setFieldValue("client-wilaya", wilaya);
-          setFieldValue("client-address", fullAddress);
-          resolve(true);
-        }, reject);
+      return new Promise(async (resolve, reject) => {
+        try {
+          if (isWeb) {
+            navigator.geolocation.getCurrentPosition(
+              async (position) => {
+                const { latitude: lat, longitude: lon } = position.coords;
+                const { fullAddress, wilaya } = await getAddressFromCoords(
+                  lat,
+                  lon
+                );
+                setFieldValue("client-wilaya", wilaya);
+                setFieldValue("client-address", fullAddress);
+                resolve(true);
+              },
+              (error) => {
+                showToast("Geolocation error: " + error.message, "error");
+                reject(new Error("Geolocation error: " + error.message));
+              }
+            );
+          } else {
+            let permStatus: PermissionStatus =
+              await Geolocation.checkPermissions();
+            if (permStatus.location !== "granted") {
+              permStatus = await Geolocation.requestPermissions();
+              if (permStatus.location !== "granted") {
+                showToast("Location permission denied", "error");
+                return reject(new Error("Location permission denied"));
+              }
+            }
+            const position = await Geolocation.getCurrentPosition();
+            const { latitude: lat, longitude: lon } = position.coords;
+            const { fullAddress, wilaya } = await getAddressFromCoords(
+              lat,
+              lon
+            );
+            setFieldValue("client-wilaya", wilaya);
+            setFieldValue("client-address", fullAddress);
+            resolve(true);
+          }
+          // Check geolocation permission
+        } catch (err) {
+          reject(err);
+        }
       });
     },
     []
@@ -228,7 +272,8 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
   useEffect(() => {
     setFieldValue("client-firstname", user?.firstname || "");
     setFieldValue("client-lastname", user?.lastname || "");
-    setFieldValue("client-phone", user?.phone || "");
+    const phoneNumber = user?.phone || localStorage.getItem("phone") || "";
+    setFieldValue("client-phone", phoneNumber);
   }, [user]);
   useEffect(() => {
     setTemp("client-form", false);
@@ -243,12 +288,16 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
       <div>
         <div className="flex justify-between items-center px-5 h-[7vh]">
           <div className="flex items-center gap-2">
-            {clientForm && (
+            {(clientForm || backToCarts) && (
               <div>
                 <CircleTip
                   icon={allIcons.solid.faArrowLeft}
                   onClick={() => {
-                    visibilityTemp.setTemp("client-form", false);
+                    if (clientForm)
+                      visibilityTemp.setTemp("client-form", false);
+                    else if (backToCarts) {
+                      showPopup(<Carts />);
+                    }
                   }}
                 />
               </div>
@@ -318,9 +367,9 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
           clientForm && "left-0"
         )}
       >
-        <div className="h-full">
+        <Scroll className="h-full">
           <div className="flex flex-col gap-2 p-2">
-            <label htmlFor="client-firstname" className="capitalize">
+            <label className="capitalize">
               <Translate content="firstname" /> :
             </label>
             <Field
@@ -329,7 +378,7 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
             />
           </div>
           <div className="flex flex-col gap-2 p-2">
-            <label htmlFor="client-lastname" className="capitalize">
+            <label className="capitalize">
               <Translate content="lastname" /> :
             </label>
             <Field
@@ -338,7 +387,7 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
             />
           </div>
           <div className="flex flex-col gap-2 p-2">
-            <label htmlFor="client-firstname" className="capitalize">
+            <label className="capitalize">
               <Translate content="phone" /> :
             </label>
             <Field
@@ -355,14 +404,20 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
             />
           </div>
           <div className="flex flex-col gap-2 p-2">
-            <label htmlFor="client-key" className="capitalize">
+            <label className="capitalize">
               <Translate content="key" /> :
             </label>
             <Field inputName="client-key" placeholder="Enter Your Key" />
           </div>
+          <div className="flex justify-center items-center gap-2 p-2">
+            <label className="capitalize">
+              <Translate content="delivery" /> :
+            </label>
+            <BooleanField config={{}} id="delivery" state={deliveryState} />
+          </div>
           <Line />
           <div className="flex flex-col gap-2 p-2">
-            <label htmlFor="client-address" className="capitalize">
+            <label className="capitalize">
               <Translate content="address" /> :
             </label>
             <Field
@@ -374,7 +429,7 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
             />
           </div>
           <div className="flex flex-col gap-2 p-2">
-            <label htmlFor="client-wilaya" className="capitalize">
+            <label className="capitalize">
               <Translate content="wilaya" /> :
             </label>
             <Field inputName="client-wilaya" placeholder="Enter Your Wilaya" />
@@ -410,19 +465,28 @@ export const CartPopup = ({ uid }: CartPopupProps) => {
               </Button>
             </span>
           </div>
-        </div>
-        <Line />
-        <div className="flex justify-end items-center gap-1 p-2">
-          <Button
-            onClick={async () => {
-              execAction("create-order");
-            }}
-            className="bg-[--biqpod-success] w-full text-[--biqpod-primary-content]"
-            icon={allIcons.solid.faCartPlus}
-          >
-            <Translate content="create order" /> {total}DA
-          </Button>
-        </div>
+        </Scroll>
+        {store && (
+          <EmptyComponent>
+            <Line />
+            <div className="flex justify-end items-center gap-1 p-2">
+              <Button
+                onClick={async () => {
+                  execAction("create-order");
+                }}
+                className="bg-[--biqpod-success] w-full text-[--biqpod-primary-content]"
+                icon={allIcons.solid.faCartPlus}
+              >
+                <Translate content="create order" /> {total}DA{" "}
+                {deliveryState.get && (
+                  <span className="font-bold">
+                    (+{store?.deliveryPrice || "Free"})
+                  </span>
+                )}
+              </Button>
+            </div>
+          </EmptyComponent>
+        )}
       </div>
       {loadingOrderCreation && (
         <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity]">

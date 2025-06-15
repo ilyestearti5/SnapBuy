@@ -9,14 +9,18 @@ import {
   Icon,
   Image,
   Translate,
+  UserAvatar,
   WindowControls,
 } from "@biqpod/app/ui/components";
 import {
+  addNotification,
   closePopup,
   execAction,
   openMenu,
+  openNotificationsView,
   setSettingValue,
   setTemp,
+  showPopup,
   showProfile,
   showSetting,
   showToast,
@@ -31,18 +35,61 @@ import { cloud, getDoc } from "./server";
 import { useHistory, useLocation } from "react-router";
 import { snapbuyApi } from "./apis";
 import { useEffect, useMemo } from "react";
-import { delay, mergeArray, tw } from "@biqpod/app/ui/utils";
-import { Biqpod, OpenMenuProps } from "@biqpod/app/ui/types";
+import { delay, mergeArray } from "@biqpod/app/ui/utils";
+import { OpenMenuProps } from "@biqpod/app/ui/types";
 import { Link } from "react-router-dom";
 import { useStoreId } from "./App";
 import { initStoreIdSave } from "./utils";
+import { AiAssistance } from "./AiAssistance";
 export const HeaderContent = () => {
   initStoreIdSave();
   const user = useUser();
   const isDark = useSettingValue("window/dark.boolean");
-  const productAddText = useCopyState("");
+  const loadingText = useCopyState("");
   const loc = useLocation();
   const storeId = useStoreId();
+  useAction(
+    "upsert-pack",
+    async (packInfo: SnapBuy.Pack) => {
+      if (!user) {
+        showToast("You must be logged in to add a pack");
+        return;
+      }
+      if (!storeId) {
+        showToast("Store not found");
+        return;
+      }
+      if (!packInfo.name) {
+        showToast("Pack name is required");
+        return;
+      }
+      if (!packInfo.products || packInfo.products.length === 0) {
+        showToast("Pack must have at least one product");
+        return;
+      }
+      closePopup();
+      loadingText.set("Adding Pack...");
+      if (packInfo.id) {
+        await snapbuyApi.updatePack(packInfo.id, {
+          ...packInfo,
+          storeId,
+        });
+      } else {
+        await snapbuyApi.addPack({
+          ...packInfo,
+          storeId,
+        });
+      }
+      loadingText.set("");
+      addNotification({
+        title: "Pack Added",
+        desc: `Pack ${packInfo.name} has been added successfully.`,
+        type: "info",
+      });
+      openNotificationsView();
+    },
+    [storeId, user]
+  );
   useAction(
     "add-products",
     async ({ exists = [], news = [] }: AddProductActionProps) => {
@@ -51,21 +98,21 @@ export const HeaderContent = () => {
         return;
       }
       closePopup();
-      productAddText.set("Adding News products...");
+      loadingText.set("Adding News products...");
       await snapbuyApi.upsertProducts(storeId, news, (product, index) => {
-        productAddText.set(
+        loadingText.set(
           `Adding ${product.name?.slice(0, 10)} ${index + 1}/${news.length} ...`
         );
       });
-      productAddText.set("Adding Exists products...");
+      loadingText.set("Adding Exists products...");
       await snapbuyApi.upsertProducts(storeId, exists, (product, index) => {
-        productAddText.set(
+        loadingText.set(
           `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
             exists.length
           } ...`
         );
       });
-      productAddText.set("");
+      loadingText.set("");
       execAction("fetch-products");
     },
     [storeId]
@@ -86,6 +133,9 @@ export const HeaderContent = () => {
   }, [loc.pathname]);
   const isProduct = useMemo(() => {
     return loc.pathname.startsWith("/product");
+  }, [loc.pathname]);
+  const isPack = useMemo(() => {
+    return loc.pathname.startsWith("/pack");
   }, [loc.pathname]);
   const subed = useAsyncMemo(() => {
     return snapbuyApi.isSubscribed();
@@ -111,14 +161,15 @@ export const HeaderContent = () => {
                   deps={[selectedTab]}
                   render={async () => {
                     await delay(1000);
-                    var user = await getDoc<Biqpod.Account.User>([
-                      "users",
+                    const store = await getDoc<SnapBuy.Store>([
+                      "projects",
+                      import.meta.env.VITE_PROJECT_ID,
+                      "stores",
                       selectedTab,
                     ]);
                     return (
                       <EmptyComponent>
-                        <Translate content="store of" /> {user?.firstname}{" "}
-                        {user?.lastname}
+                        {store?.name} <Translate content="store" />
                       </EmptyComponent>
                     );
                   }}
@@ -132,106 +183,181 @@ export const HeaderContent = () => {
                   deps={[selectedTab]}
                   render={async () => {
                     await delay(1000);
-                    var user = await getDoc<SnapBuy.Product>([
+                    var product = await getDoc<SnapBuy.Product>([
                       "projects",
                       import.meta.env.VITE_PROJECT_ID,
                       "products",
                       selectedTab,
                     ]);
-                    return <EmptyComponent>{user?.name}</EmptyComponent>;
+                    const store =
+                      product?.storeId &&
+                      (await getDoc<SnapBuy.Store>([
+                        "projects",
+                        import.meta.env.VITE_PROJECT_ID,
+                        "stores",
+                        product?.storeId,
+                      ]));
+                    return (
+                      <span className="flex items-center gap-2">
+                        {store && store.photo && (
+                          <Image
+                            className="w-[40px] h-[40px]"
+                            src={store.photo}
+                          />
+                        )}
+                        <span>{product?.name}</span>
+                      </span>
+                    );
                   }}
                   loading={
-                    <CardWait className="rounded-lg w-[150px] h-[30px]" />
+                    <div className="flex items-center gap-2">
+                      <CardWait className="flex-shrink-0 rounded-full w-[40px] h-[40px]" />
+                      <CardWait className="rounded-lg w-[150px] h-[30px]" />
+                    </div>
                   }
                 />
               )}
-              {!isProduct && !isUser && <Translate content={selectedTab} />}
+              {isPack && (
+                <AsyncComponent
+                  deps={[selectedTab]}
+                  render={async () => {
+                    await delay(1000);
+                    var pack = await getDoc<SnapBuy.Pack>([
+                      "projects",
+                      import.meta.env.VITE_PROJECT_ID,
+                      "packs",
+                      selectedTab,
+                    ]);
+                    const store =
+                      pack?.storeId &&
+                      (await getDoc<SnapBuy.Store>([
+                        "projects",
+                        import.meta.env.VITE_PROJECT_ID,
+                        "stores",
+                        pack?.storeId,
+                      ]));
+                    return (
+                      <span className="flex items-center gap-2">
+                        {store && store.photo && (
+                          <Image
+                            className="w-[40px] h-[40px]"
+                            src={store.photo}
+                          />
+                        )}
+                        <span>
+                          {store && store.name && `${store.name} / `}{" "}
+                          {pack?.name}
+                        </span>
+                      </span>
+                    );
+                  }}
+                  loading={
+                    <div className="flex items-center gap-2">
+                      <CardWait className="flex-shrink-0 rounded-full w-[40px] h-[40px]" />
+                      <CardWait className="rounded-lg w-[150px] h-[30px]" />
+                    </div>
+                  }
+                />
+              )}
+              {!isProduct && !isPack && !isUser && (
+                <Translate content={selectedTab} />
+              )}
             </span>
           )}
         </div>
         <div className="flex items-center gap-2">
+          {loadingText.get && (
+            <span className="max-md:hidden md:inline-flex items-center gap-2 bg-[--biqpod-primary] p-2 rounded-lg text-[--biqpod-primary-content] text-sm text-nowrap">
+              <Icon icon={allIcons.solid.faBox} />
+              <span>{loadingText.get}</span>
+            </span>
+          )}
           <div className="max-md:hidden flex items-center gap-x-4">
             <DarkLightIcon />
           </div>
-          {productAddText.get && (
-            <span className="inline-flex items-center gap-2 bg-[--biqpod-primary] p-2 rounded-lg text-[--biqpod-primary-content] text-sm text-nowrap">
-              <Icon icon={allIcons.solid.faBox} />
-              <span>{productAddText.get}</span>
-            </span>
-          )}
-          <div>
-            <CircleTip
-              onClick={({ clientX, clientY }) => {
-                openMenu({
-                  x: clientX,
-                  y: clientY,
-                  menu: mergeArray<OpenMenuProps["menu"][number]>(
-                    {
-                      defaultIcon: allIcons.solid.faHome,
-                      label: "Home",
-                      click() {
-                        document.getElementById("home")?.click();
+          <div className="flex">
+            <div>
+              <CircleTip
+                onClick={({ clientX, clientY }) => {
+                  openMenu({
+                    x: clientX,
+                    y: clientY,
+                    menu: mergeArray<OpenMenuProps["menu"][number]>(
+                      {
+                        defaultIcon: allIcons.solid.faHome,
+                        label: "Home",
+                        click() {
+                          document.getElementById("home")?.click();
+                        },
                       },
-                    },
-                    {
-                      label: "Plans",
-                      click() {
-                        document.getElementById("plans")?.click();
+                      {
+                        label: "Plans",
+                        click() {
+                          document.getElementById("plans")?.click();
+                        },
+                        defaultIcon: allIcons.solid.faMoneyBill,
                       },
-                      defaultIcon: allIcons.solid.faMoneyBill,
-                    },
-                    user && {
-                      defaultIcon: allIcons.solid.faSignOutAlt,
-                      label: "Logout",
-                      click() {
-                        cloud.app.auth.signOut();
+                      user && {
+                        defaultIcon: allIcons.solid.faSignOutAlt,
+                        label: "Logout",
+                        click() {
+                          cloud.app.auth.signOut();
+                        },
                       },
-                    },
-                    {
-                      label: "Send Feedback",
-                      click() {
-                        document.getElementById("feedback")?.click();
+                      {
+                        label: "Send Feedback",
+                        click() {
+                          document.getElementById("feedback")?.click();
+                        },
+                        defaultIcon: allIcons.solid.faComment,
                       },
-                      defaultIcon: allIcons.solid.faComment,
-                    },
-                    isMobile && {
-                      type: "separator",
-                    },
-                    isMobile && {
-                      label: "Dark / Light",
-                      checked: !!isDark,
-                      click() {
-                        setSettingValue("window/dark.boolean", !isDark);
+                      isMobile && {
+                        type: "separator",
                       },
-                    },
-                    {
-                      label: "Choos Language",
-                      click() {
-                        showSetting("window/lang.enum");
+                      isMobile && {
+                        label: "Dark / Light",
+                        checked: !!isDark,
+                        click() {
+                          setSettingValue("window/dark.boolean", !isDark);
+                        },
                       },
-                      defaultIcon: allIcons.solid.faEarth,
-                    }
-                  ),
-                });
-              }}
-              icon={allIcons.solid.faEllipsisV}
-            />
+                      {
+                        label: "Choos Language",
+                        click() {
+                          showSetting("window/lang.enum");
+                        },
+                        defaultIcon: allIcons.solid.faEarth,
+                      }
+                    ),
+                  });
+                }}
+                icon={allIcons.solid.faEllipsisV}
+              />
+            </div>
+            <div>
+              <CircleTip
+                icon={allIcons.solid.faClover}
+                onClick={() => {
+                  showPopup(<AiAssistance />);
+                  // ai assitance
+                }}
+                iconClassName="text-violet-500"
+              />
+            </div>
           </div>
           {user?.uid && (
-            <div
-              onClick={() => {
-                showProfile();
-              }}
-              className={tw(
-                "relative rounded-full w-[35px] h-[35px] overflow-hidden cursor-pointer",
-                subed?.isSubscribed &&
-                  "outline-4 outline-offset-0 outline-red-500"
-              )}
-            >
-              <Image
-                src={user.photo || undefined}
-                className="w-[35px] h-[35px]"
+            <div className="relative rounded-full">
+              <UserAvatar
+                user={user}
+                subscribed={subed?.isSubscribed}
+                className="relative cursor-pointer"
+                onClick={() => {
+                  showProfile();
+                }}
               />
+              {loadingText.get && (
+                <div className="md:hidden absolute inset-[-4px] border-[2px] border-x-[--biqpod-primary] border-y-transparent border-solid rounded-full animate-spin" />
+              )}
             </div>
           )}
         </div>

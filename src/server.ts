@@ -1,5 +1,6 @@
 import { initMyCloud } from "@biqpod/app/ui/apis";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { randomItem } from "@biqpod/app/ui/utils";
 export const cloud = initMyCloud({
   apiKey: "AIzaSyB0XSUnBSOaIWp-37u2N4ib5bY8-09Zeq0",
   authDomain: "water-fetch.firebaseapp.com",
@@ -11,7 +12,18 @@ export const cloud = initMyCloud({
   measurementId: "G-8GB7LZPHVX",
   functions: {
     devUri: (fnId) => `http://localhost:3000/invoke/${fnId}`,
-    prodUri: (fnId) => `https://functions-3nrx.onrender.com/invoke/${fnId}`,
+    prodUri: (fnId) => {
+      return `https://functions-3nrx.onrender.com/invoke/${fnId}`;
+      const { value } = randomItem(
+        [
+          `https://functions-3nrx.onrender.com`,
+          // "https://closed-maddie-biqpod-08b5b50b.koyeb.app",
+        ].map((origin) => {
+          return `${origin}/invoke/${fnId}`;
+        })
+      );
+      return value || `https://functions-3nrx.onrender.com/invoke/${fnId}`;
+    },
   },
 });
 // this is needed in the project for default informations

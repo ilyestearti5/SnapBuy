@@ -1,6 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  Mouseable,
   Card,
   EmptyComponent,
   CircleTip,
@@ -11,8 +10,6 @@ import {
 } from "@biqpod/app/ui/components";
 import {
   getTemp,
-  useCopyState,
-  setTemp,
   openMenu,
   showToast,
   showPopup,
@@ -20,14 +17,15 @@ import {
   showBottomSheet,
   closeBottomSheet,
 } from "@biqpod/app/ui/hooks";
-import { Biqpod } from "@biqpod/app/ui/types";
-import { mapAsync, mergeObject, tw } from "@biqpod/app/ui/utils";
-import { useMemo, useEffect } from "react";
+import { mapAsync, tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ImageSlider } from "./ImageSlider";
+import { motion } from "framer-motion";
+
 export interface ProductRenderProps {
   product: SnapBuy.Product;
+  index: number;
 }
 const sharSocialMedia = [
   {
@@ -72,7 +70,6 @@ const sharSocialMedia = [
   },
 ];
 const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
-  const available = useCopyState(false);
   var uri = new URL(location.href);
   uri.pathname = "/product/" + product.id;
   return (
@@ -96,26 +93,6 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
             </div>
           );
         })}
-        {/* {colors.map(({ name, color }) => {
-          return (
-            <div
-              key={name}
-              className="inline-flex items-center gap-2 active:bg-[--biqpod-gray-opacity] p-2 rounded-lg cursor-pointer"
-              onClick={() => {
-                navigator.clipboard.writeText(color);
-                showToast("Color Copied :)");
-              }}
-            >
-              <div
-                className="border-2 border-black rounded-full w-8 h-8"
-                style={{
-                  backgroundColor: color,
-                }}
-              />
-            </div>
-          );
-        })}
-        {colors.length == 0 && <Translate content="no colors ther is" />} */}
       </div>
       <Line />
       {[
@@ -158,25 +135,6 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           type: "separator",
         },
         {
-          label: product.available ? "Set Unavailable" : "Set Available",
-          click: async () => {
-            var isAvailable = !available.get;
-            await snapbuyApi.upsertProducts(product.storeId, [
-              {
-                id: product.id,
-                available: isAvailable,
-              },
-            ]);
-            available.set(isAvailable);
-            showToast(
-              isAvailable
-                ? "Product Marked Unavailable"
-                : "Product Marked Available"
-            );
-          },
-          defaultIcon: allIcons.solid.faCheck,
-        },
-        {
           label: "Edit Product",
           click: () => {
             showPopup(<PostNewProduct product={product} />);
@@ -199,7 +157,7 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
         return (
           <div
             key={index}
-            className="flex items-center gap-6 hover:bg-[--biqpod-gray-opacity] p-3 max-md:text-lg md:text-xl cursor-pointer"
+            className="flex items-center gap-6 hover:bg-[--biqpod-gray-opacity] p-3 max-md:text-lg md:text-xl capitalize cursor-pointer"
             onClick={async () => {
               closeBottomSheet();
               click?.();
@@ -229,36 +187,21 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
     </EmptyComponent>
   );
 };
-export const ProductRender = ({ product }: ProductRenderProps) => {
-  const changePosition = useCopyState<Partial<Biqpod.Types.Axis>>({});
-  const isStartChange = useMemo(() => {
-    return (
-      typeof changePosition.get.x == "number" &&
-      typeof changePosition.get.y == "number"
-    );
-  }, [changePosition.get]);
-  useEffect(() => {
-    setTemp("canDeleteProduct", isStartChange ? product.id : null);
-  }, [isStartChange]);
+export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const photos = product.photos || [];
-  const prices = product.multiple?.prices || [];
+  const prices = Array.from(product.multiple?.prices || []);
   const price = product.single?.price || 0;
   const isFullWidth = getTemp<boolean>("isFullWidth");
   const isPromotion = product.type === "multiple";
   return (
-    <Mouseable
-      // onMoving={changePosition.set}
-      onMovingEnd={() => {
-        // changePosition.set({});
-      }}
-      style={{
-        ...mergeObject(
-          isStartChange && {
-            left: changePosition.get.x,
-            top: changePosition.get.y,
-          }
-        ),
-      }}
+    <motion.div
+      initial={{ opacity: 0, y: 30 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, delay: index * 0.05 }}
+      className={tw(
+        "h-[300px] p-1 w-full transition-[width] duration-500",
+        isFullWidth && "w-[calc(50%-4px)] "
+      )}
       onContextMenu={(e) => {
         e.preventDefault();
         openMenu({
@@ -288,18 +231,21 @@ export const ProductRender = ({ product }: ProductRenderProps) => {
           ],
         });
       }}
-      className={tw(
-        "h-[300px] p-1 w-full transition-[width] duration-500",
-        isFullWidth && "w-[calc(50%-4px)] ",
-        isStartChange && "fixed"
-      )}
     >
       <Card
         key={product.id}
         className="flex flex-col justify-between w-full h-full overflow-hidden"
       >
         <div className="relative flex justify-center items-center w-full h-[200px] overflow-hidden cursor-pointer">
-          <ImageSlider photos={photos} />
+          {!!photos.length && <ImageSlider photos={photos} />}
+          {photos.length == 0 && (
+            <div className="flex justify-center items-center w-full h-full">
+              <Icon
+                iconClassName="text-8xl text-[--biqpod-gray-opacity]"
+                icon={allIcons.solid.faBoxOpen}
+              />
+            </div>
+          )}
           {!!product.available && (
             <div className="top-0 right-0 absolute bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
               <Translate content="available" />
@@ -310,14 +256,6 @@ export const ProductRender = ({ product }: ProductRenderProps) => {
               <Icon icon={allIcons.solid.faTag} />
               <span>
                 <Translate content="promotion" />
-              </span>
-            </div>
-          )}
-          {product.type === "multiple" && (
-            <div className="inline-flex top-0 left-0 absolute items-center gap-1 bg-red-700 px-3 py-1 rounded-ee-2xl text-white capitalize">
-              <Icon icon={allIcons.solid.faTag} />
-              <span>
-                <Translate content="promoted" />
               </span>
             </div>
           )}
@@ -334,7 +272,7 @@ export const ProductRender = ({ product }: ProductRenderProps) => {
           {isPromotion && (
             <div className="flex flex-wrap gap-2">
               {prices
-                .sort((price1, price2) => {
+                ?.sort((price1, price2) => {
                   return price1.quantity - price2.quantity;
                 })
                 .map((price, index) => {
@@ -358,11 +296,13 @@ export const ProductRender = ({ product }: ProductRenderProps) => {
           <CircleTip
             icon={allIcons.solid.faEllipsisVertical}
             onClick={() => {
-              showBottomSheet(<ProductToolsBottomSheet product={product} />);
+              showBottomSheet(
+                <ProductToolsBottomSheet index={index} product={product} />
+              );
             }}
           />
         </div>
       </Card>
-    </Mouseable>
+    </motion.div>
   );
 };

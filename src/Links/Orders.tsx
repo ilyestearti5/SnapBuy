@@ -14,6 +14,7 @@ import {
   EmptyComponent,
   Field,
   Icon,
+  Key,
   Line,
   Scroll,
   Translate,
@@ -47,6 +48,8 @@ import {
 import { openOrderMenu } from "./openOrderMenu";
 import { useStoreId } from "../App";
 import { colors, getImageByPlatform, icons } from "../utils";
+import { motion } from "framer-motion";
+
 const PAGE_SIZE = 40;
 interface StatusUiProps {
   status: SnapBuy.OrderStatus;
@@ -132,30 +135,74 @@ export const Orders = () => {
         return;
       }
       const currentTime = new Date();
-      currentTime.setHours(23, 59, 59, 999);
       var subTime: Date | null = null;
       switch (filterState?.time) {
         case "today":
-          subTime = new Date(currentTime.getTime() - 24 * 60 * 60 * 1000);
+          currentTime.setHours(0, 0, 0, 0);
+          subTime = new Date(currentTime.getTime());
           break;
-        case "this week":
-          subTime = new Date(currentTime.getTime() - 7 * 24 * 60 * 60 * 1000);
+        case "this week": {
+          const dayOfWeek = currentTime.getDay();
+          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Sunday
+          currentTime.setDate(currentTime.getDate() - daysToSubtract);
+          currentTime.setHours(0, 0, 0, 0);
+          subTime = new Date(currentTime.getTime());
           break;
+        }
         case "this month":
-          subTime = new Date(currentTime.getTime() - 30 * 24 * 60 * 60 * 1000);
+          currentTime.setDate(1);
+          currentTime.setHours(0, 0, 0, 0);
+          subTime = new Date(currentTime.getTime());
           break;
         case "this year":
-          subTime = new Date(currentTime.getTime() - 365 * 24 * 60 * 60 * 1000);
+          currentTime.setMonth(0, 1);
+          currentTime.setHours(0, 0, 0, 0);
+          subTime = new Date(currentTime.getTime());
           break;
-        case "last week":
-          subTime = new Date(currentTime.getTime() - 14 * 24 * 60 * 60 * 1000);
+        case "last week": {
+          // Go to start of this week, then subtract 7 days
+          const dayOfWeek = currentTime.getDay();
+          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+          const startOfThisWeek = new Date(currentTime.getTime());
+          startOfThisWeek.setDate(currentTime.getDate() - daysToSubtract);
+          startOfThisWeek.setHours(0, 0, 0, 0);
+          const startOfLastWeek = new Date(startOfThisWeek.getTime());
+          startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
+          subTime = startOfLastWeek;
           break;
-        case "last month":
-          subTime = new Date(currentTime.getTime() - 60 * 24 * 60 * 1000);
+        }
+        case "last month": {
+          // Go to start of this month, then subtract 1 month
+          const startOfThisMonth = new Date(
+            currentTime.getFullYear(),
+            currentTime.getMonth(),
+            1,
+            0,
+            0,
+            0,
+            0
+          );
+          const startOfLastMonth = new Date(startOfThisMonth);
+          startOfLastMonth.setMonth(startOfThisMonth.getMonth() - 1);
+          subTime = startOfLastMonth;
           break;
-        case "last year":
-          subTime = new Date(currentTime.getTime() - 730 * 24 * 60 * 60 * 1000);
+        }
+        case "last year": {
+          // Go to start of this year, then subtract 1 year
+          const startOfThisYear = new Date(
+            currentTime.getFullYear(),
+            0,
+            1,
+            0,
+            0,
+            0,
+            0
+          );
+          const startOfLastYear = new Date(startOfThisYear);
+          startOfLastYear.setFullYear(startOfThisYear.getFullYear() - 1);
+          subTime = startOfLastYear;
           break;
+        }
       }
       const selection: CloudSelection<SnapBuy.Order> = {
         where: and(
@@ -163,6 +210,9 @@ export const Orders = () => {
           filterState?.phone && where("client.phone", "==", filterState.phone),
           subTime && where("createdAt", ">=", subTime.getTime()),
           filterState?.status && where("status", "==", filterState.status),
+          filterState?.delivery &&
+            filterState.delivery !== "all" &&
+            where("delivery", "==", filterState.delivery == "delivere"),
           where("storeId", "==", selectedStoreId)
         ),
         orders: mergeArray(
@@ -319,6 +369,10 @@ export const Orders = () => {
               <Icon icon={allIcons.solid.faEllipsisV} />
               <Translate content="key" />
             </span>
+            <span className="inline-flex items-center gap-2 w-full capitalize">
+              <Icon icon={allIcons.solid.faTruck} />
+              <Translate content="delivery" />
+            </span>
             <div className="invisible">
               <CircleTip icon={allIcons.solid.faEllipsisV} />
             </div>
@@ -374,10 +428,25 @@ export const Orders = () => {
                   </span>
                   <span className="py-2 w-full overflow-hidden">
                     {order.key && (
-                      <span className="bg-[--biqpod-gray-opacity] border-[--biqpod-gray-opacity-2] px-2 py-1 border border-solid rounded-full truncate">
-                        <Anchor>{order.key}</Anchor>
-                      </span>
+                      <Key>
+                        <Anchor>lg{order.key}</Anchor>
+                      </Key>
                     )}
+                  </span>
+                  <span className="flex items-center gap-2 py-2 w-full overflow-hidden">
+                    <Icon
+                      iconClassName={tw(
+                        order.delivery
+                          ? "text-[--biqpod-success]"
+                          : "text-[--biqpod-error]"
+                      )}
+                      icon={
+                        order.delivery
+                          ? allIcons.solid.faCheckCircle
+                          : allIcons.solid.faTimesCircle
+                      }
+                    />
+                    <Translate content={order.delivery ? "yes" : "no"} />
                   </span>
                   <div>
                     <CircleTip
@@ -393,29 +462,58 @@ export const Orders = () => {
             {hasMore.get && (
               <div className="flex justify-center items-center gap-2 p-2">
                 <span>
-                  <Button
+                  <motion.button
                     onClick={() => {
                       execAction("fetch-orders", {
                         next: true,
                       });
                     }}
-                    icon={
-                      isLoading
-                        ? allIcons.solid.faCircleNotch
-                        : allIcons.solid.faPaperPlane
-                    }
-                    className="rounded-full"
-                    iconClassName={tw(isLoading && "animate-spin")}
+                    className={tw(
+                      "rounded-full flex items-center justify-center overflow-hidden",
+                      isLoading && "animate-spin"
+                    )}
+                    style={{
+                      background: "var(--biqpod-primary)",
+                      color: "var(--biqpod-primary-content)",
+                      border: "none",
+                      outline: "none",
+                      cursor: "pointer",
+                      padding: "8px 0px",
+                      minHeight: "40px",
+                      minWidth: "40px",
+                    }}
+                    animate={{
+                      width: isLoading ? 40 : 120,
+                      transition: {
+                        type: "spring",
+                        stiffness: 300,
+                        damping: 30,
+                      },
+                    }}
                   >
-                    <span
-                      className={tw("transition-[font-family] duration-200")}
-                      style={{
-                        font: isLoading ? "0px" : "8px",
+                    <Icon
+                      icon={
+                        isLoading
+                          ? allIcons.solid.faCircleNotch
+                          : allIcons.solid.faPaperPlane
+                      }
+                      iconClassName={tw(isLoading && "animate-spin")}
+                    />
+                    <motion.span
+                      className={tw(
+                        "transition-[font-family] duration-200 ml-2 whitespace-nowrap"
+                      )}
+                      style={{ font: isLoading ? "0px" : "8px" }}
+                      animate={{
+                        opacity: isLoading ? 0 : 1,
+                        width: isLoading ? 0 : "auto",
+                        marginLeft: isLoading ? 0 : 8,
+                        transition: { duration: 0.3 },
                       }}
                     >
                       <Translate content="fetch more" />
-                    </span>
-                  </Button>
+                    </motion.span>
+                  </motion.button>
                 </span>
               </div>
             )}
@@ -447,77 +545,97 @@ export const Orders = () => {
               }`;
               const googleMap = `https://www.google.com/maps/search/?api=1&query=${order.client?.place.address}`;
               return (
-                <Card
+                <motion.div
                   key={index}
-                  className="bg-gradient-to-r to-[--biqpod-primary-background] backdrop-blur-sm from-[--biqpod-borders] w-full overflow-hidden"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
-                  <div className="flex items-center gap-2 p-2">
-                    <span className="inline-block w-[40px] h-[40px]">
-                      <img
-                        className="w-full h-full object-cover"
-                        src={getImageByPlatform(order.platform)}
-                      />
-                    </span>
-                    <span className="text-xl">{fullName}</span>
-                  </div>
-                  <Line />
-                  <div className="flex justify-between items-center p-2 overflow-hidden">
-                    <div />
-                    <span className="bg-[--biqpod-gray-opacity] border-[--biqpod-gray-opacity-2] px-2 py-1 border border-solid rounded-full text-xs truncate">
-                      <Anchor
-                        onClick={async () => {
-                          const response = await confirm({
-                            message: "Filter All Orders By This Key",
-                            title: "Filter By Keys",
-                          });
-                          if (response) {
-                          }
-                        }}
-                      >
-                        {order.key || <Translate content="No Key Ther Is" />}
-                      </Anchor>
-                    </span>
-                  </div>
-                  <Line />
-                  <div className="flex justify-between items-center p-2">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]">
-                        {productCount}
+                  <Card className="overflow-hidden">
+                    <div className="flex items-center gap-2 p-2">
+                      <span className="inline-block w-[40px] h-[40px]">
+                        <img
+                          className="w-full h-full object-cover"
+                          src={getImageByPlatform(order.platform)}
+                        />
                       </span>
-                      <StatusUi status={order.status} />
+                      <span className="text-xl">{fullName}</span>
                     </div>
-                    <span className="text-sm">{timeAgo}</span>
-                  </div>
-                  <Line />
-                  <div className="flex justify-between items-center p-2">
-                    <span className="italic">{order.client.place.wilaya}</span>
-                    <div className="flex items-center">
-                      <CircleTip
-                        icon={allIcons.solid.faPhone}
-                        onClick={() => {
-                          var a = document.createElement("a");
-                          a.href = `tel:${order.client?.phone}`;
-                          a.click();
-                        }}
-                      />
-                      <CircleTip
-                        icon={allIcons.solid.faLocationDot}
-                        onClick={() => {
-                          var a = document.createElement("a");
-                          a.href = googleMap;
-                          a.target = "_blank";
-                          a.click();
-                        }}
-                      />
-                      <CircleTip
-                        icon={allIcons.solid.faEllipsisV}
-                        onClick={async ({ clientX, clientY }) => {
-                          openOrderMenu({ x: clientX, y: clientY, order });
-                        }}
-                      />
+                    <Line />
+                    <div className="flex justify-between items-center p-2 overflow-hidden">
+                      <div className="flex items-center gap-2 capitalize">
+                        <Icon
+                          iconClassName={tw(
+                            order.delivery
+                              ? "text-[--biqpod-success]"
+                              : "text-[--biqpod-error]"
+                          )}
+                          icon={
+                            order.delivery
+                              ? allIcons.solid.faCheckCircle
+                              : allIcons.solid.faTimesCircle
+                          }
+                        />
+                        <Translate content="delivery" />
+                      </div>
+                      <Key>
+                        <Anchor
+                          onClick={async () => {
+                            const response = await confirm({
+                              message: "Filter All Orders By This Key",
+                              title: "Filter By Keys",
+                            });
+                            if (response) {
+                            }
+                          }}
+                        >
+                          {order.key || <Translate content="No Key Ther Is" />}
+                        </Anchor>
+                      </Key>
                     </div>
-                  </div>
-                </Card>
+                    <Line />
+                    <div className="flex justify-between items-center p-2">
+                      <div className="flex items-center gap-2">
+                        <span className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]">
+                          {productCount}
+                        </span>
+                        <StatusUi status={order.status} />
+                      </div>
+                      <span className="text-sm">{timeAgo}</span>
+                    </div>
+                    <Line />
+                    <div className="flex justify-between items-center p-2">
+                      <span className="italic">
+                        {order.client.place.wilaya}
+                      </span>
+                      <div className="flex items-center">
+                        <CircleTip
+                          icon={allIcons.solid.faPhone}
+                          onClick={() => {
+                            var a = document.createElement("a");
+                            a.href = `tel:${order.client?.phone}`;
+                            a.click();
+                          }}
+                        />
+                        <CircleTip
+                          icon={allIcons.solid.faLocationDot}
+                          onClick={() => {
+                            var a = document.createElement("a");
+                            a.href = googleMap;
+                            a.target = "_blank";
+                            a.click();
+                          }}
+                        />
+                        <CircleTip
+                          icon={allIcons.solid.faEllipsisV}
+                          onClick={async ({ clientX, clientY }) => {
+                            openOrderMenu({ x: clientX, y: clientY, order });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </Card>
+                </motion.div>
               );
             })}
             {isLoading &&

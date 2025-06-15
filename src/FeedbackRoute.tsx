@@ -1,6 +1,20 @@
 import { allIcons } from "@biqpod/app/ui/apis";
-import { Translate, Button } from "@biqpod/app/ui/components";
-import { langHooks, openMenu } from "@biqpod/app/ui/hooks";
+import {
+  Translate,
+  Button,
+  EmptyComponent,
+  Icon,
+  Line,
+  Card,
+} from "@biqpod/app/ui/components";
+import {
+  langHooks,
+  openMenu,
+  showBottomSheet,
+  useDeviceResolution,
+} from "@biqpod/app/ui/hooks";
+import { MenuRecordProps } from "@biqpod/app/ui/types";
+import image from "./assets/feeds-background.png";
 import { useMemo } from "react";
 export const useWords = () => {
   const langs = langHooks.getAll();
@@ -12,16 +26,17 @@ export const useWords = () => {
   return words;
 };
 export const FeedbackRoute = () => {
+  const { isMobile } = useDeviceResolution();
   return (
-    <div className="flex justify-center items-center gap-2 w-full h-full">
-      <span>
-        <Button
-          className="p-8 rounded-full max-md:text-2xl md:text-3xl"
-          onClick={({ clientX, clientY }) => {
-            openMenu({
-              x: clientX,
-              y: clientY,
-              menu: [
+    <div className="flex justify-center items-center w-full h-full">
+      <Card className="relative max-w-[80vw] overflow-hidden">
+        <img draggable={false} src={image} />
+        <Line />
+        <div className="flex justify-center items-center p-2">
+          <Button
+            className="p-3 rounded-full w-fit"
+            onClick={({ clientX, clientY }) => {
+              const menu: MenuRecordProps[] = [
                 {
                   name: "Messenger",
                   icon: allIcons.brands.faFacebookMessenger,
@@ -47,6 +62,11 @@ export const FeedbackRoute = () => {
                   icon: allIcons.brands.faSnapchatGhost,
                   link: "https://www.snapchat.com/add/tiartiilyes",
                 },
+                {
+                  name: "TikTok",
+                  icon: allIcons.brands.faTiktok,
+                  link: "https://www.tiktok.com/@biqpod",
+                },
               ].map(({ name, icon, link }) => {
                 return {
                   label: name,
@@ -58,14 +78,45 @@ export const FeedbackRoute = () => {
                     anchor.click();
                   },
                 };
-              }),
-            });
-          }}
-          rightIcon={allIcons.solid.faChevronRight}
-        >
-          <Translate content="join feed" />
-        </Button>
-      </span>
+              });
+              if (isMobile) {
+                showBottomSheet(
+                  <EmptyComponent>
+                    <div className="p-2">
+                      <h1 className="font-bold text-3xl uppercase">
+                        <Translate content="send feedback" />
+                      </h1>
+                    </div>
+                    <Line />
+                    {menu.map(({ label, defaultIcon, click }) => {
+                      return (
+                        <div
+                          key={label}
+                          className="flex items-center gap-2 hover:bg-[--biqpod-gray-opacity] active:bg-[--biqpod-gray-opacity-2] p-2 text-xl cursor-pointer"
+                          onClick={() => click?.()}
+                        >
+                          <div className="flex justify-center w-[40px]">
+                            <Icon icon={defaultIcon} />
+                          </div>
+                          <h1>{label && <Translate content={label} />}</h1>
+                        </div>
+                      );
+                    })}
+                  </EmptyComponent>
+                );
+                return;
+              }
+              openMenu({
+                x: clientX,
+                y: clientY,
+                menu,
+              });
+            }}
+          >
+            <Translate content="send feedback" />
+          </Button>
+        </div>
+      </Card>
     </div>
   );
 };

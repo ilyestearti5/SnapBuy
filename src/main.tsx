@@ -18,6 +18,26 @@ startApplication(
       return {
         translations,
         settings,
+        commands: [
+          {
+            commandId: "open-ai-assistance/send",
+            private: true,
+            commands: [
+              {
+                type: "action/exec",
+                payload: ["interpretCommand"],
+              },
+            ],
+            keys: [
+              {
+                value: "enter",
+                when: "focused === 'ai-input'",
+                only: true,
+                type: "down",
+              },
+            ],
+          },
+        ],
       };
     },
   }

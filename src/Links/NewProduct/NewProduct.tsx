@@ -13,25 +13,38 @@ import {
   closePopup,
   execAction,
   fieldHooks,
-  getFieldValue,
   isLoading,
-  setFieldValue,
-  setTemp,
   showToast,
   useTemp,
 } from "@biqpod/app/ui/hooks";
-import { SettingValueType } from "@biqpod/app/ui/types";
 import { range, tw } from "@biqpod/app/ui/utils";
 import { ProductInfo } from "./Infor";
 import { useEffect, useMemo } from "react";
 import { ProductChoosThemeStyle } from "./Views/ChoiseTheme";
-import { PostDataBeforePost } from "./Views/DataBeforePost";
+import { ProductDataBeforeCreate } from "./Views/DataBeforePost";
 import { ProductDescription } from "./Views/Description";
 import { PostDescriptionMarkDown } from "./Views/DescriptionMarkDown";
 import { ProductImages } from "./Views/Image";
 import { PostMoreInfo } from "./Views/MoreInfors";
 import { PostInforPrice } from "./Views/ProductInforPrice";
 import { ProductPricingType } from "./Views/ProductType";
+import {
+  setFormAvailable,
+  setFormCategory,
+  setFormColors,
+  setFormDescription,
+  setFormKeys,
+  setFormLimited,
+  setFormName,
+  setFormPhotos,
+  setFormPrice,
+  setFormPrices,
+  setFormQuantity,
+  setFormSizes,
+  setFormTheme,
+  setFormType,
+  useFormProduct,
+} from "../../apis";
 export interface ProductFormSectionProps {
   product?: Partial<SnapBuy.Product>;
 }
@@ -51,30 +64,13 @@ const pages = [
   { name: "Description (Markdown)", component: PostDescriptionMarkDown },
   { name: "More Info", component: PostMoreInfo },
   { name: "Theme Choice", component: ProductChoosThemeStyle },
-  { name: "Data Before Post", component: PostDataBeforePost },
+  { name: "Data Before Post", component: ProductDataBeforeCreate },
 ];
 const pagesOnly = pages.map((page) => page.component);
 export interface PostNewProductProps {
   product?: Partial<SnapBuy.Product>;
 }
 export const PostNewProduct = ({ product }: PostNewProductProps) => {
-  // fields
-  const images = useTemp<string[]>("product-images");
-  const price = useTemp<number | undefined>("product-price");
-  const category = useTemp<string | undefined>("post-category");
-  const limited = useTemp<boolean>("product-limited");
-  const prices = useTemp<
-    Required<SnapBuy.Product>["multiple"]["prices"] | undefined
-  >("product-prices");
-  const quantity = useTemp<number | undefined>("post-quantity");
-  const description = getFieldValue("product-form-description");
-  const name = getFieldValue("product-form-name");
-  const theme = useTemp<SnapBuy.Product["theme"]>("product-choised-theme");
-  const colorsState = useTemp<string[]>("post-colors");
-  const sizesState = useTemp<SettingValueType["filter"]>("post-sizes");
-  const keysState = useTemp<SettingValueType["array"]>("post-keys");
-  const isAvailable = useTemp<boolean>("product-form-available");
-  const type = useTemp<"single" | "multiple">("post-type");
   const postMarketAction = actionHooks.getOne("post-market");
   const postActionStatus = actionHooks.getOneFeild("post-market", "status");
   const postIsLoading = isLoading(postMarketAction);
@@ -90,20 +86,23 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
   }, []);
 
   useEffect(() => {
-    setFieldValue("product-form-name", product?.name || "");
-    setFieldValue("product-form-description", product?.description || "");
-    setTemp("product-images", product?.photos || []);
-    setTemp("product-limited", product?.limited || false);
-    setTemp("post-colors", product?.colors || []);
-    setTemp("post-sizes", product?.sizes || []);
-    setTemp("post-keys", product?.keys || []);
-    setTemp("post-quantity", product?.quantity || 0);
-    setTemp("product-form-available", product?.available || false);
-    setTemp("post-type", product?.type || "single");
-    setTemp("post-category", product?.category || "");
-    setTemp("product-price", product?.single?.price || 0);
-    setTemp("product-prices", product?.multiple?.prices || []);
+    setFormName(product?.name || "");
+    setFormDescription(product?.description || "");
+    setFormPhotos(product?.photos || []);
+    setFormLimited(product?.limited || false);
+    setFormColors(product?.colors || []);
+    setFormSizes(product?.sizes || []);
+    setFormKeys(product?.keys || []);
+    setFormQuantity(product?.quantity || 0);
+    setFormAvailable(product?.available || false);
+    setFormType(product?.type || "single");
+    setFormCategory(product?.category || "");
+    setFormPrice(product?.single?.price || 0);
+    setFormPrices(product?.multiple?.prices || []);
+    setFormTheme(product?.theme);
   }, [product]);
+
+  const productForm = useFormProduct();
 
   return (
     <EmptyComponent>
@@ -131,7 +130,7 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
             <MultiScreenPage
               focused={focused || 0}
               pages={pagesOnly.map((Page, index) => (
-                <Page key={index} product={product} />
+                <Page key={index} />
               ))}
             />
           </div>
@@ -193,29 +192,15 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
               <Button
                 onClick={async () => {
                   const options = {
-                    ...product,
-                    category: category.get || null,
-                    photos: images.get || [],
-                    multiple: {
-                      prices: prices.get || [],
-                    },
-                    single: {
-                      price: price.get || null,
-                    },
-                    name,
-                    description: description,
-                    quantity: quantity.get || null,
-                    colors: colorsState.get || null,
-                    sizes: sizesState.get || null,
-                    keys: keysState.get || null,
-                    theme: theme.get || null,
-                    type: type.get || null,
-                    limited: limited.get || null,
-                    available: isAvailable.get || null,
+                    ...productForm,
                   };
-                  if (!product?.id) {
+                  if (product?.id) {
+                    options.id = product.id;
+                  } else {
                     options.id = encodeURIComponent(crypto.randomUUID());
                   }
+                  options.uid = product?.uid || "";
+                  options.storeId = product?.storeId || "";
                   execAction(
                     "add-products",
                     product?.id

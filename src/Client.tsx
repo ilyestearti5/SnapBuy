@@ -1,22 +1,11 @@
-import { allIcons } from "@biqpod/app/ui/apis";
 import { Scroll } from "@biqpod/app/ui/components";
 import { Redirect, Route, Switch } from "react-router";
 import { ClientProducts } from "./ClientProducts";
-import { Users } from "./Users";
+import { ExploreStores } from "./ClientStores";
 import { PageNotFound } from "./PageNotFound";
-export const clientTabs: Tab[] = [
-  {
-    name: "orders",
-    icon: allIcons.solid.faShoppingCart,
-    link: "/client/orders",
-  },
-  {
-    name: "products",
-    icon: allIcons.solid.faBox,
-    link: "/client/stores",
-  },
-];
+import { initCart } from "./AddProductToCart";
 export const Client = () => {
+  initCart();
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Scroll>
@@ -28,7 +17,7 @@ export const Client = () => {
             <ClientProducts />
           </Route>
           <Route path="/client/stores" exact>
-            <Users />
+            <ExploreStores />
           </Route>
           <Route path="/client" exact>
             <Redirect to="/client/stores" />

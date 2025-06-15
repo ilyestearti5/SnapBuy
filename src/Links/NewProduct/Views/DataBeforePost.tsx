@@ -1,65 +1,45 @@
 import { allIcons } from "@biqpod/app/ui/apis";
-
 import {
   EmptyComponent,
   Icon,
+  Key,
   Line,
   MarkDown,
   Tip,
   Translate,
 } from "@biqpod/app/ui/components";
-import {
-  fieldHooks,
-  getTemp,
-  setTemp,
-  useColorMerge,
-} from "@biqpod/app/ui/hooks";
+import { setTemp } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
-import { Nothing, SettingValueType } from "@biqpod/app/ui/types";
 import { useMemo } from "react";
-export const PostDataBeforePost = () => {
-  const keys = getTemp<SettingValueType["array"]>("post-keys");
-  const sizes = getTemp<SettingValueType["filter"]>("post-sizes");
-  const colors = getTemp<string[]>("post-colors");
-  const extraInformation = getTemp<SettingValueType["filter"]>(
-    "post-extrainformation"
-  );
-  const category = getTemp<SettingValueType["enum"]>("post-category");
-  const title = fieldHooks.getOneFeild("product-form-name", "value");
-  const postType = getTemp<"multiple" | "single">("post-type");
-  const quantity = getTemp<number | Nothing>("post-quantity");
-  const description = fieldHooks.getOneFeild(
-    "product-form-description",
-    "value"
-  );
-  const price = getTemp<number | Nothing>("product-price");
-  const limited = getTemp<boolean>("product-limited");
-  const pricesList = getTemp<
-    {
-      price: number;
-      quantity: number;
-    }[]
-  >("product-prices");
-  const colorMerge = useColorMerge();
-  const choisedTheme = getTemp<SnapBuy.Product["theme"]>(
-    "product-choised-theme"
-  );
-
-  var choisedThemeArray = useMemo(() => {
-    return Object.entries(choisedTheme || {})
+import { useFormProduct } from "../../../apis";
+export const ProductDataBeforeCreate = () => {
+  const product = useFormProduct();
+  const extraInformation = useMemo(() => {
+    const result: string[] = [];
+    if (product.colors) {
+      result.push("colors");
+    }
+    if (product.sizes) {
+      result.push("sizes");
+    }
+    if (product.keys) {
+      result.push("keys");
+    }
+    return result;
+  }, [product]);
+  const choisedThemeArray = useMemo(() => {
+    return Object.entries(product.theme || {})
       .map(([name, color]) => {
         return { name, color };
       })
       .filter(Boolean);
-  }, [choisedTheme]);
-
+  }, [product.theme]);
   return (
     <EmptyComponent>
       <div
-        className={tw("flex flex-col gap-6 shadow-lg mx-auto")}
-        style={{
-          ...colorMerge("primary.background"),
-        }}
+        className={tw(
+          "flex flex-col gap-6 shadow-lg mx-auto bg-[--biqpod-primary-background]"
+        )}
       >
         <div className="p-4">
           <h2
@@ -80,15 +60,8 @@ export const PostDataBeforePost = () => {
             </p>
           </div>
           <div className="flex items-center gap-1">
-            {title || (
-              <span
-                className="capitalize"
-                style={{
-                  ...colorMerge({
-                    color: "gray.opacity",
-                  }),
-                }}
-              >
+            {product.name || (
+              <span className="text-[--biqpod-gray-opacity] capitalize">
                 <Translate content="no title" />
               </span>
             )}
@@ -106,15 +79,8 @@ export const PostDataBeforePost = () => {
             </p>
           </div>
           <div className="flex items-center gap-1">
-            {category || (
-              <span
-                className="capitalize"
-                style={{
-                  ...colorMerge({
-                    color: "gray.opacity",
-                  }),
-                }}
-              >
+            {product.category || (
+              <span className="text-[--biqpod-gray-opacity] capitalize">
                 <Translate content="no category" />
               </span>
             )}
@@ -132,7 +98,7 @@ export const PostDataBeforePost = () => {
             </p>
           </div>
           <div className="flex items-center gap-1">
-            <div>{postType}</div>
+            <div>{product.type}</div>
             <Tip
               icon={allIcons.solid.faExternalLink}
               onClick={() => {
@@ -147,31 +113,11 @@ export const PostDataBeforePost = () => {
             </p>
           </div>
           <div>
-            {(keys &&
-              keys.map((info) => {
-                return (
-                  <span
-                    key={info}
-                    className="px-2 py-1 border border-transparent border-solid rounded-full capitalize"
-                    style={{
-                      ...colorMerge({
-                        backgroundColor: "gray.opacity",
-                        borderColor: "borders",
-                      }),
-                    }}
-                  >
-                    {info}
-                  </span>
-                );
+            {(product.keys &&
+              product.keys.map((info) => {
+                return <Key key={info}>{info}</Key>;
               })) || (
-              <span
-                className="capitalize"
-                style={{
-                  ...colorMerge({
-                    color: "gray.opacity",
-                  }),
-                }}
-              >
+              <span className="text-[--biqpod-gray-opacity] capitalize">
                 <Translate content="no keys" />
               </span>
             )}
@@ -188,7 +134,7 @@ export const PostDataBeforePost = () => {
             </p>
           </div>
           <div className="capitalize">
-            <Translate content={limited ? "yes" : "no"} />
+            <Translate content={product.limited ? "yes" : "no"} />
             <Tip
               icon={allIcons.solid.faExternalLink}
               onClick={() => {
@@ -203,15 +149,8 @@ export const PostDataBeforePost = () => {
             </p>
           </div>
           <p>
-            {(sizes && sizes.join(", ")) || (
-              <span
-                className="capitalize"
-                style={{
-                  ...colorMerge({
-                    color: "gray.opacity",
-                  }),
-                }}
-              >
+            {(product.sizes && product.sizes.join(", ")) || (
+              <span className="text-[--biqpod-gray-opacity] capitalize">
                 <Translate content="no sizes" />
               </span>
             )}
@@ -230,22 +169,15 @@ export const PostDataBeforePost = () => {
           </div>
           <div>
             <div className={tw("flex gap-2")}>
-              {colors?.map((color, index) => (
+              {product.colors?.map((color, index) => (
                 <div
                   key={index}
                   className={tw("rounded-full w-6 h-6")}
                   style={{ backgroundColor: color }}
                   title={color}
-                ></div>
+                />
               )) || (
-                <span
-                  className="capitalize"
-                  style={{
-                    ...colorMerge({
-                      color: "gray.opacity",
-                    }),
-                  }}
-                >
+                <span className="text-[--biqpod-gray-opacity] capitalize">
                   <Translate content="no colors" />
                 </span>
               )}
@@ -260,29 +192,9 @@ export const PostDataBeforePost = () => {
           <p>
             {(extraInformation &&
               extraInformation.map((info) => {
-                return (
-                  <span
-                    key={info}
-                    className="px-2 py-1 border border-transparent border-solid rounded-full capitalize"
-                    style={{
-                      ...colorMerge({
-                        backgroundColor: "gray.opacity",
-                        borderColor: "borders",
-                      }),
-                    }}
-                  >
-                    {info}
-                  </span>
-                );
+                return <Key key={info}>{info}</Key>;
               })) || (
-              <span
-                className="capitalize"
-                style={{
-                  ...colorMerge({
-                    color: "gray.opacity",
-                  }),
-                }}
-              >
+              <span className="text-[--biqpod-gray-opacity] capitalize">
                 <Translate content="no extra information" />
               </span>
             )}
@@ -305,56 +217,35 @@ export const PostDataBeforePost = () => {
               );
             })}
             {choisedThemeArray.length === 0 && (
-              <span
-                className="capitalize"
-                style={{
-                  ...colorMerge({
-                    color: "gray.opacity",
-                  }),
-                }}
-              >
+              <span className="text-[--biqpod-gray-opacity] capitalize">
                 <Translate content="no choised theme" />
               </span>
             )}
           </div>
-          {limited && (
+          {product.limited && (
             <div className={tw("flex items-center gap-2")}>
               <Icon icon={allIcons.solid.faBox} />
               <p className={tw("font-semibold capitalize")}>
                 <Translate content="quantity:" />
               </p>
               <p>
-                {quantity || (
-                  <span
-                    style={{
-                      ...colorMerge({
-                        color: "gray.opacity",
-                      }),
-                    }}
-                    className="capitalize"
-                  >
+                {product.quantity || (
+                  <span className="text-[--biqpod-gray-opacity] capitalize">
                     <Translate content="no quantity" />
                   </span>
                 )}
               </p>
             </div>
           )}
-          {postType === "single" && (
+          {product.type === "single" && (
             <div className={tw("flex items-center gap-2")}>
               <Icon icon={allIcons.solid.faDollarSign} />
               <p className={tw("font-semibold capitalize")}>
                 <Translate content="price:" />{" "}
-                {typeof price === "number" ? (
-                  <i>{price.toFixed(2).concat("DA")}</i>
+                {typeof product.single?.price === "number" ? (
+                  <i>{product.single.price.toFixed(2).concat("DA")}</i>
                 ) : (
-                  <span
-                    style={{
-                      ...colorMerge({
-                        color: "gray.opacity",
-                      }),
-                    }}
-                    className="capitalize"
-                  >
+                  <span className="text-[--biqpod-gray-opacity] capitalize">
                     <Translate content="no price" />
                   </span>
                 )}
@@ -362,7 +253,7 @@ export const PostDataBeforePost = () => {
             </div>
           )}
         </div>
-        {postType === "multiple" && (
+        {product.type === "multiple" && (
           <EmptyComponent>
             <Line />
             <div>
@@ -374,20 +265,10 @@ export const PostDataBeforePost = () => {
               <div className={tw("overflow-x-auto px-2")}>
                 <div
                   className={tw(
-                    "border border-transparent border-solid rounded-2xl w-full overflow-hidden"
+                    "border border-[--biqpod-borders] border-solid rounded-2xl w-full overflow-hidden"
                   )}
-                  style={{
-                    ...colorMerge({
-                      borderColor: "borders",
-                    }),
-                  }}
                 >
-                  <div
-                    style={{
-                      ...colorMerge("secondary.background"),
-                    }}
-                    className="flex w-full"
-                  >
+                  <div className="flex bg-[--biqpod-secondary-background] w-full">
                     <div
                       className={tw(
                         "px-6 py-3 w-full font-medium text-left text-xs uppercase"
@@ -404,7 +285,7 @@ export const PostDataBeforePost = () => {
                     </div>
                   </div>
                   <Line />
-                  {pricesList?.map((item, index) => (
+                  {product.multiple?.prices?.map((item, index) => (
                     <div key={index} className="flex w-full">
                       <div
                         className={tw(
@@ -429,7 +310,7 @@ export const PostDataBeforePost = () => {
         )}
         <Line />
         <div className="p-2">
-          <MarkDown value={description || "*No Description*"} />
+          <MarkDown value={product.description || "*No Description*"} />
         </div>
       </div>
     </EmptyComponent>

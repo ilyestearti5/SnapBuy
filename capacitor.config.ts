@@ -3,7 +3,6 @@ import type { CapacitorConfig } from "@capacitor/cli";
 const config: CapacitorConfig = {
   appId: `com.${biqpodConfig.appId}.app`,
   appName: biqpodConfig.appName,
-  webDir: "dist",
   server: {
     url: "https://snapbuy.biqpod.com",
   },

@@ -1,15 +1,9 @@
 import { Icon, Line, Translate } from "@biqpod/app/ui/components";
-import {
-  ColorIds,
-  useColorMerge,
-  useCopyState,
-  useTemp,
-} from "@biqpod/app/ui/hooks";
+import { ColorIds, useColorMerge, useCopyState } from "@biqpod/app/ui/hooks";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { mergeObject } from "@biqpod/app/ui/utils";
 import { ChromePicker as ColorPicker } from "react-color";
-import { ProductFormSectionProps } from "../NewProduct";
-import { useEffect } from "react";
+import { useFormTheme } from "../../../apis";
 export interface Colors {
   colorId: ColorIds;
   name: string;
@@ -77,18 +71,9 @@ export const ChoosColor = ({ color, colorId, onChange }: ChoosColorProps) => {
     </div>
   );
 };
-export const ProductChoosThemeStyle = ({
-  product,
-}: ProductFormSectionProps) => {
+export const ProductChoosThemeStyle = () => {
   const colorMerge = useColorMerge();
-  const colorsState = useTemp<SnapBuy.Product["theme"]>(
-    "product-choised-theme"
-  );
-  useEffect(() => {
-    if (product?.theme) {
-      colorsState.set(product.theme);
-    }
-  }, []);
+  const colorsState = useFormTheme();
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div

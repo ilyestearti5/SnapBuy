@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import {
   BooleanField,
   EmptyComponent,
@@ -7,36 +6,16 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import {
-  setFieldValue,
-  setTemp,
-  useCopyState,
-  useTemp,
-  useUser,
-} from "@biqpod/app/ui/hooks";
-import { Nothing, SettingValueType } from "@biqpod/app/ui/types";
-import { useCategories } from "../../apis";
-import { ProductFormSectionProps } from "./NewProduct";
-export const ProductInfo = ({ product }: ProductFormSectionProps) => {
-  const category = useCopyState<string | Nothing>(null);
-  const phone = useTemp<SettingValueType["pin"]>("post-phone");
-  const user = useUser();
-  useEffect(() => {
-    phone.set(user?.phone || "");
-  }, [user]);
+  useCategories,
+  useFormAvailable,
+  useFormCategory,
+  useFormLimited,
+} from "../../apis";
+export const ProductInfo = () => {
+  const category = useFormCategory();
+  const limited = useFormLimited();
   const categories = useCategories();
-  const isAvailable = useTemp<SettingValueType["boolean"]>(
-    "product-form-available"
-  );
-  useEffect(() => {
-    category.set(product?.category);
-    isAvailable.set(!!product?.available);
-    setFieldValue("product-form-name", product?.name || "");
-  }, []);
-
-  useEffect(() => {
-    setTemp("product-form-category", category.get);
-  }, [category.get]);
-
+  const isAvailable = useFormAvailable();
   return (
     <EmptyComponent>
       <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
@@ -68,6 +47,23 @@ export const ProductInfo = ({ product }: ProductFormSectionProps) => {
               }),
               search: true,
             }}
+          />
+        </div>
+      </div>
+      <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+        <label
+          className="w-full md:text-right capitalize"
+          htmlFor="product-limited"
+        >
+          <Translate content="limited" /> :
+        </label>
+        <div className="w-full">
+          <BooleanField
+            state={limited}
+            config={{
+              style: "switch",
+            }}
+            id="product-limited"
           />
         </div>
       </div>

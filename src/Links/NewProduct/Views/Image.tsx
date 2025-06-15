@@ -7,16 +7,11 @@ import {
   Tip,
   TitleView,
 } from "@biqpod/app/ui/components";
-import {
-  useTemp,
-  showToast,
-  useCopyState,
-  useColorMerge,
-} from "@biqpod/app/ui/hooks";
+import { showToast, useCopyState, useColorMerge } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
-import { ProductFormSectionProps } from "../NewProduct";
-export const ProductImages = ({ product }: ProductFormSectionProps) => {
-  const images = useTemp<string[]>("product-images");
+import { useFormPhotos } from "../../../apis";
+export const ProductImages = () => {
+  const images = useFormPhotos();
   const currentImageState = useCopyState<string | Nothing>(null);
   useEffect(() => {
     if (currentImageState.get) {
@@ -28,13 +23,6 @@ export const ProductImages = ({ product }: ProductFormSectionProps) => {
       currentImageState.set(null);
     }
   }, [currentImageState.get, images.get]);
-
-  useEffect(() => {
-    if (product?.photos) {
-      images.set(product.photos);
-    }
-  }, [product?.photos]);
-
   const colorMerge = useColorMerge();
   return (
     <div className="flex flex-col h-full">

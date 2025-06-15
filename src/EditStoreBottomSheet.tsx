@@ -5,9 +5,10 @@ import {
   ImageField,
   Field,
   Button,
-  CircleLoading,
   Card,
   CircleTip,
+  CircleLoading,
+  NumberField,
 } from "@biqpod/app/ui/components";
 import {
   useTemp,
@@ -16,26 +17,31 @@ import {
   execAction,
   closeBottomSheet,
   closePopup,
+  getAction,
+  confirm,
 } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect } from "react";
-import { useActionStatus } from "./CartPopup";
 interface UpsertStoreProps {
   store?: SnapBuy.Store;
 }
 export const UpsertStore = ({ store }: UpsertStoreProps) => {
   const photoState = useTemp<string | Nothing>("store-photo");
+  const deliveryPriceState = useTemp<number | null | undefined>(
+    "store-delivery-price"
+  );
   useEffect(() => {
     setFieldValue("store-name", store?.name || "");
     setFieldValue("store-phone", store?.phone || "");
     setTemp("store-photo", store?.photo || null);
+    setTemp("store-delivery-price", store?.deliveryPrice || null);
   }, []);
-  const status = useActionStatus("upsert-new-store");
-  const loadingAction = status.isLoading;
+  const action = getAction("upsert-store");
+  const loadingAction = action?.status === "loading";
   // const storeName = getFieldValue("store-name");
   return (
-    <Card className="relative max-md:rounded-none max-md:w-full min-w-[400px] max-md:h-full">
+    <Card className="relative max-md:rounded-none max-md:w-full min-w-[400px] max-md:h-full overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-3">
         <h1 className="font-bold text-3xl uppercase">
           <Translate content={store ? "edit store" : "add store"} />
@@ -58,17 +64,6 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
       <div className="h-full">
         <div className="flex flex-col gap-2 p-2">
           <Field inputName="store-name" placeholder="Enter Store Name" />
-          {/* <div
-              className={tw(
-                "flex justify-between items-center transition-[height] duration-300 gap-2 h-[0px] overflow-hidden",
-                storeName && !store && "h-[50px]"
-              )}
-            >
-              <div></div>
-              <div className="bg-[--biqpod-primary-background] px-2 border border-[--biqpod-borders] border-solid rounded-full">
-                {storeName ? toId(storeName) : "-"}
-              </div>
-            </div> */}
           <Field
             inputName="store-phone"
             placeholder="Enter Store Phone"
@@ -81,6 +76,27 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
               },
             }}
           />
+          <div className="relative">
+            <NumberField
+              state={deliveryPriceState}
+              config={{
+                autoChange: true,
+                placeholder: "Enter Delivery Price",
+                min: 0,
+              }}
+              id="store-delivery-price"
+            />
+            {!deliveryPriceState.get && (
+              <span className="top-1/2 right-2 absolute bg-red-700 px-2 py-[1px] rounded-full font-bold text-white capitalize -translate-y-1/2">
+                <Translate content="free" />
+              </span>
+            )}
+            {!!deliveryPriceState.get && (
+              <span className="top-1/2 right-2 absolute px-2 py-[1px] text-[--biqpod-primary] -translate-y-1/2">
+                <Translate content="DA" />
+              </span>
+            )}
+          </div>
         </div>
       </div>
       <Line />
@@ -100,9 +116,20 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
           }
           iconClassName={tw(loadingAction && "animate-spin")}
           onClick={async () => {
-            await execAction("upsert-new-store", store?.id);
-            closeBottomSheet();
-            closePopup();
+            if (!deliveryPriceState.get) {
+              const response = await confirm({
+                title: "Delivery Pricing",
+                message:
+                  "Are you sure you want to set the delivery price to free?",
+                detail:
+                  "Setting the delivery price to free means that you will not charge any delivery fee for your customers.",
+                type: "warning",
+              });
+              if (!response) {
+                return;
+              }
+            }
+            execAction("upsert-store", store?.id);
           }}
           className="p-3"
         >

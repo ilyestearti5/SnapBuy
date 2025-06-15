@@ -27,6 +27,7 @@ export interface FilterOrdersProps {
   time?: string;
   phone?: string;
   orderBy?: string;
+  delivery?: string;
 }
 export const useFilterState = () => {
   return getTemp<FilterOrdersProps>("filter-orders-state");
@@ -51,12 +52,14 @@ export const FilterOrders = () => {
   const filterTimeState = useCopyState<string | Nothing>(null);
   const filterPhoneState = useCopyState<string | Nothing>(null);
   const filterOrderByState = useCopyState<string | Nothing>(null);
+  const filterDeliveryState = useCopyState<string | Nothing>(null);
   const filterState = useFilterState();
   useEffect(() => {
     filterStatusState.set(filterState?.status);
     filterTimeState.set(filterState?.time || null);
     filterPhoneState.set(filterState?.phone || null);
     filterOrderByState.set(filterState?.orderBy || null);
+    filterDeliveryState.set(filterState?.delivery || null);
   }, [filterState]);
   const action = useAction(
     "apply-filter-orders",
@@ -66,6 +69,7 @@ export const FilterOrders = () => {
         time: filterTimeState.get || undefined,
         phone: filterPhoneState.get || undefined,
         orderBy: filterOrderByState.get || undefined,
+        delivery: filterDeliveryState.get || undefined,
       });
       await delay(1000);
       closePopup();
@@ -76,6 +80,7 @@ export const FilterOrders = () => {
       filterTimeState.get,
       filterPhoneState.get,
       filterOrderByState.get,
+      filterDeliveryState.get,
     ]
   );
   const loading = isLoading(action);
@@ -195,7 +200,43 @@ export const FilterOrders = () => {
                   .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
                   .join(" ");
                 return {
-                  content: `${capitalizedName} ${time.emojie}`,
+                  content: `${time.emojie} ${capitalizedName}`,
+                  value: time.name,
+                };
+              }),
+            }}
+          />
+        </div>
+        <div className="flex flex-col gap-4">
+          <label className="text-xl capitalize" htmlFor="filter-delivery">
+            <Translate content="delivery" /> :
+          </label>
+          <EnumField
+            state={filterDeliveryState}
+            id="filter-delivery"
+            config={{
+              placeholder: "select delivery",
+              nullable: true,
+              list: [
+                {
+                  name: "all",
+                  emojie: "📦",
+                },
+                {
+                  name: "delivere",
+                  emojie: "✅🚚",
+                },
+                {
+                  name: "not delivere",
+                  emojie: "❌🚚",
+                },
+              ].map((time) => {
+                var capitalizedName = time.name
+                  .split(" ")
+                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+                  .join(" ");
+                return {
+                  content: `${time.emojie} ${capitalizedName} `,
                   value: time.name,
                 };
               }),

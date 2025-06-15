@@ -4,7 +4,9 @@ import react from "@vitejs/plugin-react";
 import electron from "vite-plugin-electron";
 import { PluginOption, defineConfig } from "vite";
 import project from "./project.json";
+import { initVite } from "@biqpod/app/env";
 export default defineConfig(async ({ mode }) => {
+  await initVite();
   const isElectron = mode === "electron";
   const plugins: PluginOption[] = [
     react({}),
@@ -39,12 +41,12 @@ export default defineConfig(async ({ mode }) => {
         input: {
           index: "index.html",
         },
+        external: ["@biqpod/app"],
       },
     },
     plugins,
     server: {
       port: project.development.port,
-      host: true,
     },
     clearScreen: false,
   };

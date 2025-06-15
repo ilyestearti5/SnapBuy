@@ -22,6 +22,8 @@ declare namespace SnapBuy {
       latitude: number;
       longitude: number;
     };
+    createdAt?: number;
+    deliveryPrice?: number;
   }
   type Platform =
     | "facebook"
@@ -55,8 +57,9 @@ declare namespace SnapBuy {
     storeId?: string;
     uid?: string;
     platform?: Platform;
+    totalPrice?: number;
+    delivery?: boolean;
   }
-
   export type DeliveryCompanyRole =
     | "merchant"
     | "customer"
@@ -66,8 +69,7 @@ declare namespace SnapBuy {
     | "delivery_agent"
     | "finance"
     | "franchise_partner";
-
-  interface Account {
+  export interface Account {
     id?: string;
     firstname?: string;
     lastname?: string;
@@ -84,6 +86,14 @@ declare namespace SnapBuy {
     updatedAt: number;
     followed: string;
     follower: string;
+  }
+  interface Pack {
+    id?: string;
+    storeId?: string;
+    name?: string;
+    uid?: string;
+    price?: number;
+    products?: { prodId: string; count: number }[];
   }
   interface Client {
     id: string;
@@ -118,6 +128,12 @@ declare namespace SnapBuy {
     single?: {
       price?: number;
     };
+    metaData?: Partial<
+      Record<
+        string,
+        import("@biqpod/app/ui/types").SettingValueType[keyof import("@biqpod/app/ui/types").SettingValueType]
+      >
+    >;
     multiple?: {
       prices?: {
         quantity: number;

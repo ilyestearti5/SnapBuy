@@ -1,7 +1,6 @@
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  BooleanField,
   CircleTip,
   EmptyComponent,
   Icon,
@@ -11,34 +10,26 @@ import {
   TitleView,
   Translate,
 } from "@biqpod/app/ui/components";
-import { getTemp, useColorMerge, useTemp } from "@biqpod/app/ui/hooks";
+import { useTemp } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
-import { ProductFormSectionProps } from "../NewProduct";
-export const PostInforPrice = ({ product }: ProductFormSectionProps) => {
-  const postType = getTemp<"multiple" | "single">("post-type");
-  const quantity = useTemp<number | null | undefined>("post-quantity");
+import {
+  getFormLimited,
+  getFormType,
+  useFormPrice,
+  useFormPrices,
+  useFormQuantity,
+} from "../../../apis";
+export const PostInforPrice = () => {
+  const postType = getFormType();
+  const quantity = useFormQuantity();
   const tempPrice = useTemp<number | null | undefined>("temp-price");
   const tempQuantity = useTemp<number | null | undefined>("temp-quantity");
-  const limited = useTemp<boolean>("product-limited");
-  const price = useTemp<number | undefined>("product-price");
-  const colorMerge = useColorMerge();
-  const pricesList =
-    useTemp<Required<SnapBuy.Product>["multiple"]["prices"]>("product-prices");
-  useEffect(() => {
-    quantity.set(product?.quantity);
-    limited.set(product?.limited || null);
-    if (product?.type === "multiple") {
-      pricesList.set(product?.multiple?.prices);
-    }
-    if (product?.type === "single") {
-      price.set(product.single?.price);
-    }
-  }, []);
+  const price = useFormPrice();
+  const pricesList = useFormPrices();
   const [isSingle, isMultiple] = useMemo(() => {
     var isSingle = postType === "single";
     return [isSingle, !isSingle];
   }, [postType]);
-
   const maxCount = useMemo(() => {
     return Math.min(
       ...(pricesList.get?.map(({ quantity }) => {
@@ -46,31 +37,15 @@ export const PostInforPrice = ({ product }: ProductFormSectionProps) => {
       }) || [1])
     );
   }, [pricesList.get]);
+  const limited = getFormLimited();
   return (
     <EmptyComponent>
       <div className="flex flex-col">
-        <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-          <label
-            className="w-full md:text-right capitalize"
-            htmlFor="product-limited"
-          >
-            <Translate content="limited" /> :
-          </label>
-          <div className="w-full">
-            <BooleanField
-              state={limited}
-              config={{
-                style: "switch",
-              }}
-              id="product-limited"
-            />
-          </div>
-        </div>
         <div>
           <div
             className={tw(
               "h-[0px] transition-[height] overflow-hidden",
-              limited.get && "h-[60px] max-md:h-[80px]"
+              limited && "h-[60px] max-md:h-[80px]"
             )}
           >
             <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
@@ -111,14 +86,7 @@ export const PostInforPrice = ({ product }: ProductFormSectionProps) => {
                 }}
                 id="product-price"
               />
-              <div
-                style={{
-                  ...colorMerge({
-                    color: "primary",
-                  }),
-                }}
-                className="top-1/2 right-3 absolute -translate-y-1/2 pointer-events-none transform"
-              >
+              <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
                 DA
               </div>
             </div>
@@ -131,10 +99,7 @@ export const PostInforPrice = ({ product }: ProductFormSectionProps) => {
                 return (
                   <div
                     key={index}
-                    className="flex justify-between items-center gap-2 px-2 py-1 border border-transparent border-solid rounded-2xl"
-                    style={{
-                      ...colorMerge("gray.opacity"),
-                    }}
+                    className="flex justify-between items-center gap-2 bg-[--biqpod-gray-opacity] px-2 py-1 border border-transparent border-solid rounded-2xl"
                   >
                     <span>
                       {price}
@@ -194,14 +159,7 @@ export const PostInforPrice = ({ product }: ProductFormSectionProps) => {
                     }}
                     id="post-temp-price"
                   />
-                  <div
-                    style={{
-                      ...colorMerge({
-                        color: "primary",
-                      }),
-                    }}
-                    className="top-1/2 right-3 absolute -translate-y-1/2 pointer-events-none transform"
-                  >
+                  <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
                     DA
                   </div>
                 </div>

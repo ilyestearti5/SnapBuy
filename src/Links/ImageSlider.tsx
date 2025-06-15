@@ -1,5 +1,6 @@
 import { allIcons } from "@biqpod/app/ui/apis";
-import { EmptyComponent, CircleTip, Icon } from "@biqpod/app/ui/components";
+import { EmptyComponent, CircleTip } from "@biqpod/app/ui/components";
+import { useCopyState } from "@biqpod/app/ui/hooks";
 import React, { useState, useEffect, useRef } from "react";
 interface SliderProps {
   photos?: string[];
@@ -11,7 +12,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
   autoSlide = false,
   slideInterval = 5000,
 }) => {
-  const [current, setCurrent] = useState(0);
+  const current = useCopyState(0);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
   const [translateX, setTranslateX] = useState(0);
@@ -20,11 +21,11 @@ export const ImageSlider: React.FC<SliderProps> = ({
   const intervalRef = useRef<number | null>(null);
   const nextSlide = () => {
     setAnimation(true);
-    setCurrent((prev) => (prev + 1) % photos.length);
+    current.set((prev) => (prev + 1) % photos.length);
   };
   const prevSlide = () => {
     setAnimation(true);
-    setCurrent((prev) => (prev - 1 + photos.length) % photos.length);
+    current.set((prev) => (prev - 1 + photos.length) % photos.length);
   };
   const handleMouseDown = (e: MouseEvent) => {
     setIsDragging(true);
@@ -144,7 +145,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
     };
   }, [autoSlide, slideInterval]);
   const slideStyle = {
-    transform: `translateX(calc(${-current * 100}% + ${translateX}px))`,
+    transform: `translateX(calc(${-current.get * 100}% + ${translateX}px))`,
     transition: animation ? "transform 0.5s ease-in-out" : "none",
     display: "flex",
   };
@@ -153,7 +154,11 @@ export const ImageSlider: React.FC<SliderProps> = ({
       className="relative flex justify-center items-center w-full h-full overflow-hidden cursor-pointer"
       style={{ touchAction: "pan-y" }}
     >
-      <div ref={sliderRef} className="flex w-full h-full" style={slideStyle}>
+      <div
+        ref={sliderRef}
+        className="flex items-center w-full h-full"
+        style={slideStyle}
+      >
         {photos.map((photo, index) => (
           <div
             key={index}
@@ -162,9 +167,10 @@ export const ImageSlider: React.FC<SliderProps> = ({
             <img
               draggable="false"
               src={photo}
-              className="absolute inset-0 opacity-40 blur-lg object-cover"
+              loading="eager"
+              className="opacity-40 blur-lg w-full h-full object-cover"
             />
-            <div className="z-[10] flex justify-center w-full h-full">
+            <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full -translate-x-1/2 -translate-y-1/2 transform">
               <img draggable="false" src={photo} className="h-full" />
             </div>
           </div>
@@ -185,15 +191,9 @@ export const ImageSlider: React.FC<SliderProps> = ({
             />
           </div>
           <div className="bottom-2 left-1/2 absolute text-black -translate-x-1/2 transform">
-            {current + 1} / {photos.length}
+            {current.get + 1} / {photos.length}
           </div>
         </EmptyComponent>
-      )}
-      {photos.length == 0 && (
-        <Icon
-          iconClassName="text-8xl text-[--biqpod-gray-opacity]"
-          icon={allIcons.solid.faBoxOpen}
-        />
       )}
     </div>
   );

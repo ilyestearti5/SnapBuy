@@ -2,11 +2,12 @@
   "name": "@biqpod/snapbuy",
   "private": true,
   "version": "0.1.1",
-  "type": "module",
+  "main": "./dist-electron/index.js",
   "scripts": {
     "dev": "vite",
     "compile": "tsc",
     "build": "tsc && vite build",
+    "desktop": "vite --mode electron",
     "electron.build": "vite build --mode electron",
     "electron.linux.build": "vite build --mode electron && electron-builder --linux --x64",
     "electron.windows.build": "vite build --mode electron && electron-builder --win --x64",
@@ -20,7 +21,8 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@biqpod/app": "^0.0.8",
+    "@biqpod/app": "^0.1.7",
+    "@biqpod/packing": "^1.0.0",
     "@capacitor-community/camera-preview": "^7.0.1",
     "@capacitor/android": "^7.2.0",
     "@capacitor/app": "^7.0.1",
@@ -55,6 +57,7 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@capacitor/assets": "^3.0.5",
     "@testing-library/dom": ">=7.21.4",
     "@testing-library/jest-dom": "^5.16.5",
     "@testing-library/react": "^14.0.0",
