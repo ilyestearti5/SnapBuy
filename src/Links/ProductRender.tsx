@@ -16,12 +16,14 @@ import {
   execAction,
   showBottomSheet,
   closeBottomSheet,
+  setTemp,
 } from "@biqpod/app/ui/hooks";
 import { mapAsync, tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ImageSlider } from "./ImageSlider";
 import { motion } from "framer-motion";
+import { useMemo } from "react";
 
 export interface ProductRenderProps {
   product: SnapBuy.Product;
@@ -193,6 +195,38 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const price = product.single?.price || 0;
   const isFullWidth = getTemp<boolean>("isFullWidth");
   const isPromotion = product.type === "multiple";
+  let longPressTimer: NodeJS.Timeout | null = null;
+
+  const selectedProducts = getTemp<string[]>("selected-products");
+
+  // Helper: check if any product is selected
+  const anyProductSelected = !!selectedProducts?.length;
+
+  const handleLongPressStart = () => {
+    longPressTimer = setTimeout(() => {
+      setTemp("selected-products", [...(selectedProducts || []), product.id]);
+    }, 500); // 500ms for long press
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  };
+
+  const isSelected = useMemo(() => {
+    return selectedProducts?.includes(product.id);
+  }, [selectedProducts]);
+
+  // New: handle click to select if any product is already selected
+  const handleClick = () => {
+    if (anyProductSelected && !isSelected) {
+      // If any product is selected, add this product to the selection
+      setTemp("selected-products", [...(selectedProducts || []), product.id]);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -231,10 +265,21 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
           ],
         });
       }}
+      onMouseDown={handleLongPressStart}
+      onMouseUp={handleLongPressEnd}
+      onMouseLeave={handleLongPressEnd}
+      onTouchStart={handleLongPressStart}
+      onTouchEnd={handleLongPressEnd}
+      onTouchCancel={handleLongPressEnd}
+      onClick={anyProductSelected ? handleClick : undefined} // <-- add click handler
     >
       <Card
         key={product.id}
-        className="flex flex-col justify-between w-full h-full overflow-hidden"
+        className={tw(
+          "flex flex-col justify-between w-full h-full overflow-hidden",
+          isSelected &&
+            "outline outline-2 -outline-offset-2 outline-[--biqpod-primary] bg-[--biqpod-gray-opacity]"
+        )}
       >
         <div className="relative flex justify-center items-center w-full h-[200px] overflow-hidden cursor-pointer">
           {!!photos.length && <ImageSlider photos={photos} />}
@@ -279,7 +324,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                   return (
                     <div
                       key={index}
-                      className="bg-[--biqpod-gray-opacity] px-3 py-1 rounded-full max-md:text-md text-xl"
+                      className="bg-[--biqpod-gray-opacity] px-3 py-1 rounded-full max-md:text-md md:text-xl"
                     >
                       <span className="text-[--biqpod-success]">
                         {price.price} DA
@@ -293,14 +338,16 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                 })}
             </div>
           )}
-          <CircleTip
-            icon={allIcons.solid.faEllipsisVertical}
-            onClick={() => {
-              showBottomSheet(
-                <ProductToolsBottomSheet index={index} product={product} />
-              );
-            }}
-          />
+          {!anyProductSelected && (
+            <CircleTip
+              icon={allIcons.solid.faEllipsisVertical}
+              onClick={() => {
+                showBottomSheet(
+                  <ProductToolsBottomSheet index={index} product={product} />
+                );
+              }}
+            />
+          )}
         </div>
       </Card>
     </motion.div>

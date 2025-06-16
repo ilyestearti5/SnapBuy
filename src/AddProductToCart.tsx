@@ -7,6 +7,7 @@ import {
   Button,
   Translate,
   Icon,
+  EmptyComponent,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
@@ -21,6 +22,7 @@ import { setFocused } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
 import { ImageSlider } from "./Links/ImageSlider";
 import { getPrice } from "./CartPopup";
+import { useLocation } from "react-router";
 export interface ProductPopupProps {
   product: SnapBuy.Product;
 }
@@ -96,6 +98,18 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
     setFocused("prod-count");
     setFieldValue("prod-count", (cartCount || 1).toString());
   }, [cartCount]);
+  const loc = useLocation();
+  const { showPhoto } = useMemo(() => {
+    const searchParams = new URLSearchParams(loc.search);
+    return {
+      showPhoto: searchParams.has("photo")
+        ? !!+searchParams.get("photo")!
+        : true,
+    };
+  }, [loc.search]);
+  const count = useMemo(() => {
+    return parseInt(currentCount || "") || 0;
+  }, [currentCount]);
   return (
     <Card className="max-md:w-10/12 md:w-1/2 md:max-h-[70vh]">
       <div className="flex justify-between items-center p-2">
@@ -110,10 +124,14 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
         </div>
       </div>
       <Line />
-      <div className="h-[300px]">
-        <ImageSlider photos={photos} />
-      </div>
-      <Line />
+      {showPhoto && (
+        <EmptyComponent>
+          <div className="h-[300px]">
+            <ImageSlider photos={photos} />
+          </div>
+          <Line />
+        </EmptyComponent>
+      )}
       <div className="p-2 text-center">
         <span className="font-bold text-[--biqpod-success] text-2xl">
           {priceDetected.total} DA{" "}
@@ -128,7 +146,6 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
           <div
             className="inline-flex justify-center items-center rounded-full w-[50px] h-[50px] font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background] text-xl cursor-pointer"
             onClick={() => {
-              const count = parseInt(currentCount || "") || 0;
               setFieldValue("prod-count", Math.max(1, count - 1).toString());
             }}
           >
@@ -144,7 +161,6 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
           <div
             className="inline-flex justify-center items-center rounded-full w-[50px] h-[50px] font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background] text-xl cursor-pointer"
             onClick={() => {
-              const count = parseInt(currentCount || "") || 0;
               setFieldValue("prod-count", (count + 1).toString());
             }}
           >
@@ -152,19 +168,22 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
           </div>
         </div>
       </div>
-      <Line />
-      <div className="flex gap-2 p-2">
-        <Button
-          icon={allIcons.solid.faPlus}
-          onClick={() => {
-            const count = parseInt(currentCount || "") || 0;
-            addToCart(storeId, prod.id, count);
-            closePopup();
-          }}
-        >
-          <Translate content="add" />
-        </Button>
-      </div>
+      {!!count && (
+        <EmptyComponent>
+          <Line />
+          <div className="flex gap-2 p-2">
+            <Button
+              icon={allIcons.solid.faPlus}
+              onClick={() => {
+                addToCart(storeId, prod.id, count);
+                closePopup();
+              }}
+            >
+              <Translate content="add" />
+            </Button>
+          </div>
+        </EmptyComponent>
+      )}
     </Card>
   );
 };

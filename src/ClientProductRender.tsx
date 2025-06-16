@@ -25,7 +25,8 @@ import { useCartCount, removeCart, AddProductInCart } from "./AddProductToCart";
 import { ImageSlider } from "./Links/ImageSlider";
 import { MenuRecordProps } from "@biqpod/app/ui/types";
 import { motion } from "framer-motion";
-
+import { useLocation } from "react-router";
+import { useMemo } from "react";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
@@ -42,6 +43,15 @@ export const ClientProductRender = ({ product, index }: ProductRenderProps) => {
   const price = product.single?.price || 0;
   const { isMobile } = useDeviceResolution();
   const user = useUser();
+  const loc = useLocation();
+  const { showPhoto } = useMemo(() => {
+    const searchParams = new URLSearchParams(loc.search);
+    return {
+      showPhoto: searchParams.has("photo")
+        ? !!+searchParams.get("photo")!
+        : true,
+    };
+  }, [loc.search]);
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -53,18 +63,22 @@ export const ClientProductRender = ({ product, index }: ProductRenderProps) => {
       )}
     >
       <Card key={product.id} className="w-full h-full overflow-hidden">
-        <div className="relative flex justify-center items-center w-full h-[150px] cursor-pointer">
-          <ImageSlider photos={photos} />
-          {isPromotion && (
-            <div className="inline-flex top-0 left-0 absolute items-center gap-2 bg-red-600 px-3 py-1 rounded-ee-2xl text-white capitalize">
-              <Icon icon={allIcons.solid.faTag} />
-              <span>
-                <Translate content="promotion" />
-              </span>
+        {showPhoto && (
+          <EmptyComponent>
+            <div className="relative flex justify-center items-center w-full h-[150px] cursor-pointer">
+              <ImageSlider photos={photos} />
+              {isPromotion && (
+                <div className="inline-flex top-0 left-0 absolute items-center gap-2 bg-red-600 px-3 py-1 rounded-ee-2xl text-white capitalize">
+                  <Icon icon={allIcons.solid.faTag} />
+                  <span>
+                    <Translate content="promotion" />
+                  </span>
+                </div>
+              )}
             </div>
-          )}
-        </div>
-        <Line />
+            <Line />
+          </EmptyComponent>
+        )}
         <div className="max-md:p-1 md:p-2">
           <span className="font-bold max-md:text-sm md:text-xl">
             {product.name}

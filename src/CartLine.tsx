@@ -32,6 +32,7 @@ export const CartLine = ({ data }: CartLineProps) => {
   useEffect(() => {
     setTemp("cart-count-prices." + data.prodId, total);
   }, [total]);
+
   return (
     <EmptyComponent>
       {product && (
@@ -77,7 +78,7 @@ export const CartLine = ({ data }: CartLineProps) => {
                     const newCount = Math.max(1, Number(e.target.value));
                     addToCart(product.storeId!, product.id!, newCount);
                   }}
-                  className="bg-transparent border-none outline-none w-10 text-center"
+                  className="bg-transparent border-none outline-none w-10 text-base text-center"
                 />
                 <CircleTip
                   icon={allIcons.solid.faPlus}

@@ -14,12 +14,14 @@ import {
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
+  confirm,
   execAction,
   getFieldValue,
   getTemp,
   isLoading,
   isSuccess,
   openPath,
+  setTemp,
   showPopup,
   showToast,
   useAction,
@@ -271,10 +273,16 @@ export const Products = () => {
   }, [user]);
   const canDelete = getTemp<string>("canDeleteProduct");
   const loading = isLoading(action);
+  const selectedProducts = getTemp<string[]>("selected-products");
+
+  // Helper: check if any product is selected
+  const anyProductSelected = useMemo(() => {
+    return !!selectedProducts?.length;
+  }, [selectedProducts]);
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center p-2">
-        <div>
+        <div className="w-full">
           <Field
             inputName="producer-search-product"
             placeholder="Search Product"
@@ -302,6 +310,7 @@ export const Products = () => {
               isFullWidth.get && "rotate-90"
             )}
           />
+          <CircleTip icon={allIcons.solid.faFilter} />
         </div>
       </div>
       <Line />
@@ -407,6 +416,79 @@ export const Products = () => {
           )}
         />
       </Card>
+      {anyProductSelected && (
+        <Card className="bottom-4 left-4 z-[5000000000000000000000000000000] absolute flex flex-col items-center p-3 rounded-3xl">
+          <CircleTip
+            // icon represent available
+            icon={allIcons.regular.faEdit}
+            onClick={async () => {
+              if (selectedProducts) {
+                const unAvailableProducts = filterProducts?.filter(
+                  (prod) => !prod.available
+                );
+                if (unAvailableProducts?.length) {
+                  const response = await confirm({
+                    title: "Modify Products",
+                    message:
+                      "Are you sure you want to modify the selected products?",
+                    detail: `You are about to modify ${unAvailableProducts?.length} products. This action cannot be undone.`,
+                    type: "warning",
+                  });
+                  if (response) {
+                    execAction("add-products", {
+                      exists: unAvailableProducts?.map(({ id }) => {
+                        return {
+                          id,
+                          available: true,
+                        };
+                      }),
+                    });
+                    setTemp("selected-products", []);
+                  }
+                } else {
+                  showToast(
+                    "No products with state un available there is",
+                    "info"
+                  );
+                }
+              }
+            }}
+          />
+          <CircleTip
+            icon={allIcons.solid.faCheckDouble}
+            onClick={async () => {
+              setTemp(
+                "selected-products",
+                filterProducts?.map(({ id }) => id)
+              );
+            }}
+          />
+          <CircleTip
+            icon={allIcons.solid.faTrashCan}
+            onClick={async () => {
+              if (selectedProducts) {
+                const response = await confirm({
+                  title: "Delete Products",
+                  message:
+                    "Are you sure you want to delete the selected products?",
+                  detail: `You are about to delete ${selectedProducts.length} products. This action cannot be undone.`,
+                  type: "warning",
+                });
+                if (response) {
+                  execAction("delete-products", selectedProducts);
+                  setTemp("selected-products", []);
+                }
+              }
+            }}
+          />
+          <CircleTip
+            icon={allIcons.solid.faXmark}
+            onClick={async () => {
+              setTemp("selected-products", []);
+            }}
+          />
+        </Card>
+      )}
       <div
         className={tw(
           "bottom-0 z-[10000] absolute inset-x-0 flex justify-center items-center bg-gradient-to-t to-[--biqpod-transparent] opacity-0 from-[--biqpod-shadow-color] p-2 transition-[transform,opacity] translate-y-full duration-500 pointer-events-none transform",

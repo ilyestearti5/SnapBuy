@@ -20,6 +20,7 @@ import deliveryPhoto from "./assets/delivery.png";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { IconProps } from "@biqpod/app/ui/components";
 import androidPhoto from "./assets/android.png";
+import edge from "./assets/platforms/edge.png";
 import {
   execAction,
   getTemp,
@@ -84,6 +85,7 @@ export const platformsPhotos: Partial<Record<SnapBuy.Platform, string>> = {
   unknown,
   chrome,
   safari,
+  edge,
 };
 export const getImageByPlatform = (string?: SnapBuy.Platform) => {
   return (string && platformsPhotos[string]) || unknown;

@@ -28,7 +28,7 @@ import { useFullCart } from "./AddProductToCart";
 import { CartPopup } from "./CartPopup";
 import { ClientProductRender } from "./ClientProductRender";
 import { useParams } from "react-router";
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 120;
 export const ClientProducts = () => {
   const storeId = useParams<{ uid: string }>().uid;
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data

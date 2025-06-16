@@ -35,7 +35,7 @@ import { cloud, getDoc } from "./server";
 import { useHistory, useLocation } from "react-router";
 import { snapbuyApi } from "./apis";
 import { useEffect, useMemo } from "react";
-import { delay, mergeArray } from "@biqpod/app/ui/utils";
+import { delay, mapAsync, mergeArray } from "@biqpod/app/ui/utils";
 import { OpenMenuProps } from "@biqpod/app/ui/types";
 import { Link } from "react-router-dom";
 import { useStoreId } from "./App";
@@ -144,6 +144,16 @@ export const HeaderContent = () => {
     setTemp("subed", subed);
   }, [subed]);
   const { isMobile } = useDeviceResolution();
+  useAction(
+    "delete-products",
+    async (prodsIds: string[]) => {
+      await mapAsync(prodsIds, async (prodId) => {
+        loadingText.set(`Deleting product ${prodId}...`);
+        await snapbuyApi.deleteProduct(prodId);
+      });
+    },
+    []
+  );
   return (
     <EmptyComponent>
       <div className="flex justify-between items-center px-4 w-full">

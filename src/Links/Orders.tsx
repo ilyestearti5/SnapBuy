@@ -552,14 +552,21 @@ export const Orders = () => {
                   transition={{ duration: 0.3, delay: index * 0.05 }}
                 >
                   <Card className="overflow-hidden">
-                    <div className="flex items-center gap-2 p-2">
-                      <span className="inline-block w-[40px] h-[40px]">
-                        <img
-                          className="w-full h-full object-cover"
-                          src={getImageByPlatform(order.platform)}
-                        />
-                      </span>
-                      <span className="text-xl">{fullName}</span>
+                    <div className="flex justify-between items-center gap-2 p-2">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-block w-[40px] h-[40px]">
+                          <img
+                            className="w-full h-full object-cover"
+                            src={getImageByPlatform(order.platform)}
+                          />
+                        </span>
+                        <span className="text-xl">{fullName}</span>
+                      </div>
+                      {!!order.totalPrice && (
+                        <span className="font-bold text-green-600 max-md:text-base md:text-xl">
+                          {order.totalPrice}DA
+                        </span>
+                      )}
                     </div>
                     <Line />
                     <div className="flex justify-between items-center p-2 overflow-hidden">
