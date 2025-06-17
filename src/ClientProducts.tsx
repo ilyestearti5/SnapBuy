@@ -34,7 +34,7 @@ import { ClientProductRender } from "./ClientProductRender";
 import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import React from "react";
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 400;
 export const ClientProducts = () => {
   const storeId = useParams<{ uid: string }>().uid;
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
