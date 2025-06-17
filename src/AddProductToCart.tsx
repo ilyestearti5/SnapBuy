@@ -11,6 +11,7 @@ import {
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
+  ColorIds,
   getFieldValue,
   getTemp,
   getTempFromStore,
@@ -87,6 +88,23 @@ export function initCart() {
     }
   }, [fullCarts, cartsLoaded.get]);
 }
+
+export const useSearchParams = () => {
+  const loc = useLocation();
+  return useMemo(() => {
+    const searchParams = new URLSearchParams(loc.search);
+    return {
+      showPhoto: searchParams.has("photo")
+        ? !!+searchParams.get("photo")!
+        : true,
+      darkMode: searchParams.has("dark") ? !!+searchParams.get("dark")! : false,
+      getColor(name: ColorIds) {
+        return searchParams.get("color." + name);
+      },
+    };
+  }, [loc.search]);
+};
+
 export const AddProductInCart = ({ product }: ProductPopupProps) => {
   const prod = product;
   const storeId = product.storeId!;
@@ -98,15 +116,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
     setFocused("prod-count");
     setFieldValue("prod-count", (cartCount || 1).toString());
   }, [cartCount]);
-  const loc = useLocation();
-  const { showPhoto } = useMemo(() => {
-    const searchParams = new URLSearchParams(loc.search);
-    return {
-      showPhoto: searchParams.has("photo")
-        ? !!+searchParams.get("photo")!
-        : true,
-    };
-  }, [loc.search]);
+  const { showPhoto } = useSearchParams();
   const count = useMemo(() => {
     return parseInt(currentCount || "") || 0;
   }, [currentCount]);

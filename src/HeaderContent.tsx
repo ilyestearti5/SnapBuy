@@ -45,6 +45,7 @@ export const HeaderContent = () => {
   initStoreIdSave();
   const user = useUser();
   const isDark = useSettingValue("window/dark.boolean");
+  const loadingPercent = useCopyState(0);
   const loadingText = useCopyState("");
   const loc = useLocation();
   const storeId = useStoreId();
@@ -99,43 +100,38 @@ export const HeaderContent = () => {
       }
       closePopup();
       loadingText.set("Adding News products...");
+      loadingPercent.set(0);
       await snapbuyApi.upsertProducts(storeId, news, (product, index) => {
         loadingText.set(
           `Adding ${product.name?.slice(0, 10)} ${index + 1}/${news.length} ...`
         );
+        loadingPercent.set(Math.round(((index + 1) / news.length) * 100));
       });
       loadingText.set("Adding Exists products...");
+      loadingPercent.set(0);
       await snapbuyApi.upsertProducts(storeId, exists, (product, index) => {
         loadingText.set(
           `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
             exists.length
           } ...`
         );
+        loadingPercent.set(Math.round(((index + 1) / exists.length) * 100));
       });
       loadingText.set("");
+      loadingPercent.set(0);
       execAction("fetch-products");
     },
     [storeId]
   );
   const hist = useHistory();
-  const selectedTab = useMemo(() => {
+  const { selectedTab, isUser, isPack, isProduct } = useMemo(() => {
     const pathname = loc.pathname.split("/").filter(Boolean);
-    const pathName = pathname.at(-1);
-    return pathName;
-  }, [loc.pathname]);
-  const isUser = useMemo(() => {
-    const pathname = loc.pathname.split("/").filter(Boolean);
-    const pathName = pathname.at(-2);
-    if (pathName === "stores") {
-      return true;
-    }
-    return false;
-  }, [loc.pathname]);
-  const isProduct = useMemo(() => {
-    return loc.pathname.startsWith("/product");
-  }, [loc.pathname]);
-  const isPack = useMemo(() => {
-    return loc.pathname.startsWith("/pack");
+    return {
+      selectedTab: pathname.at(-1),
+      isUser: pathname.at(-2) === "stores",
+      isProduct: pathname.at(-2) === "products",
+      isPack: pathname.at(-2) === "packs",
+    };
   }, [loc.pathname]);
   const subed = useAsyncMemo(() => {
     return snapbuyApi.isSubscribed();
@@ -147,23 +143,31 @@ export const HeaderContent = () => {
   useAction(
     "delete-products",
     async (prodsIds: string[]) => {
-      await mapAsync(prodsIds, async (prodId) => {
+      if (!user) {
+        return;
+      }
+      await mapAsync(prodsIds, async (prodId, index) => {
         loadingText.set(`Deleting product ${prodId}...`);
+        loadingPercent.set(Math.round(((index + 1) / prodsIds.length) * 100));
         await snapbuyApi.deleteProduct(prodId);
       });
+      loadingText.set("");
+      loadingPercent.set(0);
     },
-    []
+    [user]
   );
   return (
     <EmptyComponent>
       <div className="flex justify-between items-center px-4 w-full">
         <div className="flex items-center gap-x-1">
-          <CircleTip
-            icon={allIcons.solid.faChevronLeft}
-            onClick={() => {
-              hist.goBack();
-            }}
-          />
+          <div>
+            <CircleTip
+              icon={allIcons.solid.faChevronLeft}
+              onClick={() => {
+                hist.goBack();
+              }}
+            />
+          </div>
           {selectedTab && (
             <span className="max-md:text-xl md:text-2xl capitalize">
               {isUser && (
@@ -210,12 +214,14 @@ export const HeaderContent = () => {
                     return (
                       <span className="flex items-center gap-2">
                         {store && store.photo && (
-                          <Image
-                            className="w-[40px] h-[40px]"
-                            src={store.photo}
-                          />
+                          <div>
+                            <Image
+                              className="w-[40px] h-[40px]"
+                              src={store.photo}
+                            />
+                          </div>
                         )}
-                        <span>{product?.name}</span>
+                        <span className="max-md:text-sm">{product?.name}</span>
                       </span>
                     );
                   }}
@@ -249,12 +255,14 @@ export const HeaderContent = () => {
                     return (
                       <span className="flex items-center gap-2">
                         {store && store.photo && (
-                          <Image
-                            className="w-[40px] h-[40px]"
-                            src={store.photo}
-                          />
+                          <div>
+                            <Image
+                              className="w-[40px] h-[40px]"
+                              src={store.photo}
+                            />
+                          </div>
                         )}
-                        <span>
+                        <span className="max-md:text-sm">
                           {store && store.name && `${store.name} / `}{" "}
                           {pack?.name}
                         </span>
@@ -359,14 +367,30 @@ export const HeaderContent = () => {
             <div className="relative rounded-full">
               <UserAvatar
                 user={user}
-                subscribed={subed?.isSubscribed}
+                subscribed={!loadingText.get && subed?.isSubscribed}
                 className="relative cursor-pointer"
                 onClick={() => {
                   showProfile();
                 }}
               />
               {loadingText.get && (
-                <div className="md:hidden absolute inset-[-4px] border-[2px] border-x-[--biqpod-primary] border-y-transparent border-solid rounded-full animate-spin" />
+                <div className="absolute inset-[0px] flex justify-center items-center">
+                  <svg width="w-full" height="40" viewBox="0 0 40 40">
+                    <circle
+                      cx="20"
+                      cy="20"
+                      r="14"
+                      fill="none"
+                      stroke="var(--biqpod-primary)"
+                      strokeWidth="12"
+                      strokeDasharray={Math.PI * 2 * 20}
+                      strokeDashoffset={
+                        Math.PI * 2 * 20 * (1 - loadingPercent.get / 100)
+                      }
+                      style={{ transition: "stroke-dashoffset 0.3s" }}
+                    />
+                  </svg>
+                </div>
               )}
             </div>
           )}

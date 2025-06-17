@@ -19,7 +19,7 @@ import {
 import { doubleFilter } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
 import { snapbuyApi } from "../apis";
-import { loadFromExcel } from "./Products";
+import { loadFromExcel } from "./loadFromExcel";
 import { useStoreId } from "../App";
 interface PopupProductProps {
   products: SnapBuy.Product[];

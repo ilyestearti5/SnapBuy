@@ -20,18 +20,15 @@ import {
 import { range, tw } from "@biqpod/app/ui/utils";
 import { ProductInfo } from "./Infor";
 import { useEffect, useMemo } from "react";
-import { ProductChoosThemeStyle } from "./Views/ChoiseTheme";
 import { ProductDataBeforeCreate } from "./Views/DataBeforePost";
 import { ProductDescription } from "./Views/Description";
 import { PostDescriptionMarkDown } from "./Views/DescriptionMarkDown";
 import { ProductImages } from "./Views/Image";
-import { PostMoreInfo } from "./Views/MoreInfors";
 import { PostInforPrice } from "./Views/ProductInforPrice";
 import { ProductPricingType } from "./Views/ProductType";
 import {
   setFormAvailable,
   setFormCategory,
-  setFormColors,
   setFormDescription,
   setFormKeys,
   setFormLimited,
@@ -40,8 +37,6 @@ import {
   setFormPrice,
   setFormPrices,
   setFormQuantity,
-  setFormSizes,
-  setFormTheme,
   setFormType,
   useFormProduct,
 } from "../../apis";
@@ -62,8 +57,6 @@ const pages = [
   { name: "Price Info", component: PostInforPrice },
   { name: "Description", component: ProductDescription },
   { name: "Description (Markdown)", component: PostDescriptionMarkDown },
-  { name: "More Info", component: PostMoreInfo },
-  { name: "Theme Choice", component: ProductChoosThemeStyle },
   { name: "Data Before Post", component: ProductDataBeforeCreate },
 ];
 const pagesOnly = pages.map((page) => page.component);
@@ -90,8 +83,6 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
     setFormDescription(product?.description || "");
     setFormPhotos(product?.photos || []);
     setFormLimited(product?.limited || false);
-    setFormColors(product?.colors || []);
-    setFormSizes(product?.sizes || []);
     setFormKeys(product?.keys || []);
     setFormQuantity(product?.quantity || 0);
     setFormAvailable(product?.available || false);
@@ -99,7 +90,6 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
     setFormCategory(product?.category || "");
     setFormPrice(product?.single?.price || 0);
     setFormPrices(product?.multiple?.prices || []);
-    setFormTheme(product?.theme);
   }, [product]);
 
   const productForm = useFormProduct();

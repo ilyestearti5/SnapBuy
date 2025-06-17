@@ -16,24 +16,11 @@ export const ProductDataBeforeCreate = () => {
   const product = useFormProduct();
   const extraInformation = useMemo(() => {
     const result: string[] = [];
-    if (product.colors) {
-      result.push("colors");
-    }
-    if (product.sizes) {
-      result.push("sizes");
-    }
     if (product.keys) {
       result.push("keys");
     }
     return result;
   }, [product]);
-  const choisedThemeArray = useMemo(() => {
-    return Object.entries(product.theme || {})
-      .map(([name, color]) => {
-        return { name, color };
-      })
-      .filter(Boolean);
-  }, [product.theme]);
   return (
     <EmptyComponent>
       <div
@@ -149,11 +136,6 @@ export const ProductDataBeforeCreate = () => {
             </p>
           </div>
           <p>
-            {(product.sizes && product.sizes.join(", ")) || (
-              <span className="text-[--biqpod-gray-opacity] capitalize">
-                <Translate content="no sizes" />
-              </span>
-            )}
             <Tip
               icon={allIcons.solid.faExternalLink}
               onClick={() => {
@@ -161,28 +143,6 @@ export const ProductDataBeforeCreate = () => {
               }}
             />
           </p>
-          <div className={tw("flex items-center gap-2")}>
-            <Icon icon={allIcons.solid.faPalette} />
-            <p className={tw("font-semibold capitalize")}>
-              <Translate content="colors" />:
-            </p>
-          </div>
-          <div>
-            <div className={tw("flex gap-2")}>
-              {product.colors?.map((color, index) => (
-                <div
-                  key={index}
-                  className={tw("rounded-full w-6 h-6")}
-                  style={{ backgroundColor: color }}
-                  title={color}
-                />
-              )) || (
-                <span className="text-[--biqpod-gray-opacity] capitalize">
-                  <Translate content="no colors" />
-                </span>
-              )}
-            </div>
-          </div>
           <div className={tw("flex items-center gap-2")}>
             <Icon icon={allIcons.solid.faInfoCircle} />
             <p className={tw("font-semibold capitalize")}>
@@ -199,29 +159,6 @@ export const ProductDataBeforeCreate = () => {
               </span>
             )}
           </p>
-          <div className={tw("flex items-center gap-2")}>
-            <Icon icon={allIcons.solid.faPaintBrush} />
-            <p className={tw("font-semibold capitalize")}>
-              <Translate content="choised theme" />:
-            </p>
-          </div>
-          <div className="flex gap-2">
-            {choisedThemeArray.map(({ name, color }) => {
-              return (
-                <div
-                  key={name}
-                  className={tw("rounded-full w-6 h-6")}
-                  style={{ backgroundColor: color }}
-                  title={name}
-                />
-              );
-            })}
-            {choisedThemeArray.length === 0 && (
-              <span className="text-[--biqpod-gray-opacity] capitalize">
-                <Translate content="no choised theme" />
-              </span>
-            )}
-          </div>
           {product.limited && (
             <div className={tw("flex items-center gap-2")}>
               <Icon icon={allIcons.solid.faBox} />

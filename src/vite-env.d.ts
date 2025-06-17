@@ -117,12 +117,9 @@ declare namespace SnapBuy {
     uid?: string;
     createdAt?: number;
     quantity: number;
-    sizes?: string[];
-    colors?: string[];
     keys?: string[];
     available?: boolean;
     category?: string | Nothing;
-    theme?: Partial<Record<import("@biqpod/app/ui/hooks").ColorIds, string>>;
     type?: "single" | "multiple";
     limited?: boolean;
     single?: {

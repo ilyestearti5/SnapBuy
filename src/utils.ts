@@ -22,6 +22,7 @@ import { IconProps } from "@biqpod/app/ui/components";
 import androidPhoto from "./assets/android.png";
 import edge from "./assets/platforms/edge.png";
 import {
+  ColorIds,
   execAction,
   getTemp,
   setTemp,
@@ -1479,3 +1480,14 @@ export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
   value: Biqpod.System.Setting.Config[T];
   onChange: (value: Biqpod.System.Setting.Config[T]) => void;
 }
+
+export const colorIds: ColorIds[] = [
+  "primary",
+  "secondary",
+  "primary.background",
+  "primary.content",
+  "secondary.background",
+  "borders",
+  "text.color",
+  "shadow.color",
+];

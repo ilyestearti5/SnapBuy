@@ -7,6 +7,8 @@ import {
   Translate,
   Line,
   Button,
+  Scroll,
+  Key,
 } from "@biqpod/app/ui/components";
 import {
   getTemp,
@@ -17,14 +19,17 @@ import {
   showBottomSheet,
   closeBottomSheet,
   setTemp,
+  useCopyState,
+  ColorIds,
 } from "@biqpod/app/ui/hooks";
 import { mapAsync, tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ImageSlider } from "./ImageSlider";
 import { motion } from "framer-motion";
-import { useMemo } from "react";
-
+import { useEffect, useMemo } from "react";
+import { colorIds } from "../utils";
+import { BlockPicker as ColorPicker } from "react-color";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
@@ -72,119 +77,266 @@ const sharSocialMedia = [
   },
 ];
 const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
-  var uri = new URL(location.href);
-  uri.pathname = "/product/" + product.id;
+  const showCopyLayout = useCopyState(false);
+  const selectedColorId = useCopyState<ColorIds | null>(null);
+  const selectedColor = useCopyState<string | null>(null);
+  const usedColor = useCopyState<Partial<Record<ColorIds, string>>>({});
+  useEffect(() => {
+    if (!showCopyLayout.get) {
+      selectedColorId.set(null);
+      selectedColor.set(null);
+    }
+  }, [showCopyLayout.get]);
+  const uri = useMemo(() => {
+    const uri = new URL(location.href);
+    uri.pathname = "/product/" + product.id;
+    Object.entries(usedColor.get).forEach(([colorId, color]) => {
+      if (color) {
+        uri.searchParams.set("color." + colorId, color);
+      }
+    });
+    return uri;
+  }, [usedColor.get]);
   return (
     <EmptyComponent>
-      <div className="p-2 font-bold text-3xl uppercase">
-        <Translate content="actions" />
+      <div className="flex items-center gap-2 p-2">
+        <CircleTip
+          className={tw(
+            "transition-transform",
+            !showCopyLayout.get && "scale-0"
+          )}
+          icon={allIcons.solid.faArrowLeft}
+          onClick={() => {
+            showCopyLayout.set(false);
+          }}
+        />
+        <h1 className="font-bold text-3xl uppercase">
+          <Translate content="actions" />
+        </h1>
       </div>
-      <Line />
-      <div className="flex gap-2 p-2 overflow-x-auto">
-        {sharSocialMedia.map(({ name, icon, link }) => {
-          const u = link.replace("{link}", encodeURIComponent(uri.href));
+      <div className="relative">
+        <Line />
+        <div className="flex gap-2 p-2 overflow-x-auto">
+          {sharSocialMedia.map(({ name, icon, link }) => {
+            const u = link.replace("{link}", encodeURIComponent(uri.href));
+            return (
+              <div
+                key={name}
+                className="inline-flex justify-center items-center gap-2 bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-solid rounded-lg w-[50px] h-[50px] text-2xl cursor-pointer"
+                onClick={() => {
+                  window.open(u, "_blank");
+                }}
+              >
+                <Icon icon={icon} />
+              </div>
+            );
+          })}
+        </div>
+        <Line />
+        {[
+          {
+            label: "Share",
+            defaultIcon: allIcons.solid.faShare,
+            async click() {
+              await navigator.share({
+                title: product.name,
+                text: product.description || "",
+                url: uri.href,
+              });
+            },
+          },
+          {
+            label: "Link",
+            defaultIcon: allIcons.regular.faCopy,
+            click: async () => {
+              showCopyLayout.set(true);
+            },
+          },
+          {
+            label: "Name",
+            click: async () => {
+              await navigator.clipboard.writeText(product.name);
+              showToast("Name Copyed :)");
+            },
+            defaultIcon: allIcons.regular.faCopy,
+          },
+          {
+            label: "Description",
+            click: async () => {
+              await navigator.clipboard.writeText(product.description || "");
+              showToast("Description Copyed :)");
+            },
+            defaultIcon: allIcons.regular.faCopy,
+          },
+          {
+            type: "separator",
+          },
+          {
+            label: "Edit Product",
+            click: () => {
+              showPopup(<PostNewProduct product={product} />);
+            },
+            defaultIcon: allIcons.solid.faPen,
+          },
+          {
+            label: "Delete Product",
+            click: async () => {
+              await snapbuyApi.deleteProduct(product.id);
+              execAction("fetch-products");
+              showToast("Product Deleted");
+            },
+            defaultIcon: allIcons.solid.faTrashCan,
+          },
+        ].map(({ label, type, click, defaultIcon }, index) => {
+          if (type === "separator") {
+            return <Line key={index} />;
+          }
           return (
             <div
-              key={name}
-              className="inline-flex justify-center items-center gap-2 bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-solid rounded-lg w-[50px] h-[50px] text-2xl cursor-pointer"
-              onClick={() => {
-                window.open(u, "_blank");
+              key={index}
+              className="flex items-center gap-6 hover:bg-[--biqpod-gray-opacity] p-3 max-md:text-lg md:text-xl capitalize cursor-pointer"
+              onClick={async () => {
+                label && !["Link"].includes(label) && closeBottomSheet();
+                click?.();
               }}
             >
-              <Icon icon={icon} />
+              <Icon
+                icon={defaultIcon || allIcons.solid.faHiking}
+                iconClassName={tw(!defaultIcon && "invisible")}
+              />
+              <span>
+                <Translate content={label || ""} />
+              </span>
             </div>
           );
         })}
-      </div>
-      <Line />
-      {[
-        {
-          label: "Share",
-          defaultIcon: allIcons.solid.faShare,
-          async click() {
-            await navigator.share({
-              title: product.name,
-              text: product.description || "",
-              url: uri.href,
-            });
-          },
-        },
-        {
-          label: "Link",
-          defaultIcon: allIcons.regular.faCopy,
-          click: async () => {
-            await navigator.clipboard.writeText(uri.href);
-            showToast("Link Copied :)");
-          },
-        },
-        {
-          label: "Name",
-          click: async () => {
-            await navigator.clipboard.writeText(product.name);
-            showToast("Name Copyed :)");
-          },
-          defaultIcon: allIcons.regular.faCopy,
-        },
-        {
-          label: "Description",
-          click: async () => {
-            await navigator.clipboard.writeText(product.description || "");
-            showToast("Description Copyed :)");
-          },
-          defaultIcon: allIcons.regular.faCopy,
-        },
-        {
-          type: "separator",
-        },
-        {
-          label: "Edit Product",
-          click: () => {
-            showPopup(<PostNewProduct product={product} />);
-          },
-          defaultIcon: allIcons.solid.faPen,
-        },
-        {
-          label: "Delete Product",
-          click: async () => {
-            await snapbuyApi.deleteProduct(product.id);
-            execAction("fetch-products");
-            showToast("Product Deleted");
-          },
-          defaultIcon: allIcons.solid.faTrashCan,
-        },
-      ].map(({ label, type, click, defaultIcon }, index) => {
-        if (type === "separator") {
-          return <Line key={index} />;
-        }
-        return (
-          <div
-            key={index}
-            className="flex items-center gap-6 hover:bg-[--biqpod-gray-opacity] p-3 max-md:text-lg md:text-xl capitalize cursor-pointer"
-            onClick={async () => {
+        <Line />
+        <div className="p-3">
+          <Button
+            onClick={() => {
               closeBottomSheet();
-              click?.();
             }}
+            className="bg-[--biqpod-gray-opacity] rounded-full w-full text-[--biqpod-text-color]"
           >
-            <Icon
-              icon={defaultIcon || allIcons.solid.faHiking}
-              iconClassName={tw(!defaultIcon && "invisible")}
-            />
-            <span>
-              <Translate content={label || ""} />
-            </span>
-          </div>
-        );
-      })}
-      <Line />
-      <div className="p-3">
-        <Button
-          onClick={() => {
-            closeBottomSheet();
-          }}
-          className="bg-[--biqpod-gray-opacity] rounded-full w-full text-[--biqpod-text-color]"
+            <Translate content="cancel" />
+          </Button>
+        </div>
+        <div
+          className={tw(
+            "absolute overflow-hidden flex flex-col bg-[--biqpod-primary-background] w-full inset-y-0 -right-full transition-[right] duration-300",
+            showCopyLayout.get && "right-0"
+          )}
         >
-          <Translate content="cancel" />
-        </Button>
+          <Line />
+          <div className="flex items-stretch overflow-hidden">
+            <Scroll>
+              {colorIds.map((color) => {
+                const normalizedColor = color.replace(".", " ");
+                const selectedColor = usedColor.get[color] || null;
+                return (
+                  <div
+                    onClick={() => {
+                      selectedColorId.set(color);
+                    }}
+                    className="flex justify-between items-center active:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-secondary-background] max-md:p-2 md:p-3 cursor-pointer"
+                  >
+                    <h1 className="text-xl capitalize">{normalizedColor}</h1>
+                    {selectedColor && (
+                      <div
+                        className="rounded-full w-[25px] h-[25px]"
+                        style={{
+                          backgroundColor: selectedColor,
+                        }}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+            </Scroll>
+            <div className="bg-[--biqpod-borders] w-[1px] h-full" />
+            <div className="w-full">
+              <iframe
+                className="w-full h-full"
+                src={uri.href}
+                title="Product Preview"
+                sandbox="allow-same-origin allow-scripts allow-popups allow-forms"
+              />
+            </div>
+          </div>
+          <Line />
+          <div className="flex gap-2 p-2">
+            <Button
+              icon={allIcons.regular.faCopy}
+              className="rounded-full"
+              onClick={async () => {
+                closeBottomSheet();
+                await navigator.clipboard.writeText(uri.href);
+              }}
+            >
+              <Translate content="copy & close" />
+            </Button>
+          </div>
+          {selectedColorId.get && (
+            <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity]">
+              <Card className="w-1/2 overflow-hidden">
+                <ColorPicker
+                  color={selectedColor.get || "#ffffff"}
+                  onChange={(color) => {
+                    selectedColor.set(color.hex);
+                  }}
+                  styles={{
+                    default: {
+                      card: {
+                        backgroundColor: "var(--biqpod-secondary-background)",
+                        boxShadow: "none",
+                        width: "100%",
+                      },
+                      input: {
+                        backgroundColor: "var(--biqpod-field-background)",
+                        color: "var(--biqpod-text-color)",
+                      },
+                    },
+                  }}
+                />
+                <Line />
+                <div className="flex justify-between items-center gap-2 p-2">
+                  <Button
+                    onClick={() => {
+                      selectedColorId.set(null);
+                      selectedColor.set(null);
+                    }}
+                    className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+                  >
+                    <Translate content="cancel" />
+                  </Button>
+                  {selectedColor.get && (
+                    <Button
+                      onClick={() => {
+                        if (selectedColorId.get === null) {
+                          return;
+                        }
+                        const color = selectedColor.get;
+                        if (color) {
+                          usedColor.set({
+                            ...usedColor.get,
+                            [selectedColorId.get]: color,
+                          });
+                          showToast("Color saved!");
+                        } else {
+                          showToast("Please select a color first.");
+                        }
+                        selectedColorId.set(null);
+                        selectedColor.set(null);
+                      }}
+                    >
+                      <Translate content="set" />
+                    </Button>
+                  )}
+                </div>
+              </Card>
+            </div>
+          )}
+        </div>
       </div>
     </EmptyComponent>
   );
@@ -196,29 +348,23 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const isFullWidth = getTemp<boolean>("isFullWidth");
   const isPromotion = product.type === "multiple";
   let longPressTimer: NodeJS.Timeout | null = null;
-
   const selectedProducts = getTemp<string[]>("selected-products");
-
   // Helper: check if any product is selected
   const anyProductSelected = !!selectedProducts?.length;
-
   const handleLongPressStart = () => {
     longPressTimer = setTimeout(() => {
       setTemp("selected-products", [...(selectedProducts || []), product.id]);
     }, 500); // 500ms for long press
   };
-
   const handleLongPressEnd = () => {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       longPressTimer = null;
     }
   };
-
   const isSelected = useMemo(() => {
     return selectedProducts?.includes(product.id);
   }, [selectedProducts]);
-
   // New: handle click to select if any product is already selected
   const handleClick = () => {
     if (anyProductSelected && !isSelected) {
@@ -226,7 +372,6 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
       setTemp("selected-products", [...(selectedProducts || []), product.id]);
     }
   };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -322,10 +467,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                 })
                 .map((price, index) => {
                   return (
-                    <div
-                      key={index}
-                      className="bg-[--biqpod-gray-opacity] px-3 py-1 rounded-full max-md:text-md md:text-xl"
-                    >
+                    <Key key={index} className="max-md:text-md md:text-xl">
                       <span className="text-[--biqpod-success]">
                         {price.price} DA
                       </span>{" "}
@@ -333,7 +475,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                         {"<"}
                         {price.quantity}
                       </sub>
-                    </div>
+                    </Key>
                   );
                 })}
             </div>

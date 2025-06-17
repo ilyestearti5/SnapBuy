@@ -5,7 +5,6 @@ import {
   Button,
   Card,
   CircleTip,
-  ExcelPopup,
   Field,
   Icon,
   Line,
@@ -32,16 +31,15 @@ import {
 import { useEffect, useMemo } from "react";
 import { getDocs } from "../server";
 import { snapbuyApi } from "../apis";
-import { PopupProduct } from "./PopupProduct";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRender } from "./ProductRender";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { getStoreId, useStoreId } from "../App";
+import { useStoreId } from "../App";
 import { UpsertPack } from "./UpsertPack";
+import { loadFromExcel } from "./loadFromExcel";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
-  "colors",
   "createdAt",
   "description",
   "id",
@@ -49,15 +47,70 @@ const productKeys: (keyof SnapBuy.Product)[] = [
   "name",
   "photos",
   "quantity",
-  "theme",
   "type",
-  "sizes",
 ];
 interface KeyLineProps {
   prodKey: keyof SnapBuy.Product;
   value: boolean;
   onChange: (value: boolean) => void;
 }
+const ExcelImportFrom = () => {
+  return (
+    <Card className="flex">
+      <div className="flex items-center gap-2 p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="import from excel" />
+        </h1>
+        <div>
+          <CircleTip
+            icon={allIcons.solid.faXmark}
+            onClick={() => {
+              closePopup();
+            }}
+          />
+        </div>
+      </div>
+      <Line />
+      <div className="flex justify-center items-center gap-2 p-2">
+        <div
+          className="flex justify-center items-center bg-[--biqpod-gray-opacity] active:bg-[--biqpod-gray-opacity-2] rounded-2xl w-[60px] h-[60px] cursor-pointer"
+          onClick={async () => {
+            const files = await openPath({
+              filters: [
+                {
+                  name: "*",
+                  extensions: ["xlsx", "xls", "csv"],
+                },
+              ],
+            });
+            const file = files.at(0);
+            if (!file) {
+              showToast("Please select a file");
+              return;
+            }
+            loadFromExcel(file);
+          }}
+        >
+          <Icon iconClassName="text-3xl" icon={allIcons.solid.faUpload} />
+        </div>
+        <div
+          className="flex justify-center items-center bg-[--biqpod-gray-opacity] opacity-20 active:bg-[--biqpod-gray-opacity-2] p-2 rounded-2xl w-[60px] h-[60px] pointer-events-none"
+          onClick={() => {
+            window.open("https://account.biqpod.com/link");
+          }}
+        >
+          <img
+            className="object-cover"
+            draggable={false}
+            src={
+              "https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg"
+            }
+          />
+        </div>
+      </div>
+    </Card>
+  );
+};
 export const KeyLine = ({ prodKey, onChange, value }: KeyLineProps) => {
   const state = useCopyState<null | boolean>(value);
   useEffect(() => {
@@ -170,46 +223,6 @@ const exportExcel = async (
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   saveAs(blob, "products.xlsx");
-};
-export const loadFromExcel = async (file: string) => {
-  const storeId = getStoreId();
-  if (storeId)
-    showPopup(
-      <ExcelPopup
-        uri={file}
-        options={[
-          "id",
-          "name",
-          "description",
-          "category",
-          "available",
-          "limited",
-          "themeId",
-          "price",
-          "quantity",
-          "photo",
-        ]}
-        onChange={(json) => {
-          showPopup(
-            <PopupProduct
-              products={json.map(({ price, photo, ...all }) => {
-                return {
-                  ...all,
-                  single: {
-                    price,
-                  },
-                  type: "single",
-                  photos: photo ? [photo] : [],
-                  storeId,
-                };
-              })}
-              file={file}
-            />
-          );
-        }}
-        title="Excel File"
-      />
-    );
 };
 const PAGE_SIZE = 20;
 export const Products = () => {
@@ -378,13 +391,7 @@ export const Products = () => {
             !showTools.get && "w-[0px] h-[0px]"
           )}
           onClick={async () => {
-            const files = await openPath({});
-            const file = files.at(0);
-            if (!file) {
-              showToast("Please select a file");
-              return;
-            }
-            loadFromExcel(file);
+            showPopup(<ExcelImportFrom />);
           }}
         />
         <CircleTip

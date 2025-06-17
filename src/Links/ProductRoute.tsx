@@ -3,48 +3,48 @@ import {
   Button,
   CardWait,
   EmptyComponent,
-  FilterField,
   Line,
   MarkDown,
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
 import {
-  setColorFor,
+  setDarkColor,
+  setDefaultColor,
+  setLightColor,
   showPopup,
-  useAsyncEffect,
   useAsyncMemo,
-  useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
-import { Nothing } from "@biqpod/app/ui/types";
 import { useParams } from "react-router";
 import { snapbuyApi } from "../apis";
-import { AddProductInCart, useCartCount } from "../AddProductToCart";
+import {
+  AddProductInCart,
+  useCartCount,
+  useSearchParams,
+} from "../AddProductToCart";
 import { CartPopup } from "../CartPopup";
 import { ImageSlider } from "./ImageSlider";
 import { FormSection } from "./FormSection";
+import { useEffect } from "react";
+import { colorIds } from "../utils";
 export const ProductRoute = () => {
-  const sizes = useCopyState<string[] | Nothing>([]);
-  const colors = useCopyState<string[] | Nothing>([]);
   const prodId = useParams<{ prodId: string }>().prodId;
   const product = useAsyncMemo(async () => {
     return await snapbuyApi.getProduct(prodId);
   }, [prodId]);
-
   const cart = useCartCount(product?.storeId || "", product?.id || "");
-  useAsyncEffect(async () => {
-    if (product?.theme) {
-      for (const themeName in product.theme) {
-        const color = product.theme?.[themeName as keyof typeof product.theme];
-        if (color) {
-          setColorFor(themeName, color, "default");
-          setColorFor(themeName, "", "dark");
-          setColorFor(themeName, "", "light");
-        }
+  const { getColor } = useSearchParams();
+  useEffect(() => {
+    for (const colorId of colorIds) {
+      const color = getColor(colorId);
+      if (color) {
+        setDarkColor(colorId, color);
+        setLightColor(colorId, color);
+        setDefaultColor(colorId, color);
       }
     }
-  }, [product?.theme]);
+  }, [getColor]);
   return (
     <div className="flex flex-col w-full h-full overflow-hidden">
       {product && (
@@ -59,52 +59,6 @@ export const ProductRoute = () => {
                 value={product?.description || "No Description Found"}
               />
             </div>
-            {!!product?.colors?.length && (
-              <EmptyComponent>
-                <FormSection title="color" />
-                <div className="p-3">
-                  <div className="flex flex-wrap max-md:justify-center gap-2">
-                    {product?.colors?.map((color, index) => {
-                      const isSelected =
-                        colors.get && colors.get.includes(color);
-                      return (
-                        <div key={index} onClick={() => {}}>
-                          <div
-                            className={tw(
-                              "rounded-full outline-1 outline-[--biqpod-borders] outline-solid outline-offset-2 w-[20px] h-[20px] transition-[outline-width] cursor-pointer",
-                              isSelected &&
-                                "outline-4 outline-[--biqpod-primary]"
-                            )}
-                            style={{
-                              backgroundColor: color,
-                            }}
-                          />
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              </EmptyComponent>
-            )}
-            {!!product?.sizes?.length && (
-              <EmptyComponent>
-                <FormSection title="sizes" />
-                <div className="flex flex-wrap justify-center gap-2 p-2">
-                  <FilterField
-                    state={sizes}
-                    id="sizes-request"
-                    config={{
-                      list: product.sizes.map((size) => {
-                        return {
-                          content: size.toUpperCase(),
-                          value: size,
-                        };
-                      }),
-                    }}
-                  />
-                </div>
-              </EmptyComponent>
-            )}
           </Scroll>
           <Line />
           <div className="flex gap-2 p-3">

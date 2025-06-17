@@ -336,15 +336,12 @@ export const snapbuyApi = {
       var {
         available = false,
         category = null,
-        colors = [],
         description = null,
         id: prodId,
         keys = [],
         limited = false,
         photos: images = [],
         quantity = null,
-        sizes = [],
-        theme = {},
         type = "single",
         ...rest
       } = product;
@@ -361,15 +358,12 @@ export const snapbuyApi = {
           ...rest,
           available,
           category,
-          colors,
           description,
           id: prodId,
           keys,
           limited,
           photos,
           quantity,
-          sizes,
-          theme,
           type,
           uid,
           storeId,
@@ -656,7 +650,6 @@ export const useFormProduct = () => {
   const quantity = getFormQuantity();
   const description = getFormDescription();
   const name = getFormName();
-  const theme = getFormTheme();
   const colorsState = getFormColors();
   const sizesState = getFormSizes();
   const keysState = getFormKeys();
@@ -668,9 +661,6 @@ export const useFormProduct = () => {
       type: type || "single",
       name: name || "",
       available: isAvailable || false,
-      theme: theme || {},
-      colors: colorsState || [],
-      sizes: sizesState || [],
       keys: keysState || [],
       quantity: quantity || 0,
       description: description || "",
@@ -696,7 +686,6 @@ export const useFormProduct = () => {
     quantity,
     description,
     name,
-    theme,
     colorsState,
     sizesState,
     keysState,
@@ -730,9 +719,6 @@ export const getFormDescription = () => {
 };
 export const getFormName = () => {
   return getFieldValue("product-form-name");
-};
-export const getFormTheme = () => {
-  return getTemp<SnapBuy.Product["theme"]>("product-choised-theme");
 };
 export const getFormColors = () => {
   return getTemp<string[]>("post-colors");
@@ -775,15 +761,6 @@ export const setFormDescription = (description: string) => {
 export const setFormName = (name: string) => {
   setFieldValue("product-form-name", name);
 };
-export const setFormTheme = (theme: SnapBuy.Product["theme"]) => {
-  setTemp("product-choised-theme", theme);
-};
-export const setFormColors = (colors: string[]) => {
-  setTemp("post-colors", colors);
-};
-export const setFormSizes = (sizes: SettingValueType["filter"]) => {
-  setTemp("post-sizes", sizes);
-};
 export const setFormKeys = (keys: SettingValueType["array"]) => {
   setTemp("post-keys", keys);
 };
@@ -816,9 +793,6 @@ export const useFormPrices = () => {
 };
 export const useFormQuantity = () => {
   return useTemp<number | undefined>("post-quantity");
-};
-export const useFormTheme = () => {
-  return useTemp<SnapBuy.Product["theme"]>("product-choised-theme");
 };
 export const useFormColors = () => {
   return useTemp<string[]>("post-colors");

@@ -19,14 +19,18 @@ import {
   showToast,
   useDeviceResolution,
   useUser,
+  getFieldValue,
 } from "@biqpod/app/ui/hooks";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
-import { useCartCount, removeCart, AddProductInCart } from "./AddProductToCart";
+import {
+  useCartCount,
+  removeCart,
+  AddProductInCart,
+  useSearchParams,
+} from "./AddProductToCart";
 import { ImageSlider } from "./Links/ImageSlider";
 import { MenuRecordProps } from "@biqpod/app/ui/types";
 import { motion } from "framer-motion";
-import { useLocation } from "react-router";
-import { useMemo } from "react";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
@@ -43,15 +47,27 @@ export const ClientProductRender = ({ product, index }: ProductRenderProps) => {
   const price = product.single?.price || 0;
   const { isMobile } = useDeviceResolution();
   const user = useUser();
-  const loc = useLocation();
-  const { showPhoto } = useMemo(() => {
-    const searchParams = new URLSearchParams(loc.search);
-    return {
-      showPhoto: searchParams.has("photo")
-        ? !!+searchParams.get("photo")!
-        : true,
-    };
-  }, [loc.search]);
+  const { showPhoto } = useSearchParams();
+  const search = getFieldValue("search-prod");
+  function highlightMatch(text: string, search: string | undefined) {
+    if (!search) return text;
+    let searchIdx = 0;
+    const searchLower = search.toLowerCase();
+    return Array.from(text).map((char, i) => {
+      if (
+        searchIdx < searchLower.length &&
+        char.toLowerCase() === searchLower[searchIdx]
+      ) {
+        searchIdx++;
+        return (
+          <span key={i} className="text-[--biqpod-primary] underline">
+            {char}
+          </span>
+        );
+      }
+      return char;
+    });
+  }
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
@@ -81,7 +97,7 @@ export const ClientProductRender = ({ product, index }: ProductRenderProps) => {
         )}
         <div className="max-md:p-1 md:p-2">
           <span className="font-bold max-md:text-sm md:text-xl">
-            {product.name}
+            {highlightMatch(product.name, search)}
           </span>
         </div>
         <Line />
@@ -99,7 +115,7 @@ export const ClientProductRender = ({ product, index }: ProductRenderProps) => {
                 })
                 .map((price, index) => {
                   return (
-                    <Key key={index} className="max-md:text-sm md:text-base">
+                    <Key key={index} className="max-md:text-md md:text-xl">
                       <span className="text-[--biqpod-success]">
                         {price.price} DA
                       </span>{" "}

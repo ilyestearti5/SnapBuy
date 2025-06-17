@@ -20,9 +20,10 @@ import {
   showPopup,
   useAction,
   useCopyState,
+  useMemoDelay,
   useTemp,
 } from "@biqpod/app/ui/hooks";
-import { useEffect, useMemo } from "react";
+import { useEffect } from "react";
 import { getDocs } from "./server";
 import { useFullCart } from "./AddProductToCart";
 import { CartPopup } from "./CartPopup";
@@ -71,12 +72,16 @@ export const ClientProducts = () => {
   }, [storeId]);
   const isFullWidth = useTemp<boolean>("isFullWidth");
   const search = getFieldValue("search-prod");
-  const filterProducts = useMemo(() => {
-    if (!search) {
-      return products.get;
-    }
-    return filterFuzzySearch(products.get, search, "name");
-  }, [products.get, search]);
+  const [_, filterProducts] = useMemoDelay(
+    () => {
+      if (!search) {
+        return products.get;
+      }
+      return filterFuzzySearch(products.get, search, "name");
+    },
+    [products.get, search],
+    200
+  );
   const cart = useFullCart(storeId);
   const loading = isLoading(action);
   useEffect(() => {
@@ -180,7 +185,7 @@ export const ClientProducts = () => {
       <Line />
       <Scroll>
         <div className="flex flex-wrap items-center gap-2 p-2">
-          {filterProducts.map((product, index) => {
+          {filterProducts?.map((product, index) => {
             return (
               <ClientProductRender
                 index={index}
@@ -206,7 +211,7 @@ export const ClientProducts = () => {
           )}
           <div className="h-[200px]" />
         </div>
-        {success && filterProducts.length === 0 && (
+        {success && filterProducts?.length === 0 && (
           <div className="flex justify-center items-center w-full h-full">
             <Card>
               <div className="flex justify-center items-center p-2 h-full">
