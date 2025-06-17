@@ -34,6 +34,25 @@ export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
 }
+export function highlightMatch(text: string, search: string | undefined) {
+  if (!search) return text;
+  let searchIdx = 0;
+  const searchLower = search.toLowerCase();
+  return Array.from(text).map((char, i) => {
+    if (
+      searchIdx < searchLower.length &&
+      char.toLowerCase() === searchLower[searchIdx]
+    ) {
+      searchIdx++;
+      return (
+        <span key={i} className="text-[--biqpod-primary] underline">
+          {char}
+        </span>
+      );
+    }
+    return char;
+  });
+}
 export const ClientProductRender = React.memo(
   ({ product }: ProductRenderProps) => {
     const storeId = product.storeId!;
@@ -48,25 +67,7 @@ export const ClientProductRender = React.memo(
     const user = useUser();
     const { showPhoto } = useSearchParams();
     const search = getFieldValue("search-prod");
-    function highlightMatch(text: string, search: string | undefined) {
-      if (!search) return text;
-      let searchIdx = 0;
-      const searchLower = search.toLowerCase();
-      return Array.from(text).map((char, i) => {
-        if (
-          searchIdx < searchLower.length &&
-          char.toLowerCase() === searchLower[searchIdx]
-        ) {
-          searchIdx++;
-          return (
-            <span key={i} className="text-[--biqpod-primary] underline">
-              {char}
-            </span>
-          );
-        }
-        return char;
-      });
-    }
+
     return (
       <div className={tw("w-[calc(50%-4px)] transition-[width] duration-700")}>
         <Card key={product.id} className="w-full h-full overflow-hidden">

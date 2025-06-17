@@ -1,10 +1,18 @@
 import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
-import { delay, filterFuzzySearch, mergeArray, tw } from "@biqpod/app/ui/utils";
+import {
+  delay,
+  filterFuzzySearch,
+  mergeArray,
+  range,
+  tw,
+} from "@biqpod/app/ui/utils";
 import {
   BooleanField,
   Button,
   Card,
+  CardWait,
   CircleTip,
+  EmptyComponent,
   Field,
   Icon,
   Line,
@@ -25,6 +33,7 @@ import {
   showToast,
   useAction,
   useCopyState,
+  useMemoDelay,
   useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
@@ -275,12 +284,16 @@ export const Products = () => {
   // market
   // filtring
   const search = getFieldValue("producer-search-product");
-  const filterProducts = useMemo(() => {
-    if (!search) {
-      return products.get;
-    }
-    return filterFuzzySearch(products.get || [], search, "name");
-  }, [search, products.get]);
+  const [_, filterProducts] = useMemoDelay(
+    () => {
+      if (!search) {
+        return products.get;
+      }
+      return filterFuzzySearch(products.get || [], search, "name");
+    },
+    [search, products.get],
+    1000
+  );
   useEffect(() => {
     if (user?.uid) return snapbuyApi.onCategoryAndMarketChange(user?.uid);
   }, [user]);
@@ -327,13 +340,42 @@ export const Products = () => {
         </div>
       </div>
       <Line />
-      <Scroll>
+      <Scroll
+        onScroll={(e) => {
+          const target = e.currentTarget;
+          if (
+            target.scrollHeight - target.scrollTop - target.clientHeight <
+              200 &&
+            hasMore.get &&
+            !loading
+          ) {
+            execAction("fetch-products", true);
+          }
+        }}
+      >
         <div className="flex flex-wrap items-center gap-2 p-2">
           {filterProducts?.map((product, index) => {
             return (
               <ProductRender index={index} product={product} key={product.id} />
             );
           })}
+          {loading && (
+            <EmptyComponent>
+              {range(10).map((index) => {
+                return (
+                  <Card className="flex flex-col w-full h-[300px]">
+                    <div className="p-2 h-full">
+                      <CardWait key={index} className="rounded-2xl h-full" />
+                    </div>
+                    <Line />
+                    <div className="p-2">
+                      <CardWait className="rounded-2xl w-full h-[50px]" />
+                    </div>
+                  </Card>
+                );
+              })}
+            </EmptyComponent>
+          )}
           {success && filterProducts?.length === 0 && (
             <div className="flex justify-center items-center w-full h-full">
               <Card>

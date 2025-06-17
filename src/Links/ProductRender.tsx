@@ -21,15 +21,17 @@ import {
   setTemp,
   useCopyState,
   ColorIds,
+  getFieldValue,
 } from "@biqpod/app/ui/hooks";
 import { mapAsync, tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ImageSlider } from "./ImageSlider";
 import { motion } from "framer-motion";
-import { useEffect, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { colorIds } from "../utils";
 import { BlockPicker as ColorPicker } from "react-color";
+import { highlightMatch } from "../ClientProductRender";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
@@ -341,27 +343,28 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
     </EmptyComponent>
   );
 };
+let longPressTimer: NodeJS.Timeout | null = null;
 export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const photos = product.photos || [];
+  const search = getFieldValue("producer-search-product");
   const prices = Array.from(product.multiple?.prices || []);
   const price = product.single?.price || 0;
   const isFullWidth = getTemp<boolean>("isFullWidth");
   const isPromotion = product.type === "multiple";
-  let longPressTimer: NodeJS.Timeout | null = null;
   const selectedProducts = getTemp<string[]>("selected-products");
   // Helper: check if any product is selected
   const anyProductSelected = !!selectedProducts?.length;
-  const handleLongPressStart = () => {
+  const handleLongPressStart = useCallback(() => {
     longPressTimer = setTimeout(() => {
       setTemp("selected-products", [...(selectedProducts || []), product.id]);
     }, 500); // 500ms for long press
-  };
-  const handleLongPressEnd = () => {
+  }, []);
+  const handleLongPressEnd = useCallback(() => {
     if (longPressTimer) {
       clearTimeout(longPressTimer);
       longPressTimer = null;
     }
-  };
+  }, []);
   const isSelected = useMemo(() => {
     return selectedProducts?.includes(product.id);
   }, [selectedProducts]);
@@ -376,7 +379,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
+      transition={{ duration: 0.3 }}
       className={tw(
         "h-[300px] p-1 w-full transition-[width] duration-500",
         isFullWidth && "w-[calc(50%-4px)] "
@@ -451,7 +454,9 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
           )}
         </div>
         <Line />
-        <div className="p-2 max-md:p-1">{product.name}</div>
+        <div className="p-2 max-md:p-1">
+          {highlightMatch(product.name, search)}
+        </div>
         <Line />
         <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
           {!isPromotion && (
