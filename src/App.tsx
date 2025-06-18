@@ -112,7 +112,7 @@ export const App = () => {
             <Route path="/__/payment" exact>
               <PayoutRoute
                 successComponent={
-                  <div className="flex flex justify-center items-center h-full">
+                  <div className="flex justify-center items-center h-full">
                     <Card className="overflow-hidden">
                       <div className="flex w-[50vw] max-w-[400px]">
                         <img

@@ -109,7 +109,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
   const prod = product;
   const storeId = product.storeId!;
   const currentCount = getFieldValue("prod-count");
-  const cartCount = useCartCount(storeId, product.id);
+  const cartCount = useCartCount(storeId, product.id!);
   const photos = product.photos || [];
   const priceDetected = getPrice(prod, +(currentCount || ""));
   useEffect(() => {
@@ -185,7 +185,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
             <Button
               icon={allIcons.solid.faPlus}
               onClick={() => {
-                addToCart(storeId, prod.id, count);
+                addToCart(storeId, prod.id!, count);
                 closePopup();
               }}
             >

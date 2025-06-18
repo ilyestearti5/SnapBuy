@@ -336,7 +336,7 @@ export const UpsertPack = ({ packId }: UpsertPackProps) => {
                       }
                       addedProducts.set((prev) => [
                         ...prev,
-                        { count: 1, prodId: product.id },
+                        { count: 1, prodId: product.id! },
                       ]);
                       setFieldValue("pack-search", "");
                     }}
@@ -381,7 +381,7 @@ export const UpsertPack = ({ packId }: UpsertPackProps) => {
                 if (!isExists) {
                   addedProducts.set((prev) => [
                     ...prev,
-                    { count: 1, prodId: product.id },
+                    { count: 1, prodId: product.id! },
                   ]);
                   setFieldValue("pack-search", "");
                 }

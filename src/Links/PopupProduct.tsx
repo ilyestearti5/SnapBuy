@@ -117,12 +117,12 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
               exists:
                 exists?.map((prod) => ({
                   ...prod,
-                  id: encodeURIComponent(prod.id),
+                  id: encodeURIComponent(prod.id!),
                 })) ?? undefined,
               news:
                 news?.map((prod) => ({
                   ...prod,
-                  id: encodeURIComponent(prod.id),
+                  id: encodeURIComponent(prod.id!),
                   available: !!isAvailable.get,
                 })) ?? undefined,
             };

@@ -157,7 +157,8 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           {
             label: "Name",
             click: async () => {
-              await navigator.clipboard.writeText(product.name);
+              product.name &&
+                (await navigator.clipboard.writeText(product.name));
               showToast("Name Copyed :)");
             },
             defaultIcon: allIcons.regular.faCopy,
@@ -183,7 +184,7 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           {
             label: "Delete Product",
             click: async () => {
-              await snapbuyApi.deleteProduct(product.id);
+              await snapbuyApi.deleteProduct(product.id!);
               execAction("fetch-products");
               showToast("Product Deleted");
             },
@@ -366,7 +367,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
     }
   }, []);
   const isSelected = useMemo(() => {
-    return selectedProducts?.includes(product.id);
+    return selectedProducts?.includes(product.id!);
   }, [selectedProducts]);
   // New: handle click to select if any product is already selected
   const handleClick = () => {
@@ -403,7 +404,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                   exists: {
                     id: product.id,
                     photos: [
-                      ...product.photos,
+                      ...product.photos!,
                       ...blobs.map((blob) => URL.createObjectURL(blob)),
                     ],
                   },
@@ -455,7 +456,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
         </div>
         <Line />
         <div className="p-2 max-md:p-1">
-          {highlightMatch(product.name, search)}
+          {highlightMatch(product.name!, search)}
         </div>
         <Line />
         <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
