@@ -315,7 +315,6 @@ export const Products = () => {
   const canDelete = getTemp<string>("canDeleteProduct");
   const loading = isLoading(action);
   const selectedProducts = getTemp<string[]>("selected-products");
-
   // Helper: check if any product is selected
   const anyProductSelected = useMemo(() => {
     return !!selectedProducts?.length;
@@ -454,43 +453,41 @@ export const Products = () => {
               setTemp("loading-text", `Found ${allProducts?.length} Products`);
               const workbook = new ExcelJS.Workbook();
               const worksheet = workbook.addWorksheet("Products");
-
               // Add header
               worksheet.columns = allKeys.map((key) => ({
                 header: key.replaceAll(".", " "),
                 key: key,
               }));
               allProducts?.forEach(async (product) => {
-                var option: Partial<Record<keys, any>> = {};
+                var option: Partial<Record<keys, string>> = {};
                 allKeys.forEach((key) => {
                   if (key === "multiple.prices") {
-                    option["multiple.prices"] =
-                      product.data?.multiple?.prices?.map(
-                        (price) => price.price
-                      );
+                    option["multiple.prices"] = product.data?.multiple?.prices
+                      ?.map((price) => price.price)
+                      .join(", ");
                     return;
                   } else if (key === "multiple.counts") {
-                    option["multiple.counts"] =
-                      product.data?.multiple?.prices?.map(
-                        (price) => price.quantity
-                      );
+                    option["multiple.counts"] = product.data?.multiple?.prices
+                      ?.map((price) => price.quantity)
+                      .join(", ");
                     return;
                   } else if (key === "single.price") {
-                    option["single.price"] = product.data?.single?.price;
+                    option["single.price"] =
+                      product.data?.single?.price?.toString();
                     return;
                   } else {
-                    var value = product.data?.[key];
+                    var value = String(product.data?.[key]);
                   }
                   if (value === undefined) {
                     switch (key) {
                       case "available":
-                        value = false;
+                        value = "false";
                         break;
                       case "limited":
-                        value = false;
+                        value = "false";
                         break;
                       case "quantity":
-                        value = 0;
+                        value = "0";
                         break;
                     }
                   }

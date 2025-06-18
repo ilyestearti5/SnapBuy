@@ -1,6 +1,6 @@
 import { allIcons, getDownloadURL } from "@biqpod/app/ui/apis";
 import exceljs from "exceljs";
-import { filterFuzzySearch, range, tw } from "@biqpod/app/ui/utils";
+import { delay, range, tw } from "@biqpod/app/ui/utils";
 import {
   Button,
   Card,
@@ -14,6 +14,37 @@ import {
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
+function filterFuzzySearch<T>(list: T[], search: string, key: keyof T): T[] {
+  if (!search) return list;
+  const normSearch = search.trim().toLowerCase();
+  // Score function: higher is better
+  function score(str: string): number {
+    str = str.toLowerCase();
+    if (str === normSearch) return 1000; // exact match
+    if (str.startsWith(normSearch)) return 900; // prefix match
+    const idx = str.indexOf(normSearch);
+    if (idx !== -1) return 800 - idx; // substring match, earlier is better
+    // Fuzzy: count matching chars in order
+    let sIdx = 0,
+      match = 0;
+    for (let c of str) {
+      if (c === normSearch[sIdx]) {
+        match++;
+        sIdx++;
+        if (sIdx === normSearch.length) break;
+      }
+    }
+    return match === normSearch.length ? 700 - str.length : 0;
+  }
+  return list
+    .map((item) => {
+      const value = String(item[key] ?? "");
+      return { item, score: score(value) };
+    })
+    .filter((x) => x.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map((x) => x.item);
+}
 import {
   execAction,
   getFieldValue,
@@ -65,67 +96,53 @@ export const ClientProducts = () => {
       await workbook.xlsx.load(await blob.arrayBuffer());
       const worksheet = workbook.worksheets[0];
       const newProducts: SnapBuy.Product[] = [];
-      worksheet.eachRow((row, rowNumber) => {
-        if (rowNumber === 1) return; // Skip header row
-        const product: SnapBuy.Product = {};
-        // Temporary holders for nested fields
-        let multiplePrices: number[] = [];
-        let multipleCounts: number[] = [];
-        let singlePrice: number | undefined = undefined;
-        allKeys.forEach((key, index) => {
-          const value = row.getCell(index + 1).value;
-          if (key === "multiple.prices") {
-            if (Array.isArray(value)) {
-              multiplePrices = value.map(Number);
-            } else if (typeof value === "string") {
-              try {
-                multiplePrices = JSON.parse(value);
-              } catch {
-                multiplePrices = value.split(",").map(Number);
+      const array = worksheet.getSheetValues();
+      const items = 500;
+      for (let index = 1; index < Math.round(array.length / items); index++) {
+        const list = array.slice(index * items, (index + 1) * items);
+        await delay(200);
+        list.map((row) => {
+          if (!Array.isArray(row)) return;
+          const product: SnapBuy.Product = {};
+          allKeys.forEach((key, colIdx) => {
+            const i = colIdx + 1;
+            if (key === "single.price") {
+              product.single = {
+                price: row[i] ? Number(row[i]) : undefined,
+              };
+            } else if (key === "multiple.prices") {
+              product.multiple = {
+                prices:
+                  row[i]
+                    ?.toString()
+                    ?.split(",")
+                    .map((p) => ({ price: Number(p), quantity: 1 })) ||
+                  undefined,
+              };
+            } else if (key === "multiple.counts") {
+              if (!product.multiple) product.multiple = {};
+              const counts =
+                row[i]
+                  ?.toString()
+                  ?.split(",")
+                  .map((c) => Number(c)) || [];
+              if (
+                product.multiple.prices &&
+                counts.length === product.multiple.prices.length
+              ) {
+                product.multiple.prices = product.multiple.prices.map(
+                  (priceObj, i) => ({ ...priceObj, quantity: counts[i] })
+                );
               }
-            } else if (typeof value === "number") {
-              multiplePrices = [value];
+            } else {
+              product[key] = row[i];
             }
-          } else if (key === "multiple.counts") {
-            if (Array.isArray(value)) {
-              multipleCounts = value.map(Number);
-            } else if (typeof value === "string") {
-              try {
-                multipleCounts = JSON.parse(value);
-              } catch {
-                multipleCounts = value.split(",").map(Number);
-              }
-            } else if (typeof value === "number") {
-              multipleCounts = [value];
-            }
-          } else if (key === "single.price") {
-            if (typeof value === "number") {
-              singlePrice = value;
-            } else if (typeof value === "string") {
-              singlePrice = Number(value);
-            }
-          } else if (key.includes(".")) {
-            // skip, handled above
-          } else {
-            // Assign primitive fields
-            (product as any)[key] = value;
-          }
+          });
+          setTemp("products." + product.id, product);
+          newProducts.push(product);
         });
-        // Assign nested fields if present
-        if (multiplePrices.length || multipleCounts.length) {
-          product.multiple = {
-            prices: multiplePrices.map((price, i) => ({
-              price,
-              quantity: multipleCounts[i] ?? 0,
-            })),
-          };
-        }
-        if (singlePrice !== undefined) {
-          product.single = { price: singlePrice };
-        }
-        setTemp("products." + product.id, product);
-      });
-      products.set(newProducts);
+        products.set(newProducts);
+      }
       // const newProducts = await getDocs<SnapBuy.Product>(
       //   ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
       //   {
