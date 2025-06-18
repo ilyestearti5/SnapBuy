@@ -400,15 +400,16 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                   const blob = await file.getType("image/png");
                   return blob;
                 });
-                await execAction("add-products", {
-                  exists: {
-                    id: product.id,
-                    photos: [
-                      ...product.photos!,
-                      ...blobs.map((blob) => URL.createObjectURL(blob)),
-                    ],
-                  },
-                });
+                product.photos &&
+                  (await execAction("add-products", {
+                    exists: {
+                      id: product.id,
+                      photos: [
+                        ...product.photos,
+                        ...blobs.map((blob) => URL.createObjectURL(blob)),
+                      ],
+                    },
+                  }));
               },
             },
           ],

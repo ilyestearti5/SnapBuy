@@ -58,7 +58,7 @@ export const ClientProductRender = React.memo(
     const storeId = product.storeId!;
     const cartCount = useCartCount(storeId, product.id!);
     const hasCart = cartCount > 0;
-    const photos = product.photos || [];
+    const photos = Array.isArray(product.photos) ? product.photos : [];
     // pour promostion
     const isPromotion = product.type === "multiple";
     const prices = product.multiple?.prices || [];
@@ -67,6 +67,8 @@ export const ClientProductRender = React.memo(
     const user = useUser();
     const { showPhoto } = useSearchParams();
     const search = getFieldValue("search-prod");
+
+    console.log(photos);
 
     return (
       <div className={tw("w-[calc(50%-4px)] transition-[width] duration-700")}>

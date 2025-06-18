@@ -1,10 +1,10 @@
 import { allIcons, getDownloadURL } from "@biqpod/app/ui/apis";
 import exceljs from "exceljs";
-import { delay, range, tw } from "@biqpod/app/ui/utils";
+import { tw } from "@biqpod/app/ui/utils";
 import {
   Button,
   Card,
-  CardWait,
+  CircleLoading,
   CircleTip,
   EmptyComponent,
   Field,
@@ -58,7 +58,7 @@ import {
   useMemoDelay,
   useResolution,
 } from "@biqpod/app/ui/hooks";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFullCart, useSearchParams } from "./AddProductToCart";
 import { CartPopup } from "./CartPopup";
 import { ClientProductRender } from "./ClientProductRender";
@@ -66,7 +66,6 @@ import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import React from "react";
 import { allKeys } from "./Links/Products";
-const PAGE_SIZE = 400;
 export const ClientProducts = () => {
   const storeId = useParams<{ uid: string }>().uid;
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
@@ -97,52 +96,46 @@ export const ClientProducts = () => {
       const worksheet = workbook.worksheets[0];
       const newProducts: SnapBuy.Product[] = [];
       const array = worksheet.getSheetValues();
-      const items = 500;
-      for (let index = 1; index < Math.round(array.length / items); index++) {
-        const list = array.slice(index * items, (index + 1) * items);
-        await delay(200);
-        list.map((row) => {
-          if (!Array.isArray(row)) return;
-          const product: SnapBuy.Product = {};
-          allKeys.forEach((key, colIdx) => {
-            const i = colIdx + 1;
-            if (key === "single.price") {
-              product.single = {
-                price: row[i] ? Number(row[i]) : undefined,
-              };
-            } else if (key === "multiple.prices") {
-              product.multiple = {
-                prices:
-                  row[i]
-                    ?.toString()
-                    ?.split(",")
-                    .map((p) => ({ price: Number(p), quantity: 1 })) ||
-                  undefined,
-              };
-            } else if (key === "multiple.counts") {
-              if (!product.multiple) product.multiple = {};
-              const counts =
+      for (let index = 2; index < array.length; index++) {
+        const row = array[index];
+        if (!Array.isArray(row)) return;
+        const product: SnapBuy.Product = {};
+        allKeys.forEach((key, colIdx) => {
+          const i = colIdx + 1;
+          if (key === "single.price") {
+            product.single = {
+              price: row[i] ? Number(row[i]) : undefined,
+            };
+          } else if (key === "multiple.prices") {
+            product.multiple = {
+              prices:
                 row[i]
                   ?.toString()
                   ?.split(",")
-                  .map((c) => Number(c)) || [];
-              if (
-                product.multiple.prices &&
-                counts.length === product.multiple.prices.length
-              ) {
-                product.multiple.prices = product.multiple.prices.map(
-                  (priceObj, i) => ({ ...priceObj, quantity: counts[i] })
-                );
-              }
-            } else {
-              product[key] = row[i];
+                  .map((p) => ({ price: Number(p), quantity: 1 })) || undefined,
+            };
+          } else if (key === "multiple.counts") {
+            if (!product.multiple) product.multiple = {};
+            const counts =
+              row[i]
+                ?.toString()
+                ?.split(",")
+                .map((c) => Number(c)) || [];
+            if (
+              product.multiple.prices &&
+              counts.length === product.multiple.prices.length
+            ) {
+              product.multiple.prices = product.multiple.prices.map(
+                (priceObj, i) => ({ ...priceObj, quantity: counts[i] })
+              );
             }
-          });
-          setTemp("products." + product.id, product);
-          newProducts.push(product);
+          } else {
+            product[key] = row[i];
+          }
         });
-        products.set(newProducts);
+        newProducts.push(product);
       }
+      products.set(newProducts);
       // const newProducts = await getDocs<SnapBuy.Product>(
       //   ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
       //   {
@@ -185,9 +178,15 @@ export const ClientProducts = () => {
   );
   const cart = useFullCart(storeId);
   const loading = isLoading(action);
+  const listRef = useRef<any>(null); // Ref for the List component
   useEffect(() => {
     setTemp("client-store-id", storeId);
   }, [storeId]);
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollToItem?.(0);
+    }
+  }, [search]);
   // useEffect(() => {
   //   if (user?.uid && storeUser?.uid) {
   //     snapbuyApi.isFollowing(storeUser.uid).then((isYes) => {
@@ -262,12 +261,6 @@ export const ClientProducts = () => {
     return height - posHeight - posTop;
   }, [position, height]);
   const { showPhoto } = useSearchParams();
-  const listProds = useMemo(() => {
-    const list: (SnapBuy.Product | number)[] = filterProducts
-      ? [...filterProducts, ...range(PAGE_SIZE)]
-      : range(PAGE_SIZE);
-    return list;
-  }, [filterProducts]);
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
       <PositionView positionId="searching">
@@ -283,13 +276,14 @@ export const ClientProducts = () => {
         <Line />
       </PositionView>
       <Scroll>
-        {!!filterProducts?.length && (
+        {success && !!filterProducts?.length && (
           <List
+            ref={listRef}
             height={listHeight}
-            itemCount={Math.ceil((listProds?.length || 0) / 2)}
+            itemCount={Math.ceil((filterProducts?.length || 0) / 2)}
             itemSize={showPhoto ? 320 : 180}
             width={"100%"}
-            itemData={listProds}
+            itemData={filterProducts}
             onItemsRendered={({ visibleStopIndex }) => {
               // If the user scrolls near the end, load more products
               if (
@@ -309,7 +303,7 @@ export const ClientProducts = () => {
             }: {
               index: number;
               style: React.CSSProperties;
-              data: (SnapBuy.Product | number)[];
+              data: SnapBuy.Product[];
             }) => {
               const first = data?.at(index * 2);
               const second = data?.at(index * 2 + 1);
@@ -329,16 +323,15 @@ export const ClientProducts = () => {
                       key={second.id}
                     />
                   )}
-                  {typeof first == "number" && (
-                    <CardWait className="rounded-xl w-[calc(50%-4px)] h-[150px]" />
-                  )}
-                  {typeof second == "number" && (
-                    <CardWait className="rounded-xl w-[calc(50%-4px)] h-[150px]" />
-                  )}
                 </div>
               );
             }}
           </List>
+        )}
+        {loading && (
+          <div className="flex justify-center items-center h-full">
+            <CircleLoading />
+          </div>
         )}
         {hasMore.get && (
           <EmptyComponent>
