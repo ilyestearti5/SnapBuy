@@ -38,7 +38,7 @@ import {
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo } from "react";
-import { getDocs } from "../server";
+import { getDocs, uploadFile } from "../server";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRender } from "./ProductRender";
@@ -63,6 +63,21 @@ interface KeyLineProps {
   value: boolean;
   onChange: (value: boolean) => void;
 }
+export const allKeys: keys[] = [
+  "available",
+  "createdAt",
+  "description",
+  "id",
+  "limited",
+  "name",
+  "photos",
+  "quantity",
+  "type",
+  "single.price",
+  "multiple.prices",
+  "multiple.counts",
+  "category",
+];
 const ExcelImportFrom = () => {
   return (
     <Card className="flex">
@@ -416,6 +431,101 @@ export const Products = () => {
         }}
         className="right-4 bottom-4 z-[5000000000000000000000000000000] absolute flex flex-col items-center p-3 rounded-3xl"
       >
+        <CircleTip
+          icon={allIcons.solid.faArrowUpRightFromSquare}
+          className={tw(
+            "transition-[width,height]",
+            !showTools.get && "w-[0px] h-[0px]"
+          )}
+          onClick={async () => {
+            if (!storeId) {
+              showToast("Store ID is not set", "error");
+              return;
+            }
+            const ok = await confirm({
+              title: "Deploy Products",
+              message: "Are you sure you want to deploy products?",
+              detail: "This will deploy all products to the server.",
+              type: "warning",
+            });
+            if (ok) {
+              setTemp("loading-text", "Start Retrieving Products");
+              const allProducts = await snapbuyApi.getProductsOf(storeId);
+              setTemp("loading-text", `Found ${allProducts?.length} Products`);
+              const workbook = new ExcelJS.Workbook();
+              const worksheet = workbook.addWorksheet("Products");
+
+              // Add header
+              worksheet.columns = allKeys.map((key) => ({
+                header: key.replaceAll(".", " "),
+                key: key,
+              }));
+              allProducts?.forEach(async (product) => {
+                var option: Partial<Record<keys, any>> = {};
+                allKeys.forEach((key) => {
+                  if (key === "multiple.prices") {
+                    option["multiple.prices"] =
+                      product.data?.multiple?.prices?.map(
+                        (price) => price.price
+                      );
+                    return;
+                  } else if (key === "multiple.counts") {
+                    option["multiple.counts"] =
+                      product.data?.multiple?.prices?.map(
+                        (price) => price.quantity
+                      );
+                    return;
+                  } else if (key === "single.price") {
+                    option["single.price"] = product.data?.single?.price;
+                    return;
+                  } else {
+                    var value = product.data?.[key];
+                  }
+                  if (value === undefined) {
+                    switch (key) {
+                      case "available":
+                        value = false;
+                        break;
+                      case "limited":
+                        value = false;
+                        break;
+                      case "quantity":
+                        value = 0;
+                        break;
+                    }
+                  }
+                  option[key] = value;
+                });
+                worksheet.addRow(option);
+              }); // Add rows
+              setTemp("loading-text", "Writing to Excel File");
+              const buffer = await workbook.xlsx.writeBuffer();
+              const blob = new Blob([buffer], {
+                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              });
+              setTemp("loading-text", "Uploading Excel File");
+              await uploadFile(
+                [
+                  "projects",
+                  import.meta.env.VITE_PROJECT_ID,
+                  "stores",
+                  storeId,
+                  "products.xlsx",
+                ],
+                blob
+              );
+              setTemp("loading-text", "");
+            }
+          }}
+        />
+        <CircleTip
+          icon={allIcons.solid.faShareAlt}
+          className={tw(
+            "transition-[width,height]",
+            !showTools.get && "w-[0px] h-[0px]"
+          )}
+          onClick={async () => {}}
+        />
         <CircleTip
           icon={allIcons.solid.faBoxesPacking}
           className={tw(

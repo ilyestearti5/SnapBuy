@@ -26,9 +26,9 @@ import {
   showToast,
   useAction,
   useAsyncMemo,
-  useCopyState,
   useDeviceResolution,
   useSettingValue,
+  useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { cloud, getDoc } from "./server";
@@ -45,8 +45,8 @@ export const HeaderContent = () => {
   initStoreIdSave();
   const user = useUser();
   const isDark = useSettingValue("window/dark.boolean");
-  const loadingPercent = useCopyState(0);
-  const loadingText = useCopyState("");
+  const loadingPercent = useTemp<number>("loading-percent");
+  const loadingText = useTemp<string>("loading-text");
   const loc = useLocation();
   const storeId = useStoreId();
   useAction(
@@ -374,23 +374,7 @@ export const HeaderContent = () => {
                 }}
               />
               {loadingText.get && (
-                <div className="absolute inset-[0px] flex justify-center items-center">
-                  <svg width="w-full" height="40" viewBox="0 0 40 40">
-                    <circle
-                      cx="20"
-                      cy="20"
-                      r="14"
-                      fill="none"
-                      stroke="var(--biqpod-primary)"
-                      strokeWidth="12"
-                      strokeDasharray={Math.PI * 2 * 20}
-                      strokeDashoffset={
-                        Math.PI * 2 * 20 * (1 - loadingPercent.get / 100)
-                      }
-                      style={{ transition: "stroke-dashoffset 0.3s" }}
-                    />
-                  </svg>
-                </div>
+                <div className="absolute inset-[-4px] border-[--biqpod-primary] border-x border-y-0 border-solid rounded-full animate-spin pointer-events-none" />
               )}
             </div>
           )}

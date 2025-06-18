@@ -109,14 +109,14 @@ declare namespace SnapBuy {
     uid?: string;
   }
   interface Product {
-    storeId: string;
-    id: string;
-    name: string;
-    description: string;
-    photos: string[];
+    storeId?: string;
+    id?: string;
+    name?: string;
+    description?: string;
+    photos?: string[];
     uid?: string;
     createdAt?: number;
-    quantity: number;
+    quantity?: number;
     keys?: string[];
     available?: boolean;
     category?: string | Nothing;
@@ -156,3 +156,9 @@ declare module "html2pdf.js" {
   const html2pdf: any;
   export default html2pdf;
 }
+
+declare type keys =
+  | keyof SnapBuy.Product
+  | "single.price"
+  | "multiple.prices"
+  | "multiple.counts";

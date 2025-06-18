@@ -43,6 +43,7 @@ import { appTabs, extraTabs, tabServices } from "./utils";
 import { isAndroid, isIos, isWeb } from "@biqpod/app/ui/app";
 import { useEffect } from "react";
 import { PackRoute } from "./Links/PackRoute";
+import { ProfileInside } from "./ProfileInside";
 interface ProfileProps {
   children?: JSX.Element;
 }
@@ -298,7 +299,7 @@ export const App = () => {
         </Container>
         <RightSide />
       </Window>
-      <Layoutes />
+      <Layoutes profileContent={<ProfileInside />} />
     </div>
   );
 };

@@ -315,6 +315,15 @@ export const snapbuyApi = {
       };
     });
   },
+  async getProductsOf(storeId: string) {
+    const products = await getDocs<SnapBuy.Product>(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
+      {
+        where: and(where("storeId", "==", storeId)),
+      }
+    );
+    return products;
+  },
   async upsertProducts(
     storeId: string,
     products: Partial<SnapBuy.Product>[],
@@ -422,6 +431,16 @@ export const snapbuyApi = {
       storeId,
     });
     return result;
+  },
+  async saveProducts(storeId: string) {
+    const fn = await getUserFunction<{ url: string; count: number }>(
+      "save-products"
+    );
+    const uid = await getCurrentAuth();
+    if (!uid) throw "USER NOT AUTHENTICATED";
+    return await fn?.({
+      storeId,
+    });
   },
   async getPlans() {
     const plans = getTempFromStore<Plan>("plans");

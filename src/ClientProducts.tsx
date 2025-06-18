@@ -1,5 +1,6 @@
-import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
-import { filterFuzzySearch, mergeArray, range, tw } from "@biqpod/app/ui/utils";
+import { allIcons, getDownloadURL } from "@biqpod/app/ui/apis";
+import exceljs from "exceljs";
+import { filterFuzzySearch, range, tw } from "@biqpod/app/ui/utils";
 import {
   Button,
   Card,
@@ -27,13 +28,13 @@ import {
   useResolution,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo } from "react";
-import { getDocs } from "./server";
 import { useFullCart, useSearchParams } from "./AddProductToCart";
 import { CartPopup } from "./CartPopup";
 import { ClientProductRender } from "./ClientProductRender";
 import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import React from "react";
+import { allKeys } from "./Links/Products";
 const PAGE_SIZE = 400;
 export const ClientProducts = () => {
   const storeId = useParams<{ uid: string }>().uid;
@@ -46,26 +47,105 @@ export const ClientProducts = () => {
       if (!storeId) {
         return;
       }
-      const newProducts = await getDocs<SnapBuy.Product>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
-        {
-          where: and(
-            where("available", "==", true),
-            where("storeId", "==", storeId)
-          ),
-          orders: mergeArray(orderBy("name", "asc")),
-          limit: PAGE_SIZE,
-          startAt: lastDoc.get?.name && mergeArray(lastDoc.get?.name),
-        }
-      );
-      if (!newProducts) {
+      if (next) {
         return;
       }
-      var list = newProducts.map((order) => ({ ...order.data, id: order.id }));
-      products.set((prev) => (next ? [...prev, ...list] : list));
-      const lastDocRef = newProducts.at(-1)?.data;
-      lastDoc.set(lastDocRef ? lastDocRef : null);
-      hasMore.set(newProducts.length === PAGE_SIZE);
+      const uri = await getDownloadURL([
+        "projects",
+        import.meta.env.VITE_PROJECT_ID,
+        "stores",
+        storeId,
+        "products.xlsx",
+      ]);
+      if (!uri) {
+        return;
+      }
+      const blob = await fetch(uri).then((res) => res.blob());
+      const workbook = new exceljs.Workbook();
+      await workbook.xlsx.load(await blob.arrayBuffer());
+      const worksheet = workbook.worksheets[0];
+      const newProducts: SnapBuy.Product[] = [];
+      worksheet.eachRow((row, rowNumber) => {
+        if (rowNumber === 1) return; // Skip header row
+        const product: SnapBuy.Product = {};
+        // Temporary holders for nested fields
+        let multiplePrices: number[] = [];
+        let multipleCounts: number[] = [];
+        let singlePrice: number | undefined = undefined;
+        allKeys.forEach((key, index) => {
+          const value = row.getCell(index + 1).value;
+          if (key === "multiple.prices") {
+            if (Array.isArray(value)) {
+              multiplePrices = value.map(Number);
+            } else if (typeof value === "string") {
+              try {
+                multiplePrices = JSON.parse(value);
+              } catch {
+                multiplePrices = value.split(",").map(Number);
+              }
+            } else if (typeof value === "number") {
+              multiplePrices = [value];
+            }
+          } else if (key === "multiple.counts") {
+            if (Array.isArray(value)) {
+              multipleCounts = value.map(Number);
+            } else if (typeof value === "string") {
+              try {
+                multipleCounts = JSON.parse(value);
+              } catch {
+                multipleCounts = value.split(",").map(Number);
+              }
+            } else if (typeof value === "number") {
+              multipleCounts = [value];
+            }
+          } else if (key === "single.price") {
+            if (typeof value === "number") {
+              singlePrice = value;
+            } else if (typeof value === "string") {
+              singlePrice = Number(value);
+            }
+          } else if (key.includes(".")) {
+            // skip, handled above
+          } else {
+            // Assign primitive fields
+            (product as any)[key] = value;
+          }
+        });
+        // Assign nested fields if present
+        if (multiplePrices.length || multipleCounts.length) {
+          product.multiple = {
+            prices: multiplePrices.map((price, i) => ({
+              price,
+              quantity: multipleCounts[i] ?? 0,
+            })),
+          };
+        }
+        if (singlePrice !== undefined) {
+          product.single = { price: singlePrice };
+        }
+        setTemp("products." + product.id, product);
+      });
+      products.set(newProducts);
+      // const newProducts = await getDocs<SnapBuy.Product>(
+      //   ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
+      //   {
+      //     where: and(
+      //       where("available", "==", true),
+      //       where("storeId", "==", storeId)
+      //     ),
+      //     orders: mergeArray(orderBy("name", "asc")),
+      //     limit: PAGE_SIZE,
+      //     startAt: lastDoc.get?.name && mergeArray(lastDoc.get?.name),
+      //   }
+      // );
+      // if (!newProducts) {
+      //   return;
+      // }
+      // var list = newProducts.map((order) => ({ ...order.data, id: order.id }));
+      // products.set((prev) => (next ? [...prev, ...list] : list));
+      // const lastDocRef = newProducts.at(-1)?.data;
+      // lastDoc.set(lastDocRef ? lastDocRef : null);
+      // hasMore.set(newProducts.length === PAGE_SIZE);
     },
     [storeId, lastDoc.get]
   );

@@ -56,7 +56,7 @@ export function highlightMatch(text: string, search: string | undefined) {
 export const ClientProductRender = React.memo(
   ({ product }: ProductRenderProps) => {
     const storeId = product.storeId!;
-    const cartCount = useCartCount(storeId, product.id);
+    const cartCount = useCartCount(storeId, product.id!);
     const hasCart = cartCount > 0;
     const photos = product.photos || [];
     // pour promostion
@@ -89,7 +89,7 @@ export const ClientProductRender = React.memo(
           )}
           <div className="max-md:p-1 md:p-2">
             <span className="font-bold max-md:text-sm md:text-xl">
-              {highlightMatch(product.name, search)}
+              {highlightMatch(product.name!, search)}
             </span>
           </div>
           <Line />
@@ -127,7 +127,7 @@ export const ClientProductRender = React.memo(
               {hasCart && (
                 <Button
                   onClick={() => {
-                    removeCart(storeId, product.id);
+                    removeCart(storeId, product.id!);
                   }}
                   className="bg-[--biqpod-gray-opacity] mb-2 max-md:p-[1.5px] rounded-2xl text-[--biqpod-text-color] max-md:text-xs"
                   icon={allIcons.solid.faTrash}
