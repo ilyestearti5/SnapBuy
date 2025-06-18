@@ -281,7 +281,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
   return (
     <Card
       className={tw(
-        "relative flex flex-col md:max-h-[93vh] overflow-hidden md:min-h-[0vh] transition-[min-height] duration-500 max-md:rounded-none lg:w-1/2 md:w-2/3 max-md:w-full max-md:h-full overflow-hidden",
+        "relative flex flex-col md:max-h-[93vh] md:min-h-[0vh] transition-[min-height] duration-500 max-md:rounded-none lg:w-1/2 md:w-2/3 max-md:w-full max-md:h-full overflow-hidden",
         clientForm && "md:min-h-[93vh]"
       )}
     >

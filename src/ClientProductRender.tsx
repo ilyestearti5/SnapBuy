@@ -67,9 +67,6 @@ export const ClientProductRender = React.memo(
     const user = useUser();
     const { showPhoto } = useSearchParams();
     const search = getFieldValue("search-prod");
-
-    console.log(photos);
-
     return (
       <div className={tw("w-[calc(50%-4px)] transition-[width] duration-700")}>
         <Card key={product.id} className="w-full h-full overflow-hidden">

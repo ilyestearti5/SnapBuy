@@ -1,17 +1,13 @@
 import { allIcons, getDownloadURL } from "@biqpod/app/ui/apis";
 import exceljs from "exceljs";
-import { tw } from "@biqpod/app/ui/utils";
 import {
   Button,
   Card,
   CircleLoading,
-  CircleTip,
-  EmptyComponent,
   Field,
   Icon,
   Line,
   PositionView,
-  Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
 function filterFuzzySearch<T>(list: T[], search: string, key: keyof T): T[] {
@@ -66,11 +62,12 @@ import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import React from "react";
 import { allKeys } from "./Links/Products";
+import { tw } from "@biqpod/app/ui/utils";
 export const ClientProducts = () => {
   const storeId = useParams<{ uid: string }>().uid;
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
   const lastDoc = useCopyState<SnapBuy.Product | null>(null);
-  const hasMore = useCopyState(false);
+  const clickCartPosition = getPosition("click-see-cart");
   const action = useAction(
     "fetch-store-products",
     async (next = false) => {
@@ -258,8 +255,9 @@ export const ClientProducts = () => {
   const listHeight = useMemo(() => {
     const posHeight = position?.height || 0;
     const posTop = position?.top || 0;
-    return height - posHeight - posTop;
-  }, [position, height]);
+    const clickCartHeight = clickCartPosition?.height || 0;
+    return height - posHeight - posTop - clickCartHeight;
+  }, [position, height, clickCartPosition]);
   const { showPhoto } = useSearchParams();
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
@@ -275,115 +273,88 @@ export const ClientProducts = () => {
         </div>
         <Line />
       </PositionView>
-      <Scroll>
-        {success && !!filterProducts?.length && (
-          <List
-            ref={listRef}
-            height={listHeight}
-            itemCount={Math.ceil((filterProducts?.length || 0) / 2)}
-            itemSize={showPhoto ? 320 : 180}
-            width={"100%"}
-            itemData={filterProducts}
-            onItemsRendered={({ visibleStopIndex }) => {
-              // If the user scrolls near the end, load more products
-              if (
-                hasMore.get &&
-                !loading &&
-                visibleStopIndex >=
-                  Math.ceil((filterProducts?.length || 0) / 2) - 2
-              ) {
-                execAction("fetch-store-products", true);
-              }
+      {success && !!filterProducts?.length && (
+        <List
+          ref={listRef}
+          height={listHeight}
+          itemCount={Math.ceil((filterProducts?.length || 0) / 2)}
+          itemSize={showPhoto ? 320 : 220}
+          width={"100%"}
+          itemData={filterProducts}
+        >
+          {({
+            index,
+            style,
+            data,
+          }: {
+            index: number;
+            style: React.CSSProperties;
+            data: SnapBuy.Product[];
+          }) => {
+            const first = data?.at(index * 2);
+            const second = data?.at(index * 2 + 1);
+            return (
+              <div style={style} className="flex items-center gap-2 p-2">
+                {typeof first == "object" && (
+                  <ClientProductRender
+                    index={index * 2}
+                    product={first}
+                    key={first.id}
+                  />
+                )}
+                {typeof second == "object" && (
+                  <ClientProductRender
+                    index={index * 2 + 1}
+                    product={second}
+                    key={second.id}
+                  />
+                )}
+              </div>
+            );
+          }}
+        </List>
+      )}
+      {loading && (
+        <div className="flex justify-center items-center h-full">
+          <CircleLoading />
+        </div>
+      )}
+      {success && filterProducts?.length === 0 && (
+        <div className="flex justify-center items-center w-full h-full">
+          <Card>
+            <div className="flex justify-center items-center p-2 h-full">
+              <Icon
+                icon={allIcons.solid.faBoxOpen}
+                iconClassName="text-9xl text-[--biqpod-primary]"
+              />
+            </div>
+            <Line />
+            <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
+              <Translate content="no products found" />
+            </div>
+          </Card>
+        </div>
+      )}
+
+      <div
+        className={tw(
+          "absolute bottom-0 inset-x-0 bg-[--biqpod-primary-background] transition-[bottom] duration-300",
+          !!cart.length && "bottom-[-200px]"
+        )}
+      >
+        <Line />
+        <div className="p-2">
+          <Button
+            className="rounded-full"
+            icon={allIcons.solid.faShoppingCart}
+            onClick={() => {
+              showPopup(<CartPopup storeId={storeId} />);
             }}
           >
-            {({
-              index,
-              style,
-              data,
-            }: {
-              index: number;
-              style: React.CSSProperties;
-              data: SnapBuy.Product[];
-            }) => {
-              const first = data?.at(index * 2);
-              const second = data?.at(index * 2 + 1);
-              return (
-                <div style={style} className="flex items-center gap-2 p-2">
-                  {typeof first == "object" && (
-                    <ClientProductRender
-                      index={index * 2}
-                      product={first}
-                      key={first.id}
-                    />
-                  )}
-                  {typeof second == "object" && (
-                    <ClientProductRender
-                      index={index * 2 + 1}
-                      product={second}
-                      key={second.id}
-                    />
-                  )}
-                </div>
-              );
-            }}
-          </List>
-        )}
-        {loading && (
-          <div className="flex justify-center items-center h-full">
-            <CircleLoading />
-          </div>
-        )}
-        {hasMore.get && (
-          <EmptyComponent>
-            <Card className="justify-center items-center w-[calc(50%-4px)] h-[180px]">
-              <CircleTip
-                iconClassName={tw(loading && "animate-spin")}
-                icon={
-                  loading
-                    ? allIcons.solid.faCircleNotch
-                    : allIcons.solid.faChevronRight
-                }
-                onClick={() => {
-                  execAction("fetch-store-products", true);
-                }}
-              />
-            </Card>
-          </EmptyComponent>
-        )}
-        <div className="h-[200px]" />
-        {success && filterProducts?.length === 0 && (
-          <div className="flex justify-center items-center w-full h-full">
-            <Card>
-              <div className="flex justify-center items-center p-2 h-full">
-                <Icon
-                  icon={allIcons.solid.faBoxOpen}
-                  iconClassName="text-9xl text-[--biqpod-primary]"
-                />
-              </div>
-              <Line />
-              <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
-                <Translate content="no products found" />
-              </div>
-            </Card>
-          </div>
-        )}
-      </Scroll>
-      {!!cart.length && (
-        <EmptyComponent>
-          <Line />
-          <div className="p-2">
-            <Button
-              className="rounded-full"
-              icon={allIcons.solid.faShoppingCart}
-              onClick={() => {
-                showPopup(<CartPopup storeId={storeId} />);
-              }}
-            >
-              <Translate content="see cart" />
-            </Button>
-          </div>
-        </EmptyComponent>
-      )}
+            <Translate content="see cart" />
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };
