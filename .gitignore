@@ -32,3 +32,4 @@ package-lock.json
 android
 ios
 dist-electron
+.biqpod
