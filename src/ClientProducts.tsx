@@ -64,6 +64,7 @@ import React from "react";
 import { allKeys } from "./Links/Products";
 import { tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "./apis";
+import { arraySeparator } from "./utils";
 export const ClientProducts = () => {
   const storeId = useParams<{ uid: string }>().uid;
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
@@ -114,7 +115,7 @@ export const ClientProducts = () => {
                 prices:
                   row[i]
                     ?.toString()
-                    ?.split(",")
+                    ?.split(arraySeparator)
                     .map((p) => ({ price: Number(p), quantity: 1 })) ||
                   undefined,
               };
@@ -124,7 +125,7 @@ export const ClientProducts = () => {
               const counts =
                 row[i]
                   ?.toString()
-                  ?.split(",")
+                  ?.split(arraySeparator)
                   .map((c) => Number(c)) || [];
               if (
                 product.multiple.prices &&
@@ -140,7 +141,10 @@ export const ClientProducts = () => {
               product.available = row[i] === "true";
               break;
             case "photos": {
-              const photos = row[i]?.toString().split(",");
+              const photos = row[i]
+                ?.toString()
+                .split(arraySeparator)
+                .filter(Boolean);
               product.photos = photos;
               break;
             }
@@ -151,7 +155,7 @@ export const ClientProducts = () => {
             case "keys":
               product.keys = row[i]
                 ?.toString()
-                ?.split(",")
+                ?.split(arraySeparator)
                 .map((key) => key.trim())
                 .filter((key) => key.length > 0);
               break;
@@ -301,6 +305,7 @@ export const ClientProducts = () => {
               className="rounded-2xl"
               placeholder="Search Product"
               inputName="search-prod"
+              propositions={["@cart"]}
             />
             <span className="top-1/2 right-2 absolute -translate-y-1/2">
               / {filterProducts?.length || 0}

@@ -98,24 +98,28 @@ export const HeaderContent = () => {
         showToast("Store not found");
         return;
       }
+      const newList = news || [];
+      const existsList = exists || [];
       closePopup();
       loadingText.set("Adding News products...");
       loadingPercent.set(0);
-      await snapbuyApi.upsertProducts(storeId, news, (product, index) => {
+      await snapbuyApi.upsertProducts(storeId, newList, (product, index) => {
         loadingText.set(
-          `Adding ${product.name?.slice(0, 10)} ${index + 1}/${news.length} ...`
+          `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
+            newList.length
+          } ...`
         );
-        loadingPercent.set(Math.round(((index + 1) / news.length) * 100));
+        loadingPercent.set(Math.round(((index + 1) / newList.length) * 100));
       });
       loadingText.set("Adding Exists products...");
       loadingPercent.set(0);
-      await snapbuyApi.upsertProducts(storeId, exists, (product, index) => {
+      await snapbuyApi.upsertProducts(storeId, existsList, (product, index) => {
         loadingText.set(
-          `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
-            exists.length
+          `Updating ${product.name?.slice(0, 10)} ${index + 1}/${
+            existsList.length
           } ...`
         );
-        loadingPercent.set(Math.round(((index + 1) / exists.length) * 100));
+        loadingPercent.set(Math.round(((index + 1) / existsList.length) * 100));
       });
       loadingText.set("");
       loadingPercent.set(0);

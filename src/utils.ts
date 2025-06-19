@@ -1491,3 +1491,5 @@ export const colorIds: ColorIds[] = [
   "text.color",
   "shadow.color",
 ];
+
+export const arraySeparator = ",;,";

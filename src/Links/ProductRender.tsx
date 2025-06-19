@@ -116,7 +116,7 @@ const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           <Translate content="actions" />
         </h1>
       </div>
-      <div className="relative">
+      <div className="relative w-full overflow-x-hidden">
         <Line />
         <div className="flex gap-2 p-2 overflow-x-auto">
           {sharSocialMedia.map(({ name, icon, link }) => {

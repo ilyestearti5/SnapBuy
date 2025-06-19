@@ -43,9 +43,6 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
     });
     return [exists, news];
   }, [allProducts.get]);
-
-  const isAvailable = useCopyState<null | boolean>(false);
-
   return (
     <Card className="max-md:w-10/12 md:w-1/2">
       <div className="flex justify-between items-center p-2">
@@ -114,27 +111,24 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
               return;
             }
             const options: AddProductActionProps = {
-              exists:
-                exists?.map((prod) => ({
-                  ...prod,
-                  id: encodeURIComponent(prod.id!),
-                })) ?? undefined,
-              news:
-                news?.map((prod) => ({
-                  ...prod,
-                  id: encodeURIComponent(prod.id!),
-                  available: !!isAvailable.get,
-                })) ?? undefined,
+              exists: exists?.map((prod) => ({
+                ...prod,
+                id: encodeURIComponent(prod.id!),
+              })),
+              news: news?.map((prod) => ({
+                ...prod,
+                id: encodeURIComponent(prod.id!),
+              })),
             };
             var isYes = await confirm({
               title: "add products",
               message: "are you sure you want to add these products ?",
+              detail: `You are about to add ${options.news?.length} new products and ${options.exists?.length} existing products.`,
             });
-            if (!isYes) {
-              return;
+            if (isYes) {
+              execAction("add-products", options);
+              closePopup();
             }
-            execAction("add-products", options);
-            closePopup();
           }}
         >
           <Translate content="add products" />

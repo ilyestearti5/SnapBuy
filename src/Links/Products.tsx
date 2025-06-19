@@ -54,6 +54,7 @@ import { saveAs } from "file-saver";
 import { useStoreId } from "../App";
 import { UpsertPack } from "./UpsertPack";
 import { loadFromExcel } from "./loadFromExcel";
+import { arraySeparator } from "../utils";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
   "createdAt",
@@ -471,12 +472,12 @@ export const Products = () => {
                   if (key === "multiple.prices") {
                     option["multiple.prices"] = product.data?.multiple?.prices
                       ?.map((price) => price.price)
-                      .join(", ");
+                      .join(arraySeparator);
                     return;
                   } else if (key === "multiple.counts") {
                     option["multiple.counts"] = product.data?.multiple?.prices
                       ?.map((price) => price.quantity)
-                      .join(", ");
+                      .join(arraySeparator);
                     return;
                   } else if (key === "single.price") {
                     option["single.price"] =
@@ -508,24 +509,16 @@ export const Products = () => {
                 type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
               });
               setTemp("loading-text", "Uploading Excel File");
-              await uploadFile(
-                [
-                  "projects",
-                  import.meta.env.VITE_PROJECT_ID,
-                  "stores",
-                  storeId,
-                  "products.xlsx",
-                ],
-                blob
-              );
-              setTemp("loading-text", "Setting Access Link");
-              const accessLink = await getDownloadURL([
+              const ref = [
                 "projects",
                 import.meta.env.VITE_PROJECT_ID,
                 "stores",
                 storeId,
                 "products.xlsx",
-              ]);
+              ];
+              await uploadFile(ref, blob);
+              setTemp("loading-text", "Setting Access Link");
+              const accessLink = await getDownloadURL(ref);
               await setDoc(
                 [
                   "projects",
@@ -534,7 +527,7 @@ export const Products = () => {
                   storeId,
                 ],
                 {
-                  accessLink: accessLink,
+                  accessLink,
                 }
               );
               setTemp("loading-text", "Done");
@@ -564,16 +557,6 @@ export const Products = () => {
           }}
         />
         <CircleTip
-          icon={allIcons.solid.faPlus}
-          className={tw(
-            "transition-[width,height]",
-            !showTools.get && "w-[0px] h-[0px]"
-          )}
-          onClick={async () => {
-            showPopup(<PostNewProduct />);
-          }}
-        />
-        <CircleTip
           className={tw(
             "transition-[width,height]",
             !showTools.get && "w-[0px] h-[0px]"
@@ -584,6 +567,17 @@ export const Products = () => {
           }}
           icon={allIcons.solid.faFileExcel}
         />
+        <CircleTip
+          icon={allIcons.solid.faPlus}
+          className={tw(
+            "transition-[width,height]",
+            !showTools.get && "w-[0px] h-[0px]"
+          )}
+          onClick={async () => {
+            showPopup(<PostNewProduct />);
+          }}
+        />
+
         <CircleTip
           icon={allIcons.solid.faPlus}
           iconClassName={tw(

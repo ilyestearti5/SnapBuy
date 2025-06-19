@@ -149,8 +149,8 @@ declare interface AddClientActionProps {
   news?: SnapBuy.Client[];
 }
 declare interface AddProductActionProps {
-  exists?: SnapBuy.Product[];
-  news?: SnapBuy.Product[];
+  exists?: SnapBuy.Product[] | null;
+  news?: SnapBuy.Product[] | null;
 }
 declare module "html2pdf.js" {
   // You can add more specific type definitions here as you explore the library's API.
