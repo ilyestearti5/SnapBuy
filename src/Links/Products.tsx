@@ -1,4 +1,11 @@
-import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
+import {
+  allIcons,
+  and,
+  getDownloadURL,
+  orderBy,
+  setDoc,
+  where,
+} from "@biqpod/app/ui/apis";
 import {
   delay,
   filterFuzzySearch,
@@ -511,17 +518,30 @@ export const Products = () => {
                 ],
                 blob
               );
+              setTemp("loading-text", "Setting Access Link");
+              const accessLink = await getDownloadURL([
+                "projects",
+                import.meta.env.VITE_PROJECT_ID,
+                "stores",
+                storeId,
+                "products.xlsx",
+              ]);
+              await setDoc(
+                [
+                  "projects",
+                  import.meta.env.VITE_PROJECT_ID,
+                  "stores",
+                  storeId,
+                ],
+                {
+                  accessLink: accessLink,
+                }
+              );
+              setTemp("loading-text", "Done");
+              await delay(1000);
               setTemp("loading-text", "");
             }
           }}
-        />
-        <CircleTip
-          icon={allIcons.solid.faShareAlt}
-          className={tw(
-            "transition-[width,height]",
-            !showTools.get && "w-[0px] h-[0px]"
-          )}
-          onClick={async () => {}}
         />
         <CircleTip
           icon={allIcons.solid.faBoxesPacking}

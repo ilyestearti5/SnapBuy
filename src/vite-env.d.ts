@@ -24,6 +24,7 @@ declare namespace SnapBuy {
     };
     createdAt?: number;
     deliveryPrice?: number;
+    accessLink?: string;
   }
   type Platform =
     | "facebook"

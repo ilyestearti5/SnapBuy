@@ -150,7 +150,7 @@ export const ClientProductRender = React.memo(
                 icon={allIcons.solid.faEllipsisV}
                 onClick={({ clientX, clientY }) => {
                   const menu: MenuRecordProps[] = mergeArray(
-                    {
+                    showPhoto && {
                       label: "See Photo",
                       defaultIcon: allIcons.solid.faPhotoFilm,
                       click() {

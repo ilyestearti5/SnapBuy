@@ -63,6 +63,7 @@ import { FixedSizeList as List } from "react-window";
 import React from "react";
 import { allKeys } from "./Links/Products";
 import { tw } from "@biqpod/app/ui/utils";
+import { snapbuyApi } from "./apis";
 export const ClientProducts = () => {
   const storeId = useParams<{ uid: string }>().uid;
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
@@ -77,13 +78,16 @@ export const ClientProducts = () => {
       if (next) {
         return;
       }
-      const uri = await getDownloadURL([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "stores",
-        storeId,
-        "products.xlsx",
-      ]);
+      const store = await snapbuyApi.getStore(storeId);
+      const uri =
+        store?.accessLink ||
+        (await getDownloadURL([
+          "projects",
+          import.meta.env.VITE_PROJECT_ID,
+          "stores",
+          storeId,
+          "products.xlsx",
+        ]));
       if (!uri) {
         return;
       }
@@ -99,35 +103,63 @@ export const ClientProducts = () => {
         const product: SnapBuy.Product = {};
         allKeys.forEach((key, colIdx) => {
           const i = colIdx + 1;
-          if (key === "single.price") {
-            product.single = {
-              price: row[i] ? Number(row[i]) : undefined,
-            };
-          } else if (key === "multiple.prices") {
-            product.multiple = {
-              prices:
+          switch (key) {
+            case "single.price":
+              product.single = {
+                price: row[i] ? Number(row[i]) : undefined,
+              };
+              break;
+            case "multiple.prices":
+              product.multiple = {
+                prices:
+                  row[i]
+                    ?.toString()
+                    ?.split(",")
+                    .map((p) => ({ price: Number(p), quantity: 1 })) ||
+                  undefined,
+              };
+              break;
+            case "multiple.counts": {
+              if (!product.multiple) product.multiple = {};
+              const counts =
                 row[i]
                   ?.toString()
                   ?.split(",")
-                  .map((p) => ({ price: Number(p), quantity: 1 })) || undefined,
-            };
-          } else if (key === "multiple.counts") {
-            if (!product.multiple) product.multiple = {};
-            const counts =
-              row[i]
+                  .map((c) => Number(c)) || [];
+              if (
+                product.multiple.prices &&
+                counts.length === product.multiple.prices.length
+              ) {
+                product.multiple.prices = product.multiple.prices.map(
+                  (priceObj, i) => ({ ...priceObj, quantity: counts[i] })
+                );
+              }
+              break;
+            }
+            case "available":
+              product.available = row[i] === "true";
+              break;
+            case "photos": {
+              const photos = row[i]?.toString().split(",");
+              product.photos = photos;
+              break;
+            }
+            case "quantity": {
+              product.quantity = Number(row[i]?.toString() || "");
+              break;
+            }
+            case "keys":
+              product.keys = row[i]
                 ?.toString()
                 ?.split(",")
-                .map((c) => Number(c)) || [];
-            if (
-              product.multiple.prices &&
-              counts.length === product.multiple.prices.length
-            ) {
-              product.multiple.prices = product.multiple.prices.map(
-                (priceObj, i) => ({ ...priceObj, quantity: counts[i] })
-              );
-            }
-          } else {
-            product[key] = row[i];
+                .map((key) => key.trim())
+                .filter((key) => key.length > 0);
+              break;
+            case "limited":
+              product.limited = row[i] === "true";
+              break;
+            default:
+              product[key] = row[i]?.toString() || "";
           }
         });
         newProducts.push(product);
@@ -259,61 +291,73 @@ export const ClientProducts = () => {
     return height - posHeight - posTop - clickCartHeight;
   }, [position, height, clickCartPosition]);
   const { showPhoto } = useSearchParams();
+  const scrollState = useCopyState(0);
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
       <PositionView positionId="searching">
         <div className="flex justify-between items-center gap-2 p-2">
-          <div className="flex justify-center w-full">
+          <div className="relative flex justify-center w-full">
             <Field
               className="rounded-2xl"
               placeholder="Search Product"
               inputName="search-prod"
             />
+            <span className="top-1/2 right-2 absolute -translate-y-1/2">
+              / {filterProducts?.length || 0}
+            </span>
           </div>
         </div>
         <Line />
       </PositionView>
-      {success && !!filterProducts?.length && (
-        <List
-          ref={listRef}
-          height={listHeight}
-          itemCount={Math.ceil((filterProducts?.length || 0) / 2)}
-          itemSize={showPhoto ? 320 : 220}
-          width={"100%"}
-          itemData={filterProducts}
-        >
-          {({
-            index,
-            style,
-            data,
-          }: {
-            index: number;
-            style: React.CSSProperties;
-            data: SnapBuy.Product[];
-          }) => {
-            const first = data?.at(index * 2);
-            const second = data?.at(index * 2 + 1);
-            return (
-              <div style={style} className="flex items-center gap-2 p-2">
-                {typeof first == "object" && (
-                  <ClientProductRender
-                    index={index * 2}
-                    product={first}
-                    key={first.id}
-                  />
-                )}
-                {typeof second == "object" && (
-                  <ClientProductRender
-                    index={index * 2 + 1}
-                    product={second}
-                    key={second.id}
-                  />
-                )}
-              </div>
-            );
-          }}
-        </List>
-      )}
+      <div className="relative h-full overflow-hidden">
+        {scrollState.get > 10 && (
+          <div className="top-[-30px] z-[10000] absolute inset-x-0 shadow-2xl shadow-black h-[30px]" />
+        )}
+        {success && !!filterProducts?.length && (
+          <List
+            ref={listRef}
+            height={listHeight}
+            itemCount={Math.ceil((filterProducts?.length || 0) / 2)}
+            itemSize={showPhoto ? 340 : 220}
+            width={"100%"}
+            itemData={filterProducts}
+            onScroll={(e) => {
+              scrollState.set(e.scrollOffset || 0);
+            }}
+          >
+            {({
+              index,
+              style,
+              data,
+            }: {
+              index: number;
+              style: React.CSSProperties;
+              data: SnapBuy.Product[];
+            }) => {
+              const first = data?.at(index * 2);
+              const second = data?.at(index * 2 + 1);
+              return (
+                <div style={style} className="flex items-center gap-2 p-2">
+                  {typeof first == "object" && (
+                    <ClientProductRender
+                      index={index * 2}
+                      product={first}
+                      key={first.id}
+                    />
+                  )}
+                  {typeof second == "object" && (
+                    <ClientProductRender
+                      index={index * 2 + 1}
+                      product={second}
+                      key={second.id}
+                    />
+                  )}
+                </div>
+              );
+            }}
+          </List>
+        )}
+      </div>
       {loading && (
         <div className="flex justify-center items-center h-full">
           <CircleLoading />
