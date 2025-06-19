@@ -85,6 +85,7 @@ export const allKeys: keys[] = [
   "multiple.prices",
   "multiple.counts",
   "category",
+  "storeId",
 ];
 const ExcelImportFrom = () => {
   return (

@@ -73,7 +73,19 @@ export const ClientProductRender = React.memo(
           {showPhoto && (
             <EmptyComponent>
               <div className="relative flex justify-center items-center w-full h-[150px] cursor-pointer">
-                <ImageSlider photos={photos} />
+                {photos.length > 0 ? (
+                  <ImageSlider photos={photos} />
+                ) : (
+                  <div className="flex flex-col justify-center items-center text-[--biqpod-gray-opacity-2] w-full h-full">
+                    <Icon
+                      icon={allIcons.solid.faPhotoFilm}
+                      iconClassName="text-5xl"
+                    />
+                    <span className="mt-2 text-sm">
+                      <Translate content="no image available" />
+                    </span>
+                  </div>
+                )}
                 {isPromotion && (
                   <div className="inline-flex top-0 left-0 absolute items-center gap-2 bg-red-600 px-3 py-1 rounded-ee-2xl text-white capitalize">
                     <Icon icon={allIcons.solid.faTag} />
