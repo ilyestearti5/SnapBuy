@@ -187,23 +187,14 @@ export const FilterOrders = () => {
               nullable: true,
               list: [
                 {
-                  name: "Ascending",
-                  emojie: "⬆️",
+                  value: "asc",
+                  content: "⬆️ Ascending",
                 },
                 {
-                  name: "Descending",
-                  emojie: "⬇️",
+                  value: "desc",
+                  content: "⬇️ Descending",
                 },
-              ].map((time) => {
-                var capitalizedName = time.name
-                  .split(" ")
-                  .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                  .join(" ");
-                return {
-                  content: `${time.emojie} ${capitalizedName}`,
-                  value: time.name,
-                };
-              }),
+              ],
             }}
           />
         </div>

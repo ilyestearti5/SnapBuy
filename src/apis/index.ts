@@ -669,8 +669,6 @@ export const useFormProduct = () => {
   const quantity = getFormQuantity();
   const description = getFormDescription();
   const name = getFormName();
-  const colorsState = getFormColors();
-  const sizesState = getFormSizes();
   const keysState = getFormKeys();
   const isAvailable = getFormAvailable();
   const type = getFormType();
@@ -705,8 +703,6 @@ export const useFormProduct = () => {
     quantity,
     description,
     name,
-    colorsState,
-    sizesState,
     keysState,
     isAvailable,
     type,
@@ -738,12 +734,6 @@ export const getFormDescription = () => {
 };
 export const getFormName = () => {
   return getFieldValue("product-form-name");
-};
-export const getFormColors = () => {
-  return getTemp<string[]>("post-colors");
-};
-export const getFormSizes = () => {
-  return getTemp<SettingValueType["filter"]>("post-sizes");
 };
 export const getFormKeys = () => {
   return getTemp<SettingValueType["array"]>("post-keys");
@@ -812,12 +802,6 @@ export const useFormPrices = () => {
 };
 export const useFormQuantity = () => {
   return useTemp<number | undefined>("post-quantity");
-};
-export const useFormColors = () => {
-  return useTemp<string[]>("post-colors");
-};
-export const useFormSizes = () => {
-  return useTemp<SettingValueType["filter"]>("post-sizes");
 };
 export const useFormKeys = () => {
   return useTemp<SettingValueType["array"]>("post-keys");

@@ -132,6 +132,9 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
   const store = useAsyncMemo(() => {
     return snapbuyApi.getStore(storeId);
   }, []);
+
+  const latitude = useCopyState<Nothing | number>(null);
+  const longitude = useCopyState<Nothing | number>(null);
   const orderCreationAction = useAction(
     "create-order",
     async () => {
@@ -194,6 +197,16 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
         };
       });
       localStorage.setItem("phone", phone);
+      const place: SnapBuy.Client["place"] = {
+        address,
+        wilaya,
+      };
+      if (latitude.get) {
+        place.latitude = latitude.get;
+      }
+      if (longitude.get) {
+        place.longitude = longitude.get;
+      }
       const options: CreateOrderOptions = {
         products,
         client: {
@@ -201,10 +214,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
           lastname,
           phone,
           id: crypto.randomUUID(),
-          place: {
-            address,
-            wilaya,
-          },
+          place,
         },
         delivery: deliveryState.get || false,
         key: key || "",
@@ -214,8 +224,19 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
       showToast("Order Created", "success");
       deleteCart(storeId);
     },
-    [phone, address, wilaya, firstname, deliveryState.get, key, storeId]
+    [
+      phone,
+      address,
+      latitude.get,
+      longitude.get,
+      wilaya,
+      firstname,
+      deliveryState.get,
+      key,
+      storeId,
+    ]
   );
+
   const action = useAction(
     "auto-detect-location",
     () => {
@@ -229,6 +250,8 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
                   lat,
                   lon
                 );
+                latitude.set(lat);
+                longitude.set(lon);
                 setFieldValue("client-wilaya", wilaya);
                 setFieldValue("client-address", fullAddress);
                 resolve(true);
@@ -254,6 +277,8 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
               lat,
               lon
             );
+            latitude.set(lat);
+            longitude.set(lon);
             setFieldValue("client-wilaya", wilaya);
             setFieldValue("client-address", fullAddress);
             resolve(true);
@@ -328,7 +353,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
             <div className="flex flex-col justify-center items-center gap-y-5 text-[--biqpod-gray-opacity-2] p-3 h-full">
               <Icon
                 icon={allIcons.solid.faCartShopping}
-                iconClassName="text-7xl "
+                iconClassName="text-7xl"
               />
               <div>
                 <h1 className="text-4xl capitalize">
@@ -374,6 +399,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
             </label>
             <Field
               inputName="client-firstname"
+              maxLength={40}
               placeholder="Enter Your Firstname"
             />
           </div>
@@ -383,6 +409,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
             </label>
             <Field
               inputName="client-lastname"
+              maxLength={40}
               placeholder="Enter Your Lastname"
             />
           </div>
@@ -407,7 +434,11 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
             <label className="capitalize">
               <Translate content="key" /> :
             </label>
-            <Field inputName="client-key" placeholder="Enter Your Key" />
+            <Field
+              inputName="client-key"
+              maxLength={30}
+              placeholder="Enter Your Key"
+            />
           </div>
           <div className="flex justify-center items-center gap-2 p-2">
             <label className="capitalize">

@@ -130,20 +130,6 @@ export const ProductDataBeforeCreate = () => {
             />
           </div>
           <div className={tw("flex items-center gap-2")}>
-            <Icon icon={allIcons.solid.faRulerCombined} />
-            <p className={tw("font-semibold capitalize")}>
-              <Translate content="sizes" />:
-            </p>
-          </div>
-          <p>
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 6);
-              }}
-            />
-          </p>
-          <div className={tw("flex items-center gap-2")}>
             <Icon icon={allIcons.solid.faInfoCircle} />
             <p className={tw("font-semibold capitalize")}>
               <Translate content="extra information" />:

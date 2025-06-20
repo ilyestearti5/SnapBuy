@@ -104,6 +104,8 @@ declare namespace SnapBuy {
     place: {
       address: string;
       wilaya: string;
+      latitude?: number;
+      longitude?: number;
     };
     // needed
     storeId?: string;

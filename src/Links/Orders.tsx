@@ -216,7 +216,7 @@ export const Orders = () => {
           where("storeId", "==", selectedStoreId)
         ),
         orders: mergeArray(
-          orderBy("createdAt", filterState?.orderBy === "desc" ? "desc" : "asc")
+          orderBy("createdAt", filterState?.orderBy == "asc" ? "asc" : "desc")
         ),
         limit: PAGE_SIZE,
         startAt:
@@ -429,7 +429,7 @@ export const Orders = () => {
                   <span className="py-2 w-full overflow-hidden">
                     {order.key && (
                       <Key>
-                        <Anchor>lg{order.key}</Anchor>
+                        <Anchor>{order.key}</Anchor>
                       </Key>
                     )}
                   </span>
@@ -543,7 +543,10 @@ export const Orders = () => {
               const fullName = `${order.client?.firstname || ""} ${
                 order.client?.lastname || ""
               }`;
-              const googleMap = `https://www.google.com/maps/search/?api=1&query=${order.client?.place.address}`;
+              const googleMapByLanAndLon =
+                order.client.place.latitude &&
+                order.client.place.longitude &&
+                `https://www.google.com/maps/search/?api=1&query=${order.client?.place.latitude},${order.client?.place.longitude}`;
               return (
                 <motion.div
                   key={index}
@@ -585,20 +588,22 @@ export const Orders = () => {
                         />
                         <Translate content="delivery" />
                       </div>
-                      <Key>
-                        <Anchor
-                          onClick={async () => {
-                            const response = await confirm({
-                              message: "Filter All Orders By This Key",
-                              title: "Filter By Keys",
-                            });
-                            if (response) {
-                            }
-                          }}
-                        >
-                          {order.key || <Translate content="No Key Ther Is" />}
-                        </Anchor>
-                      </Key>
+                      {order.key && (
+                        <Key>
+                          <Anchor
+                            onClick={async () => {
+                              const response = await confirm({
+                                message: "Filter All Orders By This Key",
+                                title: "Filter By Keys",
+                              });
+                              if (response) {
+                              }
+                            }}
+                          >
+                            {order.key}
+                          </Anchor>
+                        </Key>
+                      )}
                     </div>
                     <Line />
                     <div className="flex justify-between items-center p-2">
@@ -624,15 +629,17 @@ export const Orders = () => {
                             a.click();
                           }}
                         />
-                        <CircleTip
-                          icon={allIcons.solid.faLocationDot}
-                          onClick={() => {
-                            var a = document.createElement("a");
-                            a.href = googleMap;
-                            a.target = "_blank";
-                            a.click();
-                          }}
-                        />
+                        {!!googleMapByLanAndLon && (
+                          <CircleTip
+                            icon={allIcons.solid.faLocationDot}
+                            onClick={() => {
+                              var a = document.createElement("a");
+                              a.href = googleMapByLanAndLon;
+                              a.target = "_blank";
+                              a.click();
+                            }}
+                          />
+                        )}
                         <CircleTip
                           icon={allIcons.solid.faEllipsisV}
                           onClick={async ({ clientX, clientY }) => {
