@@ -22,7 +22,6 @@ import { ProductInfo } from "./Infor";
 import { useEffect, useMemo } from "react";
 import { ProductDataBeforeCreate } from "./Views/DataBeforePost";
 import { ProductDescription } from "./Views/Description";
-import { PostDescriptionMarkDown } from "./Views/DescriptionMarkDown";
 import { ProductImages } from "./Views/Image";
 import { PostInforPrice } from "./Views/ProductInforPrice";
 import { ProductPricingType } from "./Views/ProductType";
@@ -56,7 +55,6 @@ const pages = [
   { name: "Type", component: ProductPricingType },
   { name: "Price Info", component: PostInforPrice },
   { name: "Description", component: ProductDescription },
-  { name: "Description (Markdown)", component: PostDescriptionMarkDown },
   { name: "Data Before Post", component: ProductDataBeforeCreate },
 ];
 const pagesOnly = pages.map((page) => page.component);

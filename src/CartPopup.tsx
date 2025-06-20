@@ -222,6 +222,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
       await snapbuyApi.createOrder(options);
       closePopup();
       showToast("Order Created", "success");
+      visibilityTemp.setTemp("client-form", false);
       deleteCart(storeId);
     },
     [

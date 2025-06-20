@@ -9,6 +9,7 @@ import {
   Anchor,
   Button,
   Card,
+  CardHeaderForPopup,
   CardWait,
   CircleTip,
   EmptyComponent,
@@ -16,6 +17,7 @@ import {
   Icon,
   Key,
   Line,
+  Map,
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
@@ -543,10 +545,6 @@ export const Orders = () => {
               const fullName = `${order.client?.firstname || ""} ${
                 order.client?.lastname || ""
               }`;
-              const googleMapByLanAndLon =
-                order.client.place.latitude &&
-                order.client.place.longitude &&
-                `https://www.google.com/maps/search/?api=1&query=${order.client?.place.latitude},${order.client?.place.longitude}`;
               return (
                 <motion.div
                   key={index}
@@ -629,14 +627,29 @@ export const Orders = () => {
                             a.click();
                           }}
                         />
-                        {!!googleMapByLanAndLon && (
+                        {!!(
+                          order.client.place.latitude &&
+                          order.client.place.longitude
+                        ) && (
                           <CircleTip
                             icon={allIcons.solid.faLocationDot}
                             onClick={() => {
-                              var a = document.createElement("a");
-                              a.href = googleMapByLanAndLon;
-                              a.target = "_blank";
-                              a.click();
+                              showPopup(
+                                <Card className="w-2/3 overflow-hidden">
+                                  <CardHeaderForPopup title="Client Location" />
+                                  <Line />
+                                  <div className="relative w-full h-[400px]">
+                                    <Map
+                                      apiKey="7Serp5w3OFR9WkWfsTEW"
+                                      location={{
+                                        x: order.client.place.longitude!,
+                                        y: order.client.place.latitude!,
+                                      }}
+                                      zoom={17}
+                                    />
+                                  </div>
+                                </Card>
+                              );
                             }}
                           />
                         )}

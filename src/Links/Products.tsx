@@ -442,7 +442,7 @@ export const Products = () => {
         <CircleTip
           icon={allIcons.solid.faArrowUpRightFromSquare}
           className={tw(
-            "transition-[width,height]",
+            "transition-[width,height] bg-[--biqpod-gray-opacity] animate-pulse hover:animate-none active:animate-ping text-yellow-600",
             !showTools.get && "w-[0px] h-[0px]"
           )}
           onClick={async () => {
@@ -540,7 +540,7 @@ export const Products = () => {
         <CircleTip
           icon={allIcons.solid.faBoxesPacking}
           className={tw(
-            "transition-[width,height]",
+            "transition-[width,height] text-blue-300",
             !showTools.get && "w-[0px] h-[0px]"
           )}
           onClick={async () => {
@@ -550,7 +550,7 @@ export const Products = () => {
         <CircleTip
           icon={allIcons.regular.faFileExcel}
           className={tw(
-            "transition-[width,height]",
+            "transition-[width,height] text-green-600",
             !showTools.get && "w-[0px] h-[0px]"
           )}
           onClick={async () => {
@@ -559,7 +559,7 @@ export const Products = () => {
         />
         <CircleTip
           className={tw(
-            "transition-[width,height]",
+            "transition-[width,height] text-green-600",
             !showTools.get && "w-[0px] h-[0px]"
           )}
           onClick={() => {
@@ -571,7 +571,7 @@ export const Products = () => {
         <CircleTip
           icon={allIcons.solid.faPlus}
           className={tw(
-            "transition-[width,height]",
+            "transition-[width,height] text-violet-500",
             !showTools.get && "w-[0px] h-[0px]"
           )}
           onClick={async () => {
@@ -583,7 +583,7 @@ export const Products = () => {
           icon={allIcons.solid.faPlus}
           iconClassName={tw(
             "transition-transform",
-            showTools.get ? "rotate-45" : "rotate-0"
+            showTools.get ? "rotate-45 text-sky-700" : "rotate-0"
           )}
         />
       </Card>

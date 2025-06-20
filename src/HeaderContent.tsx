@@ -133,7 +133,7 @@ export const HeaderContent = () => {
     return {
       selectedTab: pathname.at(-1),
       isUser: pathname.at(-2) === "stores",
-      isProduct: pathname.at(-2) === "products",
+      isProduct: pathname.at(-2) === "product",
       isPack: pathname.at(-2) === "packs",
     };
   }, [loc.pathname]);
@@ -201,7 +201,7 @@ export const HeaderContent = () => {
                   deps={[selectedTab]}
                   render={async () => {
                     await delay(1000);
-                    var product = await getDoc<SnapBuy.Product>([
+                    const product = await getDoc<SnapBuy.Product>([
                       "projects",
                       import.meta.env.VITE_PROJECT_ID,
                       "products",

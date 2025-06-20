@@ -44,6 +44,7 @@ import { isAndroid, isIos, isWeb } from "@biqpod/app/ui/app";
 import { useEffect } from "react";
 import { PackRoute } from "./Links/PackRoute";
 import { ProfileInside } from "./ProfileInside";
+import { tw } from "@biqpod/app/ui/utils";
 interface ProfileProps {
   children?: JSX.Element;
 }
@@ -69,7 +70,7 @@ interface SectionProps {
 const Section = ({ text }: SectionProps) => {
   return (
     <div className="flex justify-center items-center p-4">
-      <h1 className="bg-clip-text bg-gradient-to-r from-red-500 to-blue-400 drop-shadow-md font-extrabold text-transparent text-4xl text-center capitalize">
+      <h1 className="bg-clip-text bg-gradient-to-r from-[--biqpod-secondary] to-[--biqpod-primary] drop-shadow-md font-extrabold text-transparent text-4xl text-center capitalize">
         <Translate content={text} />
       </h1>
     </div>
@@ -178,26 +179,34 @@ export const App = () => {
               <div className="flex flex-col w-full h-full">
                 <Section text="service for" />
                 <div className="flex flex-wrap justify-center items-center gap-2 w-full">
-                  {tabServices.map((tab) => {
-                    return (
-                      <Card key={tab.link} className="overflow-hidden">
-                        <ClickedView>
-                          <Link to={tab.link}>
-                            <div className="flex justify-center p-5">
-                              <img
-                                src={tab.photo}
-                                className="w-[100px] object-cover"
-                              />
-                            </div>
-                            <Line />
-                            <div className="p-2 text-xl text-center capitalize">
-                              <Translate content={tab.name} />
-                            </div>
-                          </Link>
-                        </ClickedView>
-                      </Card>
-                    );
-                  })}
+                  {tabServices.map(
+                    ({ link, name, photo, available = true }) => {
+                      return (
+                        <Card
+                          key={link}
+                          className={tw(
+                            "overflow-hidden",
+                            !available && "opacity-30 pointer-events-none"
+                          )}
+                        >
+                          <ClickedView>
+                            <Link to={link}>
+                              <div className="flex justify-center p-5">
+                                <img
+                                  src={photo}
+                                  className="w-[100px] object-cover"
+                                />
+                              </div>
+                              <Line />
+                              <div className="p-2 text-xl text-center capitalize">
+                                <Translate content={name} />
+                              </div>
+                            </Link>
+                          </ClickedView>
+                        </Card>
+                      );
+                    }
+                  )}
                 </div>
                 <Section text="more" />
                 <div className="flex flex-wrap justify-center items-center gap-2 w-full">

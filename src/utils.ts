@@ -173,6 +173,7 @@ export const tabServices = [
     name: "Deliveries",
     link: "/deliveries",
     photo: deliveryPhoto,
+    available: false,
   },
 ];
 export const extraTabs = [

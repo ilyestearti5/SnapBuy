@@ -10,17 +10,9 @@ import {
 } from "@biqpod/app/ui/components";
 import { setTemp } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
-import { useMemo } from "react";
 import { useFormProduct } from "../../../apis";
 export const ProductDataBeforeCreate = () => {
   const product = useFormProduct();
-  const extraInformation = useMemo(() => {
-    const result: string[] = [];
-    if (product.keys) {
-      result.push("keys");
-    }
-    return result;
-  }, [product]);
   return (
     <EmptyComponent>
       <div
@@ -89,7 +81,7 @@ export const ProductDataBeforeCreate = () => {
             <Tip
               icon={allIcons.solid.faExternalLink}
               onClick={() => {
-                setTemp("post-focused", 1);
+                setTemp("post-focused", 2);
               }}
             />
           </div>
@@ -111,7 +103,7 @@ export const ProductDataBeforeCreate = () => {
             <Tip
               icon={allIcons.solid.faExternalLink}
               onClick={() => {
-                setTemp("post-focused", 6);
+                setTemp("post-focused", 0);
               }}
             />
           </div>
@@ -125,26 +117,10 @@ export const ProductDataBeforeCreate = () => {
             <Tip
               icon={allIcons.solid.faExternalLink}
               onClick={() => {
-                setTemp("post-focused", 3);
+                setTemp("post-focused", 0);
               }}
             />
           </div>
-          <div className={tw("flex items-center gap-2")}>
-            <Icon icon={allIcons.solid.faInfoCircle} />
-            <p className={tw("font-semibold capitalize")}>
-              <Translate content="extra information" />:
-            </p>
-          </div>
-          <p>
-            {(extraInformation &&
-              extraInformation.map((info) => {
-                return <Key key={info}>{info}</Key>;
-              })) || (
-              <span className="text-[--biqpod-gray-opacity] capitalize">
-                <Translate content="no extra information" />
-              </span>
-            )}
-          </p>
           {product.limited && (
             <div className={tw("flex items-center gap-2")}>
               <Icon icon={allIcons.solid.faBox} />
@@ -183,7 +159,7 @@ export const ProductDataBeforeCreate = () => {
               <h3
                 className={tw("my-2 px-2 font-semibold text-2xl text-primary")}
               >
-                Prices List:
+                <Translate content="prices list" />:
               </h3>
               <div className={tw("overflow-x-auto px-2")}>
                 <div
@@ -194,14 +170,14 @@ export const ProductDataBeforeCreate = () => {
                   <div className="flex bg-[--biqpod-secondary-background] w-full">
                     <div
                       className={tw(
-                        "px-6 py-3 w-full font-medium text-left text-xs uppercase"
+                        "px-6 py-1 w-full font-medium text-left text-xs uppercase"
                       )}
                     >
                       <Translate content="price" />
                     </div>
                     <div
                       className={tw(
-                        "px-6 py-3 w-full font-medium text-left text-xs uppercase"
+                        "px-6 py-1 w-full font-medium text-left text-xs uppercase"
                       )}
                     >
                       <Translate content="quantity" />
@@ -212,14 +188,14 @@ export const ProductDataBeforeCreate = () => {
                     <div key={index} className="flex w-full">
                       <div
                         className={tw(
-                          "px-6 py-3 w-full font-medium text-left text-xs uppercase"
+                          "px-6 py-1 w-full font-medium text-left text-xs uppercase"
                         )}
                       >
                         {item.price}
                       </div>
                       <div
                         className={tw(
-                          "px-6 py-3 w-full font-medium text-left text-xs uppercase"
+                          "px-6 py-1 w-full font-medium text-left text-xs uppercase"
                         )}
                       >
                         {item.quantity}
