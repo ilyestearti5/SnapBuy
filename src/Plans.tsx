@@ -24,7 +24,7 @@ import {
 import { snapbuyApi, Duration, Plan, PlanRecord } from "./apis";
 import { Nothing } from "@biqpod/app/ui/types";
 import { range, tw } from "@biqpod/app/ui/utils";
-import { useSub } from "./initStoreIdSave";
+import { useSub } from "./store-init";
 import { getStringTimeLeave } from "./utils";
 interface SelectedPlanProps {
   name: string;
