@@ -2,7 +2,6 @@
   "name": "@biqpod/snapbuy",
   "private": true,
   "version": "0.1.1",
-  "main": "./dist-electron/index.js",
   "scripts": {
     "dev": "vite",
     "compile": "tsc",
