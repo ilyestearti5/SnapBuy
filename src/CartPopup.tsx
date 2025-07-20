@@ -35,66 +35,16 @@ import {
 import { deleteCart, useCart, useFullCart } from "./AddProductToCart";
 import { snapbuyApi, CreateOrderOptions } from "./apis";
 import { useEffect, useMemo } from "react";
-import { mapAsync, mergeArray, setFocused, tw } from "@biqpod/app/ui/utils";
-import { Nothing } from "@biqpod/app/ui/types";
+import { mapAsync, setFocused, tw } from "@biqpod/app/ui/utils";
+import { Nothing, SettingValueType } from "@biqpod/app/ui/types";
 import { CartLine } from "./CartLine";
 import { Carts } from "./ClientStores";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
 import { isWeb } from "@biqpod/app/ui/app";
+import { getAddressFromCoords } from "./getAddressFromCoords";
 export interface ProductMore {
   product: SnapBuy.Product;
   count: number;
-}
-export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
-  var total = 0;
-  var choised:
-    | null
-    | Required<Required<SnapBuy.Product>["multiple"]>["prices"][number] = null;
-  var price: null | number = null;
-  if (!product) {
-    return {
-      total,
-      choised,
-      price,
-    };
-  }
-  if (product.type === "multiple") {
-    var prices = mergeArray(product.multiple?.prices).flat();
-    choised =
-      prices
-        ?.sort((a, b) => {
-          return b.quantity - a.quantity;
-        })
-        ?.find((price) => price.quantity <= count) || null;
-    price = choised?.price || 0;
-    total = price * count;
-  } else {
-    price = product.single?.price || 0;
-    total = price * count;
-  }
-  return {
-    total,
-    price,
-    choised,
-  };
-};
-async function getAddressFromCoords(lat: number, lon: number) {
-  const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=fr`;
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "biqpod-algeria-app", // You should customize this
-    },
-  });
-  const data = await response.json();
-  if (data && data.address) {
-    const { state, county, city, town, village } = data.address;
-    return {
-      fullAddress: data.display_name,
-      wilaya: state || county || city || town || village || "Wilaya inconnue",
-    };
-  } else {
-    throw new Error("Adresse non trouvée");
-  }
 }
 export function useActionStatus(actionName?: string | Action) {
   const loading = isLoading(actionName);
@@ -111,8 +61,13 @@ export function useActionStatus(actionName?: string | Action) {
 interface CartPopupProps {
   storeId: string;
   backToCarts?: boolean;
+  magicForms?: Record<string, SettingValueType>;
 }
-export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
+export const CartPopup = ({
+  storeId,
+  magicForms = {},
+  backToCarts = false,
+}: CartPopupProps) => {
   const fullCart = useFullCart(storeId);
   const counts = getTemp<Record<string, number>>("cart-count-prices");
   const total = useMemo(() => {
@@ -132,7 +87,6 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
   const store = useAsyncMemo(() => {
     return snapbuyApi.getStore(storeId);
   }, []);
-
   const latitude = useCopyState<Nothing | number>(null);
   const longitude = useCopyState<Nothing | number>(null);
   const orderCreationAction = useAction(
@@ -217,7 +171,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
           place,
         },
         delivery: deliveryState.get || false,
-        key: key || "",
+        metaData: magicForms,
       };
       await snapbuyApi.createOrder(options);
       closePopup();
@@ -237,7 +191,6 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
       storeId,
     ]
   );
-
   const action = useAction(
     "auto-detect-location",
     () => {
@@ -433,7 +386,7 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
           </div>
           <div className="flex flex-col gap-2 p-2">
             <label className="capitalize">
-              <Translate content="key" /> :
+              <Translate content="key (optinal)" /> :
             </label>
             <Field
               inputName="client-key"
@@ -510,11 +463,6 @@ export const CartPopup = ({ storeId, backToCarts = false }: CartPopupProps) => {
                 icon={allIcons.solid.faCartPlus}
               >
                 <Translate content="create order" /> {total}DA{" "}
-                {deliveryState.get && (
-                  <span className="font-bold">
-                    (+{store?.deliveryPrice || "Free"})
-                  </span>
-                )}
               </Button>
             </div>
           </EmptyComponent>

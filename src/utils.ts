@@ -36,6 +36,7 @@ import productsPhoto from "./assets/products.png";
 import shoppingPhoto from "./assets/shopping.png";
 import overviewPhoto from "./assets/overview.png";
 import formsPhoto from "./assets/forms.png";
+import { mergeArray } from "@biqpod/app/ui/utils";
 export const userTabs = [
   {
     name: "overview",
@@ -173,7 +174,6 @@ export const tabServices = [
     name: "Deliveries",
     link: "/deliveries",
     photo: deliveryPhoto,
-    available: false,
   },
 ];
 export const extraTabs = [
@@ -1415,20 +1415,14 @@ export const types: {
   description: string;
 }[] = [
   { id: "array", name: "📚 Array", description: "A list of values" },
-  { id: "audio", name: "🎵 Audio", description: "Audio file input" },
   { id: "boolean", name: "✅ Boolean", description: "True or false value" },
   { id: "color", name: "🎨 Color", description: "Color picker" },
   { id: "date", name: "📅 Date", description: "Date picker" },
   { id: "enum", name: "🔢 Enum", description: "Enumeration of values" },
-  { id: "file", name: "📁 File", description: "File upload" },
   { id: "filter", name: "🔍 Filter", description: "Filter criteria" },
-  { id: "image", name: "🖼️ Image", description: "Image file input" },
   { id: "number", name: "🔢 Number", description: "Numeric value" },
-  { id: "object", name: "🧩 Object", description: "Object with properties" },
-  { id: "password", name: "🔒 Password", description: "Password input" },
   { id: "pin", name: "🔢 PIN", description: "PIN code input" },
   { id: "range", name: "🎚️ Range", description: "Range slider" },
-  { id: "regexp", name: "📝 RegExp", description: "Regular expression" },
   { id: "string", name: "🔤 String", description: "Text value" },
 ];
 
@@ -1439,6 +1433,7 @@ export function useFetchMoreAction<T>(
     next: boolean;
     lastDoc: T | null;
     hasMore: boolean;
+    PAGE_SIZE: number;
   }) => Promise<T[] | Nothing>,
   deps: any[] = []
 ) {
@@ -1452,6 +1447,7 @@ export function useFetchMoreAction<T>(
         next,
         lastDoc: lastDoc.get,
         hasMore: hasMore.get,
+        PAGE_SIZE,
       });
       if (!list) {
         return;
@@ -1483,14 +1479,99 @@ export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
 }
 
 export const colorIds: ColorIds[] = [
-  "primary",
-  "secondary",
+  "borders",
+  "gray.opacity.2",
+  "gray.opacity",
   "primary.background",
   "primary.content",
+  "primary",
   "secondary.background",
-  "borders",
-  "text.color",
+  "secondary.content",
+  "secondary",
   "shadow.color",
+  "text.color",
 ];
 
 export const arraySeparator = ",;,";
+
+export const images = {
+  pricing:
+    "https://cdn3d.iconscout.com/3d/premium/thumb/price-tag-3d-icon-download-in-png-blend-fbx-gltf-file-formats--label-sale-discount-shopping-pack-e-commerce-icons-5326821.png?f=webp",
+  settings:
+    "https://static.vecteezy.com/system/resources/previews/047/248/352/non_2x/setting-3d-setting-icon-3d-setting-symbol-3d-setting-image-free-png.png",
+};
+export const sharSocialMedia = [
+  {
+    name: "Facebook",
+    icon: allIcons.brands.faFacebook,
+    link: "https://web.facebook.com/share_channel/?type=reshare&link={link}&app_id=87741124305&source_surface=external_reshare&display=popup&hashtag#",
+  },
+  {
+    name: "Twitter",
+    icon: allIcons.brands.faTwitter,
+    link: "https://twitter.com/intent/tweet?url={link}",
+  },
+  {
+    name: "LinkedIn",
+    icon: allIcons.brands.faLinkedin,
+    link: "https://www.linkedin.com/shareArticle?mini=true&url={link}",
+  },
+  {
+    name: "WhatsApp",
+    icon: allIcons.brands.faWhatsapp,
+    link: "https://api.whatsapp.com/send?text={link}",
+  },
+  {
+    name: "Telegram",
+    icon: allIcons.brands.faTelegram,
+    link: "https://t.me/share/url?url={link}",
+  },
+  {
+    name: "Instagram",
+    icon: allIcons.brands.faInstagram,
+    link: "https://www.instagram.com/?url={link}",
+  },
+  {
+    name: "Snapchat",
+    icon: allIcons.brands.faSnapchatGhost,
+    link: "https://snapchat.com/share?text={link}",
+  },
+  {
+    name: "Pinterest",
+    icon: allIcons.brands.faPinterest,
+    link: "https://pinterest.com/pin/create/button/?url={link}",
+  },
+];
+export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
+  var total = 0;
+  var choised:
+    | null
+    | Required<Required<SnapBuy.Product>["multiple"]>["prices"][number] = null;
+  var price: null | number = null;
+  if (!product) {
+    return {
+      total,
+      choised,
+      price,
+    };
+  }
+  if (product.type === "multiple") {
+    var prices = mergeArray(product.multiple?.prices).flat();
+    choised =
+      prices
+        ?.sort((a, b) => {
+          return b.quantity - a.quantity;
+        })
+        ?.find((price) => price.quantity <= count) || null;
+    price = choised?.price || 0;
+    total = price * count;
+  } else {
+    price = product.single?.price || 0;
+    total = price * count;
+  }
+  return {
+    total,
+    price,
+    choised,
+  };
+};

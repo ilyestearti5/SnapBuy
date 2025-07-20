@@ -100,7 +100,6 @@ export const AiAssistance = () => {
     "speak",
     ({ text = "", voice }: SpeechProps) => {
       if (!speechSynthesis.get) {
-        console.warn("Speech synthesis not available.");
         showToast("Speech synthesis not available.", "error");
         return;
       }

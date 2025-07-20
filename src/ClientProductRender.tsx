@@ -89,7 +89,7 @@ export const ClientProductRender = React.memo(
                 {isPromotion && (
                   <div className="inline-flex top-0 left-0 absolute items-center gap-2 bg-red-600 px-3 py-1 rounded-ee-2xl text-white capitalize">
                     <Icon icon={allIcons.solid.faTag} />
-                    <span>
+                    <span className="max-md:hidden">
                       <Translate content="promotion" />
                     </span>
                   </div>
@@ -170,8 +170,8 @@ export const ClientProductRender = React.memo(
                           <Card className="max-w-[90vw] max-h-[90vh] overflow-hidden">
                             <CardHeaderForPopup title={product.name} />
                             <Line />
-                            <div className="relative flex justify-center items-center cursor-pointer">
-                              <ImageSlider photos={photos} />
+                            <div className="relative flex justify-center items-center h-[400px] cursor-pointer">
+                              <ImageSlider zoom photos={photos} />
                             </div>
                           </Card>
                         );

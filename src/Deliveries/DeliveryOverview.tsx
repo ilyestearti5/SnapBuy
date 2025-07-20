@@ -1,28 +1,25 @@
-// components/EcommerceOverview.tsx
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Card,
   CardWait,
   Icon,
   IconProps,
-  Line,
   Scroll,
   Translate,
+  Line,
 } from "@biqpod/app/ui/components";
-import { showToast, useAsyncMemo } from "@biqpod/app/ui/hooks";
+import { useAsyncMemo, showToast } from "@biqpod/app/ui/hooks";
+import { range } from "@biqpod/app/ui/utils";
 import {
+  ResponsiveContainer,
   LineChart,
-  Line as RechartsLine,
+  CartesianGrid,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
+  Line as RechartsLine,
 } from "recharts";
-import { snapbuyApi } from "./apis";
-import { range } from "@biqpod/app/ui/utils";
-import { Link } from "react-router-dom";
-import { useStoreId } from "./App";
+import { snapbuyApi } from "../apis";
 const titlesOveviews: Record<string, string> = {
   totalSales: "Total Sales",
   orders: "Orders",
@@ -38,20 +35,16 @@ const iconsColors: Record<string, string> = {
   orders: "#EF4444", // Changed to red
   customers: "#6366F1", // Changed to indigo
 };
-export function Overview() {
-  const storeId = useStoreId();
+export function DeliveryOverview() {
   const todayOrders = useAsyncMemo(async () => {
-    if (!storeId) return null;
-    return snapbuyApi.todayOrdersCount(storeId);
-  }, [storeId]);
+    return snapbuyApi.todayDeliverys();
+  }, []);
   const salesData = useAsyncMemo(async () => {
-    if (!storeId) return null;
-    return snapbuyApi.getSales(storeId);
-  }, [storeId]);
+    return snapbuyApi.getDeliverysSales();
+  }, []);
   const overview = useAsyncMemo(async () => {
-    if (!storeId) return null;
-    return snapbuyApi.getOverview(storeId);
-  }, [storeId]);
+    return snapbuyApi.getDeliveryOverview();
+  }, []);
   return (
     <Scroll>
       <div className="flex flex-wrap gap-4 p-2">
@@ -157,7 +150,7 @@ export function Overview() {
         {todayOrders !== null && (
           <Card
             onClick={() => {
-              if (todayOrders == 0) {
+              if (todayOrders?.length == 0) {
                 showToast("No orders yet");
                 return;
               }
@@ -169,7 +162,7 @@ export function Overview() {
               <Translate content="today's orders" />
             </h2>
             <p className="font-bold text-[--biqpod-primary] text-5xl">
-              {todayOrders}
+              {todayOrders?.length || 0}
             </p>
             <p className="mt-2 text-gray-500 text-sm">
               <Translate content="orders placed today" />
@@ -177,18 +170,6 @@ export function Overview() {
           </Card>
         )}
       </div>
-      <Link
-        id="pending-orders"
-        to={`/store/${storeId}/orders?time=all&status=pending&phone=none`}
-      />
-      <Link
-        id="today-orders"
-        to={`/store/${storeId}/orders?time=today&status=all&phone=none`}
-      />
-      <Link
-        id="completed-orders"
-        to={`/store/${storeId}/orders?time=today&status=completed&phone=none`}
-      />
     </Scroll>
   );
 }

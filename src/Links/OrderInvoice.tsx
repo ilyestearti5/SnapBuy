@@ -20,7 +20,6 @@ interface OrderInvoiceProps {
 export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
   const invoiceRef = React.useRef<HTMLDivElement>(null);
   const user = useUser();
-
   const store = useAsyncMemo(async () => {
     return getDoc<SnapBuy.Store>([
       "projects",
@@ -29,11 +28,9 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
       order.storeId,
     ]);
   }, []);
-
   const list = useAsyncMemo(async () => {
     return snapbuyApi.getOrderProducts(order.id);
   }, []);
-
   const handleDownloadPDF = async () => {
     if (!invoiceRef.current) return;
     const element = invoiceRef.current;
@@ -41,22 +38,18 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
     // print
     var blob = await fetch(result).then((res) => res.blob());
     var url = URL.createObjectURL(blob);
-
     var win = window.open(url, "_blank");
-
     if (win) {
       win.onload = () => {
         win?.print();
       };
     }
   };
-
   const total = useMemo(() => {
     return list?.reduce((acc, current) => {
       return acc + (current.price || 0) * (current.count || 0);
     }, 0);
   }, [list]);
-
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-2">
@@ -76,7 +69,7 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
           <div
             id="invoice-template"
             ref={invoiceRef}
-            className="mx-auto w-[300px] h-full text-gray-700"
+            className="mx-auto border-[--biqpod-borders] border-x border-solid w-[300px] h-full text-gray-700"
           >
             {/* Invoice Header */}
             <div className="flex justify-between items-start p-2">
@@ -105,7 +98,7 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
                   <Translate content="invoice" />
                 </h1>
                 <QRCodeSVG
-                  width={70}
+                  width={60}
                   value={`${location.origin}/producer/orders?order=${order.id}`}
                 />
                 <p>
@@ -117,7 +110,7 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
             </div>
             <Line />
             {/* Customer Details */}
-            <div className="mb-2 px-2 py-1 rounded">
+            <div className="mb-2 px-2 pt-1 rounded">
               <h3 className="mb-2 font-bold">Bill To:</h3>
               <div>
                 <p className="font-semibold">
@@ -129,33 +122,38 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
             </div>
             {/* Invoice Items */}
             <Line />
-            <table className="mb-2">
+            <table>
               <tbody>
-                {list?.map((item) => (
-                  <tr key={item.id} className="even:bg-[--biqpod-gray-opacity]">
-                    <td className="px-2 pt-1 pb-4 text-xs">{item.name}</td>
-                    <td className="px-2 pt-1 pb-4 text-xs text-right">
-                      <span className="text-[--biqpod-success]">
-                        {item.price.toFixed(0)}DA
-                      </span>{" "}
-                      *{" "}
-                      <span className="text-[--biqpod-success]">
-                        {item.quantity}
-                      </span>{" "}
-                      ={" "}
-                      <span className="text-[--biqpod-success]">
-                        {(item.price * item.count).toFixed(0)}DA
-                      </span>
-                    </td>
-                  </tr>
-                ))}
+                {list?.map((item) => {
+                  const count = item.count;
+                  return (
+                    <tr
+                      key={item.id}
+                      className="even:bg-[--biqpod-gray-opacity]"
+                    >
+                      <td className="px-2 py-2 w-full text-xs">{item.name}</td>
+                      <td className="px-2 py-2 text-xs text-right">
+                        <span className="text-[--biqpod-success]">
+                          {item.price.toFixed(0)}DA
+                        </span>{" "}
+                      </td>
+                      <td className="px-2 py-2 text-xs">{count}</td>
+                      <td className="px-2 py-2 text-xs">
+                        <span className="text-[--biqpod-success]">
+                          {(item.price * count).toFixed(0)}DA
+                        </span>{" "}
+                      </td>
+                      <span className="text-[--biqpod-success]"></span>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
             <Line />
             <div className="flex justify-between items-center p-2">
               <span />
               <div>
-                <div className="flex justify-between items-center bg-invoice-secondary p-2 rounded">
+                <div className="flex justify-between items-center bg-invoice-secondary rounded">
                   <span className="font-semibold">Total : </span>
                   <span className="font-bold text-[--biqpod-success]">
                     {total?.toFixed(0)}DA
@@ -163,6 +161,7 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
                 </div>
               </div>
             </div>
+            <Line />
           </div>
         </Scroll>
       )}
@@ -172,8 +171,9 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
         </div>
       )}
       <Line />
-      <div className="flex justify-between items-center p-4">
+      <div className="flex justify-between items-center p-2">
         <Button
+          className="rounded-full"
           icon={allIcons.solid.faPrint}
           onClick={async () => {
             handleDownloadPDF();

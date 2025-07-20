@@ -1,5 +1,5 @@
 import { Line, Translate } from "@biqpod/app/ui/components";
-import { getPrice } from "./CartPopup";
+import { getPrice } from "./utils";
 import { ImageSlider } from "./Links/ImageSlider";
 interface ProdInfoProps {
   product: SnapBuy.Product;

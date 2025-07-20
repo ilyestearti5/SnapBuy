@@ -1,29 +1,46 @@
-import { useEffect } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
-import {
-  CircleTip,
-  ImageField,
-  Scroll,
-  Tip,
-  TitleView,
-} from "@biqpod/app/ui/components";
-import { showToast, useCopyState, useColorMerge } from "@biqpod/app/ui/hooks";
-import { Nothing } from "@biqpod/app/ui/types";
+import { CircleTip, Scroll, Tip, TitleView } from "@biqpod/app/ui/components";
+import { imageExtensions, openPath } from "@biqpod/app/ui/hooks";
 import { useFormPhotos } from "../../../apis";
+import { useEffect } from "react";
+
 export const ProductImages = () => {
   const images = useFormPhotos();
-  const currentImageState = useCopyState<string | Nothing>(null);
+
   useEffect(() => {
-    if (currentImageState.get) {
-      if (images.get?.includes(currentImageState.get)) {
-        showToast("is exists before", "warning");
-      } else {
-        images.set([currentImageState.get, ...(images.get || [])]);
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith("image/")) {
+          const file = item.getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const imageSrc = event.target?.result as string;
+              if (imageSrc) {
+                images.set((s) => {
+                  if (s) {
+                    return [...s, imageSrc];
+                  } else {
+                    return [imageSrc];
+                  }
+                });
+              }
+            };
+            reader.readAsDataURL(file);
+          }
+        }
       }
-      currentImageState.set(null);
-    }
-  }, [currentImageState.get, images.get]);
-  const colorMerge = useColorMerge();
+    };
+
+    document.addEventListener("paste", handlePaste);
+    return () => {
+      document.removeEventListener("paste", handlePaste);
+    };
+  }, [images]);
   return (
     <div className="flex flex-col h-full">
       <Scroll className="p-1">
@@ -31,7 +48,22 @@ export const ProductImages = () => {
           <CircleTip
             className="flex justify-center items-center p-2 rounded-3xl w-[100px] h-[100px]"
             onClick={async () => {
-              document.getElementById("post-image")?.click();
+              const files = await openPath({
+                filters: [
+                  {
+                    name: "*",
+                    extensions: imageExtensions,
+                  },
+                ],
+                properties: ["multiSelections"],
+              });
+              images.set((s) => {
+                if (s) {
+                  return [...s, ...files];
+                } else {
+                  return files;
+                }
+              });
             }}
             icon={allIcons.solid.faAdd}
           />
@@ -39,12 +71,7 @@ export const ProductImages = () => {
             return (
               <div
                 key={index}
-                className="relative border border-transparent border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden"
-                style={{
-                  ...colorMerge({
-                    borderColor: "borders",
-                  }),
-                }}
+                className="relative border border-[--biqpod-borders] border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden"
               >
                 <img
                   draggable={false}
@@ -60,10 +87,7 @@ export const ProductImages = () => {
                         }) || []
                       );
                     }}
-                    className="rounded-full"
-                    style={{
-                      ...colorMerge("secondary.background"),
-                    }}
+                    className="bg-[--biqpod-secondary-background] rounded-full"
                     icon={allIcons.regular.faXmarkCircle}
                   />
                 </TitleView>
@@ -72,11 +96,6 @@ export const ProductImages = () => {
           })}
         </div>
       </Scroll>
-      <ImageField
-        state={currentImageState}
-        id="post-image"
-        config={{ hidden: true }}
-      />
     </div>
   );
 };

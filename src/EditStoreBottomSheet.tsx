@@ -8,7 +8,6 @@ import {
   Card,
   CircleTip,
   CircleLoading,
-  NumberField,
 } from "@biqpod/app/ui/components";
 import {
   useTemp,
@@ -35,7 +34,6 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
     setFieldValue("store-name", store?.name || "");
     setFieldValue("store-phone", store?.phone || "");
     setTemp("store-photo", store?.photo || null);
-    setTemp("store-delivery-price", store?.deliveryPrice || null);
   }, []);
   const action = getAction("upsert-store");
   const loadingAction = action?.status === "loading";
@@ -76,27 +74,6 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
               },
             }}
           />
-          <div className="relative">
-            <NumberField
-              state={deliveryPriceState}
-              config={{
-                autoChange: true,
-                placeholder: "Enter Delivery Price",
-                min: 0,
-              }}
-              id="store-delivery-price"
-            />
-            {!deliveryPriceState.get && (
-              <span className="top-1/2 right-2 absolute bg-red-700 px-2 py-[1px] rounded-full font-bold text-white capitalize -translate-y-1/2">
-                <Translate content="free" />
-              </span>
-            )}
-            {!!deliveryPriceState.get && (
-              <span className="top-1/2 right-2 absolute px-2 py-[1px] text-[--biqpod-primary] -translate-y-1/2">
-                <Translate content="DA" />
-              </span>
-            )}
-          </div>
         </div>
       </div>
       <Line />

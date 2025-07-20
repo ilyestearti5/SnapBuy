@@ -6,3 +6,7 @@
 [aria-label="theme"] * {
   @apply transition-colors duration-500;
 }
+
+.leaflet-control-container {
+  @apply hidden;
+}

@@ -6,7 +6,7 @@ import { App } from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { settingHooks } from "@biqpod/app/ui/hooks";
 import { settings } from "./server";
-import { translations } from "./utils";
+import { translations } from "./translations";
 startApplication(
   <BrowserRouter>
     <App />

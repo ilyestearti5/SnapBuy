@@ -5,6 +5,7 @@ import {
   CardWait,
   CircleTip,
   EmptyComponent,
+  Icon,
   Line,
   Scroll,
   Translate,
@@ -14,6 +15,9 @@ import { useParams } from "react-router";
 import { snapbuyApi } from "../apis";
 import { ImageSlider } from "./ImageSlider";
 import { allIcons } from "@biqpod/app/ui/apis";
+import { mapAsync } from "@biqpod/app/ui/utils";
+import { getPrice } from "../utils";
+import { useMemo } from "react";
 
 export const PackRoute = () => {
   const packId = useParams<{ packId: string }>().packId;
@@ -21,50 +25,53 @@ export const PackRoute = () => {
     return await snapbuyApi.getPack(packId);
   }, [packId]);
 
-  const store = useAsyncMemo(async () => {
-    if (pack?.storeId) {
-      return await snapbuyApi.getStore(pack.storeId);
-    }
-    return null;
-  }, [pack?.storeId]);
+  const totalPrice = useAsyncMemo(async () => {
+    const prods = await mapAsync(pack?.products || [], ({ prodId }) => {
+      return snapbuyApi.getProduct(prodId);
+    });
+    return prods.reduce((acc, prod) => acc + (getPrice(prod).total || 0), 0);
+  }, [pack?.products]);
+
+  const offerPercent = useMemo(() => {
+    const price = pack?.price || 0;
+    const totalPriceCopy = totalPrice || 0;
+    return totalPriceCopy > 0
+      ? Math.round(((totalPriceCopy - price) / totalPriceCopy) * 100)
+      : 0;
+  }, [pack?.price, totalPrice]);
 
   return (
     <EmptyComponent>
       {pack && (
         <div className="relative flex flex-col w-full h-full overflow-hidden">
-          <div className="flex justify-center bg-[--biqpod-primary-background] p-4">
-            <h1 className="inline-flex items-center gap-1 font-bold text-[--biqpod-success] max-md:text-2xl md:text-3xl">
-              <span>{pack.price}DA </span>
-              {store ? (
-                <span>
-                  <span className="text-[--biqpod-text-color]">
-                    +{" "}
-                    <span className="italic">
-                      ({store?.deliveryPrice || 0}DA)
-                    </span>
-                  </span>
-                  <sub className="text-[--biqpod-gray-opacity-2] ml-1 font-light text-lg">
-                    <Translate content="delivery fee" />
-                  </sub>
-                </span>
-              ) : (
-                <CardWait className="inline-block rounded-2xl w-[100px] h-[40px]" />
-              )}
-              {/* offer icon */}
-            </h1>
-          </div>
-          <Line />
           <Scroll>
+            <div className="top-0 z-10 sticky">
+              <div className="flex justify-center p-4 rounded-ee-3xl rounded-es-3xl">
+                <h1 className="inline-flex items-center gap-1 font-bold max-md:text-2xl md:text-3xl">
+                  <span className="text-green-600">{pack.price}DA </span>{" "}
+                  <sub className="text-[--biqpod-gray-opacity-2] line-through">
+                    {totalPrice}DA
+                  </sub>
+                </h1>
+                <div className="right-1 bottom-1 absolute flex items-center gap-1 bg-red-600 px-2 py-1 rounded-full text-white">
+                  <span>- {offerPercent}%</span>
+                  <Icon icon={allIcons.solid.faTag} />
+                </div>
+              </div>
+              <Line />
+            </div>
             <div className="flex flex-wrap gap-2 p-2 w-full">
               {pack.products?.map((prod) => {
                 return (
                   <AsyncComponent
                     key={prod.prodId}
+                    deps={[prod]}
                     render={async () => {
                       const product = await snapbuyApi.getProduct(prod.prodId);
                       const photos = product?.photos || [];
+                      const price = getPrice(product);
                       return (
-                        <Card className="max-md:w-full overflow-hidden">
+                        <Card className="max-md:w-full md:w-[calc(50%-4px)] overflow-hidden">
                           <div className="flex justify-between items-center p-2">
                             <h1 className="text-xl">{product?.name}</h1>
                           </div>
@@ -73,7 +80,8 @@ export const PackRoute = () => {
                             <ImageSlider photos={photos} />
                           </div>
                           <Line />
-                          <div className="flex justify-center items-center p-2">
+                          <div className="flex justify-between items-center p-2">
+                            <span>{price.total}DA</span>
                             <CircleTip className="bg-[--biqpod-gray-opacity] font-bold text-xl">
                               {prod.count}
                             </CircleTip>
@@ -95,6 +103,7 @@ export const PackRoute = () => {
                   id: "not-implemented",
                 });
               }}
+              className="rounded-full"
               rightIcon={allIcons.solid.faArrowRight}
             >
               <Translate content="order now" />

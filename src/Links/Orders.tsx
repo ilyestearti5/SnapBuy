@@ -2,11 +2,13 @@ import {
   allIcons,
   and,
   CloudSelection,
+  getDoc,
   orderBy,
   where,
 } from "@biqpod/app/ui/apis";
 import {
   Anchor,
+  AsyncComponent,
   Button,
   Card,
   CardHeaderForPopup,
@@ -15,11 +17,10 @@ import {
   EmptyComponent,
   Field,
   Icon,
-  Key,
   Line,
-  Map,
   Scroll,
   Translate,
+  UserAvatar,
 } from "@biqpod/app/ui/components";
 import {
   confirm,
@@ -51,6 +52,9 @@ import { openOrderMenu } from "./openOrderMenu";
 import { useStoreId } from "../App";
 import { colors, getImageByPlatform, icons } from "../utils";
 import { motion } from "framer-motion";
+import { Biqpod } from "@biqpod/app/ui/types";
+import { UpsertDelivery } from "./UpsertDelivery";
+import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 
 const PAGE_SIZE = 40;
 interface StatusUiProps {
@@ -373,7 +377,7 @@ export const Orders = () => {
             </span>
             <span className="inline-flex items-center gap-2 w-full capitalize">
               <Icon icon={allIcons.solid.faTruck} />
-              <Translate content="delivery" />
+              <Translate content="delivery / by" />
             </span>
             <div className="invisible">
               <CircleTip icon={allIcons.solid.faEllipsisV} />
@@ -428,27 +432,79 @@ export const Orders = () => {
                     </span>
                     <span className="capitalize">{order.platform}</span>
                   </span>
-                  <span className="py-2 w-full overflow-hidden">
-                    {order.key && (
-                      <Key>
-                        <Anchor>{order.key}</Anchor>
-                      </Key>
-                    )}
-                  </span>
-                  <span className="flex items-center gap-2 py-2 w-full overflow-hidden">
+                  <span className="flex items-center gap-2 py-2 w-full">
                     <Icon
                       iconClassName={tw(
-                        order.delivery
+                        order.isDelivery
                           ? "text-[--biqpod-success]"
                           : "text-[--biqpod-error]"
                       )}
                       icon={
-                        order.delivery
+                        order.isDelivery
                           ? allIcons.solid.faCheckCircle
                           : allIcons.solid.faTimesCircle
                       }
                     />
-                    <Translate content={order.delivery ? "yes" : "no"} />
+                    <Translate content={order.isDelivery ? "yes" : "no"} />
+                    {order.delivery?.uid && (
+                      <AsyncComponent
+                        deps={[order.delivery.uid]}
+                        render={async () => {
+                          const user = await getDoc<Biqpod.Account.User>([
+                            "users",
+                            order.delivery?.uid!,
+                          ]);
+                          return (
+                            <EmptyComponent>
+                              {" "}
+                              /{" "}
+                              <span className="group relative">
+                                {user?.email}
+                                <Card className="top-[calc(100%+5px)] right-0 absolute opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                                  <div className="flex items-center gap-2 p-2">
+                                    <UserAvatar user={user} />
+                                    <span>{user?.email}</span>
+                                    <div className="flex">
+                                      <CircleTip
+                                        onClick={() => {
+                                          var a = document.createElement("a");
+                                          a.href = `tel:${user?.phone}`;
+                                          a.click();
+                                        }}
+                                        icon={allIcons.solid.faPhone}
+                                      />
+                                      <CircleTip
+                                        onClick={async () => {
+                                          const response = await confirm({
+                                            message: "Remove Delivery",
+                                            title: "Remove Delivery",
+                                          });
+                                          if (response) {
+                                            snapbuyApi
+                                              .setDeliveryToOrder({
+                                                orderId: order.id,
+                                                delivery: null,
+                                              })
+                                              .then(() => {
+                                                showToast(
+                                                  "Delivery removed successfully",
+                                                  "success"
+                                                );
+                                                execAction("fetch-orders", {});
+                                              });
+                                          }
+                                        }}
+                                        icon={allIcons.solid.faXmark}
+                                      />
+                                    </div>
+                                  </div>
+                                </Card>
+                              </span>
+                            </EmptyComponent>
+                          );
+                        }}
+                      />
+                    )}
                   </span>
                   <div>
                     <CircleTip
@@ -571,38 +627,93 @@ export const Orders = () => {
                     </div>
                     <Line />
                     <div className="flex justify-between items-center p-2 overflow-hidden">
-                      <div className="flex items-center gap-2 capitalize">
+                      <div className="flex items-center gap-2">
                         <Icon
                           iconClassName={tw(
-                            order.delivery
+                            order.isDelivery
                               ? "text-[--biqpod-success]"
                               : "text-[--biqpod-error]"
                           )}
                           icon={
-                            order.delivery
+                            order.isDelivery
                               ? allIcons.solid.faCheckCircle
                               : allIcons.solid.faTimesCircle
                           }
                         />
-                        <Translate content="delivery" />
+                        <span className="capitalize">
+                          <Translate content="delivery" />
+                        </span>
                       </div>
-                      {order.key && (
-                        <Key>
-                          <Anchor
-                            onClick={async () => {
-                              const response = await confirm({
-                                message: "Filter All Orders By This Key",
-                                title: "Filter By Keys",
-                              });
-                              if (response) {
-                              }
-                            }}
-                          >
-                            {order.key}
-                          </Anchor>
-                        </Key>
-                      )}
                     </div>
+                    {order.delivery?.uid && (
+                      <AsyncComponent
+                        deps={[order.delivery.uid]}
+                        render={async () => {
+                          const user = await getDoc<Biqpod.Account.User>([
+                            "users",
+                            order.delivery?.uid!,
+                          ]);
+                          return (
+                            <EmptyComponent>
+                              <Line />
+                              <div className="flex justify-between items-center gap-2 p-2 w-full">
+                                <div className="flex items-center gap-2">
+                                  <UserAvatar user={user} />
+                                  <span>{user?.email}</span>
+                                </div>
+                                <div className="flex">
+                                  <CircleTip
+                                    onClick={() => {
+                                      showPopup(
+                                        <UpsertDelivery order={order} />
+                                      );
+                                    }}
+                                    icon={allIcons.solid.faPen}
+                                  />
+                                  <CircleTip
+                                    onClick={() => {
+                                      var a = document.createElement("a");
+                                      a.href = `tel:${user?.phone}`;
+                                      a.click();
+                                    }}
+                                    icon={allIcons.solid.faPhone}
+                                  />
+                                  <CircleTip
+                                    onClick={async () => {
+                                      const response = await confirm({
+                                        message: "Remove Delivery",
+                                        title: "Remove Delivery",
+                                      });
+                                      if (response) {
+                                        snapbuyApi
+                                          .setDeliveryToOrder({
+                                            orderId: order.id,
+                                            delivery: null,
+                                          })
+                                          .then(() => {
+                                            showToast(
+                                              "Delivery removed successfully",
+                                              "success"
+                                            );
+                                            execAction("fetch-orders", {});
+                                          });
+                                      }
+                                    }}
+                                    icon={allIcons.solid.faXmark}
+                                  />
+                                </div>
+                              </div>
+                            </EmptyComponent>
+                          );
+                        }}
+                        loading={
+                          <EmptyComponent>
+                            <Line />
+                            <CardWait className="w-full h-[50px]" />
+                          </EmptyComponent>
+                        }
+                      />
+                    )}
                     <Line />
                     <div className="flex justify-between items-center p-2">
                       <div className="flex items-center gap-2">
@@ -639,14 +750,29 @@ export const Orders = () => {
                                   <CardHeaderForPopup title="Client Location" />
                                   <Line />
                                   <div className="relative w-full h-[400px]">
-                                    <Map
-                                      apiKey="7Serp5w3OFR9WkWfsTEW"
-                                      location={{
-                                        x: order.client.place.longitude!,
-                                        y: order.client.place.latitude!,
-                                      }}
-                                      zoom={17}
-                                    />
+                                    <MapContainer
+                                      center={[
+                                        order.client.place.latitude!,
+                                        order.client.place.longitude!,
+                                      ]}
+                                      zoom={13}
+                                      style={{ height: "100%", width: "100%" }}
+                                    >
+                                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                                      <Marker
+                                        position={[
+                                          order.client.place.latitude!,
+                                          order.client.place.longitude!,
+                                        ]}
+                                      >
+                                        <Popup>
+                                          {order.client?.firstname}{" "}
+                                          {order.client?.lastname}
+                                          <br />
+                                          {order.client.place.wilaya}
+                                        </Popup>
+                                      </Marker>
+                                    </MapContainer>
                                   </div>
                                 </Card>
                               );

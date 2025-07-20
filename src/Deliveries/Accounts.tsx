@@ -11,6 +11,7 @@ import {
   CircleTip,
   EmptyComponent,
   Field,
+  Icon,
   Line,
   Scroll,
   Translate,
@@ -144,15 +145,12 @@ export const Accounts = () => {
     },
     [user]
   );
-
   useEffect(() => {
     if (user?.uid) {
       execAction("get-accounts");
     }
   }, [user?.uid]);
-
   const loading = isLoading("get-accounts");
-
   const search = getFieldValue("search-account");
   const filteredAccounts = useMemo(() => {
     if (!search) {
@@ -168,7 +166,6 @@ export const Accounts = () => {
       );
     });
   }, [accounts.get, search]);
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-2">
@@ -180,8 +177,8 @@ export const Accounts = () => {
             className="rounded-xl"
           />
           {filteredAccounts && (
-            <span className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 transform">
-              / {filteredAccounts?.length || "NO Accounts"}
+            <span className="top-1/2 right-3 absolute text-[--biqpod-primary] capitalize -translate-y-1/2 transform">
+              / {filteredAccounts?.length || "No Accounts"}
             </span>
           )}
         </div>
@@ -202,14 +199,9 @@ export const Accounts = () => {
               const fullName = `${account.firstname || ""} ${
                 account.lastname || ""
               }`.trim();
-
               const role = rolsInList.find((o) => o.value === account.role);
-
               return (
-                <Card
-                  key={index}
-                  className="bg-gradient-to-r to-[--biqpod-primary-background] backdrop-blur-sm from-[--biqpod-borders] w-full overflow-hidden"
-                >
+                <Card key={index} className="w-full overflow-hidden">
                   <div className="flex items-center gap-2 p-2">
                     <span className="text-xl">{fullName}</span>
                   </div>
@@ -230,15 +222,6 @@ export const Accounts = () => {
                         onClick={() => {
                           var a = document.createElement("a");
                           a.href = `tel:${account?.phone}`;
-                          a.click();
-                        }}
-                      />
-                      <CircleTip
-                        icon={allIcons.solid.faLocationDot}
-                        onClick={() => {
-                          var a = document.createElement("a");
-                          a.href = `https://maps.google.com/?q=${account?.address?.city}`;
-                          a.target = "_blank";
                           a.click();
                         }}
                       />
@@ -307,8 +290,12 @@ export const Accounts = () => {
         {filteredAccounts && filteredAccounts.length === 0 && (
           <div className="flex justify-center items-center h-full">
             <Card>
-              <div className="p-3">
-                <h1 className="text-xl text-center">
+              <div className="text-center">
+                <div className="p-4 text-8xl">
+                  <Icon icon={allIcons.solid.faUserSlash} />
+                </div>
+                <Line />
+                <h1 className="p-4 text-xl uppercase">
                   <Translate content="no accounts" />
                 </h1>
               </div>

@@ -1,0 +1,90 @@
+[
+  {
+    "path": "/auth/login",
+    "description": "User authentication login page"
+  },
+  {
+    "path": "/",
+    "description": "Home page (redirects to profile)"
+  },
+  {
+    "path": "/profile",
+    "description": "User profile page"
+  },
+  {
+    "path": "/store",
+    "description": "Store listing page"
+  },
+  {
+    "path": "/store/{storeId}/overview",
+    "description": "Store overview dashboard"
+  },
+  {
+    "path": "/store/{storeId}/orders",
+    "description": "Store orders management"
+  },
+  {
+    "path": "/store/{storeId}/products",
+    "description": "Store products management"
+  },
+  {
+    "path": "/store/{storeId}/forms",
+    "description": "Store forms management"
+  },
+  {
+    "path": "/store/{storeId}/stores",
+    "description": "Store settings and management"
+  },
+  {
+    "path": "/product/{prodId}",
+    "description": "Individual product details page"
+  },
+  {
+    "path": "/pack/{packId}",
+    "description": "Product pack details page"
+  },
+  {
+    "path": "/client",
+    "description": "Client main page (redirects to client stores)"
+  },
+  {
+    "path": "/client/stores",
+    "description": "Client stores listing"
+  },
+  {
+    "path": "/client/stores/{uid}",
+    "description": "Specific client store view"
+  },
+  {
+    "path": "/deliveries",
+    "description": "Deliveries main page (redirects to overview)"
+  },
+  {
+    "path": "/deliveries/overview",
+    "description": "Deliveries overview dashboard"
+  },
+  {
+    "path": "/deliveries/orders",
+    "description": "Delivery orders management"
+  },
+  {
+    "path": "/deliveries/accounts",
+    "description": "Delivery accounts management"
+  },
+  {
+    "path": "/deliveries/pricing",
+    "description": "Delivery pricing configuration"
+  },
+  {
+    "path": "/feedbacks",
+    "description": "Customer feedback management"
+  },
+  {
+    "path": "/offers",
+    "description": "Offers and promotions page"
+  },
+  {
+    "path": "/payment",
+    "description": "Payment processing page"
+  }
+]

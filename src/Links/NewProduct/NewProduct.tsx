@@ -12,7 +12,6 @@ import {
   actionHooks,
   closePopup,
   execAction,
-  fieldHooks,
   isLoading,
   showToast,
   useTemp,
@@ -28,6 +27,7 @@ import { ProductPricingType } from "./Views/ProductType";
 import {
   setFormAvailable,
   setFormCategory,
+  setFormCollection,
   setFormDescription,
   setFormKeys,
   setFormLimited,
@@ -42,16 +42,13 @@ import {
 export interface ProductFormSectionProps {
   product?: Partial<SnapBuy.Product>;
 }
-export function useField(fieldId: string) {
-  return fieldHooks.useOneFeild(fieldId, "value");
-}
 const buttonContents: Record<number, string | undefined> = {
   2: "accepte",
   // last one must be done
 };
 const pages = [
-  { name: "Product Info", component: ProductInfo },
   { name: "Images", component: ProductImages },
+  { name: "Product Info", component: ProductInfo },
   { name: "Type", component: ProductPricingType },
   { name: "Price Info", component: PostInforPrice },
   { name: "Description", component: ProductDescription },
@@ -75,7 +72,6 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
   useEffect(() => {
     focusedSection.set(0);
   }, []);
-
   useEffect(() => {
     setFormName(product?.name || "");
     setFormDescription(product?.description || "");
@@ -88,10 +84,9 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
     setFormCategory(product?.category || "");
     setFormPrice(product?.single?.price || 0);
     setFormPrices(product?.multiple?.prices || []);
+    setFormCollection(product?.formCollectionId);
   }, [product]);
-
   const productForm = useFormProduct();
-
   return (
     <EmptyComponent>
       {product !== null && postActionStatus != "loading" && (

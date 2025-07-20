@@ -45,6 +45,7 @@ import { useEffect } from "react";
 import { PackRoute } from "./Links/PackRoute";
 import { ProfileInside } from "./ProfileInside";
 import { tw } from "@biqpod/app/ui/utils";
+import { Tracking } from "./Tracking";
 interface ProfileProps {
   children?: JSX.Element;
 }
@@ -179,34 +180,26 @@ export const App = () => {
               <div className="flex flex-col w-full h-full">
                 <Section text="service for" />
                 <div className="flex flex-wrap justify-center items-center gap-2 w-full">
-                  {tabServices.map(
-                    ({ link, name, photo, available = true }) => {
-                      return (
-                        <Card
-                          key={link}
-                          className={tw(
-                            "overflow-hidden",
-                            !available && "opacity-30 pointer-events-none"
-                          )}
-                        >
-                          <ClickedView>
-                            <Link to={link}>
-                              <div className="flex justify-center p-5">
-                                <img
-                                  src={photo}
-                                  className="w-[100px] object-cover"
-                                />
-                              </div>
-                              <Line />
-                              <div className="p-2 text-xl text-center capitalize">
-                                <Translate content={name} />
-                              </div>
-                            </Link>
-                          </ClickedView>
-                        </Card>
-                      );
-                    }
-                  )}
+                  {tabServices.map(({ link, name, photo }) => {
+                    return (
+                      <Card key={link} className={tw("overflow-hidden")}>
+                        <ClickedView>
+                          <Link to={link}>
+                            <div className="flex justify-center p-5">
+                              <img
+                                src={photo}
+                                className="w-[100px] object-cover"
+                              />
+                            </div>
+                            <Line />
+                            <div className="p-2 text-xl text-center capitalize">
+                              <Translate content={name} />
+                            </div>
+                          </Link>
+                        </ClickedView>
+                      </Card>
+                    );
+                  })}
                 </div>
                 <Section text="more" />
                 <div className="flex flex-wrap justify-center items-center gap-2 w-full">
@@ -300,6 +293,9 @@ export const App = () => {
             </Route>
             <Route path="/deliveries">
               <Deliveries />
+            </Route>
+            <Route path="/tracking/:trackingId">
+              <Tracking />
             </Route>
             <Route path="*">
               <PageNotFound />

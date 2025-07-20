@@ -15,6 +15,7 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import {
+  confirm,
   execAction,
   getTemp,
   isLoading,
@@ -32,6 +33,7 @@ import { snapbuyApi } from "./apis";
 import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
 import { CartPopup } from "./CartPopup";
+import { deleteCart } from "./AddProductToCart";
 interface UserLineProps {
   user: Biqpod.Account.User;
 }
@@ -134,10 +136,13 @@ export const StoreRecord = ({ store }: StoreRecordProps) => {
       transition={{ duration: 0.3 }}
     >
       <Card
-        className="shadow-md hover:shadow-lg cursor-pointer"
+        className="active:bg-[--biqpod-gray-opacity] shadow-md hover:shadow-lg cursor-pointer"
         style={{ minHeight: 70 }}
       >
-        <div className="flex justify-between items-center gap-4 p-3">
+        <Link
+          to={"/client/stores/" + store.id}
+          className="flex justify-between items-center gap-4 p-3"
+        >
           <div className="flex items-center gap-4">
             <Image
               className="border-none rounded-xl outline-none w-[48px] h-[48px] object-cover"
@@ -159,10 +164,10 @@ export const StoreRecord = ({ store }: StoreRecordProps) => {
             </div> */}
             </div>
           </div>
-          <Link to={"/client/stores/" + store.id}>
+          <div>
             <CircleTip icon={allIcons.solid.faChevronRight} />
-          </Link>
-        </div>
+          </div>
+        </Link>
       </Card>
     </motion.div>
   );
@@ -170,50 +175,89 @@ export const StoreRecord = ({ store }: StoreRecordProps) => {
 const PAGE_SIZE = 10;
 export const Carts = () => {
   const carts = getTemp<any>("cart");
+  const cartsInList = Object.entries(carts || {}).filter(
+    ([_, products]) => Object.keys(products || {}).length
+  );
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh]">
       <CardHeaderForPopup title="carts" className="font-bold uppercase" />
       <Line />
       <Scroll>
         <div className="flex flex-col gap-2 p-2">
-          {Object.entries(carts || {})
-            .filter(([_, products]) => products)
-            .map(([storeId, products]) => {
-              const cartInArray = Object.entries(products || {});
-              const length = cartInArray.length;
-              return (
-                <Card
-                  className="active:bg-[--biqpod-gray-opacity-2] cursor-pointer"
-                  key={storeId}
-                  onClick={() => {
-                    showPopup(<CartPopup storeId={storeId} backToCarts />);
-                  }}
-                >
-                  <div className="flex justify-between items-center gap-2 px-5 py-2">
-                    <div className="flex items-center gap-2">
-                      <AsyncComponent
-                        render={async () => {
-                          const store = await snapbuyApi.getStore(storeId);
-                          return (
-                            <EmptyComponent>
-                              <Image
-                                className="w-[50px] h-[50px]"
-                                src={store?.photo ?? undefined}
-                              />
-                              <h1 className="text-xl">{store?.name}</h1>
-                            </EmptyComponent>
-                          );
+          {cartsInList.map(([storeId, products]) => {
+            const cartInArray = Object.entries(products || {});
+            const length = cartInArray.length;
+            return (
+              <Card
+                className="active:bg-[--biqpod-gray-opacity-2] cursor-pointer"
+                key={storeId}
+              >
+                <div className="flex justify-between items-center gap-2 px-5 py-2">
+                  <div className="flex items-center gap-2">
+                    <AsyncComponent
+                      render={async () => {
+                        const store = await snapbuyApi.getStore(storeId);
+                        return (
+                          <EmptyComponent>
+                            <Image
+                              className="w-[50px] h-[50px]"
+                              src={store?.photo ?? undefined}
+                            />
+                            <h1 className="text-xl">{store?.name}</h1>
+                          </EmptyComponent>
+                        );
+                      }}
+                      loading={
+                        <CardWait className="rounded-lg w-[150px] h-[30px]" />
+                      }
+                    />
+                  </div>
+                  <div className="flex items-center">
+                    <Key>{length}</Key>
+                    <div className="ml-1">
+                      <CircleTip
+                        className="rounded-full"
+                        onClick={async () => {
+                          const isYes = await confirm({
+                            title: "Delete Cart",
+                            message:
+                              "Are you sure you want to delete this cart?",
+                          });
+                          if (isYes) {
+                            deleteCart(storeId);
+                          }
                         }}
-                        loading={
-                          <CardWait className="rounded-lg w-[150px] h-[30px]" />
-                        }
+                        icon={allIcons.solid.faTrashCan}
                       />
                     </div>
-                    <Key>{length}</Key>
+                    <div>
+                      <CircleTip
+                        icon={allIcons.solid.faChevronRight}
+                        onClick={() => {
+                          showPopup(
+                            <CartPopup storeId={storeId} backToCarts />
+                          );
+                        }}
+                      />
+                    </div>
                   </div>
-                </Card>
-              );
-            })}
+                </div>
+              </Card>
+            );
+          })}
+          {!cartsInList.length && (
+            <div className="flex justify-center items-center p-4">
+              <div className="flex flex-col items-center gap-2 text-[--biqpod-gray-opacity-2]">
+                <Icon
+                  icon={allIcons.solid.faCartPlus}
+                  iconClassName="text-5xl"
+                />
+                <p className="text-lg text-center">
+                  <Translate content="no carts found" />
+                </p>
+              </div>
+            </div>
+          )}
         </div>
       </Scroll>
     </Card>
@@ -249,7 +293,7 @@ export const ExploreStores = () => {
   const allCarts = getTemp<any>("cart");
   const hasCarts = useMemo(() => {
     if (!allCarts) return false;
-    return Object.keys(allCarts).length > 0;
+    return Object.values(allCarts).filter((v) => v).length > 0;
   }, [allCarts]);
   return (
     <div className="flex flex-col h-full overflow-hidden">

@@ -17,13 +17,16 @@ import {
   getTempFromStore,
   setFieldValue,
   setTemp,
+  useAsyncMemo,
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { setFocused } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
 import { ImageSlider } from "./Links/ImageSlider";
-import { getPrice } from "./CartPopup";
+import { getPrice } from "./utils";
 import { useLocation } from "react-router";
+import { snapbuyApi } from "./apis";
+import { initPixels } from "./Links/pixles";
 export interface ProductPopupProps {
   product: SnapBuy.Product;
 }
@@ -120,6 +123,10 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
   const count = useMemo(() => {
     return parseInt(currentCount || "") || 0;
   }, [currentCount]);
+  const store = useAsyncMemo(async () => {
+    return await snapbuyApi.getStore(storeId);
+  }, [storeId]);
+  const pixles = initPixels(store);
   return (
     <Card className="max-md:w-10/12 md:w-1/2 md:max-h-[70vh]">
       <div className="flex justify-between items-center p-2">
@@ -185,6 +192,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
             <Button
               icon={allIcons.solid.faPlus}
               onClick={() => {
+                pixles?.addToCart(prod, count);
                 addToCart(storeId, prod.id!, count);
                 closePopup();
               }}

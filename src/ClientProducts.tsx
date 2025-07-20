@@ -1,13 +1,16 @@
-import { allIcons, getDownloadURL } from "@biqpod/app/ui/apis";
-import exceljs from "exceljs";
+import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Button,
   Card,
   CircleLoading,
+  CircleTip,
+  EmptyComponent,
   Field,
   Icon,
   Line,
   PositionView,
+  Scroll,
+  TabContent,
   Translate,
 } from "@biqpod/app/ui/components";
 function filterFuzzySearch<T>(list: T[], search: string, key: keyof T): T[] {
@@ -42,15 +45,21 @@ function filterFuzzySearch<T>(list: T[], search: string, key: keyof T): T[] {
     .map((x) => x.item);
 }
 import {
+  closePopup,
   execAction,
   getFieldValue,
   getPosition,
+  getTab,
   handelShadowColor,
   isLoading,
   isSuccess,
+  openMenu,
+  setTab,
   setTemp,
   showPopup,
+  showToast,
   useAction,
+  useAsyncMemo,
   useColorMerge,
   useCopyState,
   useMemoDelay,
@@ -62,12 +71,20 @@ import { CartPopup } from "./CartPopup";
 import { ClientProductRender } from "./ClientProductRender";
 import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
-import { allKeys } from "./Links/Products";
 import { tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "./apis";
-import { arraySeparator } from "./utils";
+import { ImageSlider } from "./Links/ImageSlider";
+import { Link } from "react-router-dom";
+import { initPixels } from "./Links/pixles";
 export const ClientProducts = () => {
-  const storeId = useParams<{ uid: string }>().uid;
+  const storeId = useParams<{ storeId: string }>().storeId;
+
+  const store = useAsyncMemo(async () => {
+    if (!storeId) return null;
+    return snapbuyApi.getStore(storeId);
+  }, [storeId]);
+
+  const pixles = initPixels(store);
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
   const lastDoc = useCopyState<SnapBuy.Product | null>(null);
   const action = useAction(
@@ -79,98 +96,10 @@ export const ClientProducts = () => {
       if (next) {
         return;
       }
-      const store = await snapbuyApi.getStore(storeId);
-      const uri =
-        store?.accessLink ||
-        (await getDownloadURL([
-          "projects",
-          import.meta.env.VITE_PROJECT_ID,
-          "stores",
-          storeId,
-          "products.xlsx",
-        ]));
-      if (!uri) {
-        return;
+      const allProducts = await snapbuyApi.getProductsOf(storeId);
+      if (allProducts) {
+        products.set(allProducts.filter((prod) => prod.available));
       }
-      const blob = await fetch(uri).then((res) => res.blob());
-      const workbook = new exceljs.Workbook();
-      await workbook.xlsx.load(await blob.arrayBuffer());
-      const worksheet = workbook.worksheets[0];
-      const newProducts: SnapBuy.Product[] = [];
-      const array = worksheet.getSheetValues();
-      for (let index = 2; index < array.length; index++) {
-        const row = array[index];
-        if (!Array.isArray(row)) return;
-        const product: SnapBuy.Product = {};
-        allKeys.forEach((key, colIdx) => {
-          const i = colIdx + 1;
-          switch (key) {
-            case "single.price":
-              product.single = {
-                price: row[i] ? Number(row[i]) : undefined,
-              };
-              break;
-            case "multiple.prices":
-              product.multiple = {
-                prices:
-                  row[i]
-                    ?.toString()
-                    ?.split(arraySeparator)
-                    .map((p) => ({ price: Number(p), quantity: 1 })) ||
-                  undefined,
-              };
-              break;
-            case "multiple.counts": {
-              if (!product.multiple) product.multiple = {};
-              const counts =
-                row[i]
-                  ?.toString()
-                  ?.split(arraySeparator)
-                  .map((c) => Number(c)) || [];
-              if (
-                product.multiple.prices &&
-                counts.length === product.multiple.prices.length
-              ) {
-                product.multiple.prices = product.multiple.prices.map(
-                  (priceObj, i) => ({ ...priceObj, quantity: counts[i] })
-                );
-              }
-              break;
-            }
-            case "available":
-              product.available = row[i] === "true";
-              break;
-            case "photos": {
-              const photos = row[i]
-                ?.toString()
-                .split(arraySeparator)
-                .filter(Boolean);
-              product.photos = photos;
-              break;
-            }
-            case "quantity": {
-              product.quantity = Number(row[i]?.toString() || "");
-              break;
-            }
-            case "keys":
-              product.keys = row[i]
-                ?.toString()
-                ?.split(arraySeparator)
-                .map((key) => key.trim())
-                .filter((key) => key.length > 0);
-              break;
-            case "limited":
-              product.limited = row[i] === "true";
-              break;
-            default:
-              product[key] = row[i]?.toString() || "";
-          }
-        });
-        if (product.available) {
-          newProducts.push(product);
-        }
-      }
-      products.set(newProducts);
     },
     [storeId, lastDoc.get]
   );
@@ -181,11 +110,12 @@ export const ClientProducts = () => {
     }
   }, [storeId]);
   const search = getFieldValue("search-prod");
-  const [_, filterProducts] = useMemoDelay(
+  const [, filterProducts] = useMemoDelay(
     () => {
       if (!search) {
         return products.get;
       }
+      pixles?.search(search);
       return filterFuzzySearch(products.get, search, "name");
     },
     [products.get, search],
@@ -204,72 +134,6 @@ export const ClientProducts = () => {
       listRef.current.scrollToItem?.(0);
     }
   }, [search]);
-  // useEffect(() => {
-  //   if (user?.uid && storeUser?.uid) {
-  //     snapbuyApi.isFollowing(storeUser.uid).then((isYes) => {
-  //       if (!isYes) {
-  //         showPopup(
-  //           <Card
-  //             style={{
-  //               ...colorMerge({
-  //                 boxShadow: handelShadowColor([
-  //                   {
-  //                     colorId: "shadow.color",
-  //                     x: 0,
-  //                     y: 0,
-  //                     blur: 30,
-  //                     size: 10,
-  //                   },
-  //                 ]),
-  //               }),
-  //             }}
-  //             className="w-1/2 min-w-[200px] max-w-[300px]"
-  //           >
-  //             <div className="flex justify-between items-center p-2">
-  //               <span className="font-bold text-2xl capitalize">
-  //                 <Translate content="follow" />
-  //               </span>
-  //               <div>
-  //                 <CircleTip
-  //                   icon={allIcons.solid.faXmark}
-  //                   onClick={() => {
-  //                     closePopup();
-  //                   }}
-  //                 />
-  //               </div>
-  //             </div>
-  //             <Line />
-  //             <div className="flex flex-col justify-center items-center gap-2 p-2">
-  //               <Image
-  //                 className="w-[100px] h-[100px]"
-  //                 src={storeUser.photo ?? undefined}
-  //                 alt={<Icon icon={allIcons.solid.faUser} />}
-  //               />
-  //               <span>
-  //                 {storeUser.firstname} {storeUser.lastname}
-  //               </span>
-  //             </div>
-  //             <Line />
-  //             <div className="p-2">
-  //               <Button
-  //                 className="rounded-full"
-  //                 onClick={async () => {
-  //                   closePopup();
-  //                   await snapbuyApi.follow(storeUser?.uid!);
-  //                 }}
-  //               >
-  //                 <Translate content="follow" />
-  //               </Button>
-  //             </div>
-  //           </Card>,
-  //           {
-  //             type: "blur",
-  //           }
-  //         );
-  //       }
-  //     });
-  //   }
-  // }, [user?.uid, storeUser]);
   const position = getPosition("searching");
   const { height } = useResolution();
   const listHeight = useMemo(() => {
@@ -279,135 +143,296 @@ export const ClientProducts = () => {
   }, [position, height]);
   const { showPhoto } = useSearchParams();
   const colorMerge = useColorMerge();
+
+  const packs = useAsyncMemo(async () => {
+    return snapbuyApi.getPacks(storeId);
+  }, [storeId]);
+
+  const selectedTab = getTab("client-products");
+
+  useEffect(() => {
+    if (!selectedTab) {
+      setTab("client-products", "products");
+    }
+  }, [selectedTab]);
+
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
-      <PositionView positionId="searching">
-        <div className="flex justify-between items-center gap-2 p-2">
-          <div className="relative flex justify-center w-full">
-            <Field
-              className="rounded-2xl"
-              placeholder="Search Product"
-              inputName="search-prod"
-              propositions={["@cart"]}
-            />
-            <span className="top-1/2 right-2 absolute font-bold text-[--biqpod-primary] -translate-y-1/2">
-              / {filterProducts?.length || 0}
-            </span>
+      <TabContent identifier="client-products" value="products">
+        <PositionView positionId="searching">
+          <div className="flex justify-between items-center gap-2 p-2">
+            <div className="relative flex justify-center w-full">
+              <Field
+                className="rounded-2xl"
+                placeholder="Search Product"
+                inputName="search-prod"
+                propositions={["@cart"]}
+              />
+              <span className="top-1/2 right-2 absolute font-bold text-[--biqpod-primary] -translate-y-1/2">
+                / {filterProducts?.length || 0}
+              </span>
+            </div>
+            {packs && packs.length > 0 && (
+              <div>
+                <Button
+                  className="bg-red-600 rounded-full text-white animate-pulse"
+                  onClick={() => {
+                    setTab("client-products", "packs");
+                  }}
+                  rightIcon={allIcons.solid.faChevronRight}
+                >
+                  <Translate content="offers" />
+                </Button>
+              </div>
+            )}
           </div>
-        </div>
-        <Line />
-      </PositionView>
-      {success && (
-        <div className="relative h-full overflow-hidden">
-          {showShadow && (
-            <div
-              style={{
-                ...colorMerge({
-                  boxShadow: handelShadowColor([
-                    {
-                      x: 0,
-                      y: 0,
-                      blur: 20,
-                      size: 5,
-                      colorId: "shadow.color",
-                    },
-                  ]),
-                }),
-              }}
-              className="top-[-30px] z-[10000] absolute inset-x-0 shadow-xl h-[30px]"
-            />
+          <Line />
+        </PositionView>
+        {success && (
+          <div className="relative h-full overflow-hidden">
+            {showShadow && (
+              <div
+                style={{
+                  ...colorMerge({
+                    boxShadow: handelShadowColor([
+                      {
+                        x: 0,
+                        y: 0,
+                        blur: 20,
+                        size: 5,
+                        colorId: "shadow.color",
+                      },
+                    ]),
+                  }),
+                }}
+                className="top-[-30px] z-[10000] absolute inset-x-0 shadow-xl h-[30px]"
+              />
+            )}
+            {!!filterProducts?.length && (
+              <List
+                ref={listRef}
+                height={listHeight}
+                itemCount={Math.ceil((filterProducts?.length + 1) / 2)}
+                itemSize={showPhoto ? 340 : 220}
+                width={"100%"}
+                itemData={[...filterProducts, 0]}
+                onScroll={(e) => {
+                  scrollState.current = e.scrollOffset || 0;
+                  setShowShadow((e.scrollOffset || 0) > 40);
+                }}
+              >
+                {({
+                  index,
+                  style,
+                  data,
+                }: {
+                  index: number;
+                  style: React.CSSProperties;
+                  data: (SnapBuy.Product | number)[];
+                }) => {
+                  if (typeof data === "number") {
+                    return <div style={style} />;
+                  }
+                  const first = data?.at(index * 2);
+                  const second = data?.at(index * 2 + 1);
+                  return (
+                    <div style={style} className="flex items-center gap-2 p-2">
+                      {typeof first == "object" && (
+                        <ClientProductRender
+                          index={index * 2}
+                          product={first}
+                          key={first.id}
+                        />
+                      )}
+                      {typeof second == "object" && (
+                        <ClientProductRender
+                          index={index * 2 + 1}
+                          product={second}
+                          key={second.id}
+                        />
+                      )}
+                    </div>
+                  );
+                }}
+              </List>
+            )}
+            {filterProducts && filterProducts?.length === 0 && (
+              <div className="flex justify-center items-center w-full h-full">
+                <Card>
+                  <div className="flex justify-center items-center p-2 h-full">
+                    <Icon
+                      icon={allIcons.solid.faBoxOpen}
+                      iconClassName="text-9xl text-[--biqpod-primary]"
+                    />
+                  </div>
+                  <Line />
+                  <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
+                    <Translate content="no products found" />
+                  </div>
+                </Card>
+              </div>
+            )}
+          </div>
+        )}
+        {loading && (
+          <div className="flex justify-center items-center h-full">
+            <CircleLoading />
+          </div>
+        )}
+        <PositionView
+          positionId="click-see-cart"
+          className={tw(
+            "absolute bottom-0 inset-x-0 bg-[--biqpod-primary-background] transition-[bottom] duration-300",
+            !cart.length && "bottom-[-200px]"
           )}
-          {!!filterProducts?.length && (
-            <List
-              ref={listRef}
-              height={listHeight}
-              itemCount={Math.ceil((filterProducts?.length + 1) / 2)}
-              itemSize={showPhoto ? 340 : 220}
-              width={"100%"}
-              itemData={[...filterProducts, 0]}
-              onScroll={(e) => {
-                scrollState.current = e.scrollOffset || 0;
-                setShowShadow((e.scrollOffset || 0) > 40);
+        >
+          <Line />
+          <div className="p-2">
+            <Button
+              className="rounded-full"
+              icon={allIcons.solid.faShoppingCart}
+              onClick={() => {
+                showPopup(<CartPopup storeId={storeId} />);
               }}
             >
-              {({
-                index,
-                style,
-                data,
-              }: {
-                index: number;
-                style: React.CSSProperties;
-                data: (SnapBuy.Product | number)[];
-              }) => {
-                if (typeof data === "number") {
-                  return <div style={style} />;
-                }
-                const first = data?.at(index * 2);
-                const second = data?.at(index * 2 + 1);
-                return (
-                  <div style={style} className="flex items-center gap-2 p-2">
-                    {typeof first == "object" && (
-                      <ClientProductRender
-                        index={index * 2}
-                        product={first}
-                        key={first.id}
-                      />
-                    )}
-                    {typeof second == "object" && (
-                      <ClientProductRender
-                        index={index * 2 + 1}
-                        product={second}
-                        key={second.id}
-                      />
-                    )}
-                  </div>
-                );
-              }}
-            </List>
-          )}
-          {filterProducts?.length === 0 && (
-            <div className="flex justify-center items-center w-full h-full">
-              <Card>
-                <div className="flex justify-center items-center p-2 h-full">
-                  <Icon
-                    icon={allIcons.solid.faBoxOpen}
-                    iconClassName="text-9xl text-[--biqpod-primary]"
-                  />
-                </div>
-                <Line />
-                <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
-                  <Translate content="no products found" />
-                </div>
-              </Card>
-            </div>
-          )}
-        </div>
-      )}
-      {loading && (
-        <div className="flex justify-center items-center h-full">
-          <CircleLoading />
-        </div>
-      )}
-      <PositionView
-        positionId="click-see-cart"
-        className={tw(
-          "absolute bottom-0 inset-x-0 bg-[--biqpod-primary-background] transition-[bottom] duration-300",
-          !cart.length && "bottom-[-200px]"
-        )}
-      >
-        <Line />
+              <Translate content="see cart" />
+            </Button>
+          </div>
+        </PositionView>
+      </TabContent>
+      <TabContent identifier="client-products" value="packs">
         <div className="p-2">
           <Button
+            leftIcon={allIcons.solid.faChevronLeft}
             className="rounded-full"
-            icon={allIcons.solid.faShoppingCart}
             onClick={() => {
-              showPopup(<CartPopup storeId={storeId} />);
+              setTab("client-products", "products");
             }}
           >
-            <Translate content="see cart" />
+            <Translate content="products" />
           </Button>
         </div>
-      </PositionView>
+        <Line />
+        <Scroll>
+          <div className="flex flex-col gap-2 p-2 min-h-full">
+            {packs?.map((pack) => {
+              return (
+                <EmptyComponent key={pack.id}>
+                  <Card>
+                    <div className="p-2 font-bold text-lg">{pack.name}</div>
+                    {pack.products && (
+                      <div className="flex flex-col gap-2">
+                        {pack.products.map((p) => {
+                          const prod = products.get.find(
+                            (pr) => pr.id === p.prodId
+                          );
+                          if (!prod) return null;
+                          const prices =
+                            prod.type === "single"
+                              ? [prod.single?.price || 0]
+                              : prod.multiple?.prices?.map(
+                                  ({ price }) => price
+                                );
+                          return (
+                            <div
+                              key={prod.id}
+                              className="flex justify-between items-center gap-2 odd:bg-[--biqpod-primary-background] p-4"
+                            >
+                              <div className="flex justify-center gap-2">
+                                {prod.photos && prod.photos.length > 0 && (
+                                  <img
+                                    src={prod.photos.at(0)}
+                                    alt={prod.name}
+                                    onClick={() => {
+                                      showPopup(
+                                        <Card>
+                                          <div className="flex justify-between items-center p-2 h-full">
+                                            <h1 className="font-bold text-2xl capitalize">
+                                              <Translate content="Product Image" />
+                                            </h1>
+                                            <div>
+                                              <CircleTip
+                                                icon={allIcons.solid.faXmark}
+                                                onClick={() => {
+                                                  closePopup();
+                                                }}
+                                              />
+                                            </div>
+                                          </div>
+                                          <Line />
+                                          <div className="h-[300px]">
+                                            <ImageSlider photos={prod.photos} />
+                                          </div>
+                                        </Card>
+                                      );
+                                    }}
+                                    className="rounded w-12 h-12 object-cover"
+                                  />
+                                )}
+                                <span className="font-semibold">
+                                  {prod.name}
+                                </span>
+                              </div>
+                              <div className="flex">
+                                <span className="text-[--biqpod-primary] text-sm">
+                                  {Math.max(...(prices || []))}DA
+                                </span>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                    <Line />
+                    {typeof pack.price !== "undefined" && (
+                      <div className="flex justify-between items-center p-2">
+                        <span className="font-semibold text-green-600 text-base">
+                          {pack.price}DA
+                        </span>
+                        <div className="flex items-center gap-1">
+                          <Link to={"/pack/" + pack.id}>
+                            <Button className="bg-[--biqpod-primary] rounded-full text-white">
+                              <Translate content="view details" />
+                            </Button>
+                          </Link>
+                          <div>
+                            <CircleTip
+                              icon={allIcons.solid.faEllipsisV}
+                              onClick={({ clientX, clientY }) => {
+                                openMenu({
+                                  x: clientX,
+                                  y: clientY,
+                                  menu: [
+                                    {
+                                      label: "Copy Link",
+                                      defaultIcon: allIcons.solid.faLink,
+                                      click: () => {
+                                        navigator.clipboard.writeText(
+                                          window.location.origin +
+                                            "/pack/" +
+                                            pack.id
+                                        );
+                                        showToast(
+                                          "Link copied to clipboard",
+                                          "success"
+                                        );
+                                      },
+                                    },
+                                  ],
+                                });
+                              }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </Card>
+                </EmptyComponent>
+              );
+            })}
+          </div>
+        </Scroll>
+      </TabContent>
     </div>
   );
 };

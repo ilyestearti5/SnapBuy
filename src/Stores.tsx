@@ -40,6 +40,7 @@ import { useStoreId } from "./App";
 import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
 import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";
+import { SetPixels } from "./SetPixels";
 export const Stores = () => {
   const storeId = useStoreId();
   const storesState = useCopyState<SnapBuy.Store[]>([]);
@@ -73,13 +74,9 @@ export const Stores = () => {
         phone: storePhone,
         id: id || Date.now().toString(),
         photo: storePhoto || undefined,
-        deliveryPrice: deliveryPrice || undefined,
       };
       if (storePhoto) {
         store.photo = storePhoto;
-      }
-      if (typeof deliveryPrice == "number") {
-        store.deliveryPrice = deliveryPrice;
       }
       await delay(1000);
       if (id) {
@@ -214,6 +211,13 @@ export const Stores = () => {
                                       />
                                     );
                                   },
+                                },
+                                {
+                                  label: "Set Pixels",
+                                  click: async () => {
+                                    showPopup(<SetPixels store={store} />);
+                                  },
+                                  defaultIcon: allIcons.solid.faCode,
                                 },
                                 // {
                                 //   label: "Invite",

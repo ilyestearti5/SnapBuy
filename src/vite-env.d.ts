@@ -23,8 +23,13 @@ declare namespace SnapBuy {
       longitude: number;
     };
     createdAt?: number;
-    deliveryPrice?: number;
     accessLink?: string;
+    pixels?: {
+      facebook?: string;
+      instagram?: string;
+      tiktok?: string;
+      snapchat?: string;
+    };
   }
   type Platform =
     | "facebook"
@@ -53,14 +58,34 @@ declare namespace SnapBuy {
     updatedAt?: number;
     products?: Partial<Record<string, { count?: number; price?: number }>>;
     client: Client;
-    key?: string;
     // needed
     storeId?: string;
     uid?: string;
     platform?: Platform;
     totalPrice?: number;
-    delivery?: boolean;
+    isDelivery?: boolean;
+    delivery?: {
+      uid: string;
+      assignedAt: number;
+      agentId?: string;
+    };
+    metaData?: Record<string, SettingValueType>;
   }
+  export type Zone = Partial<{
+    id: string;
+    centerX: number;
+    centerY: number;
+    radius: number;
+    uid: string;
+    name: string;
+  }>;
+  export type LinkZone = Partial<{
+    id: string;
+    first: string;
+    second: string;
+    price: number;
+    uid: string;
+  }>;
   export type DeliveryCompanyRole =
     | "merchant"
     | "customer"
@@ -140,6 +165,7 @@ declare namespace SnapBuy {
         price: number;
       }[];
     };
+    formCollectionId?: string;
   }
 }
 declare interface SnapBuyApi {
