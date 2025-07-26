@@ -78,12 +78,10 @@ import { Link } from "react-router-dom";
 import { initPixels } from "./Links/pixles";
 export const ClientProducts = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
-
   const store = useAsyncMemo(async () => {
     if (!storeId) return null;
     return snapbuyApi.getStore(storeId);
   }, [storeId]);
-
   const pixles = initPixels(store);
   const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
   const lastDoc = useCopyState<SnapBuy.Product | null>(null);
@@ -119,7 +117,7 @@ export const ClientProducts = () => {
       return filterFuzzySearch(products.get, search, "name");
     },
     [products.get, search],
-    200
+    100
   );
   const cart = useFullCart(storeId);
   const loading = isLoading(action);
@@ -143,19 +141,15 @@ export const ClientProducts = () => {
   }, [position, height]);
   const { showPhoto } = useSearchParams();
   const colorMerge = useColorMerge();
-
   const packs = useAsyncMemo(async () => {
     return snapbuyApi.getPacks(storeId);
   }, [storeId]);
-
   const selectedTab = getTab("client-products");
-
   useEffect(() => {
     if (!selectedTab) {
       setTab("client-products", "products");
     }
   }, [selectedTab]);
-
   return (
     <div className="relative flex flex-col h-full overflow-hidden">
       <TabContent identifier="client-products" value="products">

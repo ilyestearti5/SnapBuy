@@ -217,6 +217,25 @@ export const HeaderContent = () => {
                       }
                     />
                   </Route>
+                  <Route path="/collection/:collectionId">
+                    <AsyncComponent
+                      render={async () => {
+                        const collectionId = getId();
+                        if (!collectionId) return <EmptyComponent />;
+                        const storeInfo = await snapbuyApi.getCollection(
+                          collectionId
+                        );
+                        return (
+                          <span className="max-md:text-xl md:text-2xl capitalize">
+                            {storeInfo?.name || "Untitled Collection"}
+                          </span>
+                        );
+                      }}
+                      loading={
+                        <CardWait className="rounded-full w-[120px] h-[20px]" />
+                      }
+                    />
+                  </Route>
                   <Route path="/client/stores/:storeId">
                     <AsyncComponent
                       render={async () => {
@@ -229,9 +248,6 @@ export const HeaderContent = () => {
                           </span>
                         );
                       }}
-                      loading={
-                        <CardWait className="rounded-full w-[120px] h-[20px]" />
-                      }
                     />
                   </Route>
                   <Route path="*">

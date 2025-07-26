@@ -223,7 +223,6 @@ export const ProductRoute = () => {
       formStructor?.forEach((formId) => {
         metaData[formId.id] = magic?.[formId.id];
       });
-      pixels?.addToCart(product, count.get || 1);
       const options: CreateOrderOptions = {
         products,
         client: {
@@ -236,7 +235,14 @@ export const ProductRoute = () => {
         delivery: deliveryState.get || false,
         metaData,
       };
-      await snapbuyApi.createOrder(options);
+      const orderInfo = await snapbuyApi.createOrder(options);
+      if (!orderInfo?.id) {
+        throw "Order Info Incorrect";
+      }
+      const order = await snapbuyApi.getOrder(orderInfo.id);
+      if (order) {
+        pixels?.purchase(order);
+      }
       showToast("Order Created", "success");
     },
     [

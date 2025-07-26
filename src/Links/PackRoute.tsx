@@ -45,7 +45,7 @@ export const PackRoute = () => {
       {pack && (
         <div className="relative flex flex-col w-full h-full overflow-hidden">
           <Scroll>
-            <div className="top-0 z-10 sticky">
+            <div className="top-0 z-10 sticky bg-[--biqpod-primary-background]">
               <div className="flex justify-center p-4 rounded-ee-3xl rounded-es-3xl">
                 <h1 className="inline-flex items-center gap-1 font-bold max-md:text-2xl md:text-3xl">
                   <span className="text-green-600">{pack.price}DA </span>{" "}

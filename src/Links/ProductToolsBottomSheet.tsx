@@ -504,6 +504,21 @@ export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
             type: "separator",
           },
           {
+            label: product.available ? "Disable" : "Enable",
+            click: async () => {
+              await snapbuyApi.upsertProducts(product.storeId!, [
+                {
+                  ...product,
+                  available: !product.available,
+                },
+              ]);
+              execAction("fetch-products");
+            },
+            defaultIcon: product.available
+              ? allIcons.solid.faEyeSlash
+              : allIcons.solid.faEye,
+          },
+          {
             label: "Edit Product",
             click: () => {
               showPopup(<PostNewProduct product={product} />);

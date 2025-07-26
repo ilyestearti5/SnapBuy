@@ -30,6 +30,16 @@ interface Pixel {
   photo: string;
   color: string;
 }
+export const pixelsPhoto: Record<string, string> = {
+  facebook:
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b8/2021_Facebook_icon.svg/2048px-2021_Facebook_icon.svg.png",
+  instagram:
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/2048px-Instagram_icon.png",
+  tiktok:
+    "https://cdn.pixabay.com/photo/2021/06/15/12/28/tiktok-6338432_960_720.png",
+  snapchat:
+    "https://static.vecteezy.com/system/resources/previews/018/930/694/non_2x/snapchat-logo-snapchat-icon-transparent-free-png.png",
+};
 const pixels: Pixel[] = [
   {
     id: "facebook",
@@ -43,12 +53,12 @@ const pixels: Pixel[] = [
   //     "https://upload.wikimedia.org/wikipedia/commons/thumb/a/a5/Instagram_icon.png/2048px-Instagram_icon.png",
   //   color: "#C13584",
   // },
-  // {
-  //   id: "tiktok",
-  //   photo:
-  //     "https://cdn.pixabay.com/photo/2021/06/15/12/28/tiktok-6338432_960_720.png",
-  //   color: "#000000",
-  // },
+  {
+    id: "tiktok",
+    photo:
+      "https://cdn.pixabay.com/photo/2021/06/15/12/28/tiktok-6338432_960_720.png",
+    color: "#000000",
+  },
   // {
   //   id: "snapchat",
   //   photo:

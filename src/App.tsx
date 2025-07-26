@@ -44,7 +44,7 @@ import { isAndroid, isIos, isWeb } from "@biqpod/app/ui/app";
 import { useEffect } from "react";
 import { PackRoute } from "./Links/PackRoute";
 import { ProfileInside } from "./ProfileInside";
-import { tw } from "@biqpod/app/ui/utils";
+import { range, tw } from "@biqpod/app/ui/utils";
 import { Tracking } from "./Tracking";
 interface ProfileProps {
   children?: JSX.Element;
@@ -268,7 +268,7 @@ export const App = () => {
             <Route path="/product/:prodId">
               <ProductRoute />
             </Route>
-            <Route path="/pack/:packId">
+            <Route exact path="/pack/:packId">
               <PackRoute />
             </Route>
             <Route path="/client">
@@ -296,6 +296,27 @@ export const App = () => {
             </Route>
             <Route path="/tracking/:trackingId">
               <Tracking />
+            </Route>
+            <Route path="/test">
+              <div className="grid grid-cols-3 grid-rows-3 w-full h-full">
+                {range(9).map((i) => {
+                  const colorClasses = [
+                    "bg-[--biqpod-primary] text-white",
+                    "bg-[--biqpod-secondary] text-white",
+                  ];
+                  return (
+                    <div
+                      key={i}
+                      className={tw(
+                        "flex justify-center active:scale-110 active:z-30 cursor-pointer transition-transform scale-100 duration-200 items-center w-full h-full font-extrabold text-5xl",
+                        colorClasses[i % colorClasses.length]
+                      )}
+                    >
+                      {9 - i + 1}
+                    </div>
+                  );
+                })}
+              </div>
             </Route>
             <Route path="*">
               <PageNotFound />

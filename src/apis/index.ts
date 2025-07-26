@@ -107,6 +107,39 @@ export const snapbuyApi = {
       zoneId,
     ]);
   },
+  async setPixelId(storeId: string, id: SnapBuy.PixelId, value: string | null) {
+    await setDoc(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "stores", storeId],
+      {
+        pixels: {
+          [id]: value,
+        },
+      }
+    );
+  },
+  async getProductsOfCollection(collection: string | SnapBuy.Collection) {
+    const collectionDoc =
+      typeof collection === "string"
+        ? await this.getCollection(collection)
+        : collection;
+    const products = await mapAsync(
+      collectionDoc?.products || [],
+      async (prodId) => {
+        const product = await this.getProduct(prodId);
+        return product!;
+      }
+    );
+    return products;
+  },
+  async getCollection(collectionId: string) {
+    const doc = await getDoc<SnapBuy.Collection>([
+      "projects",
+      import.meta.env.VITE_PROJECT_ID,
+      "collections",
+      collectionId,
+    ]);
+    return doc;
+  },
   async submitStore(storeId: string, stars: number) {
     const uid = await getCurrentAuth();
     if (!uid) throw "User not authenticated";
@@ -132,6 +165,41 @@ export const snapbuyApi = {
       }
     );
     return result?.length;
+  },
+  async upsertCollection(props: SnapBuy.Collection) {
+    const uid = await getCurrentAuth();
+    if (!uid) throw "User not authenticated";
+    await setDoc(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "collections", props.id],
+      {
+        ...props,
+        uid,
+      }
+    );
+  },
+  async deleteCollection(collectionId: string) {
+    const uid = await getCurrentAuth();
+    if (!uid) throw "User not authenticated";
+    await deleteDoc([
+      "projects",
+      import.meta.env.VITE_PROJECT_ID,
+      "collections",
+      collectionId,
+    ]);
+  },
+  async getCollections(storeId: string) {
+    const collections = await getDocs<SnapBuy.Collection>(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "collections"],
+      {
+        where: and(where("storeId", "==", storeId)),
+      }
+    );
+    return (
+      collections?.map((collection) => ({
+        ...collection.data,
+        id: collection.id,
+      })) || []
+    );
   },
   async getSinglePack(storeId: string) {
     const packs = await getDocs<SnapBuy.Pack>(
@@ -458,7 +526,11 @@ export const snapbuyApi = {
         where: and(where("storeId", "==", storeId)),
       }
     );
-    return products?.map(({ data }) => data);
+    const result = products?.map(({ data }) => data);
+    result?.forEach((prod) => {
+      setTemp("products." + prod.id, prod);
+    });
+    return result;
   },
   async upsertProducts(
     storeId: string,
@@ -470,22 +542,15 @@ export const snapbuyApi = {
   ) {
     const uid = await getCurrentAuth();
     if (!uid) throw "User not authenticated";
-    const projectInfo = await getDoc<SnapBuyApi>([
-      "users",
-      uid,
-      "projects",
-      import.meta.env.VITE_PROJECT_ID,
-    ]);
-    const categorys = projectInfo?.categorys || [];
     await mapAsync(products, async (product, index) => {
       var {
-        available = false,
+        available = null,
         category = null,
         description = null,
         id: prodId,
-        keys = [],
-        limited = false,
-        photos: images = [],
+        keys = null,
+        limited = null,
+        photos: images = null,
         quantity = null,
         type = "single",
         ...rest
@@ -493,30 +558,35 @@ export const snapbuyApi = {
       await unpackPromise(() => {
         return onBeforeStart?.(product, index);
       });
-      !categorys.includes(category) && categorys.push(category);
-      const photos = await uploadFiles(images, (index) => {
-        return ["products", prodId + " " + Date.now(), "photos", "" + index];
-      });
+      const photos = images
+        ? await uploadFiles(images, (index) => {
+            return [
+              "products",
+              prodId + " " + Date.now(),
+              "photos",
+              index.toString(),
+            ];
+          })
+        : null;
+      const options = {
+        ...rest,
+        available,
+        category,
+        description,
+        id: prodId,
+        keys,
+        limited,
+        photos,
+        quantity,
+        type,
+        uid,
+        storeId,
+      };
       await setDoc(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products", prodId],
-        {
-          ...rest,
-          available,
-          category,
-          description,
-          id: prodId,
-          keys,
-          limited,
-          photos,
-          quantity,
-          type,
-          uid,
-          storeId,
-        }
+        options
       );
-    });
-    await setDoc(["users", uid, "projects", import.meta.env.VITE_PROJECT_ID], {
-      categorys,
+      setTemp("products." + prodId, options);
     });
   },
   forms: {
@@ -655,10 +725,13 @@ export const snapbuyApi = {
     await deleteProduct?.({
       id: productId,
     });
+    setTemp("products." + productId, null);
   },
   async createOrder(order: CreateOrderOptions) {
-    const createOrder = await getFunction("create-order");
-    await createOrder?.(order);
+    const createOrder = await getFunction<{ id: string }, CreateOrderOptions>(
+      "create-order"
+    );
+    return await createOrder?.(order);
   },
   async getOrderProducts(orderId: string) {
     interface ProductsResult extends SnapBuy.Product {

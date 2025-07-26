@@ -3,12 +3,14 @@ import {
   Anchor,
   Button,
   Card,
+  CardHeaderForPopup,
   CardWait,
   CircleLoading,
   CircleTip,
   EmptyComponent,
   Icon,
   Image,
+  Key,
   Line,
   Scroll,
   Translate,
@@ -40,7 +42,7 @@ import { useStoreId } from "./App";
 import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
 import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";
-import { SetPixels } from "./SetPixels";
+import { pixelsPhoto, SetPixels } from "./SetPixels";
 export const Stores = () => {
   const storeId = useStoreId();
   const storesState = useCopyState<SnapBuy.Store[]>([]);
@@ -122,6 +124,9 @@ export const Stores = () => {
             {storesState.get.map((store, idx) => {
               const linkId = `store-${store.id}`;
               const choosed = storeId === store.id;
+              const pixels = Object.entries(store.pixels || {}).filter(
+                ([_, value]) => value
+              );
               return (
                 <motion.div
                   key={store.id}
@@ -274,6 +279,86 @@ export const Stores = () => {
                     {choosed && (
                       <span className="left-1 absolute inset-y-2 bg-[--biqpod-primary] rounded-full w-[8px]"></span>
                     )}
+                    {!!pixels.length && (
+                      <EmptyComponent>
+                        <Line />
+                        <div className="flex justify-between items-center">
+                          <div className="px-4">
+                            <span className="capitalize">
+                              <Translate content="pixels" />
+                            </span>
+                          </div>
+                          <div className="flex justify-center">
+                            {pixels.map(([pixel, value]) => {
+                              const pixelId = pixel as SnapBuy.PixelId;
+                              const photo = pixelsPhoto[pixel];
+                              return (
+                                <div
+                                  key={pixel}
+                                  className="hover:bg-[--biqpod-gray-opacity-2] p-1 h-[30px] cursor-pointer"
+                                  onClick={() => {
+                                    showPopup(
+                                      <Card>
+                                        <CardHeaderForPopup
+                                          title={`${pixel} Pixel`}
+                                        />
+                                        <Line />
+                                        <div className="flex items-center gap-2 p-4">
+                                          <Key className="w-full">{value}</Key>
+                                          <div className="flex justify-center items-center">
+                                            <CircleTip
+                                              icon={allIcons.regular.faCopy}
+                                              onClick={() => {
+                                                navigator.clipboard.writeText(
+                                                  value
+                                                );
+                                                showToast(
+                                                  "Pixel copied to clipboard",
+                                                  "success"
+                                                );
+                                              }}
+                                            />
+                                            <CircleTip
+                                              icon={allIcons.solid.faTrash}
+                                              onClick={async () => {
+                                                const response = await confirm({
+                                                  title: "Delete Pixel",
+                                                  message: `Are you sure you want to delete the ${pixel} pixel?`,
+                                                });
+                                                if (response) {
+                                                  closePopup();
+                                                  const copy = { ...store };
+                                                  const {
+                                                    [pixelId]: _,
+                                                    ...rest
+                                                  } = copy.pixels || {};
+                                                  copy.pixels = rest;
+                                                  await snapbuyApi.setPixelId(
+                                                    copy.id,
+                                                    pixelId,
+                                                    null
+                                                  );
+                                                  execAction("print-stores");
+                                                }
+                                              }}
+                                            />
+                                          </div>
+                                        </div>
+                                      </Card>
+                                    );
+                                  }}
+                                >
+                                  <img
+                                    src={photo}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </EmptyComponent>
+                    )}
                     <Link to={`/store/${store.id}/overview`} id={linkId} />
                     {deletionStore === store.id && (
                       <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] backdrop-blur-md">
@@ -286,7 +371,7 @@ export const Stores = () => {
             })}
             {!!storesState.get.length && storesState.get.length < 5 && (
               <Card
-                className="flex justify-center items-center rounded-2xl max-md:w-full min-w-[200px] h-[80px]"
+                className="flex justify-center items-center active:bg-[--biqpod-gray-opacity] rounded-2xl max-md:w-full min-w-[200px] h-[80px] cursor-pointer"
                 onClick={() => {
                   showPopup(<UpsertStore />, {
                     type: "blur",

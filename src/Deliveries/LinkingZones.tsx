@@ -20,8 +20,7 @@ import { snapbuyApi } from "../apis";
 import { useEffect } from "react";
 import { allIcons, and, getDocs, or, where } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
-
-interface LinkingZonesProps {
+export interface LinkingZonesProps {
   first: string;
   second: string;
 }

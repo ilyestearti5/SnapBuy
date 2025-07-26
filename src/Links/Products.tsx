@@ -18,7 +18,6 @@ import {
   execAction,
   getFieldValue,
   getPosition,
-  getTemp,
   handelShadowColor,
   isLoading,
   isSuccess,
@@ -46,6 +45,7 @@ import { useStoreId } from "../App";
 import { UpsertPack } from "./UpsertPack";
 import { loadFromExcel } from "./loadFromExcel";
 import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
+import { Collections } from "./Collections";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
   "createdAt",
@@ -344,6 +344,16 @@ const ToolsCard = memo(
           }}
         /> */}
         <CircleTip
+          icon={allIcons.solid.faCodeFork}
+          className={tw(
+            "transition-[width,height] text-red-300",
+            !showTools && "w-[0px] h-[0px]"
+          )}
+          onClick={async () => {
+            showPopup(<Collections />);
+          }}
+        />
+        <CircleTip
           icon={allIcons.solid.faBoxesPacking}
           className={tw(
             "transition-[width,height] text-blue-300",
@@ -622,9 +632,7 @@ export const Products = () => {
   useEffect(() => {
     if (user?.uid) return snapbuyApi.onCategoryAndMarketChange(user?.uid);
   }, [user]);
-  const canDelete = getTemp<string>("canDeleteProduct");
   const loading = isLoading(action);
-  const selectedProducts = getTemp<string[]>("selected-products");
   // FastList related state and refs
   const listRef = useRef<any>(null);
   const scrollState = useRef(0);
@@ -639,9 +647,6 @@ export const Products = () => {
   }, [position, height]);
   const colorMerge = useColorMerge();
   // Helper: check if any product is selected
-  const anyProductSelected = useMemo(() => {
-    return !!selectedProducts?.length;
-  }, [selectedProducts]);
   // Stable toggle function for tools
   const toggleTools = useCallback(() => {
     showTools.set(!showTools.get);
@@ -819,24 +824,6 @@ export const Products = () => {
         onToggleTools={toggleTools}
         storeId={storeId}
       />
-      <SelectedProductsCard
-        selectedProducts={selectedProducts}
-        filterProducts={filterProducts}
-        anyProductSelected={anyProductSelected}
-      />
-      <div
-        className={tw(
-          "bottom-0 z-[10000] absolute inset-x-0 flex justify-center items-center bg-gradient-to-t to-[--biqpod-transparent] opacity-0 from-[--biqpod-shadow-color] p-2 transition-[transform,opacity] translate-y-full duration-500 pointer-events-none transform",
-          canDelete && "pointer-events-auto opacity-100 translate-y-0"
-        )}
-      >
-        <div className="flex justify-center items-center bg-[--biqpod-primary-background] border border-[--biqpod-error] border-solid rounded-full w-[80px] h-[80px]">
-          <Icon
-            icon={allIcons.solid.faTrashCan}
-            iconClassName="text-[--biqpod-error] text-3xl"
-          />
-        </div>
-      </div>
     </div>
   );
 };

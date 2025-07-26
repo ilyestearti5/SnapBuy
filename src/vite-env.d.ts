@@ -5,6 +5,15 @@ declare interface Tab {
   icon: IconProps["icon"];
 }
 declare namespace SnapBuy {
+  interface Collection {
+    id?: string;
+    name: string;
+    uid?: string;
+    createdAt?: number;
+    storeId?: string;
+    products?: string[];
+    photo?: string;
+  }
   type OrderStatus =
     | "pending"
     | "completed"
@@ -12,6 +21,7 @@ declare namespace SnapBuy {
     | "done"
     | "processing"
     | "delivery";
+  type PixelId = "facebook" | "instagram" | "tiktok" | "snapchat";
   interface Store {
     id: string;
     name: string;

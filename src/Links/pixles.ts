@@ -1,4 +1,4 @@
-import FacebookPixel from "react-facebook-pixel";
+import fcbPixel from "react-facebook-pixel";
 import ttq from "tiktok-pixel";
 import { getPrice } from "../utils";
 import { useMemo } from "react";
@@ -9,7 +9,7 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
       return undefined;
     }
     if (store.pixels?.facebook) {
-      FacebookPixel.init(store.pixels.facebook, undefined, {
+      fcbPixel.init(store.pixels.facebook, undefined, {
         autoConfig: true,
         debug: false,
       });
@@ -21,7 +21,7 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
     }
     return {
       search(value: string) {
-        FacebookPixel.track("Search", {
+        fcbPixel.track("Search", {
           search_string: value,
         });
         // TikTok Pixel tracking
@@ -30,7 +30,7 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
         });
       },
       click(tab: string | Nothing) {
-        FacebookPixel.track("Click", {
+        fcbPixel.track("Click", {
           content_type: "tab",
           content_name: tab,
         });
@@ -45,7 +45,7 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
           return;
         }
         const price = getPrice(product, 1).total;
-        FacebookPixel.track("ViewContent", {
+        fcbPixel.track("ViewContent", {
           content_ids: [product.id],
           content_name: product.name,
           content_type: "product",
@@ -63,7 +63,7 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
       },
       addToCart(product: SnapBuy.Product, count: number) {
         const price = getPrice(product, count).total;
-        FacebookPixel.track("AddToCart", {
+        fcbPixel.track("AddToCart", {
           content_ids: [product.id],
           content_name: product.name,
           content_type: "product",
@@ -82,7 +82,7 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
         });
       },
       submit(tab: string) {
-        FacebookPixel.track("SubmitApplication", {
+        fcbPixel.track("SubmitApplication", {
           form_id: tab,
         });
         // TikTok Pixel tracking
@@ -91,18 +91,17 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
         });
       },
       purchase(order: SnapBuy.Order) {
-        const price = getPrice(order, 1).total;
         const prods = Object.entries(order.products || {}).map(
           ([id, product]) => ({
             id,
             ...product,
           })
         );
-        FacebookPixel.track("Purchase", {
+        fcbPixel.track("Purchase", {
           content_ids: prods.map((p) => p.id),
           content_name: "Order " + order.id,
           content_type: "product",
-          value: price,
+          value: order.totalPrice,
           currency: "DZD",
           num_items: prods.length,
         });
@@ -111,7 +110,7 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
           content_ids: prods.map((p) => p.id),
           content_name: "Order " + order.id,
           content_type: "product",
-          value: price,
+          value: order.totalPrice,
           currency: "DZD",
           num_items: prods.length,
         });

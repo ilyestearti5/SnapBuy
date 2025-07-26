@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import {
   MapContainer,
   TileLayer,
@@ -33,6 +33,7 @@ import {
   getFieldValue,
   getTempFromStore,
   isLoading,
+  openPath,
   setFieldValue,
   setTemp,
   showPopup,
@@ -52,9 +53,10 @@ import {
   where,
 } from "@biqpod/app/ui/apis";
 import { snapbuyApi } from "../apis";
-import { tw } from "@biqpod/app/ui/utils";
+import { filterFuzzySearch, mapAsync, tw } from "@biqpod/app/ui/utils";
 import { LinkingZones } from "./LinkingZones";
 import { motion, AnimatePresence } from "framer-motion";
+import { highlightMatch } from "../ClientProductRender";
 const DEFAULT_CENTER: [number, number] = [35.6892, 51.389]; // Example: Tehran, Iran
 const DEFAULT_RADIUS = 2000; // meters
 interface DraggableCircleProps {
@@ -144,10 +146,15 @@ const CardInfo = () => {
   useEffect(() => {
     setFieldValue("search-place", "");
   }, []);
+  const name = getFieldValue("place-name");
+
   useAction(
     "add-delivery-zone",
     async () => {
-      const name = await getPlaceName([centerX.get, centerY.get]);
+      if (!name) {
+        showToast("Please enter a name for the zone", "error");
+        return;
+      }
       await snapbuyApi.addZone({
         centerX: centerX.get,
         centerY: centerY.get,
@@ -157,7 +164,7 @@ const CardInfo = () => {
       showToast("Zone added successfully", "success");
       closePopup();
     },
-    []
+    [name]
   );
   const addZoneInProccess = isLoading("add-delivery-zone");
   const search = getFieldValue("search-place");
@@ -215,7 +222,10 @@ const CardInfo = () => {
   useEffect(() => {
     if (isMobile) {
       Geolocation.getCurrentPosition().then(({ coords }) => {
-        const newLocation: [number, number] = [coords.latitude, coords.longitude];
+        const newLocation: [number, number] = [
+          coords.latitude,
+          coords.longitude,
+        ];
         centerX.set(coords.latitude);
         centerY.set(coords.longitude);
         userLocation.set(newLocation);
@@ -224,7 +234,10 @@ const CardInfo = () => {
     } else {
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const newLocation: [number, number] = [position.coords.latitude, position.coords.longitude];
+          const newLocation: [number, number] = [
+            position.coords.latitude,
+            position.coords.longitude,
+          ];
           centerX.set(position.coords.latitude);
           centerY.set(position.coords.longitude);
           userLocation.set(newLocation);
@@ -236,10 +249,26 @@ const CardInfo = () => {
       );
     }
   }, []);
+
+  const loadingName = useCopyState(false);
+
+  useEffect(() => {
+    loadingName.set(true);
+    getPlaceName([centerX.get, centerY.get])
+      .then((name) => {
+        const set = new Set(name.split(",").filter((s) => s.trim()));
+        setFieldValue("place-name", Array.from(set).join(", "));
+      })
+      .finally(() => {
+        loadingName.set(false);
+      });
+  }, [centerX.get, centerY.get]);
+
   return (
     <Card className="relative max-md:rounded-none max-md:w-full md:w-[80vw] max-md:h-full md:max-h-[90vh] overflow-hidden">
       <CardHeaderForPopup title="Delivery Pricing" />
       <Line />
+
       <div className="flex items-center gap-2 p-2">
         <Field
           inputName="search-place"
@@ -375,6 +404,20 @@ const CardInfo = () => {
         />
       </div>
       <Line />
+      <div className="flex items-center gap-2 p-2">
+        {!loadingName.get && (
+          <Field
+            inputName="place-name"
+            className="rounded-xl"
+            placeholder="Enter Name..."
+            rows={3}
+          />
+        )}
+        {loadingName.get && (
+          <CardWait className="rounded-2xl w-full h-[50px]" />
+        )}
+      </div>
+      <Line />
       <div className="p-2">
         <Button
           onClick={async () => {
@@ -442,6 +485,10 @@ export const DeliveriesPricing = () => {
       secondSelect.set(null);
     }
   }, [modeSelect.get]);
+  const zonesSearchValue = getFieldValue("search-zone");
+  const filteredZones = useMemo(() => {
+    return filterFuzzySearch(zones.get || [], zonesSearchValue || "", "name");
+  }, [zones.get, zonesSearchValue]);
   return (
     <div
       className={tw(
@@ -474,6 +521,34 @@ export const DeliveriesPricing = () => {
             }}
             icon={allIcons.solid.faPlus}
           />
+          <CircleTip
+            icon={allIcons.solid.faFileExport}
+            onClick={async () => {
+              const [fileContent] = await openPath({
+                filters: [
+                  {
+                    extensions: ["json"],
+                    name: "*",
+                  },
+                ],
+              });
+              const data: {
+                zone: SnapBuy.Zone;
+                linked: string[];
+              }[] = await fetch(fileContent).then((s) => s.json());
+              const redefinedIds = data.map(({ zone }) => ({
+                prevId: zone.id,
+                newId: crypto.randomUUID(),
+                zone,
+              }));
+              await mapAsync(redefinedIds, async ({ zone, newId }) => {
+                await snapbuyApi.addZone({
+                  ...zone,
+                  id: newId,
+                });
+              });
+            }}
+          />
         </div>
       </div>
       <Line />
@@ -488,7 +563,7 @@ export const DeliveriesPricing = () => {
       <div className="h-full overflow-hidden" style={{ position: "relative" }}>
         <Scroll>
           <div className="flex flex-col gap-2 p-2">
-            {zones.get?.map((zone, index) => {
+            {filteredZones?.map((zone, index) => {
               const isSelected =
                 modeSelect.get &&
                 (firstSelect.get === zone.id || secondSelect.get === zone.id);
@@ -548,17 +623,21 @@ export const DeliveriesPricing = () => {
                       <div className="flex justify-between items-center p-3">
                         <div>
                           <AsyncComponent
-                            deps={[zone]}
+                            deps={[zone, zonesSearchValue]}
                             render={async () => {
                               if (
                                 zone.centerX === undefined ||
                                 zone.centerY === undefined
                               )
                                 return <div>Invalid zone</div>;
+                              const content = highlightMatch(
+                                zone.name || "",
+                                zonesSearchValue
+                              );
                               return (
                                 <EmptyComponent>
                                   <div className="mb-1 font-bold text-base">
-                                    {zone.name}
+                                    {content}
                                   </div>
                                 </EmptyComponent>
                               );
@@ -585,6 +664,17 @@ export const DeliveriesPricing = () => {
                           />
                           <CircleTip
                             onClick={async () => {
+                              const response = await confirm({
+                                title: "Delete Zone",
+                                message:
+                                  "Are you sure you want to delete this zone?",
+                                detail: `Zone: ${zone.name || "Unnamed"} (${
+                                  zone.centerX
+                                }, ${zone.centerY})`,
+                              });
+                              if (!response) {
+                                return;
+                              }
                               await snapbuyApi.deleteZone(zone.id || "");
                               handleExpand(zone.id!);
                             }}
@@ -624,7 +714,7 @@ export const DeliveriesPricing = () => {
                                               await snapbuyApi.getZone(id!);
                                             if (!zoneLink)
                                               return <EmptyComponent />;
-                                            return <span>{zone.name}</span>;
+                                            return <span>{zoneLink.name}</span>;
                                           }}
                                           loading={
                                             <CardWait className="rounded-xl w-[200px] h-[20px]" />
