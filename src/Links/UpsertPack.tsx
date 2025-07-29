@@ -22,13 +22,14 @@ import {
   getFieldValue,
   getTemp,
   setFieldValue,
-  useAsyncMemo,
+  showPopup,
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { filterFuzzySearch, setFocused, tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 import { useEffect, useMemo } from "react";
 import { snapbuyApi } from "../apis";
+import { Packs } from "./Packs";
 interface PackLineProductProps {
   product?: SnapBuy.Product | null;
   onChange?: (prod: SnapBuy.Product, count: number) => void;
@@ -116,9 +117,10 @@ const PackLineProduct = ({
   );
 };
 interface UpsertPackProps {
-  packId?: string;
+  pack?: SnapBuy.Pack;
+  back?: boolean;
 }
-export const UpsertPack = ({ packId }: UpsertPackProps) => {
+export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
   const priceState = useCopyState<number | null | undefined>(0);
   const addedProducts = useCopyState<Required<SnapBuy.Pack>["products"]>([]);
   const products = getTemp<SnapBuy.Product[]>("fetched-products"); // Replace with your actual product data
@@ -126,29 +128,30 @@ export const UpsertPack = ({ packId }: UpsertPackProps) => {
   const filterdProducts = useMemo(() => {
     return filterFuzzySearch(products || [], searchField?.trim() || "", "name");
   }, [products, searchField]);
-  const pack = useAsyncMemo(async () => {
-    if (!packId) return undefined;
-    return snapbuyApi.getPack(packId);
-  }, []);
   useEffect(() => {
-    if (pack) {
-      priceState.set(pack.price);
-      addedProducts.set(pack.products || []);
-      setFieldValue("pack-name", pack.name || "");
-    } else if (pack === undefined) {
-      // If pack is undefined, it means the pack does not exist
-      setFieldValue("pack-name", "");
-      priceState.set(0);
-      addedProducts.set([]);
-    }
+    priceState.set(pack?.price);
+    addedProducts.set(pack?.products || []);
+    setFieldValue("pack-name", pack?.name || "");
   }, [pack]);
   const packName = getFieldValue("pack-name");
   return (
     <Card className="relative max-md:rounded-none max-md:w-full md:w-[75vw] max-md:h-full overflow-hidden">
       <div className="flex justify-between items-center p-2">
-        <h1 className="font-bold text-2xl">
-          <Translate content={packId ? "Modify pack" : "Create pack"} />
-        </h1>
+        <div className="flex items-center gap-2">
+          {back && (
+            <div>
+              <CircleTip
+                onClick={() => {
+                  showPopup(<Packs />);
+                }}
+                icon={allIcons.solid.faArrowLeft}
+              />
+            </div>
+          )}
+          <h1 className="font-bold text-2xl">
+            <Translate content={pack ? "Modify pack" : "Create pack"} />
+          </h1>
+        </div>
         <div>
           <CircleTip
             icon={allIcons.solid.faXmark}
@@ -408,7 +411,7 @@ export const UpsertPack = ({ packId }: UpsertPackProps) => {
               name: packName,
               price: priceState.get || 0,
               products: addedProducts.get,
-              id: packId,
+              id: pack?.id,
             };
             execAction("upsert-pack", options);
             setFieldValue("pack-name", "");

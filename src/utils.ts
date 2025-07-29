@@ -1478,19 +1478,16 @@ export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
   onChange: (value: Biqpod.System.Setting.Config[T]) => void;
 }
 
-export const colorIds: ColorIds[] = [
-  "borders",
-  "gray.opacity.2",
-  "gray.opacity",
-  "primary.background",
-  "primary.content",
-  "primary",
-  "secondary.background",
-  "secondary.content",
-  "secondary",
-  "shadow.color",
-  "text.color",
-];
+export const colorsInListWithNames: {colorId: ColorIds; name: string}[] = [
+  { colorId: "borders", name: "Borders" },
+  { colorId: "primary.content", name: "Order Button Text" },
+  { colorId: "primary", name: "Order Button" },
+  { colorId: "secondary.background", name: "Background" },
+  { colorId: "secondary", name: "Secondary" },
+  { colorId: "shadow.color", name: "Shadow" },
+  { colorId: "text.color", name: "Text" },
+  {colorId: "field.background", name: "Inputs"}
+]
 
 export const arraySeparator = ",;,";
 

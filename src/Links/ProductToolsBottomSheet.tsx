@@ -10,6 +10,7 @@ import {
   CardHeaderForPopup,
   TabContent,
   Field,
+  CircleTip,
 } from "@biqpod/app/ui/components";
 import {
   useCopyState,
@@ -23,10 +24,10 @@ import {
   closePopup,
 } from "@biqpod/app/ui/hooks";
 import { mapAsync, tw } from "@biqpod/app/ui/utils";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { ChromePicker as ColorPicker } from "react-color";
 import { snapbuyApi } from "../apis";
-import { colorIds } from "../utils";
+import { colorsInListWithNames } from "../utils";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRenderProps } from "./ProductRender";
 import { sharSocialMedia } from "../utils";
@@ -48,8 +49,8 @@ function PreviewWindow({ title, zoom, url, orientation }: PreviewWindowProps) {
         className={tw(
           `relative mx-auto border-gray-800 bg-gray-800 border-[10px] border-solid rounded-[2.5rem] shadow-xl`,
           orientation === "portrait"
-            ? "h-[600px] w-[300px]"
-            : "h-[300px] w-[600px]"
+            ? "h-[700px] w-[350px]"
+            : "h-[350px] w-[700px]"
         )}
         style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
       >
@@ -95,7 +96,7 @@ function PreviewWindow({ title, zoom, url, orientation }: PreviewWindowProps) {
             ? "w-[816px] h-[12px] md:w-[1232px] md:h-[20px]"
             : "w-[358px] h-[8px] md:w-[1216px] md:h-[32px]"
         )}
-      ></div>
+      />
       <div
         className={tw(
           "relative bg-gray-800 rounded-b-xl -mt-1",
@@ -103,7 +104,7 @@ function PreviewWindow({ title, zoom, url, orientation }: PreviewWindowProps) {
             ? "w-[320px] h-[40px] md:w-[500px] md:h-[60px]"
             : "w-[140px] h-[25px] md:w-[500px] md:h-[80px]"
         )}
-      ></div>
+      />
     </div>
   );
 }
@@ -123,24 +124,19 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
     return uri;
   }, [usedColor.get]);
   const filteredColors = useMemo(() => {
-    if (!colorSearchQuery.get) return colorIds;
-    return colorIds.filter((color) => {
-      const normalizedColor = color.replace(".", " ").toLowerCase();
+    if (!colorSearchQuery.get) return colorsInListWithNames;
+    return colorsInListWithNames.filter((color) => {
+      const normalizedColor = color.name.replaceAll(".", " ").toLowerCase();
       return normalizedColor.includes(colorSearchQuery.get.toLowerCase());
     });
   }, [colorSearchQuery.get]);
   const selectedTab = getTab("preview");
-  useEffect(() => {
-    if (selectedTab === "all") {
-      selectedColorId.set(null);
-      selectedColor.set(null);
-    }
-  }, [selectedTab]);
+  const showRightPart = useCopyState(false);
   return (
     <EmptyComponent>
       <Line />
-      <div className="flex md:flex-row flex-col items-stretch md:w-[80vw] h-full overflow-hidden">
-        <div className="max-md:hidden">
+      <div className="flex md:max-h-[70vh] items-stretch md:w-[80vw] max-md:h-full overflow-hidden">
+        <div className="border-r border-solid border-[--biqpod-borders]">
           <div className="w-[200px] overflow-hidden">
             <div className="p-2">
               <Field
@@ -151,20 +147,24 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
                 className="w-full text-sm"
               />
             </div>
+            <Line />
             <Scroll>
               {filteredColors.map((color) => {
-                const normalizedColor = color.replace(".", " ");
-                const backgroundColor = usedColor.get[color] || null;
+                const backgroundColor = usedColor.get[color.colorId] || null;
                 return (
                   <div
-                    onClick={() => {
-                      selectedColorId.set(color);
+                    onClick={async () => {
+                      if (backgroundColor) {
+                        usedColor.set(
+                          ({ [color.colorId]: _, ...colors }) => colors
+                        );
+                      } else selectedColorId.set(color.colorId);
                     }}
-                    key={color}
+                    key={color.colorId}
                     className="flex justify-between items-center active:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] max-md:p-2 md:p-3 cursor-pointer"
                   >
                     <h1 className="max-md:text-xs md:text-xl capitalize text-wrap">
-                      {normalizedColor}
+                      {color.name}
                     </h1>
                     {backgroundColor && (
                       <div>
@@ -182,17 +182,9 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
             </Scroll>
           </div>
         </div>
-        <div className="max-md:hidden h-full">
-          <div className="bg-[--biqpod-borders] w-[1px] h-full" />
-        </div>
-        <div className="flex flex-col justify-between justify-center items-center w-full">
-          <div className="flex justify-center items-center gap-2">
+        <div className="flex flex-col justify-between overflow-hidden items-center w-full">
+          <div className="flex relative h-[60px] justify-center w-full items-stretch gap-2">
             {[
-              {
-                name: "all",
-                icon: allIcons.solid.faDesktop,
-                className: "max-md:hidden",
-              },
               {
                 name: "mobile",
                 icon: allIcons.solid.faMobile,
@@ -206,50 +198,31 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
                 <div
                   key={tab.name}
                   className={tw(
-                    "flex justify-center items-center w-full gap-2 p-2 cursor-pointer",
-                    tab.name === selectedTab && "bg-[--biqpod-gray-opacity]",
-                    tab.className
+                    "flex justify-center items-center w-1/5 gap-2 p-2 cursor-pointer",
+                    tab.name === selectedTab && "bg-[--biqpod-gray-opacity]"
                   )}
                   onClick={() => {
                     setTab("preview", tab.name);
                   }}
                 >
                   <Icon icon={tab.icon} />
-                  <span>
+                  <span className="max-md:hidden">
                     <Translate content={tab.name} />
                   </span>
                 </div>
               );
             })}
+            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+              <CircleTip
+                icon={allIcons.solid.faEllipsisV}
+                onClick={() => {
+                  showRightPart.set((s) => !s);
+                }}
+              />
+            </div>
           </div>
           <Line />
           <div className="justify-center items-center bg-white w-full h-full">
-            <TabContent
-              identifier="preview"
-              className="flex justify-center items-center h-full"
-              value="all"
-            >
-              <div className="relative flex justify-center items-center">
-                {/* Desktop preview - positioned behind */}
-                <div className="flex-shrink-0">
-                  <PreviewWindow
-                    title={"Desktop"}
-                    zoom={0.25}
-                    url={uri.href}
-                    orientation="landscape"
-                  />
-                </div>
-                {/* Mobile preview - positioned to emerge from within the desktop screen */}
-                <div className="top-1/2 right-12 z-10 absolute flex-shrink-0 rotate-6 -translate-x-2 -translate-y-1/2 transform">
-                  <PreviewWindow
-                    title={"Mobile"}
-                    zoom={0.45}
-                    url={uri.href}
-                    orientation="portrait"
-                  />
-                </div>
-              </div>
-            </TabContent>
             <TabContent
               identifier="preview"
               className="flex justify-center items-center p-2 h-full"
@@ -277,49 +250,6 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
           </div>
         </div>
         {/* Mobile color picker at bottom */}
-        <div className="md:hidden">
-          <Line />
-          <div className="p-2">
-            <Field
-              inputName="colorSearchMobile"
-              placeholder="Search colors..."
-              value={colorSearchQuery.get}
-              onChange={(e) => colorSearchQuery.set(e.target.value)}
-              className="w-full text-sm"
-            />
-          </div>
-          <div className="max-h-[150px] overflow-y-auto">
-            <div className="gap-1 grid grid-cols-2 p-2">
-              {filteredColors.map((color) => {
-                const normalizedColor = color.replace(".", " ");
-                const backgroundColor = usedColor.get[color] || null;
-                return (
-                  <div
-                    onClick={() => {
-                      selectedColorId.set(color);
-                    }}
-                    key={color}
-                    className="flex justify-between items-center active:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] p-2 rounded cursor-pointer"
-                  >
-                    <h1 className="text-xs capitalize text-wrap">
-                      {normalizedColor}
-                    </h1>
-                    {backgroundColor && (
-                      <div>
-                        <div
-                          className="rounded-full w-[12px] h-[12px]"
-                          style={{
-                            backgroundColor,
-                          }}
-                        />
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        </div>
       </div>
       <Line />
       <div className="flex gap-2 p-2">
@@ -360,13 +290,14 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
         </Button>
       </div>
       {selectedColorId.get && (
-        <div className="z-50 absolute inset-0 flex justify-start items-center bg-[--biqpod-gray-opacity] pl-4">
-          <Card className="w-[350px] h-[450px] overflow-hidden">
+        <div className="z-50 absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] pl-4">
+          <Card className="w-3/4 overflow-hidden">
             <div className="p-2 border-[--biqpod-borders] border-b">
-              <h3 className="font-semibold capitalize">
+              <h3 className="font-extrabold text-2xl capitalize">
                 <Translate content={selectedColorId.get?.replace(".", " ")} />
               </h3>
             </div>
+            <Line />
             <ColorPicker
               color={selectedColor.get || "#ffffff"}
               onChange={(color) => {
@@ -476,7 +407,7 @@ export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
             click: async () => {
               closeBottomSheet();
               showPopup(
-                <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+                <Card className="max-md:rounded-none relative max-md:w-full max-md:h-full">
                   <CardHeaderForPopup title="Copy Link" />
                   <CopyLinkPickColor product={product} />
                 </Card>

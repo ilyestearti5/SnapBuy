@@ -42,10 +42,10 @@ import { ProductRender } from "./ProductRender";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { useStoreId } from "../App";
-import { UpsertPack } from "./UpsertPack";
 import { loadFromExcel } from "./loadFromExcel";
 import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
 import { Collections } from "./Collections";
+import { Packs } from "./Packs";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
   "createdAt",
@@ -360,7 +360,7 @@ const ToolsCard = memo(
             !showTools && "w-[0px] h-[0px]"
           )}
           onClick={async () => {
-            showPopup(<UpsertPack />);
+            showPopup(<Packs />);
           }}
         />
         <CircleTip

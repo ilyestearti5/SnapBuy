@@ -29,6 +29,19 @@ export function initPixels(store: SnapBuy.Store | Nothing) {
           search_string: value,
         });
       },
+      favorite(product: SnapBuy.Product) {
+        fcbPixel.track("AddToWishlist", {
+          content_ids: [product.id],
+          content_name: product.name,
+          content_type: "product",
+        });
+        // TikTok Pixel tracking
+        ttq.track("AddToWishlist", {
+          content_ids: [product.id],
+          content_name: product.name,
+          content_type: "product",
+        });
+      },
       click(tab: string | Nothing) {
         fcbPixel.track("Click", {
           content_type: "tab",

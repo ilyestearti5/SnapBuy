@@ -27,6 +27,7 @@ import { getPrice } from "./utils";
 import { useLocation } from "react-router";
 import { snapbuyApi } from "./apis";
 import { initPixels } from "./Links/pixles";
+import { Nothing } from "@biqpod/app/ui/types";
 export interface ProductPopupProps {
   product: SnapBuy.Product;
 }
@@ -38,7 +39,7 @@ export const removeCart = (storeId: string, prodId: string) => {
   var { [prodId]: _, ...rest } = fullCart || {};
   setTemp("cart." + storeId, rest);
 };
-export const useCart = (storeId: string) => {
+export const useCart = (storeId: string | Nothing) => {
   const carts = getTemp<SnapBuy.Order["products"]>("cart." + storeId);
   return carts;
 };
@@ -46,7 +47,7 @@ export interface FullCartResult {
   prodId: string;
   count: number;
 }
-export const useFullCart = (storeId: string): FullCartResult[] => {
+export const useFullCart = (storeId: string | Nothing): FullCartResult[] => {
   const carts = useCart(storeId);
   const result = useMemo(() => {
     return Object.entries(carts || {}).map(([prodId, r]) => {

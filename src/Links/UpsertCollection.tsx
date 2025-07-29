@@ -18,6 +18,7 @@ import {
   execAction,
   getFieldValue,
   isLoading,
+  setFieldValue,
   setTab,
   showPopup,
   showToast,
@@ -49,7 +50,7 @@ export const ProductRender = ({
   return (
     <div
       className={tw(
-        " w-[calc(50%)] flex items-center px-4 justify-between py-2 cursor-pointer",
+        "w-[calc(50%)] flex items-center px-4 justify-between py-2 cursor-pointer",
         "hover:bg-[--biqpod-gray-opacity]"
       )}
       key={product.id}
@@ -101,6 +102,10 @@ export const UpsertCollection = ({
   collection,
   back,
 }: UpsertCollectionProps) => {
+  useEffect(() => {
+    photoState.set(collection?.photo || "");
+    setFieldValue("collection-name", collection?.name || "");
+  }, []);
   const storeId = useStoreId();
   const products = useAsyncMemo(async () => {
     if (!storeId) return [];

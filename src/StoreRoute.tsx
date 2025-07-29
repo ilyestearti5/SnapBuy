@@ -122,28 +122,38 @@ export const StoreRoute = () => {
         <Translate content="explore products" />
       </div>
       <Line />
-      <div
-        className={tw(
-          "relative grid object-cover items-center bg-[--biqpod-primary-background]",
-          isDesktop && "grid-cols-8",
-          isTablet && "grid-cols-6",
-          isMobile && "grid-cols-4"
-        )}
-      >
-        {filterdPhotos?.photos.map((product, index) => (
-          <Link
-            key={index}
-            className="group relative"
-            to={`/product/${product?.id}`}
-          >
-            <img draggable={false} src={product?.photo} alt={`logo-${index}`} />
-            <div className="bottom-0 absolute inset-x-0 opacity-0 group-hover:opacity-100 backdrop-blur-sm p-2 bg-[--biqpod-text-color] text-[--biqpod-primary-background] text-xs text-center text-center transition-opacity pointer-events-none">
-              {product?.name}
-            </div>
-          </Link>
-        ))}
-        {!photos && <CardWait className="w-full h-full" />}
-      </div>
+      {filterdPhotos && (
+        <div
+          className={tw(
+            "relative grid object-cover items-center bg-[--biqpod-primary-background]",
+            isDesktop && "grid-cols-8",
+            isTablet && "grid-cols-6",
+            isMobile && "grid-cols-4"
+          )}
+        >
+          {filterdPhotos?.photos.map((product, index) => (
+            <Link
+              key={index}
+              className="group relative hover:bg-[--biqpod-secondary-background] transition-colors duration-300"
+              to={`/product/${product?.id}`}
+            >
+              <img
+                draggable={false}
+                src={product?.photo}
+                alt={`logo-${index}`}
+              />
+              <div className="bottom-0 absolute inset-x-0 opacity-0 group-hover:opacity-100 backdrop-blur-sm p-2 bg-[--biqpod-text-color] text-[--biqpod-primary-background] text-xs text-center transition-opacity pointer-events-none">
+                {product?.name}
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+      {!filterdPhotos && (
+        <div className="flex justify-center items-center p-4">
+          <CardWait className="w-full h-[200px]" />
+        </div>
+      )}
       {!!filterdPhotos?.length.length && (
         <Link
           to={`/client/stores/${storeId}/products`}
@@ -167,9 +177,7 @@ export const StoreRoute = () => {
                   key={collection.id}
                   className="max-md:max-w-[calc(100%/3-8px)] md:max-w-[calc(100%/4-8px)] lg:max-w-[calc(100%/5-8px)] overflow-hidden"
                 >
-                  <Link
-                    to={`/client/stores/${collection.storeId}/products?collectionId=${collection.id}`}
-                  >
+                  <Link to={`/collection/${collection.id}`}>
                     <div className="p-2">
                       <img
                         src={collection.photo}

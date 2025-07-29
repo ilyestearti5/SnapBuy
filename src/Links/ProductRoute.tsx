@@ -36,7 +36,7 @@ import { useSearchParams } from "../AddProductToCart";
 import { ImageSlider } from "./ImageSlider";
 import { FormSection } from "./FormSection";
 import { useEffect, useMemo } from "react";
-import { colorIds } from "../utils";
+import { colorsInListWithNames } from "../utils";
 import { Nothing } from "@biqpod/app/ui/types";
 import { isWeb } from "@biqpod/app/ui/app";
 import { getAddressFromCoords } from "../getAddressFromCoords";
@@ -50,7 +50,8 @@ export const ProductRoute = () => {
   }, [prodId]);
   const { getColor } = useSearchParams();
   useEffect(() => {
-    for (const colorId of colorIds) {
+    for (const colorItem of colorsInListWithNames) {
+      const colorId = colorItem.colorId;
       const color = getColor(colorId);
       if (color) {
         setDarkColor(colorId, color);
@@ -273,7 +274,7 @@ export const ProductRoute = () => {
         <EmptyComponent>
           <Scroll>
             <div className="h-[50vh]">
-              <ImageSlider zoom photos={product?.photos || []} />
+              <ImageSlider viewImages zoom photos={product?.photos || []} />
             </div>
             <EmptyComponent>
               <FormSection title="form : " />
@@ -430,7 +431,7 @@ export const ProductRoute = () => {
                       }
                     }}
                     placeholder="Q"
-                    className="focus:border-[--biqpod-primary] border-transparent rounded-full outline-none text-3xl text-center text-center"
+                    className="focus:border-[--biqpod-primary] border-transparent rounded-full outline-none text-3xl  text-center"
                     style={{ background: "transparent" }}
                   />
                 </div>

@@ -40,7 +40,7 @@ import {
 import { cloud } from "./server";
 import { Route, Switch, useHistory, useLocation } from "react-router";
 import { snapbuyApi } from "./apis";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { mapAsync, mergeArray, tw } from "@biqpod/app/ui/utils";
 import { OpenMenuProps } from "@biqpod/app/ui/types";
 import { Link } from "react-router-dom";
@@ -166,6 +166,10 @@ export const HeaderContent = () => {
 
   const loc = useLocation();
 
+  const id = useMemo(() => {
+    return getId();
+  }, [loc.pathname]);
+
   return (
     <EmptyComponent>
       <div className="flex justify-between items-center px-4 w-full">
@@ -178,88 +182,94 @@ export const HeaderContent = () => {
               }}
             />
           </div>
-          <AsyncComponent
-            render={async () => {
-              const id = getId();
-              return (
-                <Switch>
-                  <Route path="/pack/:packId">
-                    <AsyncComponent
-                      deps={[id]}
-                      render={async () => {
-                        if (!id) return <EmptyComponent />;
-                        const packInfo = await snapbuyApi.getPack(id);
-                        return (
-                          <span className="max-md:text-xl md:text-2xl capitalize">
-                            {packInfo?.name || "Pack"}
-                          </span>
-                        );
-                      }}
-                      loading={
-                        <CardWait className="rounded-full w-[120px] h-[20px]" />
-                      }
-                    />
-                  </Route>
-                  <Route path="/product/:productId">
-                    <AsyncComponent
-                      deps={[id]}
-                      render={async () => {
-                        if (!id) return <EmptyComponent />;
-                        const productInfo = await snapbuyApi.getProduct(id);
-                        return (
-                          <span className="max-md:text-xl md:text-2xl capitalize">
-                            {productInfo?.name || "Product"}
-                          </span>
-                        );
-                      }}
-                      loading={
-                        <CardWait className="rounded-full w-[120px] h-[20px]" />
-                      }
-                    />
-                  </Route>
-                  <Route path="/collection/:collectionId">
-                    <AsyncComponent
-                      render={async () => {
-                        const collectionId = getId();
-                        if (!collectionId) return <EmptyComponent />;
-                        const storeInfo = await snapbuyApi.getCollection(
-                          collectionId
-                        );
-                        return (
-                          <span className="max-md:text-xl md:text-2xl capitalize">
-                            {storeInfo?.name || "Untitled Collection"}
-                          </span>
-                        );
-                      }}
-                      loading={
-                        <CardWait className="rounded-full w-[120px] h-[20px]" />
-                      }
-                    />
-                  </Route>
-                  <Route path="/client/stores/:storeId">
-                    <AsyncComponent
-                      render={async () => {
-                        const storeId = getId();
-                        if (!storeId) return <EmptyComponent />;
-                        const storeInfo = await snapbuyApi.getStore(storeId);
-                        return (
-                          <span className="max-md:text-xl md:text-2xl capitalize">
-                            {storeInfo?.name || "Store"}
-                          </span>
-                        );
-                      }}
-                    />
-                  </Route>
-                  <Route path="*">
+          <Switch>
+            <Route path="/pack/:packId">
+              <AsyncComponent
+                deps={[id]}
+                render={async () => {
+                  if (!id) return <EmptyComponent />;
+                  const packInfo = await snapbuyApi.getPack(id);
+                  return (
                     <span className="max-md:text-xl md:text-2xl capitalize">
-                      {id}
+                      {packInfo?.name || "Pack"}
                     </span>
-                  </Route>
-                </Switch>
-              );
-            }}
-            deps={[loc]}
-          />
+                  );
+                }}
+                loading={
+                  <CardWait className="rounded-full w-[120px] h-[20px]" />
+                }
+              />
+            </Route>
+            <Route path="/product/:productId">
+              <AsyncComponent
+                deps={[id]}
+                render={async () => {
+                  if (!id) return <EmptyComponent />;
+                  const productInfo = await snapbuyApi.getProduct(id);
+                  return (
+                    <span className="max-md:text-xl md:text-2xl capitalize">
+                      {productInfo?.name || "Product"}
+                    </span>
+                  );
+                }}
+                loading={
+                  <CardWait className="rounded-full w-[120px] h-[20px]" />
+                }
+              />
+            </Route>
+            <Route path="/collection/:collectionId">
+              <AsyncComponent
+                render={async () => {
+                  const collectionId = getId();
+                  if (!collectionId) return <EmptyComponent />;
+                  const storeInfo = await snapbuyApi.getCollection(
+                    collectionId
+                  );
+                  return (
+                    <span className="max-md:text-xl md:text-2xl capitalize">
+                      {storeInfo?.name || "Untitled Collection"}
+                    </span>
+                  );
+                }}
+                loading={
+                  <CardWait className="rounded-full w-[120px] h-[20px]" />
+                }
+              />
+            </Route>
+            <Route exact path="/client/stores/:storeId">
+              <AsyncComponent
+                render={async () => {
+                  const storeId = getId();
+                  if (!storeId) return <EmptyComponent />;
+                  const storeInfo = await snapbuyApi.getStore(storeId);
+                  return (
+                    <span className="max-md:text-xl md:text-2xl capitalize">
+                      {storeInfo?.name || "Store"}
+                    </span>
+                  );
+                }}
+              />
+            </Route>
+            <Route path="/client/stores/:storeId/products">
+              <AsyncComponent
+                render={async () => {
+                  const storeId = location.pathname.split("/").at(-2);
+                  if (!storeId) return <EmptyComponent />;
+                  const storeInfo = await snapbuyApi.getStore(storeId);
+                  return (
+                    <span className="max-md:text-xl md:text-2xl capitalize">
+                      {storeInfo?.name || "Store"}
+                    </span>
+                  );
+                }}
+              />
+            </Route>
+            <Route path="*">
+              <span className="max-md:text-xl md:text-2xl capitalize">
+                {id}
+              </span>
+            </Route>
+          </Switch>
         </div>
         <div className="flex items-center gap-2">
           {loadingText.get && (
@@ -401,16 +411,18 @@ export const HeaderContent = () => {
                 <span className="inline-block top-[0] right-[0] absolute bg-[--biqpod-primary] rounded-full w-[12px] h-[12px] pointer-events-none" />
               )}
             </div>
-            <div>
-              <CircleTip
-                icon={allIcons.solid.faClover}
-                onClick={() => {
-                  showPopup(<AiAssistance />);
-                  // ai assitance
-                }}
-                iconClassName="text-violet-500"
-              />
-            </div>
+            {user && (
+              <div>
+                <CircleTip
+                  icon={allIcons.solid.faClover}
+                  onClick={() => {
+                    showPopup(<AiAssistance />);
+                    // ai assitance
+                  }}
+                  iconClassName="text-violet-500"
+                />
+              </div>
+            )}
           </div>
           {user?.uid && (
             <div className="relative rounded-full">

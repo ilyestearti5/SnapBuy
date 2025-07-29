@@ -12,8 +12,16 @@
     "description": "User profile page"
   },
   {
+    "path": "/plans",
+    "description": "Subscription plans page"
+  },
+  {
     "path": "/store",
     "description": "Store listing page"
+  },
+  {
+    "path": "/store/{storeId}",
+    "description": "Store main page (redirects to overview)"
   },
   {
     "path": "/store/{storeId}/overview",
@@ -36,12 +44,20 @@
     "description": "Store settings and management"
   },
   {
+    "path": "/store/{storeId}/settings",
+    "description": "Store settings page"
+  },
+  {
     "path": "/product/{prodId}",
     "description": "Individual product details page"
   },
   {
     "path": "/pack/{packId}",
     "description": "Product pack details page"
+  },
+  {
+    "path": "/collection/{collectionId}",
+    "description": "Product collection details page"
   },
   {
     "path": "/client",
@@ -52,8 +68,12 @@
     "description": "Client stores listing"
   },
   {
-    "path": "/client/stores/{uid}",
+    "path": "/client/stores/{storeId}",
     "description": "Specific client store view"
+  },
+  {
+    "path": "/client/stores/{storeId}/products",
+    "description": "Client store products listing"
   },
   {
     "path": "/deliveries",
@@ -76,6 +96,14 @@
     "description": "Delivery pricing configuration"
   },
   {
+    "path": "/deliveries/settings",
+    "description": "Delivery company settings"
+  },
+  {
+    "path": "/tracking/{trackingId}",
+    "description": "Order tracking page"
+  },
+  {
     "path": "/feedbacks",
     "description": "Customer feedback management"
   },
@@ -86,5 +114,21 @@
   {
     "path": "/payment",
     "description": "Payment processing page"
+  },
+  {
+    "path": "/integrations",
+    "description": "Third-party integrations management"
+  },
+  {
+    "path": "/test",
+    "description": "Test page for development"
+  },
+  {
+    "path": "/__/auth",
+    "description": "Authentication callback route"
+  },
+  {
+    "path": "/__/payment",
+    "description": "Payment callback route"
   }
 ]

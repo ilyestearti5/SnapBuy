@@ -20,6 +20,8 @@ import {
   useDeviceResolution,
   useUser,
   getFieldValue,
+  showProfile,
+  useAsyncMemo,
 } from "@biqpod/app/ui/hooks";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
 import {
@@ -30,6 +32,8 @@ import {
 } from "./AddProductToCart";
 import { ImageSlider } from "./Links/ImageSlider";
 import { MenuRecordProps } from "@biqpod/app/ui/types";
+import { initPixels } from "./Links/pixles";
+import { snapbuyApi } from "./apis";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
@@ -67,6 +71,11 @@ export const ClientProductRender = React.memo(
     const user = useUser();
     const { showPhoto } = useSearchParams();
     const search = getFieldValue("search-prod");
+    const store = useAsyncMemo(async () => {
+      if (!product.storeId) return null;
+      return snapbuyApi.getStore(product.storeId);
+    }, []);
+    const p = initPixels(store);
     return (
       <div className={tw("w-[calc(50%-4px)] transition-[width] duration-700")}>
         <Card key={product.id} className="w-full h-full overflow-hidden">
@@ -207,26 +216,31 @@ export const ClientProductRender = React.memo(
                       label: "Add to Favorite",
                       defaultIcon: allIcons.solid.faHeart,
                       click() {
+                        if (user) {
+                          p?.favorite(product);
+                          showPopup(
+                            <Card className="max-md:w-[90vw]">
+                              <CardHeaderForPopup title="Added to Favorite" />
+                              <Line />
+                              <div className="p-4 text-center">
+                                <Icon
+                                  icon={allIcons.solid.faHeart}
+                                  iconClassName="mb-2 text-red-500 text-3xl"
+                                />
+                                <div>
+                                  <Translate content="Product added to your favorites!" />
+                                </div>
+                              </div>
+                            </Card>,
+                            {
+                              type: "blur",
+                            }
+                          );
+                        } else {
+                          showProfile();
+                        }
                         // Implement your favorite logic here
                         // For now, just show a popup
-                        showPopup(
-                          <Card className="max-md:w-[90vw]">
-                            <CardHeaderForPopup title="Added to Favorite" />
-                            <Line />
-                            <div className="p-4 text-center">
-                              <Icon
-                                icon={allIcons.solid.faHeart}
-                                iconClassName="mb-2 text-red-500 text-3xl"
-                              />
-                              <div>
-                                <Translate content="Product added to your favorites!" />
-                              </div>
-                            </div>
-                          </Card>,
-                          {
-                            type: "blur",
-                          }
-                        );
                       },
                     }
                   );

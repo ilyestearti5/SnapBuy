@@ -1,5 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
-import { EmptyComponent, CircleTip } from "@biqpod/app/ui/components";
+import { EmptyComponent, CircleTip, Line } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import React, { useState, useEffect, useRef } from "react";
@@ -8,12 +8,14 @@ interface SliderProps {
   autoSlide?: boolean;
   slideInterval?: number;
   zoom?: boolean;
+  viewImages?: boolean;
 }
 export const ImageSlider: React.FC<SliderProps> = ({
   photos = [],
   autoSlide = false,
   slideInterval = 5000,
   zoom = false,
+  viewImages = false,
 }) => {
   const current = useCopyState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -42,6 +44,11 @@ export const ImageSlider: React.FC<SliderProps> = ({
       }
       return prev; // Stay on the first slide
     });
+  };
+
+  const goToSlide = (index: number) => {
+    setAnimation(true);
+    current.set(index);
   };
   const handleMouseDown = (e: MouseEvent) => {
     setIsDragging(true);
@@ -197,69 +204,101 @@ export const ImageSlider: React.FC<SliderProps> = ({
     display: "flex",
   };
   return (
-    <div
-      className={tw(
-        "relative flex justify-center items-center w-full h-full overflow-hidden",
-        zoom ? "cursor-zoom-in" : "cursor-pointer"
-      )}
-      style={{ touchAction: zoom ? "none" : "pan-y" }}
-    >
+    <div className="flex flex-col h-full">
       <div
-        ref={sliderRef}
-        className="flex items-center w-full h-full"
-        style={slideStyle}
+        className={tw(
+          "relative flex justify-center items-center w-full h-full overflow-hidden",
+          zoom ? "cursor-zoom-in" : "cursor-pointer"
+        )}
+        style={{ touchAction: zoom ? "none" : "pan-y" }}
       >
-        {photos.map((photo, index) => (
-          <div
-            key={index}
-            className="relative flex flex-shrink-0 justify-center items-center w-full h-full overflow-hidden cursor-pointer"
-          >
-            <img
-              draggable="false"
-              src={photo}
-              loading="eager"
-              className="opacity-40 blur-lg w-full h-full object-cover"
-            />
-            <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
+        <div
+          ref={sliderRef}
+          className="flex items-center w-full h-full"
+          style={slideStyle}
+        >
+          {photos.map((photo, index) => (
+            <div
+              key={index}
+              className="relative flex flex-shrink-0 justify-center items-center w-full h-full overflow-hidden cursor-pointer"
+            >
               <img
                 draggable="false"
                 src={photo}
-                className={tw(
-                  "absolute top-1/2 object-contain left-1/2 h-full",
-                  zoom && "transition-transform duration-200 ease-out"
-                )}
-                style={
-                  zoom && index === current.get && isZooming
-                    ? {
-                        transform: `translate(-50%, -50%) scale(${zoomLevel})`,
-                        transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                      }
-                    : {
-                        transform: `translate(-50%, -50%) scale(1)`,
-                        transformOrigin: `50% 50%`,
-                      }
-                }
+                loading="eager"
+                className="opacity-40 blur-lg w-full h-full object-cover"
+              />
+              <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
+                <img
+                  draggable="false"
+                  src={photo}
+                  className={tw(
+                    "absolute top-1/2 object-contain left-1/2 h-full",
+                    zoom && "transition-transform duration-200 ease-out"
+                  )}
+                  style={
+                    zoom && index === current.get && isZooming
+                      ? {
+                          transform: `translate(-50%, -50%) scale(${zoomLevel})`,
+                          transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                        }
+                      : {
+                          transform: `translate(-50%, -50%) scale(1)`,
+                          transformOrigin: `50% 50%`,
+                        }
+                  }
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        {photos.length > 1 && !zoom && (
+          <EmptyComponent>
+            <div className="top-1/2 left-2 absolute -translate-y-1/2 transform">
+              <CircleTip
+                icon={allIcons.solid.faChevronLeft}
+                onClick={prevSlide}
               />
             </div>
-          </div>
-        ))}
+            <div className="top-1/2 right-2 absolute -translate-y-1/2 transform">
+              <CircleTip
+                icon={allIcons.solid.faChevronRight}
+                onClick={nextSlide}
+              />
+            </div>
+            {!viewImages && (
+              <div className="bottom-2 left-1/2 absolute bg-[--biqpod-gray-opacity-2] px-2 rounded-lg text-white -translate-x-1/2 transform">
+                {current.get + 1} / {photos.length}
+              </div>
+            )}
+          </EmptyComponent>
+        )}
       </div>
-      {photos.length > 1 && !zoom && (
+      {viewImages && photos.length > 1 && (
         <EmptyComponent>
-          <div className="top-1/2 left-2 absolute -translate-y-1/2 transform">
-            <CircleTip
-              icon={allIcons.solid.faChevronLeft}
-              onClick={prevSlide}
-            />
-          </div>
-          <div className="top-1/2 right-2 absolute -translate-y-1/2 transform">
-            <CircleTip
-              icon={allIcons.solid.faChevronRight}
-              onClick={nextSlide}
-            />
-          </div>
-          <div className="bottom-2 left-1/2 absolute bg-[--biqpod-gray-opacity-2] px-2 rounded-lg text-white -translate-x-1/2 transform">
-            {current.get + 1} / {photos.length}
+          <Line />
+          <div className="w-full">
+            <div className="flex justify-center gap-2 p-2 w-full overflow-x-auto">
+              {photos.map((photo, index) => (
+                <div
+                  key={index}
+                  className={tw(
+                    "flex-shrink-0 rounded-lg cursor-pointer transition-all duration-200 w-20 h-20 overflow-hidden",
+                    current.get === index
+                      ? "opacity-100"
+                      : "opacity-60 hover:opacity-80"
+                  )}
+                  onClick={() => goToSlide(index)}
+                >
+                  <img
+                    src={photo}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                    draggable="false"
+                  />
+                </div>
+              ))}
+            </div>
           </div>
         </EmptyComponent>
       )}

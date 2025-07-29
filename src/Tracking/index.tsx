@@ -7,9 +7,14 @@ import {
   Line,
   Translate,
 } from "@biqpod/app/ui/components";
-import { getFieldValue, useIdleStatus } from "@biqpod/app/ui/hooks";
+import {
+  getFieldValue,
+  setFieldValue,
+  useIdleStatus,
+} from "@biqpod/app/ui/hooks";
 import { betweenInt, delay, randomItem, tw } from "@biqpod/app/ui/utils";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
+import { useLocation } from "react-router";
 // import { useParams } from "react-router";
 const robotId = crypto.randomUUID();
 export interface RobotCheckingProps {
@@ -39,7 +44,7 @@ const RobotChecking = () => {
       <span>=</span>
       <span>
         <Field
-          placeholder="Result"
+          placeholder="R"
           className="rounded-full w-[60px] text-center"
           inputName="robot-value"
           inputMode="numeric"
@@ -50,16 +55,40 @@ const RobotChecking = () => {
           check.status.set("idle");
         }}
         className={tw(
-          !check.data.get && "text-red-600",
-          check.data.get && "text-green-600"
+          check.status.get === "ready"
+            ? "text-[--biqpod-primary]"
+            : !check.data.get
+            ? "text-red-600"
+            : "text-green-600"
         )}
-        icon={!check.data.get ? allIcons.solid.faXmark : allIcons.solid.faCheck}
+        icon={
+          check.status.get === "ready"
+            ? allIcons.solid.faCheck
+            : !check.data.get
+            ? allIcons.solid.faXmark
+            : allIcons.solid.faCheck
+        }
       />
     </div>
   );
 };
 export const Tracking = () => {
-  // const { trackingId } = useParams<{ trackingId: string }>();
+  const loc = useLocation();
+  const trackingId = useMemo(() => {
+    const trackingId = new URLSearchParams(loc.search).get("id");
+    return trackingId;
+  }, [loc.pathname]);
+  const value = getFieldValue("tracking-value");
+  const id = useMemo(() => {
+    const id = value?.replaceAll(/ +/gi, "-");
+    return id;
+  }, [value]);
+  useEffect(() => {
+    const id = trackingId?.replaceAll(/ +/gi, "-");
+    if (id?.match(/^[a-zA-Z0-9]+(-([a-zA-Z0-9]+)){3}$/)) {
+      setFieldValue("tracking-value", id);
+    }
+  }, [trackingId]);
   return (
     <div className="flex justify-center items-center w-full h-full">
       <Card className="w-[80vw]">
@@ -71,8 +100,8 @@ export const Tracking = () => {
         <Line />
         <div className="p-5">
           <Field
-            className="rounded-xl text-center"
-            placeholder="XXXX XXXX XXXX"
+            className="rounded-xl font-bold text-2xl text-center"
+            placeholder="XXXX-XXXX-XXXX-XXXX"
             inputName="tracking-value"
           />
         </div>
@@ -82,7 +111,7 @@ export const Tracking = () => {
         </div>
         <Line />
         <div className="p-3">
-          <Button onClick={() => {}}>
+          <Button rightIcon={allIcons.solid.faChevronRight} onClick={() => {}}>
             <Translate content="validate" />
           </Button>
         </div>

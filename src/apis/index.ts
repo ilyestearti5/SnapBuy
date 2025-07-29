@@ -1089,7 +1089,7 @@ export const snapbuyApi = {
   },
   async deletePack(packId: string) {
     const deletePack = await getUserFunction("delete-pack");
-    await deletePack?.({ id: packId });
+    await deletePack?.({ packId });
   },
 };
 function getFns<T>(fieldId: string) {

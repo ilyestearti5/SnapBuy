@@ -46,6 +46,7 @@ import { PackRoute } from "./Links/PackRoute";
 import { ProfileInside } from "./ProfileInside";
 import { range, tw } from "@biqpod/app/ui/utils";
 import { Tracking } from "./Tracking";
+import { CollectionsRoute } from "./CollectionsRoute";
 interface ProfileProps {
   children?: JSX.Element;
 }
@@ -285,6 +286,9 @@ export const App = () => {
                 <Redirect to="/profile" />
               </Profile>
             </Route>
+            <Route exact path="/collection/:collectionId">
+              <CollectionsRoute />
+            </Route>
             <Route exact path="/auth/login">
               <Profile>
                 <Redirect to="/profile" />
@@ -294,7 +298,7 @@ export const App = () => {
             <Route path="/deliveries">
               <Deliveries />
             </Route>
-            <Route path="/tracking/:trackingId">
+            <Route exact path="/tracking">
               <Tracking />
             </Route>
             <Route path="/test">
