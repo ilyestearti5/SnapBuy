@@ -6,7 +6,7 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { useAsyncMemo } from "@biqpod/app/ui/hooks";
-import { snapbuyApi } from "./apis";
+import { snapbuyApi } from "../../apis";
 export const OffersPage = () => {
   const actions = useAsyncMemo(async () => {
     return snapbuyApi.getAIActions();

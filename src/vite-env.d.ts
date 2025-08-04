@@ -176,6 +176,7 @@ declare namespace SnapBuy {
       }[];
     };
     formCollectionId?: string;
+    barndId?: string;
   }
 }
 declare interface SnapBuyApi {

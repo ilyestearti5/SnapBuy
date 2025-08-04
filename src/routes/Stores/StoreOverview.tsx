@@ -19,10 +19,10 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { snapbuyApi } from "./apis";
+import { snapbuyApi } from "../../apis";
 import { range } from "@biqpod/app/ui/utils";
 import { Link } from "react-router-dom";
-import { useStoreId } from "./App";
+import { useStoreId } from "../../utils";
 const titlesOveviews: Record<string, string> = {
   totalSales: "Total Sales",
   orders: "Orders",

@@ -32,7 +32,7 @@ import {
 import { setFocused, tw } from "@biqpod/app/ui/utils";
 import { useParams } from "react-router";
 import { CreateOrderOptions, snapbuyApi } from "../apis";
-import { useSearchParams } from "../AddProductToCart";
+import { useSearchParams } from "../routes/Clients/AddProductToCart";
 import { ImageSlider } from "./ImageSlider";
 import { FormSection } from "./FormSection";
 import { useEffect, useMemo } from "react";
@@ -431,7 +431,7 @@ export const ProductRoute = () => {
                       }
                     }}
                     placeholder="Q"
-                    className="focus:border-[--biqpod-primary] border-transparent rounded-full outline-none text-3xl  text-center"
+                    className="focus:border-[--biqpod-primary] border-transparent rounded-full outline-none text-3xl text-center"
                     style={{ background: "transparent" }}
                   />
                 </div>

@@ -33,7 +33,7 @@ import {
   visibilityTemp,
 } from "@biqpod/app/ui/hooks";
 import { deleteCart, useCart, useFullCart } from "./AddProductToCart";
-import { snapbuyApi, CreateOrderOptions } from "./apis";
+import { snapbuyApi, CreateOrderOptions } from "../../apis";
 import { useEffect, useMemo } from "react";
 import { mapAsync, setFocused, tw } from "@biqpod/app/ui/utils";
 import { Nothing, SettingValueType } from "@biqpod/app/ui/types";
@@ -41,7 +41,7 @@ import { CartLine } from "./CartLine";
 import { Carts } from "./ClientStores";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
 import { isWeb } from "@biqpod/app/ui/app";
-import { getAddressFromCoords } from "./getAddressFromCoords";
+import { getAddressFromCoords } from "../../getAddressFromCoords";
 export interface ProductMore {
   product: SnapBuy.Product;
   count: number;

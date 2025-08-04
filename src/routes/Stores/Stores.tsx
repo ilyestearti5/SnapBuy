@@ -33,12 +33,12 @@ import {
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect } from "react";
-import { snapbuyApi } from "./apis";
+import { snapbuyApi } from "../../apis";
 import { delay, range } from "@biqpod/app/ui/utils";
-import notFoundPhoto from "./assets/nothing.png";
+import notFoundPhoto from "../../assets/nothing.png";
 import { Link } from "react-router-dom";
 import { UpsertStore } from "./EditStoreBottomSheet";
-import { useStoreId } from "./App";
+import { useStoreId } from "../../utils";
 import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
 import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";

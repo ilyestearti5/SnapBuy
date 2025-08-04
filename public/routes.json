@@ -1,63 +1,63 @@
 [
   {
-    "path": "/auth/login",
-    "description": "User authentication login page"
-  },
-  {
     "path": "/",
     "description": "Home page (redirects to profile)"
   },
   {
     "path": "/profile",
-    "description": "User profile page"
+    "description": "User profile dashboard with service tabs and navigation"
   },
   {
     "path": "/plans",
-    "description": "Subscription plans page"
+    "description": "Subscription plans and pricing page"
+  },
+  {
+    "path": "/auth/login",
+    "description": "User authentication login page (redirects to profile)"
+  },
+  {
+    "path": "/payment",
+    "description": "Payment processing and subscription management page"
   },
   {
     "path": "/store",
-    "description": "Store listing page"
+    "description": "Store listing and management main page"
   },
   {
     "path": "/store/{storeId}",
-    "description": "Store main page (redirects to overview)"
+    "description": "Individual store management dashboard"
   },
   {
     "path": "/store/{storeId}/overview",
-    "description": "Store overview dashboard"
+    "description": "Store overview with analytics and quick stats"
   },
   {
     "path": "/store/{storeId}/orders",
-    "description": "Store orders management"
+    "description": "Store orders management and tracking"
   },
   {
     "path": "/store/{storeId}/products",
-    "description": "Store products management"
+    "description": "Store products catalog management"
   },
   {
     "path": "/store/{storeId}/forms",
-    "description": "Store forms management"
+    "description": "Store custom forms and collections management"
   },
   {
     "path": "/store/{storeId}/stores",
-    "description": "Store settings and management"
-  },
-  {
-    "path": "/store/{storeId}/settings",
-    "description": "Store settings page"
+    "description": "Store settings and configuration"
   },
   {
     "path": "/product/{prodId}",
-    "description": "Individual product details page"
+    "description": "Individual product details and order creation page"
   },
   {
     "path": "/pack/{packId}",
-    "description": "Product pack details page"
+    "description": "Product pack details with bundled items and pricing"
   },
   {
     "path": "/collection/{collectionId}",
-    "description": "Product collection details page"
+    "description": "Product collection page with grouped items"
   },
   {
     "path": "/client",
@@ -65,15 +65,15 @@
   },
   {
     "path": "/client/stores",
-    "description": "Client stores listing"
+    "description": "Browse and explore available stores"
   },
   {
     "path": "/client/stores/{storeId}",
-    "description": "Specific client store view"
+    "description": "Client view of a specific store with products"
   },
   {
     "path": "/client/stores/{storeId}/products",
-    "description": "Client store products listing"
+    "description": "Client store products listing and shopping"
   },
   {
     "path": "/deliveries",
@@ -81,54 +81,46 @@
   },
   {
     "path": "/deliveries/overview",
-    "description": "Deliveries overview dashboard"
+    "description": "Delivery service overview dashboard with analytics"
   },
   {
     "path": "/deliveries/orders",
-    "description": "Delivery orders management"
+    "description": "Delivery orders management and assignment"
   },
   {
     "path": "/deliveries/accounts",
-    "description": "Delivery accounts management"
+    "description": "Delivery service accounts and staff management"
   },
   {
     "path": "/deliveries/pricing",
-    "description": "Delivery pricing configuration"
+    "description": "Delivery pricing configuration and zone management"
   },
   {
     "path": "/deliveries/settings",
-    "description": "Delivery company settings"
+    "description": "Delivery company settings and branding"
   },
   {
-    "path": "/tracking/{trackingId}",
-    "description": "Order tracking page"
+    "path": "/tracking",
+    "description": "Order tracking and status checking page"
   },
   {
     "path": "/feedbacks",
-    "description": "Customer feedback management"
+    "description": "Customer feedback and support contact page"
   },
   {
     "path": "/offers",
-    "description": "Offers and promotions page"
-  },
-  {
-    "path": "/payment",
-    "description": "Payment processing page"
-  },
-  {
-    "path": "/integrations",
-    "description": "Third-party integrations management"
+    "description": "Special offers and promotions page"
   },
   {
     "path": "/test",
-    "description": "Test page for development"
+    "description": "Development test page with interactive grid"
   },
   {
     "path": "/__/auth",
-    "description": "Authentication callback route"
+    "description": "Authentication callback and redirect handler"
   },
   {
     "path": "/__/payment",
-    "description": "Payment callback route"
+    "description": "Payment processing callback and success handler"
   }
 ]

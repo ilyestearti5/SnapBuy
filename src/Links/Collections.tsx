@@ -8,7 +8,7 @@ import {
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
-import { useStoreId } from "../App";
+import { useStoreId } from "../utils";
 import { snapbuyApi } from "../apis";
 import {
   confirm,
@@ -36,7 +36,7 @@ export const Collections = () => {
               return (
                 <div
                   key={collection.id}
-                  className="flex items-center justify-between gap-2 hover:bg-[--biqpod-primary-background] p-2 cursor-pointer"
+                  className="flex justify-between items-center gap-2 hover:bg-[--biqpod-primary-background] p-2 cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <div className="relative">
@@ -44,7 +44,7 @@ export const Collections = () => {
                         src={collection.photo}
                         className="border border-[--biqpod-borders] border-solid rounded-xl w-16 h-16 object-cover"
                       />
-                      <span className="font-bold absolute top-0 right-0 bg-red-500 text-white w-[18px] pointer-events-none transform translate-x-1/2 z-[1000] -translate-y-1/2 h-[18px] inline-flex items-center justify-center rounded-full text-xs">
+                      <span className="inline-flex top-0 right-0 z-[1000] absolute justify-center items-center bg-red-500 rounded-full w-[18px] h-[18px] font-bold text-white text-xs -translate-y-1/2 translate-x-1/2 pointer-events-none transform">
                         {collection.products?.length}
                       </span>
                     </div>

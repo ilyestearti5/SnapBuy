@@ -36,9 +36,9 @@ import { useEffect } from "react";
 import { snapbuyApi } from "../apis";
 import { mergeArray, range } from "@biqpod/app/ui/utils";
 import { Nothing } from "@biqpod/app/ui/types";
-import { OrderView } from "../Clients/OrderView";
 import { FilterPopup } from "./FilterPopup";
 import { AssignDeliveryAgent } from "./AssignDeliveryAgent";
+import { OrderView } from "../routes/Clients/OrderView";
 interface DeliveryOrdersProps {}
 const PAGE_SIZE = 20;
 export const DeliveryOrders = ({}: DeliveryOrdersProps) => {

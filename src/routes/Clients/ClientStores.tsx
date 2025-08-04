@@ -29,11 +29,11 @@ import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { delay, tw } from "@biqpod/app/ui/utils";
-import { snapbuyApi } from "./apis";
+import { snapbuyApi } from "../../apis";
 import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
-import { CartPopup } from "./CartPopup";
 import { deleteCart } from "./AddProductToCart";
+import { CartPopup } from "./CartPopup";
 interface UserLineProps {
   user: Biqpod.Account.User;
 }

@@ -22,11 +22,11 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { setFocused } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
-import { ImageSlider } from "./Links/ImageSlider";
-import { getPrice } from "./utils";
+import { ImageSlider } from "../../Links/ImageSlider";
+import { getPrice } from "../../utils";
 import { useLocation } from "react-router";
-import { snapbuyApi } from "./apis";
-import { initPixels } from "./Links/pixles";
+import { snapbuyApi } from "../../apis";
+import { initPixels } from "../../Links/pixles";
 import { Nothing } from "@biqpod/app/ui/types";
 export interface ProductPopupProps {
   product: SnapBuy.Product;

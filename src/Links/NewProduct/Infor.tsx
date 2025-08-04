@@ -17,7 +17,7 @@ import {
   useFormLimited,
 } from "../../apis";
 import { useAsyncMemo } from "@biqpod/app/ui/hooks";
-import { useStoreId } from "../../App";
+import { useStoreId } from "../../utils";
 export const ProductInfo = () => {
   const category = useFormCategory();
   const limited = useFormLimited();

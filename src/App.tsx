@@ -21,23 +21,17 @@ import {
   EmptyComponent,
 } from "@biqpod/app/ui/components";
 import { Link } from "react-router-dom";
-import { Store } from "./Store";
-import { Client } from "./Client";
-import { FeedbackRoute } from "./FeedbackRoute";
-import { Redirections } from "./RedirectToLoginIfNeeded";
+import { Store } from "./routes/Stores/Store";
+import { Client } from "./routes/Clients/Client";
+import { FeedbackRoute } from "./routes/App/FeedbackRoute";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { Plans } from "./Plans";
-import { PageNotFound } from "./PageNotFound";
+import { Plans } from "./routes/App/Plans";
+import { PageNotFound } from "./routes/App/PageNotFound";
 import { ProductRoute } from "./Links/ProductRoute";
 import payChecked from "./assets/payment-checked.png";
-import {
-  getTemp,
-  getTempFromStore,
-  setSettingValue,
-  useUser,
-} from "@biqpod/app/ui/hooks";
-import { Stores } from "./Stores";
-import { OffersPage } from "./OffersPage";
+import { setSettingValue } from "@biqpod/app/ui/hooks";
+import { Stores } from "./routes/Stores/Stores";
+import { OffersPage } from "./routes/App/OffersPage";
 import { Deliveries } from "./Deliveries";
 import { appTabs, extraTabs, tabServices } from "./utils";
 import { isAndroid, isIos, isWeb } from "@biqpod/app/ui/app";
@@ -46,38 +40,9 @@ import { PackRoute } from "./Links/PackRoute";
 import { ProfileInside } from "./ProfileInside";
 import { range, tw } from "@biqpod/app/ui/utils";
 import { Tracking } from "./Tracking";
-import { CollectionsRoute } from "./CollectionsRoute";
-interface ProfileProps {
-  children?: JSX.Element;
-}
-export const Profile = ({ children }: ProfileProps) => {
-  const userLoaded = getTemp<boolean>("userLoaded");
-  const user = useUser();
-  return (
-    <EmptyComponent>
-      {userLoaded && user && children}
-      <Redirections />
-    </EmptyComponent>
-  );
-};
-export const useStoreId = () => {
-  return getTemp<string>("storeId");
-};
-export const getStoreId = () => {
-  return getTempFromStore<string>("storeId");
-};
-interface SectionProps {
-  text: string;
-}
-const Section = ({ text }: SectionProps) => {
-  return (
-    <div className="flex justify-center items-center p-4">
-      <h1 className="bg-clip-text bg-gradient-to-r from-[--biqpod-secondary] to-[--biqpod-primary] drop-shadow-md font-extrabold text-transparent text-4xl text-center capitalize">
-        <Translate content={text} />
-      </h1>
-    </div>
-  );
-};
+import { CollectionsRoute } from "./routes/Collections/CollectionsRoute";
+import { Profile } from "./routes/App/Profile";
+import { Section } from "./routes/App/Section";
 export const App = () => {
   const loc = useLocation();
   useEffect(() => {
@@ -88,6 +53,7 @@ export const App = () => {
     typeof dark === "string" &&
       setSettingValue("window/dark.boolean", dark === "true");
   }, [loc.search]);
+  const isClient = loc.pathname.match(/\/?client\/stores\/[0-9]+/gi);
   return (
     <div className="flex flex-col h-full">
       {isAndroid && (
@@ -96,11 +62,13 @@ export const App = () => {
       {isIos && (
         <div className="z-[100000000000000000000000000000000000000000000000] h-[40px]" />
       )}
-      <Header>
-        <HeaderContent />
-      </Header>
+      {!isClient && (
+        <Header>
+          <HeaderContent />
+        </Header>
+      )}
       <Window>
-        <LeftSide />
+        {!isClient && <LeftSide />}
         <Container>
           <Switch>
             <Route path="/__/auth">
@@ -327,9 +295,9 @@ export const App = () => {
             </Route>
           </Switch>
         </Container>
-        <RightSide />
+        {!isClient && <RightSide />}
       </Window>
-      <Layoutes profileContent={<ProfileInside />} />
+      {!isClient && <Layoutes profileContent={<ProfileInside />} />}
     </div>
   );
 };

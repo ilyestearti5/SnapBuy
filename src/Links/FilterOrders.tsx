@@ -19,7 +19,7 @@ import {
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
-import { allStatus } from "../ChangeStatus";
+import { allStatus } from "../routes/Stores/ChangeStatus";
 import { useEffect } from "react";
 import { delay, tw } from "@biqpod/app/ui/utils";
 export interface FilterOrdersProps {

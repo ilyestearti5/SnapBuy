@@ -11,8 +11,8 @@ import {
 } from "@biqpod/app/ui/components";
 import { useAsyncMemo, closePopup } from "@biqpod/app/ui/hooks";
 import { tw, range } from "@biqpod/app/ui/utils";
-import { snapbuyApi } from "../apis";
 import { useMemo } from "react";
+import { snapbuyApi } from "../../apis";
 export interface OrderView {
   order: SnapBuy.Order;
 }

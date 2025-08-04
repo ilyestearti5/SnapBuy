@@ -28,7 +28,7 @@ import {
 import { SettingValueType } from "@biqpod/app/ui/types";
 import { useFetchMoreAction } from "../../utils";
 import { useEffect, useMemo } from "react";
-import { useStoreId } from "../../App";
+import { useStoreId } from "../../utils";
 import { setFocused } from "@biqpod/app/ui/utils";
 import { UpsertProp } from "./AddProp";
 import { snapbuyApi } from "../../apis";

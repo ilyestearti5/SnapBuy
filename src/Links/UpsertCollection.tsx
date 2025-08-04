@@ -11,7 +11,7 @@ import {
   TabContent,
   Translate,
 } from "@biqpod/app/ui/components";
-import { useStoreId } from "../App";
+import { useStoreId } from "../utils";
 import {
   closePopup,
   confirm,

@@ -56,7 +56,7 @@ import { snapbuyApi } from "../apis";
 import { filterFuzzySearch, mapAsync, tw } from "@biqpod/app/ui/utils";
 import { LinkingZones } from "./LinkingZones";
 import { motion, AnimatePresence } from "framer-motion";
-import { highlightMatch } from "../ClientProductRender";
+import { highlightMatch } from "../routes/Clients/ClientProductRender";
 const DEFAULT_CENTER: [number, number] = [35.6892, 51.389]; // Example: Tehran, Iran
 const DEFAULT_RADIUS = 2000; // meters
 interface DraggableCircleProps {

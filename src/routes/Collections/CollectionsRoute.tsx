@@ -9,25 +9,21 @@ import {
 } from "@biqpod/app/ui/components";
 import { getPosition, showPopup, useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { useParams } from "react-router";
-import { snapbuyApi } from "./apis";
-import { ClientProductRender } from "./ClientProductRender";
-import { useFullCart } from "./AddProductToCart";
+import { snapbuyApi } from "../../apis";
+import { ClientProductRender } from "../Clients/ClientProductRender";
+import { useFullCart } from "../Clients/AddProductToCart";
 import { tw } from "@biqpod/app/ui/utils";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { CartPopup } from "./CartPopup";
-import { ImageSlider } from "./Links/ImageSlider";
-
+import { ImageSlider } from "../../Links/ImageSlider";
+import { CartPopup } from "../Clients/CartPopup";
 export const CollectionsRoute = () => {
   const collectionId = useParams<{ collectionId: string }>().collectionId;
   const collection = useAsyncMemo(async () => {
     if (!collectionId) return null;
     return await snapbuyApi.getCollection(collectionId);
   }, [collectionId]);
-
   const cart = useFullCart(collection?.storeId);
-
   const height = getPosition("click-see-cart")?.height || 0;
-
   return (
     <EmptyComponent>
       {!collection && <CardWait className="w-full h-full" />}
@@ -35,14 +31,14 @@ export const CollectionsRoute = () => {
         <EmptyComponent>
           {collection.photo && (
             <EmptyComponent>
-              <div className="overflow-hidden h-[50vh] w-full">
+              <div className="w-full h-[50vh] overflow-hidden">
                 <ImageSlider photos={[collection.photo]} />
               </div>
               <Line />
             </EmptyComponent>
           )}
-          <div className="sticky top-0 z-10 bg-[--biqpod-primary-background]">
-            <h1 className="text-3xl p-3 text-center text-[--biqpod-primary] font-bold bg-[--biqpod-primary-background]">
+          <div className="top-0 z-10 sticky bg-[--biqpod-primary-background]">
+            <h1 className="bg-[--biqpod-primary-background] p-3 font-bold text-[--biqpod-primary] text-3xl text-center">
               {collection.name}
             </h1>
             <Line />

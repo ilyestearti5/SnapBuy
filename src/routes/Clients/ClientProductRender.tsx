@@ -30,10 +30,10 @@ import {
   AddProductInCart,
   useSearchParams,
 } from "./AddProductToCart";
-import { ImageSlider } from "./Links/ImageSlider";
+import { ImageSlider } from "../../Links/ImageSlider";
 import { MenuRecordProps } from "@biqpod/app/ui/types";
-import { initPixels } from "./Links/pixles";
-import { snapbuyApi } from "./apis";
+import { initPixels } from "../../Links/pixles";
+import { snapbuyApi } from "../../apis";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;

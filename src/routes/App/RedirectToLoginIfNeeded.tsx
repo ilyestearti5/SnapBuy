@@ -4,7 +4,7 @@ import {
   CircleLoading,
 } from "@biqpod/app/ui/components";
 import { setTemp, useAsyncEffect, useUser } from "@biqpod/app/ui/hooks";
-import { getCurrentAuth } from "./server";
+import { getCurrentAuth } from "../../server";
 import { delay } from "@biqpod/app/ui/utils";
 import { Link } from "react-router-dom";
 export const Redirections = () => {

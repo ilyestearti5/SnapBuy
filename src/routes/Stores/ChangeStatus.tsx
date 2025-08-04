@@ -15,8 +15,8 @@ import {
   getTempFromStore,
   setTemp,
 } from "@biqpod/app/ui/hooks";
-import { colors, icons } from "./utils";
-import { deleteDoc, setDoc } from "./server";
+import { colors, icons } from "../../utils";
+import { deleteDoc, setDoc } from "../../server";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
 export interface ChangeStatusProps {
   order: SnapBuy.Order;

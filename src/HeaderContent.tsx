@@ -44,7 +44,7 @@ import { useEffect, useMemo } from "react";
 import { mapAsync, mergeArray, tw } from "@biqpod/app/ui/utils";
 import { OpenMenuProps } from "@biqpod/app/ui/types";
 import { Link } from "react-router-dom";
-import { useStoreId } from "./App";
+import { useStoreId } from "./utils";
 import { initStoreIdSave } from "./utils";
 import { AiAssistance } from "./AiAssistance";
 const getId = () => {

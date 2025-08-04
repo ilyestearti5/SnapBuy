@@ -27,10 +27,10 @@ import { delay, mergeObject, tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "./apis";
 import { useHistory } from "react-router";
 import pinUri from "./assets/ping.mp3";
-import { CartPopup } from "./CartPopup";
 import { useClientStoreId } from "./utils";
 import { Link } from "react-router-dom";
 import { initialHeight, isAndroidWeb } from "./utils";
+import { CartPopup } from "./routes/Clients/CartPopup";
 interface SpeechProps {
   text?: string;
   voice?: string;
@@ -234,7 +234,6 @@ export const AiAssistance = () => {
   const keyboardHeight = useMemo(() => {
     return initialHeight - height;
   }, [height]);
-
   return (
     <Card
       className="bottom-[-1px] absolute border-b-0 max-md:w-full md:min-w-[50%] md:max-w-[80vw] overflow-hidden"

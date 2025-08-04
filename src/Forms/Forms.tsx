@@ -18,7 +18,7 @@ import {
   useTemp,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
-import { useStoreId } from "../App";
+import { useStoreId } from "../utils";
 import { UpsertCollection } from "./UpsertCollection";
 const forms: {
   id: SnapBuyCollection["type"];

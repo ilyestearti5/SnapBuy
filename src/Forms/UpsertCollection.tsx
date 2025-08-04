@@ -18,7 +18,7 @@ import {
   setFieldValue,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
-import { useStoreId } from "../App";
+import { useStoreId } from "../utils";
 import { SnapBuyCollection } from "./Orders/OrderIndex";
 interface UpsertCollectionProps {
   collectionId?: string;

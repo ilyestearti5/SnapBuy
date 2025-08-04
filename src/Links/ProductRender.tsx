@@ -17,7 +17,7 @@ import { tw } from "@biqpod/app/ui/utils";
 import { ImageSlider } from "./ImageSlider";
 import { motion } from "framer-motion";
 import { useCallback, useMemo } from "react";
-import { highlightMatch } from "../ClientProductRender";
+import { highlightMatch } from "../routes/Clients/ClientProductRender";
 import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
 export interface ProductRenderProps {
   product: SnapBuy.Product;

@@ -1,6 +1,6 @@
 import { useParams } from "react-router";
 import { useAsyncMemo, useDeviceResolution } from "@biqpod/app/ui/hooks";
-import { snapbuyApi } from "./apis";
+import { snapbuyApi } from "../../apis";
 import {
   Card,
   CardWait,
@@ -14,8 +14,8 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { Link } from "react-router-dom";
 import { mapAsync, randomizeArray, tw } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
-import { ClientProductRender } from "./ClientProductRender";
-import { getPrice } from "./utils";
+import { ClientProductRender } from "../Clients/ClientProductRender";
+import { getPrice } from "../../utils";
 export const StoreRoute = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
   const store = useAsyncMemo(async () => {

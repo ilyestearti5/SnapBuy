@@ -78,11 +78,11 @@ export const Tracking = () => {
     const trackingId = new URLSearchParams(loc.search).get("id");
     return trackingId;
   }, [loc.pathname]);
-  const value = getFieldValue("tracking-value");
-  const id = useMemo(() => {
-    const id = value?.replaceAll(/ +/gi, "-");
-    return id;
-  }, [value]);
+  // const value = getFieldValue("tracking-value");
+  // const id = useMemo(() => {
+  //   const id = value?.replaceAll(/ +/gi, "-");
+  //   return id;
+  // }, [value]);
   useEffect(() => {
     const id = trackingId?.replaceAll(/ +/gi, "-");
     if (id?.match(/^[a-zA-Z0-9]+(-([a-zA-Z0-9]+)){3}$/)) {

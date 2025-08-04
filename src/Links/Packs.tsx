@@ -24,7 +24,7 @@ import {
   isSuccess,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
-import { useStoreId } from "../App";
+import { useStoreId } from "../utils";
 import { UpsertPack } from "./UpsertPack";
 import { useEffect } from "react";
 import { range } from "@biqpod/app/ui/utils";
@@ -71,11 +71,11 @@ export const Packs = () => {
               return (
                 <div
                   key={pack.id}
-                  className="flex items-center justify-between gap-2 hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] p-2 cursor-pointer"
+                  className="flex justify-between items-center gap-2 hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] p-2 cursor-pointer"
                 >
                   <div className="flex items-center gap-2">
                     <div className="flex items-center gap-1">
-                      <span className="font-bold bg-red-500 text-white w-[18px] pointer-events-none h-[18px] inline-flex items-center justify-center rounded-full text-xs">
+                      <span className="inline-flex justify-center items-center bg-red-500 rounded-full w-[18px] h-[18px] font-bold text-white text-xs pointer-events-none">
                         {pack.products?.length}
                       </span>
                       <span>{pack.name}</span>
@@ -142,7 +142,7 @@ export const Packs = () => {
               );
             })}
             {packs.get.length === 0 && (
-              <div className="flex items-center justify-center h-full">
+              <div className="flex justify-center items-center h-full">
                 <img
                   draggable={false}
                   src={
@@ -157,7 +157,7 @@ export const Packs = () => {
           range(5).map((number) => {
             return (
               <div key={number} className="p-2">
-                <CardWait className="w-full h-[50px] flex items-center justify-center rounded-2xl" />
+                <CardWait className="flex justify-center items-center rounded-2xl w-full h-[50px]" />
               </div>
             );
           })}
@@ -174,7 +174,7 @@ export const Packs = () => {
         </Button>
       </div>
       {loading && (
-        <div className="absolute inset-0 bg-[--biqpod-gray-opacity-2] flex items-center justify-center">
+        <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity-2]">
           <CircleLoading />
         </div>
       )}

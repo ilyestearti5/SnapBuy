@@ -2,9 +2,9 @@ import { Scroll } from "@biqpod/app/ui/components";
 import { Redirect, Route, Switch } from "react-router";
 import { ClientProducts } from "./ClientProducts";
 import { ExploreStores } from "./ClientStores";
-import { PageNotFound } from "./PageNotFound";
+import { PageNotFound } from "../App/PageNotFound";
 import { initCart } from "./AddProductToCart";
-import { StoreRoute } from "./StoreRoute";
+import { Test } from "../../Test";
 export const Client = () => {
   initCart();
   return (
@@ -18,7 +18,7 @@ export const Client = () => {
             <ClientProducts />
           </Route>
           <Route path="/client/stores/:storeId" exact>
-            <StoreRoute />
+            <Test />
           </Route>
           <Route path="/client/stores" exact>
             <ExploreStores />

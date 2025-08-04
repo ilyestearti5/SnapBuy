@@ -6,8 +6,7 @@ import {
   showPopup,
   showToast,
 } from "@biqpod/app/ui/hooks";
-import { ChangeStatus } from "../ChangeStatus";
-import { OrderView } from "../Clients/OrderView";
+import { ChangeStatus } from "../routes/Stores/ChangeStatus";
 import { OrderInvoice } from "./OrderInvoice";
 import { delay, mergeArray } from "@biqpod/app/ui/utils";
 import { ViewClient } from "./ViewClient";
@@ -23,6 +22,7 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { snapbuyApi } from "../apis";
+import { OrderView } from "../routes/Clients/OrderView";
 export interface OpenOrderMenuOptions {
   x: number;
   y: number;

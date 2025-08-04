@@ -67,15 +67,15 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFullCart, useSearchParams } from "./AddProductToCart";
-import { CartPopup } from "./CartPopup";
-import { ClientProductRender } from "./ClientProductRender";
 import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import { tw } from "@biqpod/app/ui/utils";
-import { snapbuyApi } from "./apis";
-import { ImageSlider } from "./Links/ImageSlider";
+import { snapbuyApi } from "../../apis";
+import { ImageSlider } from "../../Links/ImageSlider";
 import { Link } from "react-router-dom";
-import { initPixels } from "./Links/pixles";
+import { initPixels } from "../../Links/pixles";
+import { ClientProductRender } from "./ClientProductRender";
+import { CartPopup } from "./CartPopup";
 export const ClientProducts = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
   const store = useAsyncMemo(async () => {

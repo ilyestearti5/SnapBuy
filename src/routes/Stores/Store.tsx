@@ -1,15 +1,15 @@
 import { Button, Scroll } from "@biqpod/app/ui/components";
 import { Link } from "react-router-dom";
-import { Orders } from "./Links/Orders";
+import { Orders } from "../../Links/Orders";
 import { StoreOverview } from "./StoreOverview";
-import { Products } from "./Links/Products";
+import { Products } from "../../Links/Products";
 import { Route, Switch, useLocation, useParams } from "react-router";
 import { setTemp } from "@biqpod/app/ui/hooks";
-import { Stores } from "./Stores";
 import { useEffect } from "react";
-import { userTabs } from "./utils";
+import { userTabs } from "../../utils";
 import { tw } from "@biqpod/app/ui/utils";
-import { Forms } from "./Forms/Forms";
+import { Forms } from "../../Forms/Forms";
+import { Stores } from "./Stores";
 // function Page() {
 //   return (
 //     <div className="flex justify-center items-center p-2 h-full">

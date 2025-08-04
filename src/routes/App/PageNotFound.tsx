@@ -1,4 +1,4 @@
-import pageNotFound from "./assets/page-not-found.png";
+import pageNotFound from "../../assets/page-not-found.png";
 import { Button, Card, Line, Translate } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Link, useLocation } from "react-router-dom";

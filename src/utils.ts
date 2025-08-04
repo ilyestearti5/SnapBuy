@@ -25,6 +25,7 @@ import {
   ColorIds,
   execAction,
   getTemp,
+  getTempFromStore,
   setTemp,
   useAction,
   useCopyState,
@@ -1478,7 +1479,7 @@ export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
   onChange: (value: Biqpod.System.Setting.Config[T]) => void;
 }
 
-export const colorsInListWithNames: {colorId: ColorIds; name: string}[] = [
+export const colorsInListWithNames: { colorId: ColorIds; name: string }[] = [
   { colorId: "borders", name: "Borders" },
   { colorId: "primary.content", name: "Order Button Text" },
   { colorId: "primary", name: "Order Button" },
@@ -1486,8 +1487,8 @@ export const colorsInListWithNames: {colorId: ColorIds; name: string}[] = [
   { colorId: "secondary", name: "Secondary" },
   { colorId: "shadow.color", name: "Shadow" },
   { colorId: "text.color", name: "Text" },
-  {colorId: "field.background", name: "Inputs"}
-]
+  { colorId: "field.background", name: "Inputs" },
+];
 
 export const arraySeparator = ",;,";
 
@@ -1571,4 +1572,10 @@ export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
     price,
     choised,
   };
+};
+export const useStoreId = () => {
+  return getTemp<string>("storeId");
+};
+export const getStoreId = () => {
+  return getTempFromStore<string>("storeId");
 };

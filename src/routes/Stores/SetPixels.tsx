@@ -19,7 +19,7 @@ import {
   showToast,
   useAction,
 } from "@biqpod/app/ui/hooks";
-import { snapbuyApi } from "./apis";
+import { snapbuyApi } from "../../apis";
 import { useEffect } from "react";
 import { tw } from "@biqpod/app/ui/utils";
 interface SetPixelsProps {

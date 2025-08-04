@@ -21,11 +21,11 @@ import {
   useCopyState,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { snapbuyApi, Duration, Plan, PlanRecord } from "./apis";
+import { snapbuyApi, Duration, Plan, PlanRecord } from "../../apis";
 import { Nothing } from "@biqpod/app/ui/types";
 import { range, tw } from "@biqpod/app/ui/utils";
-import { useSub } from "./store-init";
-import { getStringTimeLeave } from "./utils";
+import { useSub } from "../../store-init";
+import { getStringTimeLeave } from "../../utils";
 interface SelectedPlanProps {
   name: string;
   plan: PlanRecord;

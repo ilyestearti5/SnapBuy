@@ -1,6 +1,6 @@
 import { ExcelPopup } from "@biqpod/app/ui/components";
 import { showPopup } from "@biqpod/app/ui/hooks";
-import { getStoreId } from "../App";
+import { getStoreId } from "../utils";
 import { PopupProduct } from "./PopupProduct";
 
 export const loadFromExcel = async (file: string | Blob) => {

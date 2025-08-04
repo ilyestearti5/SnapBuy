@@ -38,8 +38,6 @@ import {
 import { include, mergeArray, range, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
 import { cloud, onCollectionSnapshot } from "../server";
-import { OrderView } from "../Clients/OrderView";
-import { useActionStatus } from "../CartPopup";
 import { useLocation } from "react-router-dom";
 import { snapbuyApi } from "../apis";
 import {
@@ -49,12 +47,14 @@ import {
   useFilterState,
 } from "./FilterOrders";
 import { openOrderMenu } from "./openOrderMenu";
-import { useStoreId } from "../App";
+import { useStoreId } from "../utils";
 import { colors, getImageByPlatform, icons } from "../utils";
 import { motion } from "framer-motion";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { UpsertDelivery } from "./UpsertDelivery";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
+import { OrderView } from "../routes/Clients/OrderView";
+import { useActionStatus } from "../routes/Clients/CartPopup";
 
 const PAGE_SIZE = 40;
 interface StatusUiProps {

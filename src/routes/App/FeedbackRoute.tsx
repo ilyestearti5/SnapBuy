@@ -14,7 +14,7 @@ import {
   useDeviceResolution,
 } from "@biqpod/app/ui/hooks";
 import { MenuRecordProps } from "@biqpod/app/ui/types";
-import image from "./assets/feeds-background.png";
+import image from "../../assets/feeds-background.png";
 import { useMemo } from "react";
 export const useWords = () => {
   const langs = langHooks.getAll();
