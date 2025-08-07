@@ -26,7 +26,7 @@ import { PostInforPrice } from "./Views/ProductInforPrice";
 import { ProductPricingType } from "./Views/ProductType";
 import {
   setFormAvailable,
-  setFormCategory,
+  setFormBrand,
   setFormCollection,
   setFormDescription,
   setFormKeys,
@@ -81,10 +81,10 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
     setFormQuantity(product?.quantity || 0);
     setFormAvailable(product?.available || false);
     setFormType(product?.type || "single");
-    setFormCategory(product?.category || "");
     setFormPrice(product?.single?.price || 0);
     setFormPrices(product?.multiple?.prices || []);
     setFormCollection(product?.formCollectionId);
+    setFormBrand(product?.brandId);
   }, [product]);
   const productForm = useFormProduct();
   return (

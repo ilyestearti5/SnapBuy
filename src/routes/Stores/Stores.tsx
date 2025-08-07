@@ -43,6 +43,9 @@ import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
 import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";
 import { pixelsPhoto, SetPixels } from "./SetPixels";
+import { SetTemplate } from "./SetTemplate";
+import { platformsPhoto } from "../../utils/platforms";
+import { SetStorePlatforms } from "./SetStorePlatforms";
 export const Stores = () => {
   const storeId = useStoreId();
   const storesState = useCopyState<SnapBuy.Store[]>([]);
@@ -125,6 +128,9 @@ export const Stores = () => {
               const linkId = `store-${store.id}`;
               const choosed = storeId === store.id;
               const pixels = Object.entries(store.pixels || {}).filter(
+                ([_, value]) => value
+              );
+              const platforms = Object.entries(store.platforms || {}).filter(
                 ([_, value]) => value
               );
               return (
@@ -218,11 +224,27 @@ export const Stores = () => {
                                   },
                                 },
                                 {
+                                  label: "Set Template",
+                                  click() {
+                                    showPopup(<SetTemplate store={store} />);
+                                  },
+                                  defaultIcon: allIcons.solid.faPalette,
+                                },
+                                {
                                   label: "Set Pixels",
                                   click: async () => {
                                     showPopup(<SetPixels store={store} />);
                                   },
                                   defaultIcon: allIcons.solid.faCode,
+                                },
+                                {
+                                  label: "Set Platforms",
+                                  click: async () => {
+                                    showPopup(
+                                      <SetStorePlatforms store={store} />
+                                    );
+                                  },
+                                  defaultIcon: allIcons.solid.faGlobe,
                                 },
                                 // {
                                 //   label: "Invite",
@@ -345,6 +367,42 @@ export const Stores = () => {
                                           </div>
                                         </div>
                                       </Card>
+                                    );
+                                  }}
+                                >
+                                  <img
+                                    src={photo}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </EmptyComponent>
+                    )}
+                    {!!platforms.length && (
+                      <EmptyComponent>
+                        <Line />
+                        <div className="flex justify-between items-center">
+                          <div className="px-4">
+                            <span className="capitalize">
+                              <Translate content="platforms" />
+                            </span>
+                          </div>
+                          <div className="flex justify-center">
+                            {platforms.map(([platform, _]) => {
+                              const photo =
+                                platformsPhoto[
+                                  platform as keyof typeof platformsPhoto
+                                ];
+                              return (
+                                <div
+                                  key={platform}
+                                  className="hover:bg-[--biqpod-gray-opacity-2] p-1 h-[30px] cursor-pointer"
+                                  onClick={() => {
+                                    showPopup(
+                                      <SetStorePlatforms store={store} />
                                     );
                                   }}
                                 >

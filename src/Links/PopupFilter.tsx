@@ -15,14 +15,7 @@ import { closePopup, getTab, setTab, useCopyState } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect } from "react";
-import { useCategories } from "../apis";
 const filterFields = [
-  {
-    label: "Category",
-    value: "category",
-    icon: allIcons.solid.faTag,
-    description: "Is For Getting Product With Specific Category",
-  },
   {
     label: "Available",
     value: "available",
@@ -43,7 +36,6 @@ const filterFields = [
   },
 ];
 export interface FilterOptionsForProduct {
-  category: string | null;
   available: string | null;
   promoted?: string | null;
   minPrice?: number | null;
@@ -55,14 +47,11 @@ interface PopupFilterProps {
 }
 export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
   const isAvailable = useCopyState<string | Nothing>(false);
-  const category = useCopyState<string | Nothing>("");
   const promoted = useCopyState<string | Nothing>("");
-  const categories = useCategories();
   const minPriceState = useCopyState<number | null | undefined>(0);
   const maxPriceState = useCopyState<number | null | undefined>(0);
   useEffect(() => {
     if (value) {
-      category.set(value.category);
       isAvailable.set(value.available);
       promoted.set(value.promoted || "");
       minPriceState.set(value.minPrice || 0);
@@ -155,39 +144,6 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
               <Line />
               <div className="p-2 capitalize">
                 <Translate content="is for getting the available product" />
-              </div>
-            </Card>
-          </TabContent>
-          <TabContent
-            identifier="filter-products"
-            value="category"
-            className="flex flex-col justify-center items-center gap-2 h-full"
-          >
-            <Card>
-              <div className="p-2 text-center">
-                <h1 className="font-bold text-2xl capitalize">
-                  <Translate content="category" />
-                </h1>
-              </div>
-              <Line />
-              <div className="p-2">
-                <EnumField
-                  state={category}
-                  config={{
-                    list: (categories || []).map(({ category, emoji }) => {
-                      return {
-                        value: category,
-                        content: category + " " + emoji,
-                      };
-                    }),
-                    search: !!(categories?.length && categories?.length > 10),
-                  }}
-                  id="category"
-                />
-              </div>
-              <Line />
-              <div className="p-2 capitalize">
-                <Translate content="is for getting product with specific category" />
               </div>
             </Card>
           </TabContent>
@@ -308,13 +264,11 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
         <Button
           onClick={() => {
             onChange?.({
-              category: category.get || null,
               available: isAvailable.get || null,
               promoted: promoted.get || null,
               minPrice: minPriceState.get || null,
               maxPrice: maxPriceState.get || null,
             });
-            category.set("");
             isAvailable.set(false);
             promoted.set("");
             minPriceState.set(0);

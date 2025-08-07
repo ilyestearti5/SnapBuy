@@ -206,7 +206,7 @@ const exportExcel = async (
   }));
   // Add rows
   products.forEach((product) => {
-    var option: Partial<SnapBuy.Product> = {};
+    var option: Record<string, any> = {};
     keys.forEach((key) => {
       var value = product[key];
       if (value === undefined) {
@@ -544,12 +544,6 @@ export const Products = () => {
       let filteredProducts = products.get?.filter((prod) => {
         // Apply filter options with AND logic
         if (options.get) {
-          // Filter by category
-          if (options.get.category && options.get.category !== "all") {
-            if (prod.category !== options.get.category) {
-              return false;
-            }
-          }
           // Filter by availability
           if (
             options.get.available !== null &&
@@ -630,7 +624,7 @@ export const Products = () => {
     500
   );
   useEffect(() => {
-    if (user?.uid) return snapbuyApi.onCategoryAndMarketChange(user?.uid);
+    if (user?.uid) return snapbuyApi.onMarketChange(user?.uid);
   }, [user]);
   const loading = isLoading(action);
   // FastList related state and refs

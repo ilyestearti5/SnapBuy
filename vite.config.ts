@@ -44,6 +44,12 @@ export default defineConfig(async ({ mode }) => {
         external: ["@biqpod/app"],
       },
     },
+    define: {
+      global: "globalThis",
+    },
+    optimizeDeps: {
+      include: ["react", "react-dom", "react/jsx-runtime"],
+    },
     plugins,
     server: {
       port: project.development.port,

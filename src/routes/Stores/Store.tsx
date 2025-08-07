@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Orders } from "../../Links/Orders";
 import { StoreOverview } from "./StoreOverview";
 import { Products } from "../../Links/Products";
+import { Brands } from "../../Links/Brands";
 import { Route, Switch, useLocation, useParams } from "react-router";
 import { setTemp } from "@biqpod/app/ui/hooks";
 import { useEffect } from "react";
@@ -76,6 +77,9 @@ export const Store = () => {
             </Route>
             <Route path={createRoute("products")}>
               <Products />
+            </Route>
+            <Route path={createRoute("brands")}>
+              <Brands />
             </Route>
             <Route path={createRoute("overview")}>
               <StoreOverview />

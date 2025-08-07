@@ -12,6 +12,7 @@ import {
   showBottomSheet,
   setTemp,
   getFieldValue,
+  useAsyncMemo,
 } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import { ImageSlider } from "./ImageSlider";
@@ -19,6 +20,7 @@ import { motion } from "framer-motion";
 import { useCallback, useMemo } from "react";
 import { highlightMatch } from "../routes/Clients/ClientProductRender";
 import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
+import { snapbuyApi } from "../apis";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
@@ -31,6 +33,20 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const price = product.single?.price || 0;
   const isPromotion = product.type === "multiple";
   const selectedProducts = getTemp<string[]>("selected-products");
+
+  // Fetch brand information if brandId exists
+  const brand = useAsyncMemo(async () => {
+    if (product.brandId) {
+      try {
+        return await snapbuyApi.getBrand(product.brandId);
+      } catch (error) {
+        console.error("Error fetching brand:", error);
+        return null;
+      }
+    }
+    return null;
+  }, [product.brandId]);
+
   // Helper: check if any product is selected
   const anyProductSelected = !!selectedProducts?.length;
   const handleLongPressStart = useCallback(() => {
@@ -102,10 +118,25 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
               </span>
             </div>
           )}
+          {brand && brand.photo && (
+            <div className="right-1 bottom-1 absolute h-8 overflow-hidden">
+              <img
+                src={brand.photo}
+                alt={brand.name}
+                className="w-full h-full object-contain"
+                title={brand.name}
+              />
+            </div>
+          )}
         </div>
         <Line />
         <div className="p-2 max-md:p-1">
-          {highlightMatch(product.name!, search)}
+          <div className="flex justify-between items-center gap-2">
+            <div className="flex-1">
+              {highlightMatch(product.name!, search)}
+            </div>
+            {brand && <Key className="italic">{brand.name} </Key>}
+          </div>
         </div>
         <Line />
         <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">

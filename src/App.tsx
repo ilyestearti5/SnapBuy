@@ -43,6 +43,7 @@ import { Tracking } from "./Tracking";
 import { CollectionsRoute } from "./routes/Collections/CollectionsRoute";
 import { Profile } from "./routes/App/Profile";
 import { Section } from "./routes/App/Section";
+import { DeveloperRoute } from "./routes/Dev";
 export const App = () => {
   const loc = useLocation();
   useEffect(() => {
@@ -245,6 +246,9 @@ export const App = () => {
             </Route>
             <Route path="/feedbacks" exact>
               <FeedbackRoute />
+            </Route>
+            <Route path="/developer" exact>
+              <DeveloperRoute />
             </Route>
             <Route path="/offers">
               <OffersPage />

@@ -9,9 +9,8 @@ import {
 } from "@biqpod/app/ui/components";
 import {
   snapbuyApi,
-  useCategories,
   useFormAvailable,
-  useFormCategory,
+  useFormBrand,
   useFormCollection,
   useFormKeys,
   useFormLimited,
@@ -19,15 +18,18 @@ import {
 import { useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { useStoreId } from "../../utils";
 export const ProductInfo = () => {
-  const category = useFormCategory();
   const limited = useFormLimited();
-  const categories = useCategories();
   const isAvailable = useFormAvailable();
   const keysState = useFormKeys();
   const collection = useFormCollection();
+  const brand = useFormBrand();
   const storeId = useStoreId();
   const ordersCollections = useAsyncMemo(async () => {
     if (storeId) return snapbuyApi.forms.getCollections("order");
+    return [];
+  }, [storeId]);
+  const brands = useAsyncMemo(async () => {
+    if (storeId) return snapbuyApi.getAllBrands(storeId);
     return [];
   }, [storeId]);
   return (
@@ -44,24 +46,36 @@ export const ProductInfo = () => {
       <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
         <label
           className="w-full md:text-right capitalize"
-          htmlFor="product-form-categorys"
+          htmlFor="product-brand"
         >
-          <Translate content="category" /> :
+          <Translate content="brand" />{" "}
+          <span className="text-[--biqpod-gray-opacity]">
+            (<Translate content="optional" />)
+          </span>{" "}
+          :
         </label>
         <div className="w-full">
-          <EnumField
-            id="product-form-category"
-            state={category}
-            config={{
-              list: (categories || []).map(({ category, emoji }) => {
-                return {
-                  value: category,
-                  content: category + " " + emoji,
-                };
-              }),
-              search: true,
-            }}
-          />
+          {brands && (
+            <EnumField
+              state={brand}
+              config={{
+                list: [
+                  {
+                    value: "",
+                    content: "No Brand",
+                  },
+                  ...brands.map((brand) => {
+                    return {
+                      value: brand.id!,
+                      content: brand.name || "Unnamed Brand",
+                    };
+                  }),
+                ],
+                search: brands.length >= 6,
+              }}
+              id="product-brand"
+            />
+          )}
         </div>
       </div>
       <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">

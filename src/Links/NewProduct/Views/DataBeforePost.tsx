@@ -56,25 +56,6 @@ export const ProductDataBeforeCreate = () => {
           <div className={tw("flex items-center gap-2")}>
             <Icon icon={allIcons.solid.faTags} />
             <p className={tw("font-semibold capitalize")}>
-              <Translate content="category" />:
-            </p>
-          </div>
-          <div className="flex items-center gap-1">
-            {product.category || (
-              <span className="text-[--biqpod-gray-opacity] capitalize">
-                <Translate content="no category" />
-              </span>
-            )}
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 1);
-              }}
-            />
-          </div>
-          <div className={tw("flex items-center gap-2")}>
-            <Icon icon={allIcons.solid.faTags} />
-            <p className={tw("font-semibold capitalize")}>
               <Translate content="form style" />:
             </p>
           </div>

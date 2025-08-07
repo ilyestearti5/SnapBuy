@@ -50,6 +50,11 @@ export const userTabs = [
     photo: productsPhoto,
   },
   {
+    name: "brands",
+    link: `/store/{storeId}/brands`,
+    photo: offersPhoto,
+  },
+  {
     name: "orders",
     link: `/store/{storeId}/orders`,
     photo: shoppingPhoto,
@@ -187,6 +192,12 @@ export const extraTabs = [
     name: "feedbacks",
     link: "/feedbacks",
     photo: feedbackPhoto,
+  },
+  {
+    name: "developer",
+    link: "/developer",
+    photo:
+      "https://static.vecteezy.com/system/resources/previews/041/317/508/original/3d-developer-icon-on-transparent-background-png.png",
   },
 ];
 
@@ -1369,6 +1380,42 @@ export const translations = [
     fr: "TikTok",
     ar: "تيك توك",
     word: "tiktok",
+  },
+  {
+    en: "platforms",
+    fr: "plateformes",
+    ar: "المنصات",
+    word: "platforms",
+  },
+  {
+    en: "store platforms",
+    fr: "plateformes du magasin",
+    ar: "منصات المتجر",
+    word: "store%20platforms",
+  },
+  {
+    en: "manage platforms",
+    fr: "gérer les plateformes",
+    ar: "إدارة المنصات",
+    word: "manage%20platforms",
+  },
+  {
+    en: "active platforms",
+    fr: "plateformes actives",
+    ar: "المنصات النشطة",
+    word: "active%20platforms",
+  },
+  {
+    en: "add platforms",
+    fr: "ajouter des plateformes",
+    ar: "إضافة منصات",
+    word: "add%20platforms",
+  },
+  {
+    en: "no platforms configured",
+    fr: "aucune plateforme configurée",
+    ar: "لم يتم تكوين أي منصات",
+    word: "no%20platforms%20configured",
   },
 ];
 export const useSub = () => {

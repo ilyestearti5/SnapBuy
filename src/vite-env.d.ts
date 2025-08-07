@@ -40,6 +40,23 @@ declare namespace SnapBuy {
       tiktok?: string;
       snapchat?: string;
     };
+    platforms?: {
+      facebook?: string;
+      snapchat?: string;
+      tiktok?: string;
+      instagram?: string;
+      youtube?: string;
+      telegram?: string;
+      discord?: string;
+      reddit?: string;
+      linkedin?: string;
+      pinterest?: string;
+      x?: string;
+      chrome?: string;
+      edge?: string;
+      safari?: string;
+    };
+    template?: string | null;
   }
   type Platform =
     | "facebook"
@@ -146,6 +163,26 @@ declare namespace SnapBuy {
     storeId?: string;
     uid?: string;
   }
+  interface Template {
+    id?: string;
+    creatorId?: string;
+    name?: string;
+    description?: string;
+    url?: string;
+    photo?: string;
+    status?: "rejected" | "accepted";
+    createdAt?: number;
+  }
+  interface Brand {
+    id?: string;
+    name?: string;
+    description?: string;
+    photo?: string;
+    uid?: string;
+    storeId?: string;
+    createdAt?: number;
+    updatedAt?: number;
+  }
   interface Product {
     storeId?: string;
     id?: string;
@@ -157,7 +194,6 @@ declare namespace SnapBuy {
     quantity?: number;
     keys?: string[];
     available?: boolean;
-    category?: string | Nothing;
     type?: "single" | "multiple";
     limited?: boolean;
     single?: {
@@ -176,12 +212,11 @@ declare namespace SnapBuy {
       }[];
     };
     formCollectionId?: string;
-    barndId?: string;
+    brandId?: string;
   }
 }
 declare interface SnapBuyApi {
   markets: string[];
-  categorys: string[];
 }
 declare interface AddClientActionProps {
   exists?: SnapBuy.Client[];
