@@ -1,7 +1,7 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Icon, Translate } from "@biqpod/app/ui/components";
 import { tw } from "@biqpod/app/ui/utils";
-import { getFormType, setFormType } from "../../../apis";
+import { getFormType, setFormType } from "../../../apis/getFns";
 export const ProductPricingType = () => {
   const postType = getFormType();
   const isSingle = postType === "single";

@@ -1,7 +1,7 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import { CircleTip, Scroll, Tip, TitleView } from "@biqpod/app/ui/components";
 import { imageExtensions, openPath } from "@biqpod/app/ui/hooks";
-import { useFormPhotos } from "../../../apis";
+import { useFormPhotos } from "../../../apis/getFns";
 import { useEffect } from "react";
 
 export const ProductImages = () => {

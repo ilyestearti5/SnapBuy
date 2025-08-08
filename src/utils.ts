@@ -37,6 +37,7 @@ import productsPhoto from "./assets/products.png";
 import shoppingPhoto from "./assets/shopping.png";
 import overviewPhoto from "./assets/overview.png";
 import formsPhoto from "./assets/forms.png";
+import settingsPhoto from "./assets/settings.png";
 import { mergeArray } from "@biqpod/app/ui/utils";
 export const userTabs = [
   {
@@ -73,6 +74,11 @@ export const userTabs = [
     name: "Form's",
     link: "/store/{storeId}/forms",
     photo: formsPhoto,
+  },
+  {
+    name: "settings",
+    link: "/store/{storeId}/settings",
+    photo: settingsPhoto,
   },
 ];
 export const toId = (value: string) => {

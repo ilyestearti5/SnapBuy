@@ -21,7 +21,6 @@ import {
   Line,
   Translate,
 } from "@biqpod/app/ui/components";
-import { snapbuyApi } from "../apis";
 import { OrderView } from "../routes/Clients/OrderView";
 export interface OpenOrderMenuOptions {
   x: number;
@@ -52,10 +51,9 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
                       deps={[key, value]}
                       render={async () => {
                         await delay(1000);
-                        const form = await snapbuyApi.forms.getProperty(key);
                         return (
                           <div className="flex items-center odd:bg-[--biqpod-primary-background] px-3 border-[--biqpod-borders] border-b border-solid h-[50px]">
-                            <div className="px-3 w-full">{form?.name}</div>
+                            <div className="px-3 w-full">{key}</div>
                             <div className="h-full">
                               <div className="bg-[--biqpod-borders] w-[1px] h-full"></div>
                             </div>

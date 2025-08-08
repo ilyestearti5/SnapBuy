@@ -8,7 +8,8 @@ import {
   useAllWord,
 } from "@biqpod/app/ui/hooks";
 import { delay, tw } from "@biqpod/app/ui/utils";
-import { snapbuyApi, useFormProduct } from "../../../apis";
+import { snapbuyApi } from "../../../apis";
+import { useFormProduct } from "../../../apis/getFns";
 export const ProductDescription = () => {
   const product = useFormProduct();
   const generateDescriptionAction = useAction(

@@ -57,6 +57,17 @@ declare namespace SnapBuy {
       safari?: string;
     };
     template?: string | null;
+    notify?: {
+      newOrder?: boolean;
+      orderStatusChanged?: boolean;
+      orderCompleted?: boolean;
+      orderCancelled?: boolean;
+      orderProcessing?: boolean;
+      orderDelivery?: boolean;
+      lowStock?: boolean;
+      newProduct?: boolean;
+      newClient?: boolean;
+    };
   }
   type Platform =
     | "facebook"
@@ -211,7 +222,6 @@ declare namespace SnapBuy {
         price: number;
       }[];
     };
-    formCollectionId?: string;
     brandId?: string;
   }
 }

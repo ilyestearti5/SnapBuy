@@ -27,7 +27,6 @@ import { ProductPricingType } from "./Views/ProductType";
 import {
   setFormAvailable,
   setFormBrand,
-  setFormCollection,
   setFormDescription,
   setFormKeys,
   setFormLimited,
@@ -38,7 +37,7 @@ import {
   setFormQuantity,
   setFormType,
   useFormProduct,
-} from "../../apis";
+} from "../../apis/getFns";
 export interface ProductFormSectionProps {
   product?: Partial<SnapBuy.Product>;
 }
@@ -83,7 +82,6 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
     setFormType(product?.type || "single");
     setFormPrice(product?.single?.price || 0);
     setFormPrices(product?.multiple?.prices || []);
-    setFormCollection(product?.formCollectionId);
     setFormBrand(product?.brandId);
   }, [product]);
   const productForm = useFormProduct();

@@ -1,6 +1,5 @@
 import { initMyCloud } from "@biqpod/app/ui/apis";
 import { Biqpod } from "@biqpod/app/ui/types";
-import { randomItem } from "@biqpod/app/ui/utils";
 export const cloud = initMyCloud({
   apiKey: "AIzaSyB0XSUnBSOaIWp-37u2N4ib5bY8-09Zeq0",
   authDomain: "water-fetch.firebaseapp.com",
@@ -13,16 +12,7 @@ export const cloud = initMyCloud({
   functions: {
     devUri: (fnId) => `http://localhost:3000/invoke/${fnId}`,
     prodUri: (fnId) => {
-      return `https://functions-3nrx.onrender.com/invoke/${fnId}`;
-      const { value } = randomItem(
-        [
-          `https://functions-3nrx.onrender.com`,
-          // "https://closed-maddie-biqpod-08b5b50b.koyeb.app",
-        ].map((origin) => {
-          return `${origin}/invoke/${fnId}`;
-        })
-      );
-      return value || `https://functions-3nrx.onrender.com/invoke/${fnId}`;
+      return `https://developed-nickie-biqpod-7b27f741.koyeb.app/invoke/${fnId}`;
     },
   },
 });
@@ -55,4 +45,4 @@ export const {
   getDownloadURL,
   getFileContent: getContent,
 } = cloud.app.storage;
-export const settings: Biqpod.System.Setting.Type[] = []
+export const settings: Biqpod.System.Setting.Type[] = [];

@@ -27,7 +27,6 @@ import { FeedbackRoute } from "./routes/App/FeedbackRoute";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Plans } from "./routes/App/Plans";
 import { PageNotFound } from "./routes/App/PageNotFound";
-import { ProductRoute } from "./Links/ProductRoute";
 import payChecked from "./assets/payment-checked.png";
 import { setSettingValue } from "@biqpod/app/ui/hooks";
 import { Stores } from "./routes/Stores/Stores";
@@ -44,6 +43,7 @@ import { CollectionsRoute } from "./routes/Collections/CollectionsRoute";
 import { Profile } from "./routes/App/Profile";
 import { Section } from "./routes/App/Section";
 import { DeveloperRoute } from "./routes/Dev";
+import { ProductRoute } from "./Test/ProductRoute";
 export const App = () => {
   const loc = useLocation();
   useEffect(() => {
@@ -55,6 +55,9 @@ export const App = () => {
       setSettingValue("window/dark.boolean", dark === "true");
   }, [loc.search]);
   const isClient = loc.pathname.match(/\/?client\/stores\/[0-9]+/gi);
+  const isProduct = loc.pathname.match(/\/?product\/[0-9]+/gi);
+  const isPack = loc.pathname.match(/\/?pack\/[0-9]+/gi);
+  const isVisible = !isClient && !isProduct && !isPack;
   return (
     <div className="flex flex-col h-full">
       {isAndroid && (
@@ -63,13 +66,13 @@ export const App = () => {
       {isIos && (
         <div className="z-[100000000000000000000000000000000000000000000000] h-[40px]" />
       )}
-      {!isClient && (
+      {isVisible && (
         <Header>
           <HeaderContent />
         </Header>
       )}
       <Window>
-        {!isClient && <LeftSide />}
+        {isVisible && <LeftSide />}
         <Container>
           <Switch>
             <Route path="/__/auth">
@@ -299,9 +302,9 @@ export const App = () => {
             </Route>
           </Switch>
         </Container>
-        {!isClient && <RightSide />}
+        {isVisible && <RightSide />}
       </Window>
-      {!isClient && <Layoutes profileContent={<ProfileInside />} />}
+      {isVisible && <Layoutes profileContent={<ProfileInside />} />}
     </div>
   );
 };

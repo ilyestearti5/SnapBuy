@@ -39,31 +39,22 @@ export const StoreRouteImport = () => {
     if (!currentStore?.template) return null;
     return snapbuyApi.getTemplate(currentStore?.template);
   }, [currentStore]);
-  const StoreRoute = useAsyncMemo(async () => {
+  const module = useAsyncMemo(async () => {
     if (template?.url) {
-      console.log("Loading template from:", template.url);
       try {
         const module = await import(template.url);
-        return module.StoreRoute || module.default;
+        return module;
       } catch (error) {
-        console.error("Failed to load template:", error);
         // If import fails due to module resolution, try with a different approach
-        if (
-          error instanceof TypeError &&
-          error.message.includes("module specifier")
-        ) {
-          console.warn(
-            "Module resolution failed, template may have dependency issues"
-          );
-        }
         return null;
       }
     }
     return null;
   }, [template]);
+  const { StoreRoute } = module || {};
   return (
     <EmptyComponent>
-      {StoreRoute ? <StoreRoute storeId={storeId} api={api} /> : null}
+      {StoreRoute && <StoreRoute storeId={storeId} api={api} />}
     </EmptyComponent>
   );
 };

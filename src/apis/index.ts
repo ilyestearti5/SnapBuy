@@ -1,12 +1,4 @@
-import {
-  getFieldValue,
-  getTemp,
-  getTempFromStore,
-  setFieldValue,
-  setTemp,
-  useTemp,
-  useFieldValue,
-} from "@biqpod/app/ui/hooks";
+import { getTempFromStore, setTemp } from "@biqpod/app/ui/hooks";
 import {
   deleteDoc,
   functions,
@@ -34,8 +26,6 @@ import {
   mergeArray,
   unpackPromise,
 } from "@biqpod/app/ui/utils";
-import { useMemo } from "react";
-import { SnapBuyCollection, SnapBuyProp } from "../Forms/Orders/OrderIndex";
 export interface OverviewProps {
   orders: number;
   customers: number;
@@ -680,123 +670,6 @@ export const snapbuyApi = {
       setTemp("products." + prodId, options);
     });
   },
-  forms: {
-    async upsertCollection(collection: SnapBuyCollection) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      const { id = crypto.randomUUID(), ...rest } = collection;
-      const docs = await getDocs<SnapBuyCollection>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "props-collections"],
-        {
-          where: and(
-            where("storeId", "==", rest.storeId),
-            where("name", "==", rest.name)
-          ),
-          limit: 1,
-        }
-      );
-      const collectionInfo = docs?.at(0);
-      if (collectionInfo) {
-        if (collectionInfo.id !== id) {
-          throw "Collection with this name already exists";
-        }
-      }
-      await setDoc(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "props-collections", id],
-        {
-          ...rest,
-          id,
-          uid,
-        }
-      );
-    },
-    async getCollections(type?: SnapBuyCollection["type"]) {
-      const uid = getCurrentAuth();
-      if (!uid) {
-        throw "User not authenticated";
-      }
-      const result = await getDocs<SnapBuyCollection>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "props-collections"],
-        {
-          where: and(type && where("type", "==", type)),
-        }
-      );
-      return result?.map(({ data }) => data) || [];
-    },
-    async getCollection(collectionId: string) {
-      const result = await getDoc<SnapBuyCollection>([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "props-collections",
-        collectionId,
-      ]);
-      return result;
-    },
-    async getCollectionPropertys(collectionId: string) {
-      const result = await getDocs<SnapBuyProp>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "props"],
-        {
-          where: and(where("collectionId", "==", collectionId)),
-        }
-      );
-      return result?.map(({ data }) => data) || [];
-    },
-    async deleteCollectionProperty(propId: string) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      await deleteDoc([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "props",
-        propId,
-      ]);
-    },
-    async deleteCollection(collectionId: string) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      await deleteDoc([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "props-collections",
-        collectionId,
-      ]);
-      const props = await this.getCollectionPropertys(collectionId);
-      await mapAsync(props, async (prop) => {
-        this.deleteCollectionProperty(prop.id!);
-      });
-    },
-    async createProperty(option: SnapBuyProp) {
-      await createDoc(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "props", option.id],
-        option
-      );
-    },
-    async getProperty(id: string) {
-      const property = getTempFromStore<SnapBuyProp>("props." + id);
-      if (property) {
-        return property;
-      }
-      const doc = await getDoc<SnapBuyProp>([
-        "projects",
-        import.meta.env.VITE_PROJECT_ID,
-        "props",
-        id,
-      ]);
-      if (doc) {
-        setTemp("props." + id, doc);
-      }
-      return doc;
-    },
-    async getAllPropertys(storeId: string) {
-      const allData = await getDocs<SnapBuyProp>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "props"],
-        {
-          where: and(where("storeId", "==", storeId)),
-        }
-      );
-      return allData?.map(({ data }) => data);
-    },
-  },
   onMarketChange(uid: string) {
     if (!uid) {
       return () => {};
@@ -888,6 +761,48 @@ export const snapbuyApi = {
       return doc;
     }
     return brand;
+  },
+  async updateBrand(
+    brandId: string,
+    brand: Partial<Omit<SnapBuy.Brand, "id" | "createdAt" | "uid">>
+  ) {
+    const uid = await getCurrentAuth();
+    if (!uid) throw "User not authenticated";
+
+    const now = Date.now();
+
+    // Get existing brand data
+    const existingBrand = await getDoc<SnapBuy.Brand>([
+      "projects",
+      import.meta.env.VITE_PROJECT_ID,
+      "brands",
+      brandId,
+    ]);
+
+    if (!existingBrand) throw "Brand not found";
+
+    let photo: string | undefined = brand.photo;
+    if (brand.photo && brand.photo.startsWith("data:")) {
+      const [uploadedPhoto] = await uploadFiles([brand.photo], () => {
+        return ["brands", brandId];
+      });
+      photo = uploadedPhoto;
+    }
+
+    const updatedBrandData: SnapBuy.Brand = {
+      ...existingBrand,
+      ...brand,
+      photo: photo || existingBrand.photo,
+      updatedAt: now,
+    };
+
+    await setDoc(
+      ["projects", import.meta.env.VITE_PROJECT_ID, "brands", brandId],
+      updatedBrandData
+    );
+
+    setTemp("brands." + brandId, updatedBrandData);
+    return updatedBrandData;
   },
   async deleteBrand(brandId: string) {
     const uid = await getCurrentAuth();
@@ -1202,153 +1117,4 @@ export const snapbuyApi = {
     const deletePack = await getUserFunction("delete-pack");
     await deletePack?.({ packId });
   },
-};
-function getFns<T>(fieldId: string) {
-  const get = () => getTemp<T>(fieldId);
-  const set = (value: T) => {
-    setTemp(fieldId, value);
-  };
-  const use = () => {
-    return useTemp<T>(fieldId);
-  };
-  return {
-    get,
-    use,
-    set,
-  };
-}
-export const useMarkets = () => {
-  return getTemp<string[]>("markets");
-};
-export const useFocused = () => {
-  return getTemp<string>("input.focused");
-};
-export const {
-  get: getFormPrices,
-  use: useFormPrices,
-  set: setFormPrices,
-} = getFns<Required<SnapBuy.Product>["multiple"]["prices"] | undefined>(
-  "product-prices"
-);
-export const {
-  get: getFormQuantity,
-  set: setFormQuantity,
-  use: useFormQuantity,
-} = getFns<number | undefined>("post-quantity");
-export const getFormDescription = () => {
-  return getFieldValue("product-form-description");
-};
-export const setFormDescription = (value: string) => {
-  setFieldValue("product-form-description", value);
-};
-export const useFormDescription = () => {
-  return useFieldValue("product-form-description");
-};
-export const getFormName = () => {
-  return getFieldValue("product-form-name");
-};
-export const setFormName = (value: string) => {
-  setFieldValue("product-form-name", value);
-};
-export const useFormName = () => {
-  return useFieldValue("product-form-name");
-};
-export const {
-  get: getFormKeys,
-  set: setFormKeys,
-  use: useFormKeys,
-} = getFns<SettingValueType["array"]>("post-keys");
-export const {
-  get: getFormAvailable,
-  set: setFormAvailable,
-  use: useFormAvailable,
-} = getFns<boolean>("product-form-available");
-export const {
-  get: getFormType,
-  set: setFormType,
-  use: useFormType,
-} = getFns<"single" | "multiple">("post-type");
-export const {
-  get: getFormCollection,
-  set: setFormCollection,
-  use: useFormCollection,
-} = getFns<string | Nothing>("product-form-collection");
-export const {
-  get: getFormPhotos,
-  set: setFormPhotos,
-  use: useFormPhotos,
-} = getFns<SnapBuy.Product["photos"]>("product-images");
-export const {
-  get: getFormPrice,
-  set: setFormPrice,
-  use: useFormPrice,
-} = getFns<number | undefined>("product-price");
-export const {
-  get: getFormLimited,
-  use: useFormLimited,
-  set: setFormLimited,
-} = getFns<boolean>("product-limited");
-export const {
-  get: getFormBrand,
-  set: setFormBrand,
-  use: useFormBrand,
-} = getFns<string | Nothing>("product-brand");
-export const useFormProduct = () => {
-  const photos = getFormPhotos();
-  const price = getFormPrice();
-  const limited = getFormLimited();
-  const prices = getFormPrices();
-  const quantity = getFormQuantity();
-  const description = getFormDescription();
-  const name = getFormName();
-  const keys = getFormKeys();
-  const isAvailable = getFormAvailable();
-  const type = getFormType();
-  const formCollectionId = getFormCollection();
-  const brandId = getFormBrand();
-  const product = useMemo(() => {
-    const result: Partial<SnapBuy.Product> = {
-      photos: photos || [],
-      type: type || "single",
-      name: name || "",
-      available: isAvailable || false,
-      keys: keys || [],
-      quantity: quantity || 0,
-      description: description || "",
-      limited: limited || false,
-    };
-    if (type === "multiple") {
-      result.multiple = {
-        prices: prices || [],
-      };
-    } else {
-      result.single = {
-        price: price || 0,
-      };
-    }
-    if (formCollectionId) {
-      result.formCollectionId = formCollectionId;
-    }
-    if (brandId) {
-      result.brandId = brandId;
-    }
-    if (brandId) {
-      result.brandId = brandId;
-    }
-    return result;
-  }, [
-    photos,
-    price,
-    limited,
-    prices,
-    quantity,
-    description,
-    name,
-    keys,
-    isAvailable,
-    type,
-    formCollectionId,
-    brandId,
-  ]);
-  return product;
 };

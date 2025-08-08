@@ -14,10 +14,10 @@ import { OrderIndex, SnapBuyCollection } from "./Orders/OrderIndex";
 import {
   confirm,
   showPopup,
+  showToast,
   useCopyState,
   useTemp,
 } from "@biqpod/app/ui/hooks";
-import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { UpsertCollection } from "./UpsertCollection";
 const forms: {
@@ -99,8 +99,8 @@ export const Forms = () => {
                       deps={[form.id]}
                       render={async () => {
                         await delay(1000); // Simulate loading delay
-                        const propsCollections =
-                          await snapbuyApi.forms.getCollections(form.id);
+                        // Forms functionality removed
+                        const propsCollections: any[] = [];
                         return (
                           <EmptyComponent>
                             <div className="flex justify-between items-center odd:bg-[--biqpod-primary-background] p-3 font-bold uppercase">
@@ -148,8 +148,10 @@ export const Forms = () => {
                                           if (!response) {
                                             return;
                                           }
-                                          await snapbuyApi.forms.deleteCollection(
-                                            collection.id!
+                                          // Forms functionality removed - cannot delete collections
+                                          showToast(
+                                            "Forms functionality has been removed",
+                                            "info"
                                           );
                                           const id = form.id;
                                           showedForm.set(null);

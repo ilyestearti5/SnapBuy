@@ -7,27 +7,21 @@ import {
   Line,
   Translate,
 } from "@biqpod/app/ui/components";
+import { snapbuyApi } from "../../apis";
 import {
-  snapbuyApi,
   useFormAvailable,
   useFormBrand,
-  useFormCollection,
   useFormKeys,
   useFormLimited,
-} from "../../apis";
+} from "../../apis/getFns";
 import { useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { useStoreId } from "../../utils";
 export const ProductInfo = () => {
   const limited = useFormLimited();
   const isAvailable = useFormAvailable();
   const keysState = useFormKeys();
-  const collection = useFormCollection();
   const brand = useFormBrand();
   const storeId = useStoreId();
-  const ordersCollections = useAsyncMemo(async () => {
-    if (storeId) return snapbuyApi.forms.getCollections("order");
-    return [];
-  }, [storeId]);
   const brands = useAsyncMemo(async () => {
     if (storeId) return snapbuyApi.getAllBrands(storeId);
     return [];
@@ -74,31 +68,6 @@ export const ProductInfo = () => {
                 search: brands.length >= 6,
               }}
               id="product-brand"
-            />
-          )}
-        </div>
-      </div>
-      <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-        <label
-          className="w-full md:text-right capitalize"
-          htmlFor="product-collection"
-        >
-          <Translate content="collection" /> :
-        </label>
-        <div className="w-full">
-          {ordersCollections && (
-            <EnumField
-              state={collection}
-              config={{
-                list: ordersCollections.map((collection) => {
-                  return {
-                    value: collection.id!,
-                    content: collection.name,
-                  };
-                }),
-                search: ordersCollections.length >= 6,
-              }}
-              id="product-collection"
             />
           )}
         </div>

@@ -35,7 +35,8 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
     username?: string,
     repoName?: string,
     packageName?: string,
-    customUrl?: string
+    customUrl?: string,
+    version?: string
   ): string => {
     switch (sourceType) {
       case "github":
@@ -45,7 +46,8 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         return "";
       case "npm":
         if (packageName?.trim()) {
-          return `https://cdn.jsdelivr.net/npm/${packageName.trim()}@latest/dist/index.js`;
+          const npmVersion = version?.trim() || "1.0.0";
+          return `https://cdn.jsdelivr.net/npm/${packageName.trim()}@${npmVersion}/dist/index.js`;
         }
         return "";
       case "full-url":
@@ -73,6 +75,13 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         if (npmMatch) {
           setFieldValue("npm-package", npmMatch[1]);
         }
+        // Try to extract version from jsdelivr URL
+        const versionMatch = url.match(/@([^\/]+)\/dist/);
+        if (versionMatch) {
+          setFieldValue("npm-version", versionMatch[1]);
+        } else {
+          setFieldValue("npm-version", "1.0.0");
+        }
       } else {
         sourceTypeState.set("full-url");
         setFieldValue("custom-url", url);
@@ -84,6 +93,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
       setFieldValue("github-username", "");
       setFieldValue("github-repo", "");
       setFieldValue("npm-package", "");
+      setFieldValue("npm-version", "1.0.0");
       setFieldValue("custom-url", "");
       photoState.set(null);
       sourceTypeState.set("github");
@@ -94,6 +104,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   const githubUsername = getFieldValue("github-username");
   const githubRepo = getFieldValue("github-repo");
   const npmPackage = getFieldValue("npm-package");
+  const npmVersion = getFieldValue("npm-version");
   const customUrl = getFieldValue("custom-url");
   // Generate the template URL based on current inputs
   const templateUrl = generateTemplateUrl(
@@ -101,7 +112,8 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
     githubUsername,
     githubRepo,
     npmPackage,
-    customUrl
+    customUrl,
+    npmVersion
   );
   const saveAction = useAction(
     "save-template",
@@ -154,6 +166,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
       githubUsername,
       githubRepo,
       npmPackage,
+      npmVersion,
       customUrl,
       sourceTypeState.get,
       photoState.get,
@@ -281,15 +294,27 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           </div>
         )}
         {sourceTypeState.get === "npm" && (
-          <div className="flex flex-col gap-2">
-            <label className="font-semibold">
-              <Translate content="npm package name" />*
-            </label>
-            <Field
-              inputName="npm-package"
-              placeholder="e.g., react, @types/node"
-              maxLength={200}
-            />
+          <div className="flex gap-2">
+            <div className="flex flex-col flex-1 gap-2">
+              <label className="font-semibold">
+                <Translate content="npm package name" />*
+              </label>
+              <Field
+                inputName="npm-package"
+                placeholder="e.g., react, @types/node"
+                maxLength={200}
+              />
+            </div>
+            <div className="flex flex-col flex-1 gap-2">
+              <label className="font-semibold">
+                <Translate content="version" />
+              </label>
+              <Field
+                inputName="npm-version"
+                placeholder="e.g., 1.0.0, latest"
+                maxLength={50}
+              />
+            </div>
           </div>
         )}
         {sourceTypeState.get === "full-url" && (

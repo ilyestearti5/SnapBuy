@@ -47,6 +47,7 @@ import { Link } from "react-router-dom";
 import { useStoreId } from "./utils";
 import { initStoreIdSave } from "./utils";
 import { AiAssistance } from "./AiAssistance";
+import { NotificationSettings } from "./components/NotificationSettings";
 const getId = () => {
   return location.pathname.split("/").at(-1);
 };
@@ -304,6 +305,14 @@ export const HeaderContent = () => {
                         },
                         defaultIcon: allIcons.solid.faMoneyBill,
                       },
+                      user &&
+                        storeId && {
+                          defaultIcon: allIcons.solid.faBell,
+                          label: "Notification Settings",
+                          click() {
+                            showPopup(<NotificationSettings />);
+                          },
+                        },
                       user && {
                         defaultIcon: allIcons.solid.faSignOutAlt,
                         label: "Logout",

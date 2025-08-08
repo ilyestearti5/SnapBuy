@@ -129,11 +129,11 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
         storeId,
       };
       if (brand?.id) {
-        // Update existing brand - for now we'll create a new one
-        // You can implement update functionality later
-        showToast("Brand update functionality not implemented yet", "info");
-        return;
+        // Update existing brand
+        await snapbuyApi.updateBrand(brand.id, brandData);
+        showToast("Brand updated successfully", "success");
       } else {
+        // Create new brand
         await snapbuyApi.createBrand(brandData);
         showToast("Brand created successfully", "success");
       }

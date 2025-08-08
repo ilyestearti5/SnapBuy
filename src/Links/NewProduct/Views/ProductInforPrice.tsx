@@ -18,7 +18,7 @@ import {
   useFormPrice,
   useFormPrices,
   useFormQuantity,
-} from "../../../apis";
+} from "../../../apis/getFns";
 export const PostInforPrice = () => {
   const postType = getFormType();
   const quantity = useFormQuantity();

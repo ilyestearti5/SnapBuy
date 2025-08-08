@@ -1,7 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  AsyncComponent,
-  CardWait,
   EmptyComponent,
   Icon,
   Key,
@@ -11,8 +9,8 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { setTemp } from "@biqpod/app/ui/hooks";
-import { delay, tw } from "@biqpod/app/ui/utils";
-import { snapbuyApi, useFormProduct } from "../../../apis";
+import { tw } from "@biqpod/app/ui/utils";
+import { useFormProduct } from "../../../apis/getFns";
 export const ProductDataBeforeCreate = () => {
   const product = useFormProduct();
   return (
@@ -46,46 +44,6 @@ export const ProductDataBeforeCreate = () => {
                 <Translate content="no title" />
               </span>
             )}
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 1);
-              }}
-            />
-          </div>
-          <div className={tw("flex items-center gap-2")}>
-            <Icon icon={allIcons.solid.faTags} />
-            <p className={tw("font-semibold capitalize")}>
-              <Translate content="form style" />:
-            </p>
-          </div>
-          <div className="flex items-center gap-1">
-            <AsyncComponent
-              deps={[product.formCollectionId]}
-              render={async () => {
-                await delay(1000);
-                if (!product.formCollectionId) {
-                  return (
-                    <span className="text-[--biqpod-gray-opacity-2]">
-                      <Translate content="no form style choosed" />
-                    </span>
-                  );
-                }
-                const formCollection = await snapbuyApi.forms.getCollection(
-                  product.formCollectionId
-                );
-                return (
-                  <EmptyComponent>
-                    {formCollection?.name || (
-                      <span className="text-[--biqpod-gray-opacity-2]">
-                        <Translate content="no form style choosed" />
-                      </span>
-                    )}
-                  </EmptyComponent>
-                );
-              }}
-              loading={<CardWait className="rounded-xl w-[100px] h-[20px]" />}
-            />
             <Tip
               icon={allIcons.solid.faExternalLink}
               onClick={() => {

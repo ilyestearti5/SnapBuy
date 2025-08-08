@@ -5,7 +5,6 @@ import { ExploreStores } from "./ClientStores";
 import { PageNotFound } from "../App/PageNotFound";
 import { initCart } from "./AddProductToCart";
 import { StoreRouteImport } from "./StoreRouteImport";
-import { Test } from "../../Test";
 export const Client = () => {
   initCart();
   return (
@@ -19,7 +18,7 @@ export const Client = () => {
             <ClientProducts />
           </Route>
           <Route path="/client/stores/:storeId" exact>
-            <Test />
+            <StoreRouteImport />
           </Route>
           <Route path="/client/stores" exact>
             <ExploreStores />

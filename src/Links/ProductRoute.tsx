@@ -125,12 +125,7 @@ export const ProductRoute = () => {
     []
   );
   const loading = isLoading(action);
-  const formStructor = useAsyncMemo(async () => {
-    if (!product?.formCollectionId) return [];
-    return snapbuyApi.forms.getCollectionPropertys(
-      product.formCollectionId || "order.default"
-    );
-  }, [product?.storeId]);
+  const formStructor: any[] = []; // Removed forms functionality
   const user = useUser();
   const count = useCopyState(1);
   useEffect(() => {

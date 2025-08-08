@@ -11,6 +11,7 @@ import { userTabs } from "../../utils";
 import { tw } from "@biqpod/app/ui/utils";
 import { Forms } from "../../Forms/Forms";
 import { Stores } from "./Stores";
+import { NotificationSettings } from "../../components/NotificationSettings";
 // function Page() {
 //   return (
 //     <div className="flex justify-center items-center p-2 h-full">
@@ -87,9 +88,11 @@ export const Store = () => {
             <Route path={createRoute("forms")}>
               <Forms />
             </Route>
-            {/* <Route path={createRoute("settings")}>
-              <SettingsPage />
-            </Route> */}
+            <Route path={createRoute("settings")}>
+              <div className="p-6">
+                <NotificationSettings />
+              </div>
+            </Route>
             <Route path={createRoute("stores")}>
               <Stores />
             </Route>

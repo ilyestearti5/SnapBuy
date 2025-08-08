@@ -17,7 +17,6 @@ import {
   closePopup,
   setFieldValue,
 } from "@biqpod/app/ui/hooks";
-import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { SnapBuyCollection } from "./Orders/OrderIndex";
 interface UpsertCollectionProps {
@@ -57,8 +56,8 @@ export const UpsertCollection = ({
           createdAt: Date.now(),
           type,
         };
-        await snapbuyApi.forms.upsertCollection(options);
-        showToast("Collection added successfully", "success");
+        // Forms functionality removed - cannot create collections
+        showToast("Forms functionality has been removed", "info");
         onChange?.(options);
         setFieldValue("form-collection-name", "");
         closePopup();
