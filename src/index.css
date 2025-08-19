@@ -19,3 +19,56 @@
 .scrollbar-hide::-webkit-scrollbar {
   display: none;  /* Safari and Chrome */
 }
+
+/* Mobile touch improvements for swipe gestures */
+* {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+}
+
+/* Allow text selection for input fields */
+input, textarea, [contenteditable] {
+  -webkit-user-select: text;
+  -khtml-user-select: text;
+  -moz-user-select: text;
+  -ms-user-select: text;
+  user-select: text;
+}
+
+/* Improve touch responsiveness for mobile swipes */
+@media (max-width: 768px) {
+  * {
+    touch-action: manipulation;
+  }
+  
+  /* Specific touch handling for swipe containers */
+  [data-swipe-container] {
+    touch-action: pan-y !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Enhanced scrollable area detection */
+  [data-swipe-container] .scroll-container,
+  [data-swipe-container] [data-scrollable],
+  [data-swipe-container] [style*="overflow"],
+  [data-swipe-container] [style*="scroll"] {
+    touch-action: auto !important;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+  
+  /* Prevent unwanted scrolling interference */
+  [data-swipe-container] .scroll-container:not([style*="overflow-x"]) {
+    touch-action: pan-y !important;
+  }
+  
+  [data-swipe-container] .scroll-container[style*="overflow-x"] {
+    touch-action: pan-x !important;
+  }
+}

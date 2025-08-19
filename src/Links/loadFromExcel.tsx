@@ -35,7 +35,7 @@ export const loadFromExcel = async (file: string | Blob) => {
                 return {
                   ...all,
                   single: {
-                    price,
+                    client: price,
                   },
                   type: "single",
                   photos: photo ? [photo] : [],

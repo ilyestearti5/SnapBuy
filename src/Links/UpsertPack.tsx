@@ -46,7 +46,7 @@ const PackLineProduct = ({
   const prices =
     product?.type === "multiple"
       ? product?.multiple?.prices?.map((price) => price.price)
-      : [product?.single?.price || 0];
+      : [product?.single?.client || 0];
   return (
     <Card className="w-fit">
       <div className="flex items-center gap-1 p-1">
@@ -204,8 +204,8 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                         ...prod.multiple.prices.map((p) => p.price)
                       );
                       total += minPrice * count;
-                    } else if (prod.single?.price) {
-                      total += prod.single.price * count;
+                    } else if (prod.single?.client) {
+                      total += prod.single.client * count;
                     }
                   }
                 });
@@ -320,7 +320,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                 const prices =
                   product?.type === "multiple"
                     ? product?.multiple?.prices?.map((p) => p.price)
-                    : [product?.single?.price || 0];
+                    : [product?.single?.client || 0];
                 return (
                   <motion.div
                     key={index}

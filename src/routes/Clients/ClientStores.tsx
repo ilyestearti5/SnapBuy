@@ -32,8 +32,8 @@ import { delay, tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "../../apis";
 import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
-import { deleteCart } from "./AddProductToCart";
 import { CartPopup } from "./CartPopup";
+import { deleteCart } from "@biqpod/snapbuy";
 interface UserLineProps {
   user: Biqpod.Account.User;
 }

@@ -24,16 +24,12 @@ import {
   useAsyncMemo,
 } from "@biqpod/app/ui/hooks";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
-import {
-  useCartCount,
-  removeCart,
-  AddProductInCart,
-  useSearchParams,
-} from "./AddProductToCart";
+import { AddProductInCart, useSearchParams } from "./AddProductToCart";
 import { ImageSlider } from "../../Links/ImageSlider";
 import { MenuRecordProps } from "@biqpod/app/ui/types";
 import { initPixels } from "../../Links/pixles";
 import { snapbuyApi } from "../../apis";
+import { removeCart, useCartCount } from "@biqpod/snapbuy";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
@@ -66,7 +62,7 @@ export const ClientProductRender = React.memo(
     // pour promostion
     const isPromotion = product.type === "multiple";
     const prices = product.multiple?.prices || [];
-    const price = product.single?.price || 0;
+    const price = product.single?.client || 0;
     const { isMobile } = useDeviceResolution();
     const user = useUser();
     const { showPhoto } = useSearchParams();

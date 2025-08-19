@@ -66,7 +66,7 @@ import {
   useResolution,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useFullCart, useSearchParams } from "./AddProductToCart";
+import { useSearchParams } from "./AddProductToCart";
 import { useParams } from "react-router";
 import { FixedSizeList as List } from "react-window";
 import { tw } from "@biqpod/app/ui/utils";
@@ -76,6 +76,7 @@ import { Link } from "react-router-dom";
 import { initPixels } from "../../Links/pixles";
 import { ClientProductRender } from "./ClientProductRender";
 import { CartPopup } from "./CartPopup";
+import { useFullCart } from "@biqpod/snapbuy";
 export const ClientProducts = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
   const store = useAsyncMemo(async () => {
@@ -323,7 +324,7 @@ export const ClientProducts = () => {
                           if (!prod) return null;
                           const prices =
                             prod.type === "single"
-                              ? [prod.single?.price || 0]
+                              ? [prod.single?.client || 0]
                               : prod.multiple?.prices?.map(
                                   ({ price }) => price
                                 );

@@ -43,7 +43,7 @@ import { CollectionsRoute } from "./routes/Collections/CollectionsRoute";
 import { Profile } from "./routes/App/Profile";
 import { Section } from "./routes/App/Section";
 import { DeveloperRoute } from "./routes/Dev";
-import { ProductRoute } from "./Test/ProductRoute";
+import { ProductRoute } from "./Links/ProductRoute";
 export const App = () => {
   const loc = useLocation();
   useEffect(() => {

@@ -46,6 +46,7 @@ import { pixelsPhoto, SetPixels } from "./SetPixels";
 import { SetTemplate } from "./SetTemplate";
 import { platformsPhoto } from "../../utils/platforms";
 import { SetStorePlatforms } from "./SetStorePlatforms";
+import { OrderVarient } from "./OrderVarient";
 export const Stores = () => {
   const storeId = useStoreId();
   const storesState = useCopyState<SnapBuy.Store[]>([]);
@@ -229,6 +230,13 @@ export const Stores = () => {
                                     showPopup(<SetTemplate store={store} />);
                                   },
                                   defaultIcon: allIcons.solid.faPalette,
+                                },
+                                {
+                                  label: "Set A Order Varient",
+                                  async click() {
+                                    showPopup(<OrderVarient store={store} />);
+                                  },
+                                  defaultIcon: allIcons.regular.faAddressCard,
                                 },
                                 {
                                   label: "Set Pixels",

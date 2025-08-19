@@ -26,12 +26,10 @@ import { getAddressFromCoords } from "../getAddressFromCoords";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
 import { getPrice } from "../utils";
 import { initPixels } from "../Links/pixles";
-
 // Custom Loading Component
 const LoadingSpinner = () => (
   <div className="inline-block border-2 border-gray-300 border-t-blue-600 rounded-full w-6 h-6 animate-spin"></div>
 );
-
 // Custom Checkbox Component
 const Checkbox = ({
   checked,
@@ -74,7 +72,6 @@ const Checkbox = ({
     </span>
   </label>
 );
-
 // Custom Input Field Component
 const InputField = ({
   placeholder,
@@ -97,7 +94,6 @@ const InputField = ({
       />
     );
   }
-
   return (
     <input
       type={type}
@@ -109,7 +105,6 @@ const InputField = ({
     />
   );
 };
-
 // Custom Button Component - matching index.tsx style
 const Button = ({
   children,
@@ -131,10 +126,8 @@ const Button = ({
     {children}
   </button>
 );
-
 // Custom Line Component
 const Line = () => <hr className="bg-gray-300 h-[1px]" />;
-
 // Icon symbols using allIcons
 const icons = {
   fire: allIcons.solid.faFire,
@@ -162,13 +155,11 @@ const icons = {
   shield: allIcons.solid.faShield,
   returnIcon: allIcons.solid.faUndo,
 };
-
 // Product Image Gallery Component with Auto-Sliding
 const ProductImageGallery = ({ photos }: { photos: string[] }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isZoomed, setIsZoomed] = useState(false);
   const hasMultiplePhotos = photos.length > 1;
-
   // Auto-slide photos every 4 seconds
   useEffect(() => {
     if (!hasMultiplePhotos) return;
@@ -179,19 +170,16 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
     }, 4000);
     return () => clearInterval(interval);
   }, [photos.length, hasMultiplePhotos]);
-
   const nextPhoto = () => {
     setCurrentPhotoIndex((prevIndex) =>
       prevIndex === photos.length - 1 ? 0 : prevIndex + 1
     );
   };
-
   const prevPhoto = () => {
     setCurrentPhotoIndex((prevIndex) =>
       prevIndex === 0 ? photos.length - 1 : prevIndex - 1
     );
   };
-
   if (photos.length === 0) {
     return (
       <div className="flex justify-center items-center bg-gray-200 w-full h-96">
@@ -199,7 +187,6 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
       </div>
     );
   }
-
   return (
     <div className="relative bg-white w-full h-96 overflow-hidden">
       {/* Main Image Container */}
@@ -229,7 +216,6 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
           </div>
         ))}
       </div>
-
       {/* Navigation Arrows */}
       {hasMultiplePhotos && (
         <>
@@ -253,14 +239,12 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
           </button>
         </>
       )}
-
       {/* Photo Counter */}
       {hasMultiplePhotos && (
         <div className="top-4 right-4 absolute bg-black/50 px-3 py-1 rounded-full text-white text-sm">
           {currentPhotoIndex + 1}/{photos.length}
         </div>
       )}
-
       {/* Thumbnail Navigation */}
       {hasMultiplePhotos && (
         <div className="bottom-4 left-1/2 absolute flex space-x-2 -translate-x-1/2 transform">
@@ -283,7 +267,6 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
     </div>
   );
 };
-
 // Quantity Selector Component
 const QuantitySelector = ({
   count,
@@ -303,7 +286,6 @@ const QuantitySelector = ({
           iconClassName="text-gray-600 group-hover:text-red-500 transition-colors text-lg"
         />
       </button>
-
       <div className="flex-1 bg-white shadow-sm px-4 py-2 border-2 border-gray-200 rounded-xl text-center">
         <input
           type="number"
@@ -329,7 +311,6 @@ const QuantitySelector = ({
         />
         <div className="font-medium text-gray-500 text-xs">QUANTITY</div>
       </div>
-
       <button
         onClick={() => setCount(Math.min(500, (count.get || 0) + 1))}
         className="group flex justify-center items-center bg-white hover:bg-green-50 shadow-md hover:shadow-lg border-2 border-gray-200 hover:border-green-300 rounded-full w-12 h-12 hover:scale-105 active:scale-95 transition-all duration-300 transform"
@@ -342,7 +323,6 @@ const QuantitySelector = ({
     </div>
   );
 };
-
 // Form Field Component
 const FormField = ({
   label,
@@ -380,7 +360,6 @@ const FormField = ({
     </div>
   );
 };
-
 export const ProductRoute = () => {
   const prodId = useParams<{ prodId: string }>().prodId;
   const [isFavorite, setIsFavorite] = useState(false);
@@ -388,20 +367,16 @@ export const ProductRoute = () => {
   const deliveryState = useCopyState<boolean | null>(false);
   const latitude = useCopyState<Nothing | number>(null);
   const longitude = useCopyState<Nothing | number>(null);
-
   // Form state
   const [firstname, setFirstname] = useState("");
   const [lastname, setLastname] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [wilaya, setWilaya] = useState("");
-
   const product = useAsyncMemo(async () => {
     return await snapbuyApi.getProduct(prodId);
   }, [prodId]);
-
   const { getColor } = useSearchParams();
-
   useEffect(() => {
     for (const colorItem of colorsInListWithNames) {
       const colorId = colorItem.colorId;
@@ -413,38 +388,30 @@ export const ProductRoute = () => {
       }
     }
   }, [getColor]);
-
   const store = useAsyncMemo(async () => {
     if (!product?.storeId) return undefined;
     return snapbuyApi.getStore(product?.storeId!);
   }, [product]);
-
   const price = useMemo(() => {
     return getPrice(product, 1).total;
   }, [product]);
-
   const pixels = initPixels(store);
-
   const user = useUser();
   const formStructor: any[] = []; // Removed forms functionality
-
   useEffect(() => {
     pixels?.view(product);
   }, [pixels, product]);
-
   useEffect(() => {
     setFirstname(user?.firstname || "");
     setLastname(user?.lastname || "");
     const phoneNumber = user?.phone || localStorage.getItem("phone") || "";
     setPhone(phoneNumber);
   }, [user]);
-
   useEffect(() => {
     if (count.get === 0) {
       count.set(1);
     }
   }, [count.get]);
-
   // Auto-detect location action
   const locationAction = useAction(
     "auto-detect-location-in-product",
@@ -495,11 +462,8 @@ export const ProductRoute = () => {
     },
     []
   );
-
   const loadingLocation = isLoading(locationAction);
-
   const magic = getTemp<Record<string, any>>("magic-fields");
-
   // Create order action
   const createOrderAction = useAction(
     "create-order-in-product",
@@ -528,37 +492,31 @@ export const ProductRoute = () => {
         showToast("Enter Your Wilaya", "info");
         return;
       }
-
       // Basic phone validation
       if (phone.length !== 10 || !/^\d+$/.test(phone)) {
         showToast("Enter Valid Phone Number", "info");
         return;
       }
-
       const products: SnapBuy.Order["products"] = {
         [product?.id!]: {
           count: count.get || 1,
         },
       };
-
       localStorage.setItem("phone", phone);
       const place: SnapBuy.Client["place"] = {
         address,
         wilaya,
       };
-
       if (latitude.get) {
         place.latitude = latitude.get;
       }
       if (longitude.get) {
         place.longitude = longitude.get;
       }
-
       const metaData: Record<string, any> = {};
       formStructor?.forEach((formId) => {
         metaData[formId.id] = magic?.[formId.id];
       });
-
       const options: CreateOrderOptions = {
         products,
         client: {
@@ -571,7 +529,6 @@ export const ProductRoute = () => {
         delivery: deliveryState.get || false,
         metaData,
       };
-
       const orderInfo = await snapbuyApi.createOrder(options);
       if (!orderInfo?.id) {
         throw "Order Info Incorrect";
@@ -597,9 +554,7 @@ export const ProductRoute = () => {
       magic,
     ]
   );
-
   const loadingOrder = isLoading(createOrderAction);
-
   if (!product) {
     return (
       <div className="flex justify-center items-center bg-gray-50 min-h-screen">
@@ -610,7 +565,6 @@ export const ProductRoute = () => {
       </div>
     );
   }
-
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header */}
@@ -657,7 +611,6 @@ export const ProductRoute = () => {
           </div>
         </div>
       </header>
-
       <div className="mx-auto px-4 py-8 max-w-7xl">
         <div className="gap-8 grid lg:grid-cols-2">
           {/* Product Images */}
@@ -669,7 +622,6 @@ export const ProductRoute = () => {
           >
             <ProductImageGallery photos={product.photos || []} />
           </motion.div>
-
           {/* Product Info */}
           <motion.div
             initial={{ opacity: 0, x: 50 }}
@@ -685,7 +637,6 @@ export const ProductRoute = () => {
               >
                 {product.name}
               </h1>
-
               <div className="flex justify-between items-center mb-4">
                 <span
                   className="font-bold text-3xl"
@@ -702,7 +653,6 @@ export const ProductRoute = () => {
                   </span>
                 )}
               </div>
-
               {/* Product Features */}
               <div className="gap-4 grid grid-cols-3 mb-6">
                 <div className="flex items-center gap-2 text-green-600">
@@ -718,7 +668,6 @@ export const ProductRoute = () => {
                   <span className="text-sm">Easy Returns</span>
                 </div>
               </div>
-
               {/* Quantity and Delivery */}
               <div className="space-y-4">
                 <div>
@@ -727,7 +676,6 @@ export const ProductRoute = () => {
                   </label>
                   <QuantitySelector count={count} setCount={count.set} />
                 </div>
-
                 <div className="flex items-center gap-3">
                   <Checkbox
                     checked={deliveryState.get || false}
@@ -737,7 +685,6 @@ export const ProductRoute = () => {
                 </div>
               </div>
             </div>
-
             {/* Order Form */}
             <div className="bg-gradient-to-br from-white to-gray-50 shadow-xl p-8 border border-gray-100 rounded-2xl">
               <h3
@@ -747,7 +694,6 @@ export const ProductRoute = () => {
                 <Icon icon={icons.user} iconClassName="text-blue-600 text-lg" />
                 Order Information
               </h3>
-
               <div className="space-y-6">
                 <div className="gap-6 grid grid-cols-1 md:grid-cols-2">
                   <FormField
@@ -765,7 +711,6 @@ export const ProductRoute = () => {
                     maxLength={40}
                   />
                 </div>
-
                 <FormField
                   label="Phone Number"
                   placeholder="0123456789"
@@ -774,7 +719,6 @@ export const ProductRoute = () => {
                   inputMode="numeric"
                   maxLength={10}
                 />
-
                 <FormField
                   label="Address"
                   placeholder="Enter your full address..."
@@ -782,7 +726,6 @@ export const ProductRoute = () => {
                   onChange={(e: any) => setAddress(e.target.value)}
                   multiLines={true}
                 />
-
                 <div className="flex gap-4">
                   <div className="flex-1">
                     <FormField
@@ -817,7 +760,6 @@ export const ProductRoute = () => {
                     </Button>
                   </div>
                 </div>
-
                 {Boolean(address && wilaya) && (
                   <Button
                     className="flex items-center gap-3 bg-gradient-to-r from-gray-100 hover:from-red-50 to-gray-200 hover:to-red-100 px-4 py-3 border-2 border-gray-200 hover:border-red-200 rounded-xl font-medium text-gray-600 hover:text-red-600 transition-all duration-300"
@@ -832,11 +774,9 @@ export const ProductRoute = () => {
                     </span>
                   </Button>
                 )}
-
                 {/* Custom Form Fields - Removed for simplicity */}
               </div>
             </div>
-
             {/* Order Button */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
@@ -861,7 +801,6 @@ export const ProductRoute = () => {
             </motion.div>
           </motion.div>
         </div>
-
         {/* Product Description */}
         <motion.div
           initial={{ opacity: 0, y: 50 }}
@@ -889,7 +828,6 @@ export const ProductRoute = () => {
           </div>
         </motion.div>
       </div>
-
       {/* Loading Overlay */}
       <AnimatePresence>
         {loadingOrder && (

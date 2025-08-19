@@ -13,6 +13,7 @@ import {
   useFormBrand,
   useFormKeys,
   useFormLimited,
+  useFormVarient,
 } from "../../apis/getFns";
 import { useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { useStoreId } from "../../utils";
@@ -25,6 +26,10 @@ export const ProductInfo = () => {
   const brands = useAsyncMemo(async () => {
     if (storeId) return snapbuyApi.getAllBrands(storeId);
     return [];
+  }, [storeId]);
+  const varient = useFormVarient();
+  const varients = useAsyncMemo(async () => {
+    return snapbuyApi.varient.getList();
   }, [storeId]);
   return (
     <EmptyComponent>
@@ -66,6 +71,41 @@ export const ProductInfo = () => {
                   }),
                 ],
                 search: brands.length >= 6,
+              }}
+              id="product-brand"
+            />
+          )}
+        </div>
+      </div>
+      <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+        <label
+          className="w-full md:text-right capitalize"
+          htmlFor="product-varient"
+        >
+          <Translate content="varient" />{" "}
+          <span className="text-[--biqpod-gray-opacity]">
+            (<Translate content="optional" />)
+          </span>{" "}
+          :
+        </label>
+        <div className="w-full">
+          {varients && (
+            <EnumField
+              state={varient}
+              config={{
+                list: [
+                  {
+                    value: "no-varient",
+                    content: "No varient",
+                  },
+                  ...varients.map((varient) => {
+                    return {
+                      value: varient.id!,
+                      content: varient.name || "Unnamed varient",
+                    };
+                  }),
+                ],
+                search: varients.length >= 6,
               }}
               id="product-brand"
             />

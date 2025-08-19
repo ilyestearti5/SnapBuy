@@ -47,7 +47,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
       case "npm":
         if (packageName?.trim()) {
           const npmVersion = version?.trim() || "1.0.0";
-          return `https://cdn.jsdelivr.net/npm/${packageName.trim()}@${npmVersion}/dist/index.js`;
+          return `https://cdn.jsdelivr.net/npm/${packageName.trim()}@${npmVersion}`;
         }
         return "";
       case "full-url":
@@ -360,7 +360,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         <Button
           icon={template ? allIcons.solid.faPen : allIcons.solid.faPlus}
           className={tw(
-            "rounded-full",
+            "px-2 py-1",
             loading && "pointer-events-none opacity-50"
           )}
           onClick={() => {

@@ -15,7 +15,8 @@ import { tw } from "@biqpod/app/ui/utils";
 import {
   getFormLimited,
   getFormType,
-  useFormPrice,
+  useFormClientPrice,
+  useFormCustomerPrice,
   useFormPrices,
   useFormQuantity,
 } from "../../../apis/getFns";
@@ -24,7 +25,8 @@ export const PostInforPrice = () => {
   const quantity = useFormQuantity();
   const tempPrice = useTemp<number | null | undefined>("temp-price");
   const tempQuantity = useTemp<number | null | undefined>("temp-quantity");
-  const price = useFormPrice();
+  const clientPrice = useFormClientPrice();
+  const customerPrice = useFormCustomerPrice();
   const pricesList = useFormPrices();
   const [isSingle, isMultiple] = useMemo(() => {
     var isSingle = postType === "single";
@@ -70,27 +72,50 @@ export const PostInforPrice = () => {
         </div>
         <Line />
         {isSingle && (
-          <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-            <label
-              className="w-full md:text-right capitalize"
-              htmlFor="product-price"
-            >
-              <Translate content="price" /> :
-            </label>
-            <div className="relative w-full">
-              <NumberField
-                state={price}
-                config={{
-                  placeholder: "Enter Price",
-                  autoChange: true,
-                }}
-                id="product-price"
-              />
-              <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
-                DA
+          <EmptyComponent>
+            <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+              <label
+                className="w-full md:text-right capitalize"
+                htmlFor="product-client"
+              >
+                <Translate content="client price" /> :
+              </label>
+              <div className="relative w-full">
+                <NumberField
+                  state={clientPrice}
+                  config={{
+                    placeholder: "Enter Client Price",
+                    autoChange: true,
+                  }}
+                  id="product-client-price"
+                />
+                <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
+                  DA
+                </div>
               </div>
             </div>
-          </div>
+            <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+              <label
+                className="w-full md:text-right capitalize"
+                htmlFor="product-customer-price"
+              >
+                <Translate content="customer price" /> :
+              </label>
+              <div className="relative w-full">
+                <NumberField
+                  state={customerPrice}
+                  config={{
+                    placeholder: "Enter Customer Price",
+                    autoChange: true,
+                  }}
+                  id="product-customer-price"
+                />
+                <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
+                  DA
+                </div>
+              </div>
+            </div>
+          </EmptyComponent>
         )}
         {isMultiple && (
           <EmptyComponent>

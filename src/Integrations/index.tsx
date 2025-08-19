@@ -1,237 +1,375 @@
 import {
-  fieldHooks,
-  getTemp,
-  getTempFromStore,
-  setTemp,
-  showToast,
-  useAsyncMemo,
-  useColorMerge,
-  useCopyState,
-  useUser,
-} from "@biqpod/app/ui/hooks";
-import { cloud, getDocs, getDownloadURL, setDoc, uploadFile } from "../server";
-import {
+  ArrayField,
+  Button,
   Card,
-  CircleTip,
-  ClickedView,
-  EmptyComponent,
-  Field,
-  Icon,
-  IconProps,
-  ImageField,
-  Line,
-  Scroll,
+  EnumField,
   Translate,
 } from "@biqpod/app/ui/components";
-import { allIcons } from "@biqpod/app/ui/apis";
+import {
+  confirm,
+  showToast,
+  useCopyState,
+  useSettingValue,
+} from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
-import { include, mergeArray, tw } from "@biqpod/app/ui/utils";
-import { useMemo } from "react";
-export interface SingleDocument {
-  name?: string;
-  photo?: string;
-  type?: "camera" | "service";
-  camera?: Partial<{
-    photo: string;
-  }>;
-  service?: Partial<{}>;
-  id?: string;
-}
-interface DocumentForUser {
-  id: string;
-  type?: "camera" | "service";
-  status: "pending" | "accepted" | "rejected" | "idle";
-  camera?: Partial<{
-    photo: string;
-  }>;
-  service?: Partial<{}>;
-}
-interface DocumentRecordProps {
-  data: SingleDocument;
-}
-export const statusColors: Partial<Record<DocumentForUser["status"], string>> =
-  {
-    rejected: "#e74c3c", // Beautiful red for failed status
-    pending: "#f39c12", // Warm orange for pending status
-    accepted: "#2ecc71", // Vibrant green for paid status,
-  };
-export const statusIcons: Partial<
-  Record<DocumentForUser["status"], IconProps["icon"]>
-> = {
-  rejected: allIcons.solid.faWarning,
-  pending: allIcons.solid.faClock,
-  accepted: allIcons.solid.faCheckCircle, // Added icon for 'paid' status,
-};
-export const statusText: Partial<Record<DocumentForUser["status"], string>> = {
-  rejected: "rejected",
-  pending: "pending",
-  accepted: "accepted",
-};
-export const DocumentRecord = ({ data }: DocumentRecordProps) => {
-  const { name, type = "camera", photo, id } = data;
-  const cameraId = `state-${name}-camera`;
-  const state = useCopyState<string | Nothing>(null);
-  const colorMerge = useColorMerge();
-  const user = useUser();
-  const savedDocuments = getTemp<DocumentForUser[]>("saved-docs");
-  const doc = useMemo(() => {
-    return savedDocuments?.find((doc) => doc.id === id);
-  }, [savedDocuments]);
-  const loading = useCopyState(false);
-  return (
-    <Card
-      key={name}
-      style={{
-        ...colorMerge("secondary.background"),
-      }}
-      className="w-[calc(50%-6px)] max-md:w-full h-fit overflow-hidden"
-    >
-      <ClickedView>
-        <div className="flex flex-col justify-between">
-          <div className="flex justify-center">
-            <img
-              className="h-[150px] object-cover"
-              src={photo}
-              draggable={false}
-            />
-          </div>
-          <Line />
-          <div className="flex justify-between items-center p-3">
-            <h1 className="text-3xl capitalize">
-              <Translate content={name || "no name"} />
-            </h1>
-            {(!doc || doc?.status === "idle") && (
-              <div className="flex justify-end gap-2">
-                {type === "service" && (
-                  <CircleTip
-                    onClick={async () => {
-                      const url = new URL("https://water-fetch-api.web.app");
-                      const token = await cloud.app.auth.generateToken();
-                      if (!token) {
-                        showToast("Failed to generate token");
-                        return;
-                      }
-                      url.pathname = "/document";
-                      url.searchParams.append("token", token);
-                      url.searchParams.append("name", id!);
-                      const a = document.createElement("a");
-                      a.href = url.toString();
-                      a.target = "_blank";
-                      a.click();
-                    }}
-                    icon={allIcons.solid.faChevronRight}
-                  />
-                )}
-                {type === "camera" && (
-                  <EmptyComponent>
-                    <CircleTip
-                      onClick={() => {
-                        document.getElementById(cameraId)?.click();
-                      }}
-                      icon={allIcons.solid.faCamera}
-                    />
-                    {state.get && (
-                      <CircleTip
-                        onClick={async () => {
-                          if (!user?.uid) {
-                            showToast("You are not logged in");
-                            return;
-                          }
-                          if (!state.get) {
-                            showToast("No image found");
-                            return;
-                          }
-                          loading.set(true);
-                          try {
-                            const ref = ["users", user.uid, "documents", id!];
-                            const blob = await fetch(state.get).then((s) =>
-                              s.blob()
-                            );
-                            await uploadFile(ref, blob);
-                            const photo = await getDownloadURL(ref);
-                            await setDoc(ref, {
-                              status: "pending",
-                              type: "camera",
-                              camera: {
-                                photo,
-                              },
-                            });
-                          } catch {}
-                          loading.set(false);
-                          showToast("Document sent for verification");
-                        }}
-                        iconClassName={tw(loading.get && "animate-spin")}
-                        icon={
-                          loading.get
-                            ? allIcons.solid.faSpinner
-                            : allIcons.solid.faPaperPlane
-                        }
-                      />
-                    )}
-                    <ImageField
-                      state={state}
-                      config={{
-                        hidden: true,
-                      }}
-                      id={cameraId}
-                    />
-                  </EmptyComponent>
-                )}
-              </div>
-            )}
-            {doc && doc.status !== "idle" && (
-              <div
-                style={{
-                  color: statusColors[doc.status],
-                }}
-                className="flex justify-center items-center gap-2 text-3xl capitalize"
-              >
-                <Icon icon={statusIcons[doc.status]} />
-              </div>
-            )}
-          </div>
-        </div>
-      </ClickedView>
-    </Card>
-  );
-};
+import { useEffect } from "react";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import {
+  vscDarkPlus,
+  vs,
+} from "react-syntax-highlighter/dist/esm/styles/prism";
+import { snapbuyApi } from "../apis";
+import { useParams } from "react-router-dom";
+import { allIcons } from "@biqpod/app/ui/apis";
 export const Integrations = () => {
-  const documents = useAsyncMemo(async () => {
-    const cashedDocs = getTempFromStore<SingleDocument[]>("documents");
-    if (cashedDocs) return cashedDocs;
-    const docs = await getDocs<SingleDocument>(["documents"]);
-    const list = docs?.map((doc) => ({
-      ...doc.data,
-      id: doc.id,
-    }));
-    setTemp("documents", list);
-    return list;
-  }, []);
-  const searchDocValue = fieldHooks.getOneFeild("search-doc", "value");
-  const filterdDocuments = useMemo(() => {
-    const docs = mergeArray(documents).flat();
-    if (!searchDocValue) {
-      return docs;
+  const { storeId } = useParams<{ storeId: string }>();
+  const origins = useCopyState<string[] | Nothing>([]);
+  const apiToken = useCopyState<string | null>(null);
+  const isGenerating = useCopyState(false);
+  const isLoading = useCopyState(false);
+  const error = useCopyState<string | null>(null);
+  const selectedLanguage = useCopyState<string | Nothing>("javascript");
+  // Detect current theme mode
+  const isDarkMode = useSettingValue("window/dark.boolean");
+  // Load existing token on component mount
+  useEffect(() => {
+    const loadExistingToken = async () => {
+      if (!storeId) return;
+      isLoading.set(true);
+      error.set(null);
+      try {
+        const existingToken = await snapbuyApi.getPartOfToken(storeId);
+        if (existingToken) {
+          apiToken.set(existingToken);
+        }
+      } catch (err) {
+        console.error("Failed to load existing token:", err);
+        error.set("Failed to load existing token. You can generate a new one.");
+      } finally {
+        isLoading.set(false);
+      }
+    };
+    loadExistingToken();
+  }, [storeId]);
+  // Programming language options
+  const languageOptions = [
+    { value: "javascript", content: "JavaScript" },
+    { value: "python", content: "Python" },
+    { value: "php", content: "PHP" },
+    { value: "java", content: "Java" },
+    { value: "csharp", content: "C#" },
+    { value: "go", content: "Go" },
+    { value: "ruby", content: "Ruby" },
+    { value: "curl", content: "Curl" },
+  ];
+  // Function to get syntax highlighting language
+  const getSyntaxLanguage = (language: string) => {
+    const languageMap = {
+      javascript: "javascript",
+      python: "python",
+      php: "php",
+      java: "java",
+      csharp: "csharp",
+      go: "go",
+      ruby: "ruby",
+      curl: "bash",
+    };
+    return languageMap[language as keyof typeof languageMap] || "javascript";
+  };
+  // Function to get code example based on selected language
+  const getCodeExample = (language: string, token: string) => {
+    const examples = {
+      javascript: `// Using fetch API
+fetch('https://api.snapbuy.com/v1/endpoint', {
+  method: 'GET',
+  headers: {
+    'Authorization': 'Bearer ${token}',
+    'Content-Type': 'application/json'
+  }
+})
+.then(response => response.json())
+.then(data => console.log(data));`,
+      python: `# Using requests library
+import requests
+headers = {
+    'Authorization': 'Bearer ${token}',
+    'Content-Type': 'application/json'
+}
+response = requests.get('https://api.snapbuy.com/v1/endpoint', headers=headers)
+data = response.json()
+print(data)`,
+      php: `<?php
+// Using cURL
+$ch = curl_init();
+curl_setopt($ch, CURLOPT_URL, 'https://api.snapbuy.com/v1/endpoint');
+curl_setopt($ch, CURLOPT_HTTPHEADER, [
+    'Authorization: Bearer ${token}',
+    'Content-Type: application/json'
+]);
+curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+$response = curl_exec($ch);
+$data = json_decode($response, true);
+curl_close($ch);
+?>`,
+      java: `// Using HttpURLConnection
+import java.net.http.*;
+import java.net.URI;
+HttpClient client = HttpClient.newHttpClient();
+HttpRequest request = HttpRequest.newBuilder()
+    .uri(URI.create("https://api.snapbuy.com/v1/endpoint"))
+    .header("Authorization", "Bearer ${token}")
+    .header("Content-Type", "application/json")
+    .GET()
+    .build();
+HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+System.out.println(response.body());`,
+      csharp: `// Using HttpClient
+using System.Net.Http;
+using System.Net.Http.Headers;
+var client = new HttpClient();
+client.DefaultRequestHeaders.Authorization = 
+    new AuthenticationHeaderValue("Bearer", "${token}");
+var response = await client.GetAsync("https://api.snapbuy.com/v1/endpoint");
+var content = await response.Content.ReadAsStringAsync();
+Console.WriteLine(content);`,
+      go: `// Using net/http package
+package main
+import (
+    "fmt"
+    "net/http"
+    "io/ioutil"
+)
+func main() {
+    client := &http.Client{}
+    req, _ := http.NewRequest("GET", "https://api.snapbuy.com/v1/endpoint", nil)
+    req.Header.Add("Authorization", "Bearer ${token}")
+    req.Header.Add("Content-Type", "application/json")
+    resp, _ := client.Do(req)
+    defer resp.Body.Close()
+    body, _ := ioutil.ReadAll(resp.Body)
+    fmt.Println(string(body))
+}`,
+      ruby: `# Using net/http
+require 'net/http'
+require 'json'
+uri = URI('https://api.snapbuy.com/v1/endpoint')
+http = Net::HTTP.new(uri.host, uri.port)
+http.use_ssl = true
+request = Net::HTTP::Get.new(uri)
+request['Authorization'] = 'Bearer ${token}'
+request['Content-Type'] = 'application/json'
+response = http.request(request)
+data = JSON.parse(response.body)
+puts data`,
+      curl: `# Using cURL command line
+curl -X GET "https://api.snapbuy.com/v1/endpoint" \\
+  -H "Authorization: Bearer ${token}" \\
+  -H "Content-Type: application/json"`,
+    };
+    return examples[language as keyof typeof examples] || examples.javascript;
+  };
+  // Function to generate a real API token using snapbuyApi
+  const generateToken = async () => {
+    if (!storeId) {
+      error.set("Store ID is required for token generation");
+      return;
     }
-    return docs.filter((doc) => include(doc.name, searchDocValue));
-  }, [documents, searchDocValue]);
+    isGenerating.set(true);
+    error.set(null);
+    try {
+      const partOfToken = await snapbuyApi.generateStoreApiToken(storeId);
+      if (partOfToken) {
+        apiToken.set(partOfToken);
+        error.set(null);
+      } else {
+        throw new Error("No token received from API");
+      }
+    } catch (err) {
+      console.error("Failed to generate API token:", err);
+      error.set(
+        "Failed to generate API token. Please try again or contact support."
+      );
+      // Fallback to demo token if API fails
+    } finally {
+      isGenerating.set(false);
+    }
+  };
+  // Function to regenerate token
+  const regenerateToken = async () => {
+    const response = await confirm({
+      title: "Regenerate API Token",
+      message: "Are you sure you want to regenerate the API token?",
+      type: "warning",
+    });
+    if (response) {
+      await generateToken();
+    }
+  };
+  // Function to add origin to the list
+  // Function to copy token to clipboard
+  const copyToken = async () => {
+    if (apiToken.get) {
+      try {
+        await navigator.clipboard.writeText(apiToken.get);
+        showToast("API Token copied to clipboard");
+        // Clear any existing errors when copy is successful
+        error.set(null);
+        // You could add a toast notification here
+      } catch (err) {
+        error.set("Failed to copy token to clipboard");
+      }
+    }
+  };
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="p-3">
-        <Field
-          inputName="search-doc"
-          className="rounded-xl"
-          placeholder="search document"
-        />
+    <div className="space-y-6 p-6">
+      <div className="mb-8">
+        <h1 className="mb-2 font-bold text-[--biqpod-text-color] text-2xl">
+          <Translate content="API Integrations" />
+        </h1>
+        <p className="opacity-70 text-[--biqpod-text-color]">
+          <Translate content="Configure your SnapBuy API integration settings" />
+        </p>
       </div>
-      <Line />
-      <Scroll>
-        <div className="flex flex-wrap gap-2 p-2">
-          {filterdDocuments?.map((document) => {
-            return <DocumentRecord data={document} key={document.id} />;
-          })}
+      {/* SnapBuy API Integration Section */}
+      <Card className="p-6">
+        <h2 className="mb-4 font-semibold text-[--biqpod-text-color] text-xl">
+          <Translate content="SnapBuy API Integration" />
+        </h2>
+        {/* API Token Section */}
+        <div className="mb-6">
+          <h3 className="mb-3 font-medium text-[--biqpod-text-color] text-lg">
+            <Translate content="API Token" />
+          </h3>
+          {/* Error Display */}
+          {error.get && (
+            <div className="bg-red-100 mb-3 px-4 py-3 border border-red-300 rounded-lg text-red-700">
+              <p className="text-sm">{error.get}</p>
+            </div>
+          )}
+          {!storeId ? (
+            <div className="bg-[--biqpod-gray-opacity] p-4 rounded-lg">
+              <p className="opacity-70 text-[--biqpod-text-color]">
+                <Translate content="Store ID is required to generate API tokens. Please make sure you're accessing this from a store context." />
+              </p>
+            </div>
+          ) : apiToken.get ? (
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 bg-[--biqpod-gray-opacity] p-3 rounded-lg font-mono text-sm">
+                  {apiToken.get}
+                </div>
+                <Button
+                  onClick={copyToken}
+                  className="bg-[--biqpod-gray-opacity] px-4 py-2 w-fit text-[--biqpod-text-color]"
+                  icon={allIcons.regular.faCopy}
+                >
+                  <Translate content="Copy" />
+                </Button>
+              </div>
+              <div className="flex gap-3">
+                <Button
+                  onClick={regenerateToken}
+                  disabled={isGenerating.get}
+                  className="px-4 py-2"
+                >
+                  <Translate
+                    content={
+                      isGenerating.get ? "Regenerating..." : "Regenerate Token"
+                    }
+                  />
+                </Button>
+                {apiToken.get.startsWith("sb_demo_") && (
+                  <span className="bg-yellow-100 px-3 py-2 rounded-lg text-yellow-800 text-xs">
+                    <Translate content="Demo Token" />
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <Button
+              onClick={generateToken}
+              disabled={isGenerating.get || isLoading.get}
+              className="px-6 py-2"
+            >
+              <Translate
+                content={
+                  isGenerating.get
+                    ? "Generating..."
+                    : isLoading.get
+                    ? "Loading..."
+                    : "Generate API Token"
+                }
+              />
+            </Button>
+          )}
         </div>
-      </Scroll>
+        {/* Origins Section */}
+        <ArrayField
+          state={origins}
+          id="origins"
+          config={{
+            addText: "Add Origin",
+          }}
+        />
+        {/* API Usage Instructions */}
+        {apiToken.get && (
+          <div className="bg-[--biqpod-field-background] mt-6 p-4 border border-[--biqpod-borders] border-solid rounded-lg">
+            <h4 className="mb-4 font-medium text-[--biqpod-text-color] text-sm">
+              <Translate content="Usage Instructions" />
+            </h4>
+            {/* Programming Language Selector */}
+            <div className="mb-4">
+              <label className="block mb-2 font-medium text-[--biqpod-text-color] text-sm">
+                <Translate content="Choose Programming Language:" />
+              </label>
+              <EnumField
+                state={selectedLanguage}
+                id="programming-language"
+                config={{
+                  list: languageOptions,
+                }}
+              />
+            </div>
+            {/* Code Example */}
+            <div>
+              <p className="opacity-70 mb-2 text-[--biqpod-text-color] text-xs">
+                <Translate content="Code example for" />{" "}
+                {
+                  languageOptions.find(
+                    (lang) => lang.value === selectedLanguage.get
+                  )?.content
+                }
+                :
+              </p>
+              <div className="rounded-lg overflow-hidden">
+                <SyntaxHighlighter
+                  language={getSyntaxLanguage(
+                    selectedLanguage.get || "javascript"
+                  )}
+                  style={isDarkMode ? vscDarkPlus : vs}
+                  showLineNumbers={true}
+                  wrapLines={true}
+                  customStyle={{
+                    margin: 0,
+                    fontSize: "12px",
+                    background: isDarkMode
+                      ? "rgba(0, 0, 0, 0.3)"
+                      : "rgba(255, 255, 255, 0.9)",
+                    border: isDarkMode
+                      ? "1px solid rgba(255, 255, 255, 0.1)"
+                      : "1px solid rgba(0, 0, 0, 0.1)",
+                  }}
+                >
+                  {getCodeExample(
+                    (selectedLanguage.get as string) || "javascript",
+                    apiToken.get || ""
+                  )}
+                </SyntaxHighlighter>
+              </div>
+            </div>
+          </div>
+        )}
+      </Card>
     </div>
   );
 };

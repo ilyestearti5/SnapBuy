@@ -8,32 +8,30 @@ import {
   Key,
 } from "@biqpod/app/ui/components";
 import {
-  getTemp,
   showBottomSheet,
-  setTemp,
   getFieldValue,
   useAsyncMemo,
+  showPopup,
+  setTemp,
 } from "@biqpod/app/ui/hooks";
-import { tw } from "@biqpod/app/ui/utils";
+import { delay, tw } from "@biqpod/app/ui/utils";
 import { ImageSlider } from "./ImageSlider";
 import { motion } from "framer-motion";
-import { useCallback, useMemo } from "react";
 import { highlightMatch } from "../routes/Clients/ClientProductRender";
 import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
 import { snapbuyApi } from "../apis";
+import { PostNewProduct } from "./NewProduct/NewProduct";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;
 }
-let longPressTimer: NodeJS.Timeout | null = null;
 export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const photos = product.photos || [];
   const search = getFieldValue("producer-search-product");
   const prices = Array.from(product.multiple?.prices || []);
-  const price = product.single?.price || 0;
+  const clientPrice = product.single?.client || 0;
+  const customerPrice = product.single?.customer || 0;
   const isPromotion = product.type === "multiple";
-  const selectedProducts = getTemp<string[]>("selected-products");
-
   // Fetch brand information if brandId exists
   const brand = useAsyncMemo(async () => {
     if (product.brandId) {
@@ -46,50 +44,18 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
     }
     return null;
   }, [product.brandId]);
-
   // Helper: check if any product is selected
-  const anyProductSelected = !!selectedProducts?.length;
-  const handleLongPressStart = useCallback(() => {
-    longPressTimer = setTimeout(() => {
-      setTemp("selected-products", [...(selectedProducts || []), product.id]);
-    }, 500); // 500ms for long press
-  }, []);
-  const handleLongPressEnd = useCallback(() => {
-    if (longPressTimer) {
-      clearTimeout(longPressTimer);
-      longPressTimer = null;
-    }
-  }, []);
-  const isSelected = useMemo(() => {
-    return selectedProducts?.includes(product.id!);
-  }, [selectedProducts]);
-  // New: handle click to select if any product is already selected
-  const handleClick = () => {
-    if (anyProductSelected && !isSelected) {
-      // If any product is selected, add this product to the selection
-      setTemp("selected-products", [...(selectedProducts || []), product.id]);
-    }
-  };
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={tw("h-[300px] p-1 w-full transition-[width] duration-500")}
-      onMouseDown={handleLongPressStart}
-      onMouseUp={handleLongPressEnd}
-      onMouseLeave={handleLongPressEnd}
-      onTouchStart={handleLongPressStart}
-      onTouchEnd={handleLongPressEnd}
-      onTouchCancel={handleLongPressEnd}
-      onClick={anyProductSelected ? handleClick : undefined} // <-- add click handler
     >
       <Card
         key={product.id}
         className={tw(
-          "flex flex-col justify-between w-full h-full overflow-hidden",
-          isSelected &&
-            "outline outline-2 -outline-offset-2 outline-[--biqpod-primary] bg-[--biqpod-gray-opacity]"
+          "flex flex-col justify-between w-full h-full overflow-hidden"
         )}
       >
         <div className="relative flex justify-center items-center w-full h-[200px] overflow-hidden cursor-pointer">
@@ -119,7 +85,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             </div>
           )}
           {brand && brand.photo && (
-            <div className="right-1 bottom-1 absolute h-8 overflow-hidden">
+            <div className="right-1 bottom-1 absolute w-1/4 overflow-hidden">
               <img
                 src={brand.photo}
                 alt={brand.name}
@@ -135,15 +101,46 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             <div className="flex-1">
               {highlightMatch(product.name!, search)}
             </div>
-            {brand && <Key className="italic">{brand.name} </Key>}
+            {brand && <Key className="italic">{brand.name}</Key>}
           </div>
         </div>
         <Line />
         <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
           {!isPromotion && (
-            <span className="font-bold text-[--biqpod-success] max-md:text-lg text-2xl">
-              {price} DA
-            </span>
+            <div className="flex flex-col gap-2">
+              {clientPrice ? (
+                <span className="font-bold text-[--biqpod-success] max-md:text-lg text-2xl">
+                  {clientPrice} DA
+                </span>
+              ) : (
+                <span
+                  onClick={async () => {
+                    showPopup(<PostNewProduct product={product} />);
+                    await delay(100);
+                    setTemp("post-focused", 3);
+                  }}
+                  className="hover:text-[--biqpod-primary] max-md:text-lg text-2xl underline italic cursor-pointer"
+                >
+                  <Translate content="no set" />
+                </span>
+              )}
+              {customerPrice ? (
+                <span className="font-bold text-[--biqpod-success] max-md:text-lg text-2xl">
+                  {customerPrice} DA
+                </span>
+              ) : (
+                <span
+                  onClick={async () => {
+                    showPopup(<PostNewProduct product={product} />);
+                    await delay(100);
+                    setTemp("post-focused", 3);
+                  }}
+                  className="hover:text-[--biqpod-primary] max-md:text-lg text-2xl underline italic cursor-pointer"
+                >
+                  <Translate content="no set" />
+                </span>
+              )}
+            </div>
           )}
           {isPromotion && (
             <div className="flex flex-wrap gap-2">
@@ -166,16 +163,14 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                 })}
             </div>
           )}
-          {!anyProductSelected && (
-            <CircleTip
-              icon={allIcons.solid.faEllipsisVertical}
-              onClick={() => {
-                showBottomSheet(
-                  <ProductToolsBottomSheet index={index} product={product} />
-                );
-              }}
-            />
-          )}
+          <CircleTip
+            icon={allIcons.solid.faEllipsisVertical}
+            onClick={() => {
+              showBottomSheet(
+                <ProductToolsBottomSheet index={index} product={product} />
+              );
+            }}
+          />
         </div>
       </Card>
     </motion.div>

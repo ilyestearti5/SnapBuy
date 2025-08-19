@@ -14,7 +14,6 @@ import {
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
-  confirm,
   execAction,
   getFieldValue,
   getPosition,
@@ -22,7 +21,6 @@ import {
   isLoading,
   isSuccess,
   openPath,
-  setTemp,
   showPopup,
   showToast,
   useAction,
@@ -34,13 +32,14 @@ import {
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
-import { FixedSizeList as List } from "react-window";
+import { FixedSizeList as List, ListOnScrollProps } from "react-window";
 import { getDocs } from "../server";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRender } from "./ProductRender";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
+import { motion } from "framer-motion";
 import { useStoreId } from "../utils";
 import { loadFromExcel } from "./loadFromExcel";
 import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
@@ -242,11 +241,13 @@ const ToolsCard = memo(
     storeId: string | null | undefined;
   }) => {
     return (
-      <Card
-        onClick={onToggleTools}
-        className="right-4 bottom-4 z-[5000000000000000000000000000000] absolute flex flex-col items-center p-3 rounded-3xl"
+      <motion.div
+        drag
+        dragMomentum={false}
+        className="right-4 bottom-4 z-[5000000000000000000000000000000] absolute"
       >
-        {/* <CircleTip
+        <Card className="flex flex-col items-center p-3 rounded-3xl">
+          {/* <CircleTip
           icon={allIcons.solid.faArrowUpRightFromSquare}
           className={tw(
             "transition-[width,height] bg-[--biqpod-gray-opacity] animate-pulse hover:animate-none active:animate-ping text-yellow-600",
@@ -343,156 +344,70 @@ const ToolsCard = memo(
             }
           }}
         /> */}
-        <CircleTip
-          icon={allIcons.solid.faCodeFork}
-          className={tw(
-            "transition-[width,height] text-red-300",
-            !showTools && "w-[0px] h-[0px]"
-          )}
-          onClick={async () => {
-            showPopup(<Collections />);
-          }}
-        />
-        <CircleTip
-          icon={allIcons.solid.faBoxesPacking}
-          className={tw(
-            "transition-[width,height] text-blue-300",
-            !showTools && "w-[0px] h-[0px]"
-          )}
-          onClick={async () => {
-            showPopup(<Packs />);
-          }}
-        />
-        <CircleTip
-          icon={allIcons.regular.faFileExcel}
-          className={tw(
-            "transition-[width,height] text-green-600",
-            !showTools && "w-[0px] h-[0px]"
-          )}
-          onClick={async () => {
-            showPopup(<ExcelImportFrom />);
-          }}
-        />
-        <CircleTip
-          className={tw(
-            "transition-[width,height] text-green-600",
-            !showTools && "w-[0px] h-[0px]"
-          )}
-          onClick={() => {
-            // export excel file (upload)
-            showPopup(<ExportExcelPopupProducts />);
-          }}
-          icon={allIcons.solid.faFileExcel}
-        />
-        <CircleTip
-          icon={allIcons.solid.faPlus}
-          className={tw(
-            "transition-[width,height] text-violet-500",
-            !showTools && "w-[0px] h-[0px]"
-          )}
-          onClick={async () => {
-            showPopup(<PostNewProduct />);
-          }}
-        />
-        <CircleTip
-          icon={allIcons.solid.faPlus}
-          iconClassName={tw(
-            "transition-transform",
-            showTools ? "rotate-45 text-sky-700" : "rotate-0"
-          )}
-        />
-      </Card>
+          <CircleTip
+            icon={allIcons.solid.faCodeFork}
+            className={tw(
+              "transition-[width,height] text-red-300",
+              !showTools && "w-[0px] h-[0px]"
+            )}
+            onClick={async () => {
+              showPopup(<Collections />);
+            }}
+          />
+          <CircleTip
+            icon={allIcons.solid.faBoxesPacking}
+            className={tw(
+              "transition-[width,height] text-blue-300",
+              !showTools && "w-[0px] h-[0px]"
+            )}
+            onClick={async () => {
+              showPopup(<Packs />);
+            }}
+          />
+          <CircleTip
+            icon={allIcons.regular.faFileExcel}
+            className={tw(
+              "transition-[width,height] text-green-600",
+              !showTools && "w-[0px] h-[0px]"
+            )}
+            onClick={async () => {
+              showPopup(<ExcelImportFrom />);
+            }}
+          />
+          <CircleTip
+            className={tw(
+              "transition-[width,height] text-green-600",
+              !showTools && "w-[0px] h-[0px]"
+            )}
+            onClick={() => {
+              // export excel file (upload)
+              showPopup(<ExportExcelPopupProducts />);
+            }}
+            icon={allIcons.solid.faFileExcel}
+          />
+          <CircleTip
+            icon={allIcons.solid.faPlus}
+            className={tw(
+              "transition-[width,height] text-violet-500",
+              !showTools && "w-[0px] h-[0px]"
+            )}
+            onClick={async () => {
+              showPopup(<PostNewProduct />);
+            }}
+          />
+          <CircleTip
+            onClick={onToggleTools}
+            icon={allIcons.solid.faPlus}
+            iconClassName={tw(
+              "transition-transform",
+              showTools ? "rotate-45 text-sky-700" : "rotate-0"
+            )}
+          />
+        </Card>
+      </motion.div>
     );
   }
 );
-ToolsCard.displayName = "ToolsCard";
-const SelectedProductsCard = memo(
-  ({
-    selectedProducts,
-    filterProducts,
-    anyProductSelected,
-  }: {
-    selectedProducts: string[] | null | undefined;
-    filterProducts: SnapBuy.Product[] | null | undefined;
-    anyProductSelected: boolean;
-  }) => {
-    if (!anyProductSelected) return null;
-    return (
-      <Card className="bottom-4 left-4 z-[5000000000000000000000000000000] absolute flex flex-col items-center p-3 rounded-3xl">
-        <CircleTip
-          // icon represent available
-          icon={allIcons.regular.faEdit}
-          onClick={async () => {
-            if (selectedProducts) {
-              const unAvailableProducts = filterProducts?.filter(
-                (prod) => !prod.available
-              );
-              if (unAvailableProducts?.length) {
-                const response = await confirm({
-                  title: "Modify Products",
-                  message:
-                    "Are you sure you want to modify the selected products?",
-                  detail: `You are about to modify ${unAvailableProducts?.length} products. This action cannot be undone.`,
-                  type: "warning",
-                });
-                if (response) {
-                  execAction("add-products", {
-                    exists: unAvailableProducts?.map(({ id }) => {
-                      return {
-                        id,
-                        available: true,
-                      };
-                    }),
-                  });
-                  setTemp("selected-products", []);
-                }
-              } else {
-                showToast(
-                  "No products with state un available there is",
-                  "info"
-                );
-              }
-            }
-          }}
-        />
-        <CircleTip
-          icon={allIcons.solid.faCheckDouble}
-          onClick={async () => {
-            setTemp(
-              "selected-products",
-              filterProducts?.map(({ id }) => id)
-            );
-          }}
-        />
-        <CircleTip
-          icon={allIcons.solid.faTrashCan}
-          onClick={async () => {
-            if (selectedProducts) {
-              const response = await confirm({
-                title: "Delete Products",
-                message:
-                  "Are you sure you want to delete the selected products?",
-                detail: `You are about to delete ${selectedProducts.length} products. This action cannot be undone.`,
-                type: "warning",
-              });
-              if (response) {
-                execAction("delete-products", selectedProducts);
-                setTemp("selected-products", []);
-              }
-            }
-          }}
-        />
-        <CircleTip
-          icon={allIcons.solid.faXmark}
-          onClick={async () => {
-            setTemp("selected-products", []);
-          }}
-        />
-      </Card>
-    );
-  }
-);
-SelectedProductsCard.displayName = "SelectedProductsCard";
 const PAGE_SIZE = 20;
 export const Products = () => {
   const user = useUser();
@@ -575,8 +490,8 @@ export const Products = () => {
             options.get.minPrice > 0
           ) {
             let productPrice = 0;
-            if (prod.type === "single" && prod.single?.price) {
-              productPrice = prod.single.price;
+            if (prod.type === "single" && prod.single?.client) {
+              productPrice = prod.single.client;
             } else if (
               prod.type === "multiple" &&
               prod.multiple?.prices?.length
@@ -596,8 +511,8 @@ export const Products = () => {
             options.get.maxPrice > 0
           ) {
             let productPrice = 0;
-            if (prod.type === "single" && prod.single?.price) {
-              productPrice = prod.single.price;
+            if (prod.type === "single" && prod.single?.client) {
+              productPrice = prod.single.client;
             } else if (
               prod.type === "multiple" &&
               prod.multiple?.prices?.length
@@ -623,9 +538,6 @@ export const Products = () => {
     [search, products.get, options.get],
     500
   );
-  useEffect(() => {
-    if (user?.uid) return snapbuyApi.onMarketChange(user?.uid);
-  }, [user]);
   const loading = isLoading(action);
   // FastList related state and refs
   const listRef = useRef<any>(null);
@@ -661,7 +573,7 @@ export const Products = () => {
   }, [filterProducts?.length]);
   // Stable onScroll callback
   const handleScroll = useCallback(
-    (e: any) => {
+    (e: ListOnScrollProps) => {
       scrollState.current = e.scrollOffset || 0;
       setShowShadow((e.scrollOffset || 0) > 40);
       // Infinite scroll logic

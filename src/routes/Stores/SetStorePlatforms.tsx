@@ -10,6 +10,7 @@ import {
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
+  confirm,
   execAction,
   showToast,
   useCopyState,
@@ -157,8 +158,8 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                                 }
                                 transition={{ duration: 0.2 }}
                               />
-                              <div className="flex-1">
-                                <div className="font-medium">
+                              <div className="flex-1 overflow-x-hidden">
+                                <div className="font-medium truncate">
                                   {platformInfo.name}
                                 </div>
                                 <AnimatePresence mode="wait">
@@ -263,9 +264,17 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                                     >
                                       <CircleTip
                                         icon={allIcons.solid.faTrash}
-                                        onClick={() =>
-                                          handleRemovePlatform(platformId)
-                                        }
+                                        onClick={async () => {
+                                          const isResponse = await confirm({
+                                            title: "Delete Platform",
+                                            message: `Are you sure you want to delete the platform \`${platformInfo.name}\`?`,
+                                            detail:
+                                              "This action cannot be undone.",
+                                          });
+                                          if (isResponse) {
+                                            handleRemovePlatform(platformId);
+                                          }
+                                        }}
                                       />
                                     </motion.div>
                                     <motion.div

@@ -23,13 +23,6 @@ import {
 } from "@biqpod/app/ui/components";
 import { fuzzySearch, tw, setFocused } from "@biqpod/app/ui/utils";
 import { useCartTotalCount } from "../routes/Clients/CartHooks";
-import {
-  initCart,
-  useFullCart,
-  addToCart,
-  removeCart,
-  deleteCart,
-} from "../routes/Clients/AddProductToCart";
 import { Geolocation } from "@capacitor/geolocation";
 import { isWeb } from "@biqpod/app/ui/app";
 import { getAddressFromCoords } from "../getAddressFromCoords";
@@ -38,6 +31,13 @@ import { NotificationTester } from "../components/NotificationTester";
 import { FloatingNotificationTester } from "../components/FloatingNotificationTester";
 import { quickNotificationTest } from "../utils/quickNotificationTest";
 import "../utils/desktopNotificationFixes"; // Auto-applies fixes when imported
+import {
+  useFullCart,
+  addToCart,
+  deleteCart,
+  removeCart,
+  initCart,
+} from "@biqpod/snapbuy";
 // Custom Button Component
 const Button = ({ children, className, style, onClick, ...props }: any) => (
   <button
@@ -75,7 +75,7 @@ const icons = {
 // Optimized utility functions for repeated logic
 const getProductPrice = (product: SnapBuy.Product): number => {
   return product.type === "single"
-    ? product.single?.price || 0
+    ? product.single?.client || 0
     : Math.min(...(product.multiple?.prices?.map((p) => p.price) || [0]));
 };
 
@@ -702,9 +702,7 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                   if (addressInfo.fullAddress) {
                     setAddress(addressInfo.fullAddress);
                   }
-                } catch (err) {
-                  console.warn("Could not get address from coordinates");
-                }
+                } catch (err) {}
                 resolve(coords);
               },
               (error) => {
@@ -737,9 +735,7 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
             if (addressInfo.fullAddress) {
               setAddress(addressInfo.fullAddress);
             }
-          } catch (err) {
-            console.warn("Could not get address from coordinates");
-          }
+          } catch (err) {}
         }
         showToast("Location detected successfully", "success");
       } catch (error) {
@@ -1834,7 +1830,7 @@ export const Test = () => {
       filtered = filtered.filter((product) => {
         const price =
           product.type === "single"
-            ? product.single?.price || 0
+            ? product.single?.client || 0
             : Math.min(
                 ...(product.multiple?.prices?.map((p) => p.price) || [0])
               );
@@ -2146,7 +2142,6 @@ export const Test = () => {
                         style={{ fontFamily: "Inter, sans-serif" }}
                         onClick={() => {
                           // Handle trending search click
-                          console.log("Trending search:", term);
                         }}
                       >
                         <Icon icon={allIcons.solid.faChartLine} />
@@ -2276,7 +2271,6 @@ export const Test = () => {
                   }`}
                   onClick={() => {
                     // Handle brand click - could filter products by brand
-                    console.log("Brand clicked:", brand.name);
                   }}
                 >
                   <div className="flex items-center gap-3">

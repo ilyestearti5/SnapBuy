@@ -17,10 +17,11 @@ import clientPhoto from "./assets/clients.png";
 import feedbackPhoto from "./assets/feedback.png";
 import offersPhoto from "./assets/offers.png";
 import deliveryPhoto from "./assets/delivery.png";
+import androidPhoto from "./assets/android.png";
+import integrationsPhoto from "./assets/integrations.png";
+import edge from "./assets/platforms/edge.png";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { IconProps } from "@biqpod/app/ui/components";
-import androidPhoto from "./assets/android.png";
-import edge from "./assets/platforms/edge.png";
 import {
   ColorIds,
   execAction,
@@ -39,6 +40,8 @@ import overviewPhoto from "./assets/overview.png";
 import formsPhoto from "./assets/forms.png";
 import settingsPhoto from "./assets/settings.png";
 import { mergeArray } from "@biqpod/app/ui/utils";
+const varientsPhoto =
+  "https://cdn3d.iconscout.com/3d/premium/thumb/variable-5591050-4652827.png";
 export const userTabs = [
   {
     name: "overview",
@@ -60,11 +63,7 @@ export const userTabs = [
     link: `/store/{storeId}/orders`,
     photo: shoppingPhoto,
   },
-  // {
-  //   name: "integrations",
-  //   link: `/store/{storeId}/integrations`,
-  //   photo: integrationsPhoto,
-  // },
+
   {
     name: "Stores",
     link: `/store/{storeId}/stores`,
@@ -79,6 +78,16 @@ export const userTabs = [
     name: "settings",
     link: "/store/{storeId}/settings",
     photo: settingsPhoto,
+  },
+  {
+    name: "integrations",
+    link: `/store/{storeId}/integrations`,
+    photo: integrationsPhoto,
+  },
+  {
+    name: "varients",
+    link: `/store/{storeId}/varients`,
+    photo: varientsPhoto,
   },
 ];
 export const toId = (value: string) => {
@@ -1617,7 +1626,7 @@ export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
     price = choised?.price || 0;
     total = price * count;
   } else {
-    price = product.single?.price || 0;
+    price = product.single?.client || 0;
     total = price * count;
   }
   return {

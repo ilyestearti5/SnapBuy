@@ -9,9 +9,9 @@ import {
 } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  actionHooks,
   closePopup,
   execAction,
+  getAction,
   isLoading,
   showToast,
   useTemp,
@@ -32,10 +32,11 @@ import {
   setFormLimited,
   setFormName,
   setFormPhotos,
-  setFormPrice,
+  setFormClientPrice,
   setFormPrices,
   setFormQuantity,
   setFormType,
+  setFormVarient,
   useFormProduct,
 } from "../../apis/getFns";
 export interface ProductFormSectionProps {
@@ -58,8 +59,8 @@ export interface PostNewProductProps {
   product?: Partial<SnapBuy.Product>;
 }
 export const PostNewProduct = ({ product }: PostNewProductProps) => {
-  const postMarketAction = actionHooks.getOne("post-market");
-  const postActionStatus = actionHooks.getOneFeild("post-market", "status");
+  const postMarketAction = getAction("post-market");
+  const postIsInLoading = isLoading(postMarketAction);
   const postIsLoading = isLoading(postMarketAction);
   useEffect(() => {
     if (postMarketAction?.status === "success") {
@@ -80,22 +81,21 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
     setFormQuantity(product?.quantity || 0);
     setFormAvailable(product?.available || false);
     setFormType(product?.type || "single");
-    setFormPrice(product?.single?.price || 0);
+    setFormClientPrice(product?.single?.client || 0);
     setFormPrices(product?.multiple?.prices || []);
     setFormBrand(product?.brandId);
+    setFormVarient(product?.varientId);
   }, [product]);
   const productForm = useFormProduct();
   return (
     <EmptyComponent>
-      {product !== null && postActionStatus != "loading" && (
+      {product !== null && !postIsInLoading && (
         <Card className="relative justify-between max-md:border-none max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:h-[70vh] overflow-hidden">
           <div className="flex justify-between items-center p-2">
             <h1 className="text-2xl capitalize">
-              {product ? (
-                <Translate content="modifie product" />
-              ) : (
-                <Translate content="add product" />
-              )}
+              <Translate
+                content={product ? "modifie product" : "add product"}
+              />
             </h1>
             <div className="flex">
               <CircleTip

@@ -8,7 +8,6 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { SettingValueType, Nothing } from "@biqpod/app/ui/types";
 import { useMemo } from "react";
-
 function getFns<T>(fieldId: string) {
   const get = () => getTemp<T>(fieldId);
   const set = (value: T) => {
@@ -80,10 +79,15 @@ export const {
   use: useFormPhotos,
 } = getFns<SnapBuy.Product["photos"]>("product-images");
 export const {
-  get: getFormPrice,
-  set: setFormPrice,
-  use: useFormPrice,
-} = getFns<number | undefined>("product-price");
+  get: getFormClientPrice,
+  set: setFormClientPrice,
+  use: useFormClientPrice,
+} = getFns<number | undefined>("product-client-price");
+export const {
+  get: getFormCustomerPrice,
+  set: setFormCustomerPrice,
+  use: useFormCustomerPrice,
+} = getFns<number | undefined>("product-customer-price");
 export const {
   get: getFormLimited,
   use: useFormLimited,
@@ -94,9 +98,15 @@ export const {
   set: setFormBrand,
   use: useFormBrand,
 } = getFns<string | Nothing>("product-brand");
+export const {
+  get: getFormVarient,
+  set: setFormVarient,
+  use: useFormVarient,
+} = getFns<string | Nothing>("product-varient");
 export const useFormProduct = () => {
   const photos = getFormPhotos();
-  const price = getFormPrice();
+  const clientPrice = getFormClientPrice();
+  const customerPrice = getFormCustomerPrice();
   const limited = getFormLimited();
   const prices = getFormPrices();
   const quantity = getFormQuantity();
@@ -106,6 +116,7 @@ export const useFormProduct = () => {
   const isAvailable = getFormAvailable();
   const type = getFormType();
   const brandId = getFormBrand();
+  const varient = getFormVarient();
   const product = useMemo(() => {
     const result: Partial<SnapBuy.Product> = {
       photos: photos || [],
@@ -122,20 +133,25 @@ export const useFormProduct = () => {
         prices: prices || [],
       };
     } else {
-      result.single = {
-        price: price || 0,
-      };
+      const options: Required<SnapBuy.Product>["single"] = {};
+      if (clientPrice) {
+        options.client = clientPrice;
+      }
+      if (customerPrice) {
+        options.customer = customerPrice;
+      }
+      result.single = options;
     }
-    if (brandId) {
+    if (brandId && brandId !== "no-varient") {
       result.brandId = brandId;
     }
-    if (brandId) {
-      result.brandId = brandId;
+    if (varient && varient !== "no-varient") {
+      result.varientId = varient;
     }
     return result;
   }, [
     photos,
-    price,
+    clientPrice,
     limited,
     prices,
     quantity,

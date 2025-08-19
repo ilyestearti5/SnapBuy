@@ -12,40 +12,33 @@ import { tw } from "@biqpod/app/ui/utils";
 import { Forms } from "../../Forms/Forms";
 import { Stores } from "./Stores";
 import { NotificationSettings } from "../../components/NotificationSettings";
-// function Page() {
-//   return (
-//     <div className="flex justify-center items-center p-2 h-full">
-//       <Card>
-//         <div className="flex flex-col justify-center items-center gap-3 p-8">
-//           <h1 className="bg-clip-text bg-gradient-to-r from-red-500 to-blue-400 drop-shadow-md font-extrabold text-transparent text-2xl text-center capitalize">
-//             <Translate content="This feature will be available soon" />
-//           </h1>
-//           <span className="text-[--biqpod-gray-opacity-2] text-base">
-//             <Translate content="We are working hard to provide this feature for you. Stay tuned!" />
-//           </span>
-//         </div>
-//       </Card>
-//     </div>
-//   );
-// }
+import { Integrations } from "../../Integrations";
+import { Varients } from "./Varients";
+
 export const Store = () => {
   const loc = useLocation();
   const storeId = useParams<{ storeId: string }>().storeId;
   const selectedTab = userTabs.find(
     (item) => item.link.replaceAll(`{storeId}`, storeId) === loc.pathname
   );
+
+  // Find current tab index
+
   useEffect(() => {
     setTemp("selectedTab", selectedTab);
   }, [selectedTab]);
+
   useEffect(() => {
     return () => {
       setTemp("selectedTab", null);
     };
   }, []);
+
   const createRoute = (...path: string[]) => {
     const result = ["store", ":storeId", ...path].join("/");
     return "/" + result;
   };
+
   return (
     <div className="flex gap-1 h-full">
       <div className="flex items-center h-full">
@@ -70,9 +63,12 @@ export const Store = () => {
           })}
         </div>
       </div>
-      <div className="bg-[--biqpod-primary-background] border-[--biqpod-borders] border-y border-l border-solid rounded-ss-3xl rounded-es-3xl w-full overflow-hidden">
+      <div className="relative bg-[--biqpod-primary-background] border-[--biqpod-borders] border-y border-l border-solid rounded-ss-3xl rounded-es-3xl w-full overflow-hidden">
         <Scroll>
           <Switch>
+            <Route path={createRoute("varients")}>
+              <Varients />
+            </Route>
             <Route path={createRoute("orders")}>
               <Orders />
             </Route>
@@ -95,6 +91,9 @@ export const Store = () => {
             </Route>
             <Route path={createRoute("stores")}>
               <Stores />
+            </Route>
+            <Route path={createRoute("integrations")}>
+              <Integrations />
             </Route>
           </Switch>
         </Scroll>

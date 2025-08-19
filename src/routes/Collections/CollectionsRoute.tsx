@@ -11,11 +11,11 @@ import { getPosition, showPopup, useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { useParams } from "react-router";
 import { snapbuyApi } from "../../apis";
 import { ClientProductRender } from "../Clients/ClientProductRender";
-import { useFullCart } from "../Clients/AddProductToCart";
 import { tw } from "@biqpod/app/ui/utils";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { ImageSlider } from "../../Links/ImageSlider";
 import { CartPopup } from "../Clients/CartPopup";
+import { useFullCart } from "@biqpod/snapbuy";
 export const CollectionsRoute = () => {
   const collectionId = useParams<{ collectionId: string }>().collectionId;
   const collection = useAsyncMemo(async () => {

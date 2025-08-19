@@ -3,8 +3,8 @@ import { Redirect, Route, Switch } from "react-router";
 import { ClientProducts } from "./ClientProducts";
 import { ExploreStores } from "./ClientStores";
 import { PageNotFound } from "../App/PageNotFound";
-import { initCart } from "./AddProductToCart";
-import { StoreRouteImport } from "./StoreRouteImport";
+import { initCart } from "@biqpod/snapbuy";
+import { StoreRoute } from "../Stores/StoreRoute";
 export const Client = () => {
   initCart();
   return (
@@ -18,7 +18,7 @@ export const Client = () => {
             <ClientProducts />
           </Route>
           <Route path="/client/stores/:storeId" exact>
-            <StoreRouteImport />
+            <StoreRoute />
           </Route>
           <Route path="/client/stores" exact>
             <ExploreStores />

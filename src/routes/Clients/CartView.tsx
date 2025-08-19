@@ -1,18 +1,17 @@
-import React, { useMemo, useEffect } from "react";
+import React, { useMemo } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Card, Button, Translate, Icon } from "@biqpod/app/ui/components";
 import { useAsyncMemo, confirm, showToast } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../../apis";
 import { getPrice } from "../../utils";
 import {
-  useCart,
-  useFullCart,
   addToCart,
-  removeCart,
   deleteCart,
   initCart,
-} from "./AddProductToCart";
-
+  removeCart,
+  useCart,
+  useFullCart,
+} from "@biqpod/snapbuy";
 interface CartItemProps {
   prodId: string;
   count: number;
@@ -151,9 +150,7 @@ interface CartViewProps {
 
 export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
   // Initialize cart on component mount
-  useEffect(() => {
-    initCart();
-  }, []);
+  initCart();
 
   const cartItems = useFullCart(storeId);
   const cart = useCart(storeId);
@@ -238,10 +235,6 @@ export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
           <Button
             className="px-6 py-3 rounded-lg font-semibold text-white"
             style={{ backgroundColor: "#89CFF0" }}
-            onClick={() => {
-              // Navigate back to products or home
-              console.log("Navigate to products");
-            }}
           >
             <Icon icon={allIcons.solid.faArrowLeft} iconClassName="mr-2" />
             <Translate content="Continue Shopping" />
@@ -307,7 +300,6 @@ export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
           <Button
             onClick={() => {
               // Navigate back to shopping
-              console.log("Continue shopping");
             }}
             className="hover:bg-gray-50 px-4 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 transition-colors"
           >
