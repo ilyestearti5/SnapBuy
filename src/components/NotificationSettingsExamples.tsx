@@ -1,10 +1,21 @@
 // Example of how to use the NotificationSettings component in your app
 import { NotificationSettings } from "../components/NotificationSettings";
 import { showPopup } from "@biqpod/app/ui/hooks";
-import { Translate } from "@biqpod/app/ui/components";
+import {
+  Card,
+  CardHeaderForPopup,
+  Line,
+  Translate,
+} from "@biqpod/app/ui/components";
 // Example 1: Show as popup
 export const openNotificationSettings = () => {
-  showPopup(<NotificationSettings />);
+  showPopup(
+    <Card className="max-w-full max-h-[80vh] overflow-x-hidden">
+      <CardHeaderForPopup title="Notification Settings" />
+      <Line />
+      <NotificationSettings />
+    </Card>
+  );
 };
 // Example 2: Use in settings page
 export const SettingsPage = () => {

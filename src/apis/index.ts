@@ -1113,6 +1113,59 @@ export const createApi = (cloud: ClientCloud) => {
       const deletePack = await getUserFunction("delete-pack");
       await deletePack?.({ packId });
     },
+    async getNotificationSettings(storeId: string) {
+      const store = await getDoc<Required<SnapBuy.Store>>([
+        "projects",
+        appProjectId,
+        "stores",
+        storeId,
+      ]);
+      return store?.notify;
+    },
+    // Customer Management Functions
+    async createCustomer(customer: Omit<SnapBuy.Customer, "createdAt">) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const customerId = crypto.randomUUID();
+      await createDoc(["projects", appProjectId, "customers", customerId], {
+        ...customer,
+        id: customerId,
+        createdAt: Date.now(),
+      });
+      return customerId;
+    },
+    async getStoreCustomers(storeId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const customers = await getDocs<SnapBuy.Customer>(
+        ["projects", appProjectId, "customers"],
+        {
+          where: and(where("storeId", "==", storeId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      return (
+        customers?.map((customer) => ({
+          ...customer.data,
+          id: customer.id,
+        })) || []
+      );
+    },
+    async updateCustomerStatus(
+      customerId: string,
+      status: "pending" | "rejected" | "accepted"
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await updateDoc(["projects", appProjectId, "customers", customerId], {
+        status,
+      });
+    },
+    async deleteCustomer(customerId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc(["projects", appProjectId, "customers", customerId]);
+    },
   };
   return snapbuyApi;
 };

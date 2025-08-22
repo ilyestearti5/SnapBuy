@@ -1,3 +1,4 @@
+import * as React from "react";
 import {
   Button,
   Card,
@@ -28,6 +29,7 @@ export const Brands = () => {
   const storeId = useStoreId();
 
   const brands = useCopyState<SnapBuy.Brand[]>([]);
+  const [searchQuery, setSearchQuery] = React.useState("");
 
   const action = useAction(
     "fetch-brands",
@@ -46,11 +48,24 @@ export const Brands = () => {
     execAction("fetch-brands");
   }, []);
 
+  const filteredBrands = brands.get.filter((brand) =>
+    brand.name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {isSuccess && !!brands.get.length && (
+      <div className="p-2">
+        <input
+          type="text"
+          placeholder="Search for a brand..."
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          className="w-full p-2 border border-[--biqpod-borders] rounded-md"
+        />
+      </div>
+      {isSuccess && !!filteredBrands.length && (
         <Scroll>
-          {brands.get.map((brand) => {
+          {filteredBrands.map((brand) => {
             return (
               <div
                 key={brand.id}
@@ -105,10 +120,10 @@ export const Brands = () => {
                               click: async () => {
                                 const response = await confirm({
                                   title: "Delete Brand",
-                                  message: `Are you sure you want to delete the brand "${brand.name}"? This action cannot be undone.`,
+                                  message: `Are you sure you want to delete the brand \"${brand.name}\"? This action cannot be undone.`, 
                                 });
                                 if (!response) return;
-                                await snapbuyApi.deleteBrand(brand.id!);
+                                await snapbuyApi.deleteBrand(brand.id!); 
                                 showToast(
                                   "Brand deleted successfully",
                                   "success"
@@ -136,7 +151,7 @@ export const Brands = () => {
           })}
         </Scroll>
       )}
-      {isSuccess && !brands.get.length && (
+      {isSuccess && !filteredBrands.length && (
         <div className="flex justify-center items-center h-full">
           <Card>
             <div className="flex justify-center items-center">

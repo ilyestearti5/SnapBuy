@@ -47,7 +47,7 @@ import { Link } from "react-router-dom";
 import { useStoreId } from "./utils";
 import { initStoreIdSave } from "./utils";
 import { AiAssistance } from "./AiAssistance";
-import { NotificationSettings } from "./components/NotificationSettings";
+import { openNotificationSettings } from "./components/NotificationSettingsExamples";
 const getId = () => {
   return location.pathname.split("/").at(-1);
 };
@@ -310,7 +310,7 @@ export const HeaderContent = () => {
                           defaultIcon: allIcons.solid.faBell,
                           label: "Notification Settings",
                           click() {
-                            showPopup(<NotificationSettings />);
+                            openNotificationSettings();
                           },
                         },
                       user && {

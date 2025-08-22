@@ -24,21 +24,7 @@ import { ProductDescription } from "./Views/Description";
 import { ProductImages } from "./Views/Image";
 import { PostInforPrice } from "./Views/ProductInforPrice";
 import { ProductPricingType } from "./Views/ProductType";
-import {
-  setFormAvailable,
-  setFormBrand,
-  setFormDescription,
-  setFormKeys,
-  setFormLimited,
-  setFormName,
-  setFormPhotos,
-  setFormClientPrice,
-  setFormPrices,
-  setFormQuantity,
-  setFormType,
-  setFormVarient,
-  useFormProduct,
-} from "../../apis/getFns";
+import { useFormProduct, setFormProduct } from "../../apis/getFns";
 export interface ProductFormSectionProps {
   product?: Partial<SnapBuy.Product>;
 }
@@ -73,18 +59,7 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
     focusedSection.set(0);
   }, []);
   useEffect(() => {
-    setFormName(product?.name || "");
-    setFormDescription(product?.description || "");
-    setFormPhotos(product?.photos || []);
-    setFormLimited(product?.limited || false);
-    setFormKeys(product?.keys || []);
-    setFormQuantity(product?.quantity || 0);
-    setFormAvailable(product?.available || false);
-    setFormType(product?.type || "single");
-    setFormClientPrice(product?.single?.client || 0);
-    setFormPrices(product?.multiple?.prices || []);
-    setFormBrand(product?.brandId);
-    setFormVarient(product?.varientId);
+    setFormProduct(product);
   }, [product]);
   const productForm = useFormProduct();
   return (

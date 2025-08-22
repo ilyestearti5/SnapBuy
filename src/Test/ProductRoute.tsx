@@ -15,7 +15,7 @@ import {
 import { snapbuyApi, CreateOrderOptions } from "../apis";
 import { useState, useEffect, useMemo } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { Icon } from "@biqpod/app/ui/components";
+import { Icon, Translate } from "@biqpod/app/ui/components";
 import { tw } from "@biqpod/app/ui/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "../routes/Clients/AddProductToCart";
@@ -309,7 +309,9 @@ const QuantitySelector = ({
           placeholder="1"
           className="bg-transparent border-none focus:outline-none w-full font-bold text-gray-800 text-2xl text-center [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none [appearance:textfield]"
         />
-        <div className="font-medium text-gray-500 text-xs">QUANTITY</div>
+        <div className="font-medium text-gray-500 text-xs">
+          <Translate content="quantity caps" />
+        </div>
       </div>
       <button
         onClick={() => setCount(Math.min(500, (count.get || 0) + 1))}
@@ -657,15 +659,21 @@ export const ProductRoute = () => {
               <div className="gap-4 grid grid-cols-3 mb-6">
                 <div className="flex items-center gap-2 text-green-600">
                   <Icon icon={icons.truck} iconClassName="text-sm" />
-                  <span className="text-sm">Free Delivery</span>
+                  <span className="text-sm">
+                    <Translate content="free delivery" />
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-blue-600">
                   <Icon icon={icons.shield} iconClassName="text-sm" />
-                  <span className="text-sm">Secure</span>
+                  <span className="text-sm">
+                    <Translate content="secure" />
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-orange-600">
                   <Icon icon={icons.returnIcon} iconClassName="text-sm" />
-                  <span className="text-sm">Easy Returns</span>
+                  <span className="text-sm">
+                    <Translate content="easy returns" />
+                  </span>
                 </div>
               </div>
               {/* Quantity and Delivery */}
@@ -822,7 +830,9 @@ export const ProductRoute = () => {
                   {product.description}
                 </p>
               ) : (
-                <p className="text-gray-500 italic">No Description Found</p>
+                <p className="text-gray-500 italic">
+                  <Translate content="no description found" />
+                </p>
               )}
             </div>
           </div>

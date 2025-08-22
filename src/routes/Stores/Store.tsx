@@ -14,6 +14,7 @@ import { Stores } from "./Stores";
 import { NotificationSettings } from "../../components/NotificationSettings";
 import { Integrations } from "../../Integrations";
 import { Varients } from "./Varients";
+import { Customers } from "./Customers";
 
 export const Store = () => {
   const loc = useLocation();
@@ -78,6 +79,9 @@ export const Store = () => {
             <Route path={createRoute("brands")}>
               <Brands />
             </Route>
+            <Route path={createRoute("customers")}>
+              <Customers />
+            </Route>
             <Route path={createRoute("overview")}>
               <StoreOverview />
             </Route>
@@ -85,9 +89,7 @@ export const Store = () => {
               <Forms />
             </Route>
             <Route path={createRoute("settings")}>
-              <div className="p-6">
-                <NotificationSettings />
-              </div>
+              <NotificationSettings />
             </Route>
             <Route path={createRoute("stores")}>
               <Stores />

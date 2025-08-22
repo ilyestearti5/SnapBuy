@@ -68,6 +68,7 @@ declare namespace SnapBuy {
       lowStock?: boolean;
       newProduct?: boolean;
       newClient?: boolean;
+      accountAutoAccept?: boolean;
     };
     orderVarientId?: string | null;
   }
@@ -160,6 +161,18 @@ declare namespace SnapBuy {
     uid?: string;
     price?: number;
     products?: { prodId: string; count: number }[];
+  }
+  interface Customer {
+    username: string;
+    createdAt: number;
+    status: "pending" | "rejected" | "accepted";
+    firstname: string;
+    lastname: string;
+    phone: string;
+    email: string;
+    storeId?: string;
+    uid?: string;
+    metaData?: Record<string, any>;
   }
   interface Client {
     id: string;

@@ -164,3 +164,20 @@ export const useFormProduct = () => {
   ]);
   return product;
 };
+
+export const setFormProduct = (value?: Partial<SnapBuy.Product>) => {
+  typeof value?.available !== "undefined" && setFormAvailable(value.available);
+  typeof value?.keys !== "undefined" && setFormKeys(value.keys);
+  typeof value?.quantity !== "undefined" && setFormQuantity(value.quantity);
+  typeof value?.description !== "undefined" &&
+    setFormDescription(value.description);
+  typeof value?.name !== "undefined" && setFormName(value.name);
+  typeof value?.photos !== "undefined" && setFormPhotos(value.photos);
+  typeof value?.single?.client !== "undefined" &&
+    setFormClientPrice(value.single.client);
+  typeof value?.single?.customer !== "undefined" &&
+    setFormCustomerPrice(value.single.customer);
+  typeof value?.limited !== "undefined" && setFormLimited(value.limited);
+  typeof value?.brandId !== "undefined" && setFormBrand(value.brandId);
+  typeof value?.varientId !== "undefined" && setFormVarient(value.varientId);
+};

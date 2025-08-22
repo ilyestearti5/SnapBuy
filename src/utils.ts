@@ -20,6 +20,7 @@ import deliveryPhoto from "./assets/delivery.png";
 import androidPhoto from "./assets/android.png";
 import integrationsPhoto from "./assets/integrations.png";
 import edge from "./assets/platforms/edge.png";
+import accountsPhoto from "./assets/accounts.png";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { IconProps } from "@biqpod/app/ui/components";
 import {
@@ -63,7 +64,11 @@ export const userTabs = [
     link: `/store/{storeId}/orders`,
     photo: shoppingPhoto,
   },
-
+  {
+    name: "customers",
+    link: `/store/{storeId}/customers`,
+    photo: accountsPhoto,
+  },
   {
     name: "Stores",
     link: `/store/{storeId}/stores`,
@@ -1640,4 +1645,61 @@ export const useStoreId = () => {
 };
 export const getStoreId = () => {
   return getTempFromStore<string>("storeId");
+};
+
+// Generate random metadata for customers
+export const generateRandomCustomerMetadata = (): Record<string, any> => {
+  const preferences = [
+    "electronic",
+    "fashion",
+    "home",
+    "sports",
+    "books",
+    "beauty",
+    "automotive",
+  ];
+  const sources = [
+    "google",
+    "facebook",
+    "instagram",
+    "referral",
+    "direct",
+    "email",
+    "tiktok",
+  ];
+  const devices = ["mobile", "desktop", "tablet"];
+  const browsers = ["chrome", "safari", "firefox", "edge"];
+  const locations = [
+    "Algiers",
+    "Oran",
+    "Constantine",
+    "Setif",
+    "Batna",
+    "Djelfa",
+    "Sidi Bel Abbes",
+  ];
+
+  return {
+    age: Math.floor(Math.random() * 50) + 18, // 18-67 years old
+    gender: Math.random() > 0.5 ? "male" : "female",
+    preferences: preferences
+      .sort(() => 0.5 - Math.random())
+      .slice(0, Math.floor(Math.random() * 3) + 1), // 1-3 preferences
+    source: sources[Math.floor(Math.random() * sources.length)],
+    device: devices[Math.floor(Math.random() * devices.length)],
+    browser: browsers[Math.floor(Math.random() * browsers.length)],
+    location: locations[Math.floor(Math.random() * locations.length)],
+    loyaltyScore: Math.floor(Math.random() * 100), // 0-99
+    totalOrders: Math.floor(Math.random() * 20), // 0-19 previous orders
+    averageOrderValue: Math.floor(Math.random() * 5000) + 500, // 500-5500 DA
+    lastActivity:
+      Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000), // Within last 30 days
+    newsletter: Math.random() > 0.3, // 70% subscribed to newsletter
+    language:
+      Math.random() > 0.7
+        ? "french"
+        : Math.random() > 0.5
+        ? "arabic"
+        : "english",
+  };
 };
