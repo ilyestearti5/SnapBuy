@@ -11,7 +11,7 @@ import {
   removeCart,
   useCart,
   useFullCart,
-} from "@biqpod/snapbuy";
+} from "../../apis/snapbuy";
 interface CartItemProps {
   prodId: string;
   count: number;

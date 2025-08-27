@@ -41,7 +41,7 @@ import { Carts } from "./ClientStores";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
 import { isWeb } from "@biqpod/app/ui/app";
 import { getAddressFromCoords } from "../../getAddressFromCoords";
-import { deleteCart, useCart, useFullCart } from "@biqpod/snapbuy";
+import { deleteCart, useCart, useFullCart } from "../../apis/snapbuy";
 export interface ProductMore {
   product: SnapBuy.Product;
   count: number;
@@ -151,7 +151,7 @@ export const CartPopup = ({
         };
       });
       localStorage.setItem("phone", phone);
-      const place: SnapBuy.Client["place"] = {
+      const place: SnapBuy.Order["place"] = {
         address,
         wilaya,
       };
@@ -168,8 +168,8 @@ export const CartPopup = ({
           lastname,
           phone,
           id: crypto.randomUUID(),
-          place,
         },
+        place,
         delivery: deliveryState.get || false,
         metaData: magicForms,
       };

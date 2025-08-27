@@ -15,7 +15,7 @@ import { tw } from "@biqpod/app/ui/utils";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { ImageSlider } from "../../Links/ImageSlider";
 import { CartPopup } from "../Clients/CartPopup";
-import { useFullCart } from "@biqpod/snapbuy";
+import { useFullCart } from "../../apis/snapbuy";
 export const CollectionsRoute = () => {
   const collectionId = useParams<{ collectionId: string }>().collectionId;
   const collection = useAsyncMemo(async () => {

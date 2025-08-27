@@ -1,6 +1,11 @@
 // Browser notification service for SnapBuy
 // This handles native browser notifications that work even when the app is closed
 
+import {
+  getOrderClientInfo,
+  getOrderClientDisplayName,
+} from "./orderClientInfo";
+
 export interface NotificationOptions {
   title: string;
   body: string;
@@ -152,11 +157,12 @@ export class StoreNotificationHandler {
   public async notifyNewOrder(order: SnapBuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.newOrder) return;
 
+    const clientInfo = await getOrderClientInfo(order);
+    const clientName = getOrderClientDisplayName(clientInfo);
+
     await this.notificationService.sendNotification({
       title: "🛒 New Order Received!",
-      body: `Order from ${order.client.firstname} ${
-        order.client.lastname
-      } - Total: ${order.totalPrice || 0} DA`,
+      body: `Order from ${clientName} - Total: ${order.totalPrice || 0} DA`,
       icon: "/assets/snapbuy.png",
       tag: `new-order-${order.id}`,
       requireInteraction: true,
@@ -205,9 +211,12 @@ export class StoreNotificationHandler {
   public async notifyOrderCompleted(order: SnapBuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderCompleted) return;
 
+    const clientInfo = await getOrderClientInfo(order);
+    const clientName = getOrderClientDisplayName(clientInfo);
+
     await this.notificationService.sendNotification({
       title: "🎉 Order Completed!",
-      body: `Order from ${order.client.firstname} ${order.client.lastname} has been completed`,
+      body: `Order from ${clientName} has been completed`,
       icon: "/assets/snapbuy.png",
       tag: `completed-${order.id}`,
       data: {
@@ -222,9 +231,12 @@ export class StoreNotificationHandler {
   public async notifyOrderCancelled(order: SnapBuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderCancelled) return;
 
+    const clientInfo = await getOrderClientInfo(order);
+    const clientName = getOrderClientDisplayName(clientInfo);
+
     await this.notificationService.sendNotification({
       title: "❌ Order Cancelled",
-      body: `Order from ${order.client.firstname} ${order.client.lastname} has been cancelled`,
+      body: `Order from ${clientName} has been cancelled`,
       icon: "/assets/snapbuy.png",
       tag: `cancelled-${order.id}`,
       data: {
@@ -239,9 +251,12 @@ export class StoreNotificationHandler {
   public async notifyOrderProcessing(order: SnapBuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderProcessing) return;
 
+    const clientInfo = await getOrderClientInfo(order);
+    const clientName = getOrderClientDisplayName(clientInfo);
+
     await this.notificationService.sendNotification({
       title: "🔄 Order Processing",
-      body: `Order from ${order.client.firstname} ${order.client.lastname} is now being processed`,
+      body: `Order from ${clientName} is now being processed`,
       icon: "/assets/snapbuy.png",
       tag: `processing-${order.id}`,
       data: {
@@ -256,9 +271,12 @@ export class StoreNotificationHandler {
   public async notifyOrderDelivery(order: SnapBuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderDelivery) return;
 
+    const clientInfo = await getOrderClientInfo(order);
+    const clientName = getOrderClientDisplayName(clientInfo);
+
     await this.notificationService.sendNotification({
       title: "🚚 Order Out for Delivery",
-      body: `Order from ${order.client.firstname} ${order.client.lastname} is out for delivery`,
+      body: `Order from ${clientName} is out for delivery`,
       icon: "/assets/snapbuy.png",
       tag: `delivery-${order.id}`,
       data: {

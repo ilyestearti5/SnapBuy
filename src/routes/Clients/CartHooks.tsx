@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { Nothing } from "@biqpod/app/ui/types";
-import { useFullCart } from "@biqpod/snapbuy";
+import { useFullCart } from "../../apis/snapbuy";
 /**
  * Hook to get total cart item count for a store
  */

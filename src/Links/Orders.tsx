@@ -7,11 +7,9 @@ import {
   where,
 } from "@biqpod/app/ui/apis";
 import {
-  Anchor,
   AsyncComponent,
   Button,
   Card,
-  CardHeaderForPopup,
   CardWait,
   CircleTip,
   EmptyComponent,
@@ -52,9 +50,13 @@ import { colors, getImageByPlatform, icons } from "../utils";
 import { motion } from "framer-motion";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { UpsertDelivery } from "./UpsertDelivery";
-import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { OrderView } from "../routes/Clients/OrderView";
 import { useActionStatus } from "../routes/Clients/CartPopup";
+import {
+  OrderClientDisplay,
+  OrderClientLocation,
+  OrderClientActions,
+} from "../components/OrderClientDisplay";
 
 const PAGE_SIZE = 40;
 interface StatusUiProps {
@@ -408,11 +410,11 @@ export const Orders = () => {
                   className="flex justify-between items-center gap-2 odd:bg-[--biqpod-secondary-background] p-2"
                 >
                   <div className="w-full">
-                    {order.client?.firstname} {order.client?.lastname} (
-                    <Anchor href={order.client?.phone}>
-                      {order.client?.phone}
-                    </Anchor>
-                    )
+                    <OrderClientDisplay
+                      order={order}
+                      showPhone={true}
+                      showCustomerBadge={true}
+                    />
                   </div>
                   <span className="w-full">{timeAgo}</span>
                   <span className="w-full">
@@ -598,9 +600,6 @@ export const Orders = () => {
           )}
           <div className="flex flex-col gap-2 p-2">
             {ordersState?.map(({ order, timeAgo, productCount }, index) => {
-              const fullName = `${order.client?.firstname || ""} ${
-                order.client?.lastname || ""
-              }`;
               return (
                 <motion.div
                   key={index}
@@ -617,7 +616,11 @@ export const Orders = () => {
                             src={getImageByPlatform(order.platform)}
                           />
                         </span>
-                        <span className="text-xl">{fullName}</span>
+                        <OrderClientDisplay
+                          order={order}
+                          className="text-xl"
+                          showCustomerBadge={true}
+                        />
                       </div>
                       {!!order.totalPrice && (
                         <span className="font-bold text-green-600 max-md:text-base md:text-xl">
@@ -726,59 +729,9 @@ export const Orders = () => {
                     </div>
                     <Line />
                     <div className="flex justify-between items-center p-2">
-                      <span className="italic">
-                        {order.client.place.wilaya}
-                      </span>
+                      <OrderClientLocation order={order} />
                       <div className="flex items-center">
-                        <CircleTip
-                          icon={allIcons.solid.faPhone}
-                          onClick={() => {
-                            var a = document.createElement("a");
-                            a.href = `tel:${order.client?.phone}`;
-                            a.click();
-                          }}
-                        />
-                        {!!(
-                          order.client.place.latitude &&
-                          order.client.place.longitude
-                        ) && (
-                          <CircleTip
-                            icon={allIcons.solid.faLocationDot}
-                            onClick={() => {
-                              showPopup(
-                                <Card className="w-2/3 overflow-hidden">
-                                  <CardHeaderForPopup title="Client Location" />
-                                  <Line />
-                                  <div className="relative w-full h-[400px]">
-                                    <MapContainer
-                                      center={[
-                                        order.client.place.latitude!,
-                                        order.client.place.longitude!,
-                                      ]}
-                                      zoom={13}
-                                      style={{ height: "100%", width: "100%" }}
-                                    >
-                                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                                      <Marker
-                                        position={[
-                                          order.client.place.latitude!,
-                                          order.client.place.longitude!,
-                                        ]}
-                                      >
-                                        <Popup>
-                                          {order.client?.firstname}{" "}
-                                          {order.client?.lastname}
-                                          <br />
-                                          {order.client.place.wilaya}
-                                        </Popup>
-                                      </Marker>
-                                    </MapContainer>
-                                  </div>
-                                </Card>
-                              );
-                            }}
-                          />
-                        )}
+                        <OrderClientActions order={order} />
                         <CircleTip
                           icon={allIcons.solid.faEllipsisV}
                           onClick={async ({ clientX, clientY }) => {

@@ -62,13 +62,13 @@ export const AssignDeliveryAgent = ({ order }: { order: SnapBuy.Order }) => {
             <strong>
               <Translate content="client" />:
             </strong>{" "}
-            {order.client.firstname} {order.client.lastname}
+            {order.client?.firstname} {order.client?.lastname}
           </p>
           <p>
             <strong>
               <Translate content="phone" />:
             </strong>{" "}
-            {order.client.phone}
+            {order.client?.phone}
           </p>
         </div>
         <div className="mb-4">

@@ -17,8 +17,6 @@ import {
   EmptyComponent,
   Field,
   AsyncComponent,
-  Map,
-  CardHeaderForPopup,
 } from "@biqpod/app/ui/components";
 import {
   useAction,
@@ -27,7 +25,6 @@ import {
   showPopup,
   execAction,
   useTemp,
-  openMenu,
   isLoading,
   getTemp,
   isSuccess,
@@ -39,6 +36,13 @@ import { Nothing } from "@biqpod/app/ui/types";
 import { FilterPopup } from "./FilterPopup";
 import { AssignDeliveryAgent } from "./AssignDeliveryAgent";
 import { OrderView } from "../routes/Clients/OrderView";
+import {
+  OrderClientDisplay,
+  OrderClientPhone,
+  OrderClientAddress,
+  OrderClientWilaya,
+  OrderClientMenuActions,
+} from "../components/OrderClientDisplay";
 interface DeliveryOrdersProps {}
 const PAGE_SIZE = 20;
 export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
@@ -120,9 +124,11 @@ export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
                     <div className="flex justify-between items-center p-3">
                       <div className="flex-1">
                         <div className="flex justify-between items-center mb-2">
-                          <h3 className="font-semibold">
-                            {order.client.firstname} {order.client.lastname}
-                          </h3>
+                          <OrderClientDisplay
+                            order={order}
+                            className="font-semibold"
+                            showCustomerBadge={true}
+                          />
                         </div>
                         <div className="space-y-1 text-sm">
                           <p>
@@ -177,22 +183,15 @@ export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
                             <strong>
                               <Translate content="phone" />:
                             </strong>{" "}
-                            {order.client.phone}
+                            <OrderClientPhone order={order} />
                           </p>
                           <p>
                             <strong>
                               <Translate content="address" />:
                             </strong>{" "}
-                            {order.client.place.address}
+                            <OrderClientAddress order={order} />
                           </p>
-                          {order.client.place.wilaya && (
-                            <p>
-                              <strong>
-                                <Translate content="wilaya" />:
-                              </strong>{" "}
-                              {order.client.place.wilaya}
-                            </p>
-                          )}
+                          <OrderClientWilaya order={order} />
                           <p>
                             <strong>
                               <Translate content="products" />:
@@ -213,69 +212,13 @@ export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
                       </div>
                       <div className="flex flex-col justify-between gap-2 ml-4 h-full">
                         <div className="flex gap-1">
-                          <CircleTip
-                            icon={allIcons.solid.faEllipsisV}
-                            onClick={({ clientX, clientY }) => {
-                              openMenu({
-                                x: clientX,
-                                y: clientY,
-                                menu: mergeArray(
-                                  {
-                                    label: "View Order Details",
-                                    defaultIcon: allIcons.solid.faBook,
-                                    click: () => {
-                                      showPopup(<OrderView order={order} />);
-                                    },
-                                  },
-                                  {
-                                    type: "separator",
-                                  },
-                                  {
-                                    label: "Assign Delivery Agent",
-                                    defaultIcon: allIcons.solid.faUserPlus,
-                                    click: () => {
-                                      showPopup(
-                                        <AssignDeliveryAgent order={order} />
-                                      );
-                                    },
-                                  },
-                                  {
-                                    label: "Call",
-                                    defaultIcon: allIcons.solid.faPhone,
-                                    click: () => {
-                                      const tel = document.createElement("a");
-                                      tel.href = `tel:${order.client.phone}`;
-                                      tel.click();
-                                    },
-                                  },
-                                  order.client.place.latitude &&
-                                    order.client.place.longitude && {
-                                      label: "Open in Maps",
-                                      defaultIcon:
-                                        allIcons.solid.faMapMarkerAlt,
-                                      click: () => {
-                                        showPopup(
-                                          <Card className="w-2/3 overflow-hidden">
-                                            <CardHeaderForPopup title="Client Location" />
-                                            <Line />
-                                            <div className="relative w-full h-[400px]">
-                                              <Map
-                                                apiKey="7Serp5w3OFR9WkWfsTEW"
-                                                location={{
-                                                  x: order.client.place
-                                                    .longitude!,
-                                                  y: order.client.place
-                                                    .latitude!,
-                                                }}
-                                                zoom={17}
-                                              />
-                                            </div>
-                                          </Card>
-                                        );
-                                      },
-                                    }
-                                ),
-                              });
+                          <OrderClientMenuActions
+                            order={order}
+                            onViewOrder={() => {
+                              showPopup(<OrderView order={order} />);
+                            }}
+                            onAssignAgent={() => {
+                              showPopup(<AssignDeliveryAgent order={order} />);
                             }}
                           />
                         </div>

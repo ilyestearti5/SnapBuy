@@ -23,7 +23,7 @@ import { getPrice } from "../../utils";
 import { useLocation } from "react-router";
 import { snapbuyApi } from "../../apis";
 import { initPixels } from "../../Links/pixles";
-import { addToCart, useCartCount } from "@biqpod/snapbuy";
+import { addToCart, useCartCount } from "../../apis/snapbuy";
 export interface ProductPopupProps {
   product: SnapBuy.Product;
 }

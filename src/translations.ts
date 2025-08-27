@@ -523,6 +523,12 @@ export const translations = [
     word: "customer",
   },
   {
+    en: "Guest",
+    fr: "Invité",
+    ar: "ضيف",
+    word: "guest",
+  },
+  {
     en: "Amount",
     fr: "Montant",
     ar: "المبلغ",

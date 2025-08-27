@@ -1,7 +1,7 @@
 {
   "name": "@biqpod/snapbuy",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.2.1",
   "scripts": {
     "dev": "vite",
     "compile": "tsc",
@@ -20,7 +20,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@biqpod/app": "^0.1.8",
+    "@biqpod/app": "^0.2.0",
     "@biqpod/packing": "^1.0.0",
     "@biqpod/snapbuy": "^1.0.5",
     "@capacitor-community/camera-preview": "^7.0.1",

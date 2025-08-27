@@ -48,6 +48,7 @@ export interface CreateOrderOptions {
   client: SnapBuy.Client;
   delivery: boolean;
   metaData?: Record<string, SettingValueType>;
+  place: SnapBuy.Order["place"];
 }
 export interface Action {
   name: string;
@@ -1133,6 +1134,17 @@ export const createApi = (cloud: ClientCloud) => {
         createdAt: Date.now(),
       });
       return customerId;
+    },
+    async getCustomer(customerId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const customer = await getDoc<SnapBuy.Customer>([
+        "projects",
+        appProjectId,
+        "customers",
+        customerId,
+      ]);
+      return customer ? { ...customer, id: customerId } : null;
     },
     async getStoreCustomers(storeId: string) {
       const uid = await getCurrentAuth();

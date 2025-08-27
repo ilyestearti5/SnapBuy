@@ -98,7 +98,9 @@ declare namespace SnapBuy {
     createdAt?: number;
     updatedAt?: number;
     products?: Partial<Record<string, { count?: number; price?: number }>>;
-    client: Client;
+    packs?: Partial<Record<string, { count?: number; price?: number }>>;
+    client?: Client;
+    customer?: string;
     // needed
     storeId?: string;
     uid?: string;
@@ -111,6 +113,12 @@ declare namespace SnapBuy {
       agentId?: string;
     };
     metaData?: Record<string, SettingValueType>;
+    place?: {
+      address: string;
+      wilaya: string;
+      latitude?: number;
+      longitude?: number;
+    };
   }
   export type Zone = Partial<{
     id: string;
@@ -179,12 +187,7 @@ declare namespace SnapBuy {
     firstname?: string;
     lastname?: string;
     phone: string;
-    place: {
-      address: string;
-      wilaya: string;
-      latitude?: number;
-      longitude?: number;
-    };
+
     // needed
     storeId?: string;
     uid?: string;

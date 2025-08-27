@@ -365,8 +365,8 @@ export const HeaderContent = () => {
                                   return (
                                     <div key={order.data.id} className="p-3">
                                       <span>
-                                        {order.data.client.firstname}{" "}
-                                        {order.data.client.lastname}
+                                        {order.data.client?.firstname}{" "}
+                                        {order.data.client?.lastname}
                                       </span>
                                       <Key>{order.resetDays}</Key>
                                     </div>

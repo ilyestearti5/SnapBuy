@@ -8,7 +8,7 @@ export const OrderProducts = ({ order }: OrderProductsProps) => {
     <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
       <div className="p-2">
         <div>
-          <span className="text-2xl">{order?.client.firstname}</span>
+          <span className="text-2xl">{order?.client?.firstname}</span>
         </div>
         <div>
           <CircleTip icon={allIcons.solid.faClose} />

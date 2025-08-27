@@ -205,7 +205,7 @@ export const ProductRoute = () => {
         },
       };
       localStorage.setItem("phone", phone);
-      const place: SnapBuy.Client["place"] = {
+      const place: SnapBuy.Order["place"] = {
         address,
         wilaya,
       };
@@ -226,8 +226,8 @@ export const ProductRoute = () => {
           lastname,
           phone,
           id: crypto.randomUUID(),
-          place,
         },
+        place,
         delivery: deliveryState.get || false,
         metaData,
       };

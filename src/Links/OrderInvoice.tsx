@@ -14,6 +14,12 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { QRCodeSVG } from "qrcode.react";
 import html2pdf from "html2pdf.js";
 import { getDoc } from "../server";
+import {
+  getOrderClientInfo,
+  getOrderClientDisplayName,
+  getOrderClientAddress,
+} from "../utils/orderClientInfo";
+
 interface OrderInvoiceProps {
   order: SnapBuy.Order;
 }
@@ -28,6 +34,11 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
       order.storeId,
     ]);
   }, []);
+
+  const clientInfo = useAsyncMemo(async () => {
+    return await getOrderClientInfo(order);
+  }, [order]);
+
   const list = useAsyncMemo(async () => {
     return snapbuyApi.getOrderProducts(order.id);
   }, []);
@@ -113,11 +124,29 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
             <div className="mb-2 px-2 pt-1 rounded">
               <h3 className="mb-2 font-bold">Bill To:</h3>
               <div>
-                <p className="font-semibold">
-                  {order.client.firstname || "Customer Name"}
-                </p>
-                <p>{order.client.place.address || "Customer Address"}</p>
-                <p>{order.client.phone || "Client Phone Number"}</p>
+                {clientInfo ? (
+                  <>
+                    <p className="font-semibold">
+                      {getOrderClientDisplayName(clientInfo)}
+                    </p>
+                    <p>
+                      {getOrderClientAddress(clientInfo) ||
+                        "No Address Available"}
+                    </p>
+                    <p>{clientInfo.phone}</p>
+                    {clientInfo.isCustomer && (
+                      <p className="text-gray-500 text-sm">
+                        Registered Customer
+                      </p>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p className="font-semibold">Customer Name</p>
+                    <p>Customer Address</p>
+                    <p>Client Phone Number</p>
+                  </>
+                )}
               </div>
             </div>
             {/* Invoice Items */}

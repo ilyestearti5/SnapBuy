@@ -76,7 +76,7 @@ import { Link } from "react-router-dom";
 import { initPixels } from "../../Links/pixles";
 import { ClientProductRender } from "./ClientProductRender";
 import { CartPopup } from "./CartPopup";
-import { useFullCart } from "@biqpod/snapbuy";
+import { useFullCart } from "../../apis/snapbuy";
 export const ClientProducts = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
   const store = useAsyncMemo(async () => {

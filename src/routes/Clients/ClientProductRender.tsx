@@ -29,7 +29,7 @@ import { ImageSlider } from "../../Links/ImageSlider";
 import { MenuRecordProps } from "@biqpod/app/ui/types";
 import { initPixels } from "../../Links/pixles";
 import { snapbuyApi } from "../../apis";
-import { removeCart, useCartCount } from "@biqpod/snapbuy";
+import { removeCart, useCartCount } from "../../apis/snapbuy";
 export interface ProductRenderProps {
   product: SnapBuy.Product;
   index: number;

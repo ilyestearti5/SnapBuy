@@ -12,7 +12,7 @@ import { useAsyncMemo, setTemp, openDialog } from "@biqpod/app/ui/hooks";
 import { useMemo, useEffect } from "react";
 import { snapbuyApi } from "../../apis";
 import { getPrice } from "../../utils";
-import { FullCartResult, addToCart, removeCart } from "@biqpod/snapbuy";
+import { FullCartResult, addToCart, removeCart } from "../../apis/snapbuy";
 export interface CartLineProps {
   data: FullCartResult;
 }

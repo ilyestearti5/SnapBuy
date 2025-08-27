@@ -37,7 +37,7 @@ import {
   deleteCart,
   removeCart,
   initCart,
-} from "@biqpod/snapbuy";
+} from "../apis/snapbuy";
 // Custom Button Component
 const Button = ({ children, className, style, onClick, ...props }: any) => (
   <button
@@ -71,26 +71,22 @@ const icons = {
   search: allIcons.solid.faSearch,
   shoppingCart: allIcons.solid.faShoppingCart,
 };
-
 // Optimized utility functions for repeated logic
 const getProductPrice = (product: SnapBuy.Product): number => {
   return product.type === "single"
     ? product.single?.client || 0
     : Math.min(...(product.multiple?.prices?.map((p) => p.price) || [0]));
 };
-
 const getProductPriceDisplay = (product: SnapBuy.Product): string => {
   const price = getProductPrice(product);
   return product.type === "single" ? `${price} DA` : `From ${price} DA`;
 };
-
 const getDiscountedPrice = (
   originalPrice: number,
   discountRate: number = 1.3
 ): string => {
   return (originalPrice * discountRate).toFixed(2);
 };
-
 // Memoized scroll functions to prevent recreating on every render
 const createScrollFunction = (
   ref: React.RefObject<HTMLDivElement>,
@@ -107,14 +103,12 @@ const createScrollFunction = (
     }
   };
 };
-
 // Constants for repeated style values
 const BRAND_COLOR = "#89CFF0";
 const INTER_FONT = "Inter, sans-serif";
 const PLAYFAIR_FONT = "Playfair Display, serif";
 const MONTSERRAT_FONT = "Montserrat, sans-serif";
 const ROBOTO_FONT = "Roboto, sans-serif";
-
 // Common style objects
 const COMMON_STYLES = {
   brandButton: {
@@ -151,11 +145,9 @@ const CollectionProducts = ({
     if (!collection.id) return null;
     return snapbuyApi.getProductsOfCollection(collection.id);
   }, [collection.id]);
-
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(true);
-
   const checkScrollability = useCallback(() => {
     if (scrollContainerRef.current) {
       const { scrollLeft, scrollWidth, clientWidth } =
@@ -164,18 +156,15 @@ const CollectionProducts = ({
       setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
     }
   }, []);
-
   // Memoized scroll functions
   const scrollLeft = useMemo(
     () => createScrollFunction(scrollContainerRef, -320, checkScrollability),
     [checkScrollability]
   );
-
   const scrollRight = useMemo(
     () => createScrollFunction(scrollContainerRef, 320, checkScrollability),
     [checkScrollability]
   );
-
   useEffect(() => {
     checkScrollability();
   }, [collectionProducts, checkScrollability]);
@@ -260,7 +249,6 @@ const ProductCard = ({
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
-
   // Memoized values for performance
   const photos = useMemo(() => product.photos || [], [product.photos]);
   const hasMultiplePhotos = useMemo(() => photos.length > 1, [photos.length]);
@@ -268,11 +256,9 @@ const ProductCard = ({
     () => getProductPriceDisplay(product),
     [product]
   );
-
   // Get current cart count for this product
   const currentCartCount =
     useFullCart(storeId).find((item) => item.prodId === product.id)?.count || 0;
-
   // Handle add to cart
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click event
@@ -280,7 +266,6 @@ const ProductCard = ({
       addToCart(storeId, product.id, currentCartCount + 1);
     }
   };
-
   // Auto-slide photos every 3 seconds
   useEffect(() => {
     if (!hasMultiplePhotos) return;
@@ -411,7 +396,6 @@ const SearchProductCard = ({
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [isFavorite, setIsFavorite] = useState(false);
-
   // Memoized values for performance
   const photos = useMemo(() => product.photos || [], [product.photos]);
   const hasMultiplePhotos = useMemo(() => photos.length > 1, [photos.length]);
@@ -419,11 +403,9 @@ const SearchProductCard = ({
     () => getProductPriceDisplay(product),
     [product]
   );
-
   // Get current cart count for this product
   const currentCartCount =
     useFullCart(storeId).find((item) => item.prodId === product.id)?.count || 0;
-
   // Handle add to cart
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent card click event
@@ -431,7 +413,6 @@ const SearchProductCard = ({
       addToCart(storeId, product.id, currentCartCount + 1);
     }
   };
-
   // Auto-slide photos every 3 seconds
   useEffect(() => {
     if (!hasMultiplePhotos) return;
@@ -610,7 +591,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
   const [showWilayaDropdown, setShowWilayaDropdown] = useState(false);
   const [selectedWilayaIndex, setSelectedWilayaIndex] = useState(-1);
   const wilayaDropdownRef = useRef<HTMLDivElement>(null);
-
   // Algerian Wilayas list
   const algerianWilayas = [
     "01 - Adrar",
@@ -791,8 +771,8 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
           lastname,
           phone,
           id: crypto.randomUUID(),
-          place,
         },
+        place,
         delivery: false,
         metaData: {},
       };
@@ -814,7 +794,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
       addToCart(storeId, prodId, newCount);
     }
   };
-
   const handleMinusClick = (
     prodId: string,
     currentCount: number,
@@ -829,7 +808,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
       handleQuantityChange(prodId, currentCount - 1);
     }
   };
-
   const confirmDeleteProduct = () => {
     if (productToDelete) {
       removeCart(storeId, productToDelete.prodId);
@@ -837,26 +815,21 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
       setProductToDelete(null);
     }
   };
-
   const cancelDeleteProduct = () => {
     setShowDeleteConfirmation(false);
     setProductToDelete(null);
   };
-
   const handleRemoveItem = (prodId: string) => {
     removeCart(storeId, prodId);
   };
-
   // Shipping form state
   const [showShippingForm, setShowShippingForm] = useState(false);
-
   // Confirmation dialog state
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [productToDelete, setProductToDelete] = useState<{
     prodId: string;
     productName: string;
   } | null>(null);
-
   // Filter wilaya based on search
   const filteredWilayas = useMemo(() => {
     if (!wilaya) return algerianWilayas;
@@ -864,7 +837,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
       w.toLowerCase().includes(wilaya.toLowerCase())
     );
   }, [wilaya, algerianWilayas]);
-
   // Handle wilaya selection
   const handleWilayaSelect = (selectedWilaya: string) => {
     // Extract just the name part (after " - ")
@@ -873,18 +845,15 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
     setShowWilayaDropdown(false);
     setSelectedWilayaIndex(-1);
   };
-
   // Handle wilaya input change
   const handleWilayaChange = (value: string) => {
     setWilaya(value);
     setShowWilayaDropdown(true);
     setSelectedWilayaIndex(-1);
   };
-
   // Handle keyboard navigation for wilaya dropdown
   const handleWilayaKeyDown = (e: React.KeyboardEvent) => {
     if (!showWilayaDropdown) return;
-
     switch (e.key) {
       case "ArrowDown":
         e.preventDefault();
@@ -911,7 +880,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
         break;
     }
   };
-
   // Scroll selected item into view
   useEffect(() => {
     if (selectedWilayaIndex >= 0 && wilayaDropdownRef.current) {
@@ -923,7 +891,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
       }
     }
   }, [selectedWilayaIndex]);
-
   const isLocationLoading = isLoading(locationAction);
   if (!cartProducts || cartProducts.length === 0) {
     return (
@@ -987,7 +954,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
             </span>
           </div>
         </div>
-
         {/* Header */}
         <div className="flex justify-between items-center mb-6 pb-4 border-gray-200 border-b">
           <div className="flex items-center gap-4">
@@ -1032,7 +998,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
               : 0;
             const discountedPriceStr = getDiscountedPrice(productPrice);
             const totalItemPrice = (productPrice * item.count).toFixed(2);
-
             return (
               <div key={item.prodId} className="bg-gray-50 p-4 rounded-lg">
                 <div className="flex gap-4">
@@ -1044,7 +1009,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                       className="rounded-md w-20 h-20 object-cover"
                     />
                   </div>
-
                   {/* Product Details */}
                   <div className="flex-grow">
                     <h3
@@ -1053,7 +1017,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                     >
                       {item.product?.name}
                     </h3>
-
                     {/* Product specifications */}
                     <div className="space-y-1 text-gray-600 text-sm">
                       <div style={COMMON_STYLES.interFont}>
@@ -1074,7 +1037,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                       </div>
                     </div>
                   </div>
-
                   {/* Price */}
                   <div className="flex flex-col justify-between items-end">
                     <div className="text-right">
@@ -1092,7 +1054,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                         {discountedPriceStr} DA
                       </div>
                     </div>
-
                     <div
                       className="font-bold text-red-500 text-xl"
                       style={COMMON_STYLES.interFont}
@@ -1101,7 +1062,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                     </div>
                   </div>
                 </div>
-
                 {/* Actions */}
                 <div className="flex justify-between items-center mt-4 pt-3 border-gray-200 border-t">
                   <div className="flex gap-4">
@@ -1119,7 +1079,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                       <Translate content="Update" />
                     </button>
                   </div>
-
                   {/* Quantity Controls */}
                   <div className="flex items-center gap-3">
                     <button
@@ -1161,7 +1120,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
             );
           })}
         </div>
-
         {/* Cart Summary */}
         <div className="bg-gray-50 mt-6 p-4 rounded-lg">
           <div className="flex justify-between items-center">
@@ -1179,7 +1137,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
             </span>
           </div>
         </div>
-
         {/* Shipping Information Form */}
         {showShippingForm && (
           <div className="mt-8 pt-8 border-gray-200 border-t">
@@ -1199,7 +1156,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                   <Icon icon={allIcons.solid.faTimes} iconClassName="text-xl" />
                 </button>
               </div>
-
               {/* Form Grid */}
               <div className="gap-4 grid grid-cols-1 md:grid-cols-2">
                 {/* First Name */}
@@ -1219,7 +1175,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                     placeholder="Enter your first name"
                   />
                 </div>
-
                 {/* Last Name */}
                 <div>
                   <label
@@ -1237,7 +1192,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                     placeholder="Enter your last name"
                   />
                 </div>
-
                 {/* Phone */}
                 <div>
                   <label
@@ -1255,7 +1209,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                     placeholder="Enter your phone number"
                   />
                 </div>
-
                 {/* Wilaya */}
                 <div className="relative">
                   <label
@@ -1275,7 +1228,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                     placeholder="Select or type wilaya..."
                     autoComplete="off"
                   />
-
                   {/* Wilaya Dropdown */}
                   {showWilayaDropdown && filteredWilayas.length > 0 && (
                     <div
@@ -1303,7 +1255,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                     </div>
                   )}
                 </div>
-
                 {/* Address/Place - Full Width */}
                 <div className="md:col-span-2">
                   <label
@@ -1345,7 +1296,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
                   </div>
                 </div>
               </div>
-
               {/* Actions */}
               <div className="flex gap-3 mt-6">
                 <Button
@@ -1381,7 +1331,6 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
             </div>
           </div>
         )}
-
         {/* Confirmation Dialog */}
         <AnimatePresence>
           {showDeleteConfirmation && (
@@ -3766,7 +3715,6 @@ export const Test = () => {
           <NotificationTester />
         </div>
       </TabContent>
-
       {/* Floating Notification Tester - Always visible for easy testing */}
       <FloatingNotificationTester />
     </div>

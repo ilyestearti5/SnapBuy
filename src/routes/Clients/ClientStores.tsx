@@ -33,7 +33,7 @@ import { snapbuyApi } from "../../apis";
 import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
 import { CartPopup } from "./CartPopup";
-import { deleteCart } from "@biqpod/snapbuy";
+import { deleteCart } from "../../apis/snapbuy";
 interface UserLineProps {
   user: Biqpod.Account.User;
 }
