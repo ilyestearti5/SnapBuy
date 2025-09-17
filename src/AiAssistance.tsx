@@ -330,6 +330,7 @@ export const AiAssistance = () => {
       {listOfPathNames.map(({ name, path }) => {
         return <Link key={name} to={path} hidden id={name} />;
       })}
+      {/* Debug Panel - only show in development */}
     </Card>
   );
 };

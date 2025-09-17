@@ -5,6 +5,8 @@ import {
   showBottomSheet,
   showPopup,
   showToast,
+  confirm,
+  execAction,
 } from "@biqpod/app/ui/hooks";
 import { ChangeStatus } from "../routes/Stores/ChangeStatus";
 import { OrderInvoice } from "./OrderInvoice";
@@ -22,6 +24,8 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { OrderView } from "../routes/Clients/OrderView";
+import { snapbuyApi } from "../apis";
+import { notifyOrderDeleted } from "../utils/orderNotifications";
 export interface OpenOrderMenuOptions {
   x: number;
   y: number;
@@ -150,6 +154,35 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
           showToast("Order ID Copied");
         },
         defaultIcon: allIcons.regular.faCopy,
+      },
+      {
+        type: "separator",
+      },
+      {
+        label: "Delete Order",
+        async click() {
+          const response = await confirm({
+            title: "Delete Order",
+            message:
+              "Are you sure you want to delete this order? This action cannot be undone.",
+            type: "warning",
+          });
+          if (response) {
+            try {
+              // Send notification before deleting
+              if (order.storeId) {
+                await notifyOrderDeleted(order.storeId, order);
+              }
+              await snapbuyApi.deleteOrder(order.id);
+              showToast("Order deleted successfully", "success");
+              // Refresh the orders list
+              execAction("fetch-orders", {});
+            } catch (error) {
+              showToast("Failed to delete order", "error");
+            }
+          }
+        },
+        defaultIcon: allIcons.solid.faTrash,
       }
     ),
   });

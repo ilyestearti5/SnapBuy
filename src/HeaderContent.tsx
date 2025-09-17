@@ -48,6 +48,8 @@ import { useStoreId } from "./utils";
 import { initStoreIdSave } from "./utils";
 import { AiAssistance } from "./AiAssistance";
 import { openNotificationSettings } from "./components/NotificationSettingsExamples";
+import { HoverScale } from "./animations/components";
+import { motion } from "framer-motion";
 const getId = () => {
   return location.pathname.split("/").at(-1);
 };
@@ -173,16 +175,21 @@ export const HeaderContent = () => {
 
   return (
     <EmptyComponent>
-      <div className="flex justify-between items-center px-4 w-full">
+      <motion.div
+        className="flex justify-between items-center px-4 w-full"
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+      >
         <div className="flex items-center gap-x-1">
-          <div>
+          <HoverScale scale={1.1}>
             <CircleTip
               icon={allIcons.solid.faChevronLeft}
               onClick={() => {
                 hist.goBack();
               }}
             />
-          </div>
+          </HoverScale>
           <Switch>
             <Route path="/pack/:packId">
               <AsyncComponent
@@ -449,7 +456,7 @@ export const HeaderContent = () => {
             </div>
           )}
         </div>
-      </div>
+      </motion.div>
       {isDesktop && <WindowControls />}
       <Link to="/profile" id="home" />
       <Link to="/plans" id="plans" />

@@ -8,7 +8,6 @@ import {
   CircleLoading,
   CircleTip,
   EmptyComponent,
-  Icon,
   Image,
   Key,
   Line,
@@ -39,17 +38,258 @@ import notFoundPhoto from "../../assets/nothing.png";
 import { Link } from "react-router-dom";
 import { UpsertStore } from "./EditStoreBottomSheet";
 import { useStoreId } from "../../utils";
-import { isMobile } from "@biqpod/app/ui/app";
 import { motion } from "framer-motion";
 import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";
 import { pixelsPhoto, SetPixels } from "./SetPixels";
 import { SetTemplate } from "./SetTemplate";
 import { platformsPhoto } from "../../utils/platforms";
 import { SetStorePlatforms } from "./SetStorePlatforms";
-import { OrderVarient } from "./OrderVarient";
+// Enhanced Animation variants
+const containerVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      ease: [0.25, 0.46, 0.45, 0.94] as const,
+      staggerChildren: 0.15,
+      delayChildren: 0.2,
+    },
+  },
+};
+const storeCardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+    scale: 0.9,
+    rotateX: 10,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotateX: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 260,
+      damping: 20,
+      duration: 0.8,
+    },
+  },
+  hover: {
+    scale: 1.03,
+    y: -5,
+    rotateX: 2,
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+  tap: {
+    scale: 0.98,
+  },
+};
+const addButtonVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.7,
+    rotate: -10,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 20,
+      delay: 0.3,
+    },
+  },
+  hover: {
+    scale: 1.1,
+    rotate: 5,
+    backgroundColor: "rgba(var(--biqpod-primary-rgb), 0.1)",
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 15,
+    },
+  },
+  tap: {
+    scale: 0.9,
+    rotate: -2,
+  },
+};
+const loadingSkeletonVariants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+    scale: 0.9,
+  },
+  visible: (index: number) => ({
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      delay: index * 0.1,
+      type: "spring" as const,
+      stiffness: 200,
+      damping: 25,
+    },
+  }),
+  pulse: {
+    scale: [1, 1.02, 1],
+    opacity: [0.7, 1, 0.7],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: "easeInOut" as const,
+    },
+  },
+};
+const emptyStateVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.8,
+    y: 50,
+    rotateX: 15,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    rotateX: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 150,
+      damping: 20,
+      delay: 0.5,
+      duration: 1,
+    },
+  },
+  float: {
+    y: [-2, 2, -2],
+    transition: {
+      duration: 3,
+      repeat: Infinity,
+      ease: "easeInOut" as const,
+    },
+  },
+};
+const chooseIndicatorVariants = {
+  hidden: {
+    scaleY: 0,
+    opacity: 0,
+    scaleX: 0,
+  },
+  visible: {
+    scaleY: 1,
+    opacity: 1,
+    scaleX: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+      delay: 0.2,
+    },
+  },
+  pulse: {
+    scaleX: [1, 1.2, 1],
+    opacity: [1, 0.8, 1],
+    transition: {
+      duration: 2,
+      repeat: Infinity,
+      ease: "easeInOut" as const,
+    },
+  },
+};
+const pixelItemVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.6,
+    rotate: -15,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 350,
+      damping: 20,
+    },
+  },
+  hover: {
+    scale: 1.15,
+    rotate: 10,
+    zIndex: 10,
+    transition: {
+      type: "spring" as const,
+      stiffness: 500,
+      damping: 15,
+    },
+  },
+  tap: {
+    scale: 0.9,
+    rotate: -5,
+  },
+};
+
+// Store content section animations
+const storeContentVariants = {
+  hidden: {
+    opacity: 0,
+    x: -20,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 25,
+      delay: 0.1,
+    },
+  },
+};
+
+const storeImageVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.8,
+    rotate: -10,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    rotate: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 20,
+    },
+  },
+  hover: {
+    scale: 0.95,
+    rotate: 2,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 15,
+    },
+  },
+};
 export const Stores = () => {
   const storeId = useStoreId();
   const storesState = useCopyState<SnapBuy.Store[]>([]);
+  // Helper function to show delivery prices view
   const action = useAction(
     "print-stores",
     async () => {
@@ -61,9 +301,6 @@ export const Stores = () => {
   const storeName = getFieldValue("store-name");
   const storePhone = getFieldValue("store-phone");
   const storePhoto = getTemp<string>("store-photo");
-  const deliveryPrice = getTemp<number | null | undefined>(
-    "store-delivery-price"
-  );
   useAction(
     "upsert-store",
     async (id?: string) => {
@@ -96,10 +333,9 @@ export const Stores = () => {
       setFieldValue("store-name", "");
       setFieldValue("store-phone", "");
       setTemp("store-photo", null);
-      setTemp("store-delivery-price", null);
       execAction("print-stores");
     },
-    [storeName, storePhone, storePhoto, deliveryPrice]
+    [storeName, storePhone, storePhoto]
   );
   const actionLoading = isLoading(action);
   const user = useUser();
@@ -122,10 +358,15 @@ export const Stores = () => {
   const deletionStore = getTemp<string>("deletion-store");
   return (
     <Scroll>
-      <div className="flex flex-wrap items-center gap-2 p-2">
+      <motion.div
+        className="flex flex-wrap items-center gap-2 p-2 w-full"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
         {!actionLoading && (
           <EmptyComponent>
-            {storesState.get.map((store, idx) => {
+            {storesState.get.map((store) => {
               const linkId = `store-${store.id}`;
               const choosed = storeId === store.id;
               const pixels = Object.entries(store.pixels || {}).filter(
@@ -137,37 +378,38 @@ export const Stores = () => {
               return (
                 <motion.div
                   key={store.id}
-                  initial={
-                    isMobile
-                      ? { opacity: 0, y: 40 }
-                      : { opacity: 0, scale: 0.95 }
-                  }
-                  animate={
-                    isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1 }
-                  }
-                  transition={{
-                    duration: 0.3,
-                    delay: idx * 0.05,
-                  }}
+                  variants={storeCardVariants}
+                  whileHover="hover"
+                  whileTap="tap"
                   className="max-md:w-full md:min-w-[400px]"
                 >
                   <Card className="relative w-full overflow-hidden">
                     <div className="flex justify-between items-center gap-4 p-4">
-                      <div className="flex items-center gap-2">
-                        <div>
+                      <motion.div
+                        className="flex items-center gap-2"
+                        variants={storeContentVariants}
+                        initial="hidden"
+                        animate="visible"
+                      >
+                        <motion.div
+                          variants={storeImageVariants}
+                          whileHover="hover"
+                        >
                           <Image
-                            className="bg-[--biqpod-gray-opacity] rounded-xl w-[60px] h-[60px]"
+                            onClick={() => {
+                              showPopup(<UpsertStore store={store} />, {
+                                type: "blur",
+                              });
+                            }}
+                            className="bg-[--biqpod-gray-opacity] rounded-xl w-[60px] h-[60px] hover:scale-95 transition-transform cursor-pointer"
                             src={store.photo}
                             alt={
-                              <div className="flex justify-center items-center">
-                                <Icon
-                                  icon={allIcons.solid.faStore}
-                                  iconClassName="text-2xl"
-                                />
+                              <div className="flex justify-center items-center font-bold">
+                                <i className="rotate-12">SnapBuy</i>
                               </div>
                             }
                           />
-                        </div>
+                        </motion.div>
                         <div>
                           <p className="font-bold max-md:text-base md:text-lg text-wrap">
                             {store.name}
@@ -178,8 +420,14 @@ export const Stores = () => {
                             </Anchor>
                           </p>
                         </div>
-                      </div>
-                      <div className="flex justify-center items-center">
+                      </motion.div>
+                      <motion.div
+                        className="flex justify-center items-center"
+                        variants={storeContentVariants}
+                        initial="hidden"
+                        animate="visible"
+                        transition={{ delay: 0.2 }}
+                      >
                         <CircleTip
                           icon={allIcons.solid.faChevronRight}
                           onClick={async () => {
@@ -230,13 +478,6 @@ export const Stores = () => {
                                     showPopup(<SetTemplate store={store} />);
                                   },
                                   defaultIcon: allIcons.solid.faPalette,
-                                },
-                                {
-                                  label: "Set A Order Varient",
-                                  async click() {
-                                    showPopup(<OrderVarient store={store} />);
-                                  },
-                                  defaultIcon: allIcons.regular.faAddressCard,
                                 },
                                 {
                                   label: "Set Pixels",
@@ -304,10 +545,15 @@ export const Stores = () => {
                             });
                           }}
                         />
-                      </div>
+                      </motion.div>
                     </div>
                     {choosed && (
-                      <span className="left-1 absolute inset-y-2 bg-[--biqpod-primary] rounded-full w-[8px]"></span>
+                      <motion.span
+                        className="left-1 absolute inset-y-2 bg-[--biqpod-primary] rounded-full w-[8px]"
+                        variants={chooseIndicatorVariants}
+                        initial="hidden"
+                        animate={["visible", "pulse"]}
+                      />
                     )}
                     {!!pixels.length && (
                       <EmptyComponent>
@@ -323,9 +569,12 @@ export const Stores = () => {
                               const pixelId = pixel as SnapBuy.PixelId;
                               const photo = pixelsPhoto[pixel];
                               return (
-                                <div
+                                <motion.div
                                   key={pixel}
-                                  className="hover:bg-[--biqpod-gray-opacity-2] p-1 h-[30px] cursor-pointer"
+                                  variants={pixelItemVariants}
+                                  whileHover="hover"
+                                  whileTap="tap"
+                                  className="hover:bg-[--biqpod-gray-opacity-2] p-1 w-[30px] h-[30px] object-cover cursor-pointer"
                                   onClick={() => {
                                     showPopup(
                                       <Card>
@@ -382,7 +631,7 @@ export const Stores = () => {
                                     src={photo}
                                     className="w-full h-full object-cover"
                                   />
-                                </div>
+                                </motion.div>
                               );
                             })}
                           </div>
@@ -400,14 +649,18 @@ export const Stores = () => {
                           </div>
                           <div className="flex justify-center">
                             {platforms.map(([platform, _]) => {
+                              console.log(platformsPhoto, platform);
                               const photo =
                                 platformsPhoto[
                                   platform as keyof typeof platformsPhoto
                                 ];
                               return (
-                                <div
+                                <motion.div
                                   key={platform}
-                                  className="hover:bg-[--biqpod-gray-opacity-2] p-1 h-[30px] cursor-pointer"
+                                  variants={pixelItemVariants}
+                                  whileHover="hover"
+                                  whileTap="tap"
+                                  className="hover:bg-[--biqpod-gray-opacity-2] p-1 w-[30px] h-[30px] object-cover cursor-pointer"
                                   onClick={() => {
                                     showPopup(
                                       <SetStorePlatforms store={store} />
@@ -418,14 +671,14 @@ export const Stores = () => {
                                     src={photo}
                                     className="w-full h-full object-cover"
                                   />
-                                </div>
+                                </motion.div>
                               );
                             })}
                           </div>
                         </div>
                       </EmptyComponent>
                     )}
-                    <Link to={`/store/${store.id}/overview`} id={linkId} />
+                    <Link to={`/store/${store.id}/dashboard`} id={linkId} />
                     {deletionStore === store.id && (
                       <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] backdrop-blur-md">
                         <CircleLoading />
@@ -436,31 +689,48 @@ export const Stores = () => {
               );
             })}
             {!!storesState.get.length && storesState.get.length < 5 && (
-              <Card
-                className="flex justify-center items-center active:bg-[--biqpod-gray-opacity] rounded-2xl max-md:w-full min-w-[200px] h-[80px] cursor-pointer"
-                onClick={() => {
-                  showPopup(<UpsertStore />, {
-                    type: "blur",
-                  });
-                }}
+              <motion.div
+                variants={addButtonVariants}
+                whileHover="hover"
+                whileTap="tap"
+                className="max-md:w-full md:w-[150px]"
               >
-                <CircleTip icon={allIcons.solid.faPlus} />
-              </Card>
+                <Card
+                  className="flex justify-center items-center active:bg-[--biqpod-gray-opacity] rounded-2xl w-full h-[80px] cursor-pointer"
+                  onClick={() => {
+                    showPopup(<UpsertStore />, {
+                      type: "blur",
+                    });
+                  }}
+                >
+                  <CircleTip icon={allIcons.solid.faPlus} />
+                </Card>
+              </motion.div>
             )}
           </EmptyComponent>
         )}
         {actionLoading &&
           range(5).map((index) => {
             return (
-              <CardWait
+              <motion.div
                 key={index}
-                className="rounded-2xl w-[200px] max-md:w-full h-[150px]"
-              />
+                variants={loadingSkeletonVariants}
+                initial="hidden"
+                animate={["visible", "pulse"]}
+                custom={index}
+              >
+                <CardWait className="rounded-2xl max-md:w-full md:w-[200px] h-[150px]" />
+              </motion.div>
             );
           })}
-      </div>
+      </motion.div>
       {!actionLoading && storesState.get.length === 0 && (
-        <div className="flex justify-center items-center w-full h-full">
+        <motion.div
+          className="flex justify-center items-center w-full h-full"
+          variants={emptyStateVariants}
+          initial="hidden"
+          animate={["visible", "float"]}
+        >
           <Card className="w-1/2 max-w-[300px] overflow-hidden">
             <img draggable="false" src={notFoundPhoto} />
             <Line />
@@ -481,7 +751,7 @@ export const Stores = () => {
               </Button>
             </div>
           </Card>
-        </div>
+        </motion.div>
       )}
     </Scroll>
   );

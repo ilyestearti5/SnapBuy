@@ -5,7 +5,6 @@ import {
   CardWait,
   Icon,
   IconProps,
-  Line,
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
@@ -23,6 +22,13 @@ import { snapbuyApi } from "../../apis";
 import { range } from "@biqpod/app/ui/utils";
 import { Link } from "react-router-dom";
 import { useStoreId } from "../../utils";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  AnimatedCard,
+  AnimatedListItem,
+  FadeIn,
+} from "../../animations/components";
+import { staggerContainer, loadingVariants } from "../../animations/index";
 const titlesOveviews: Record<string, string> = {
   totalSales: "Total Sales",
   orders: "Orders",
@@ -54,128 +60,237 @@ export function StoreOverview() {
   }, [storeId]);
   return (
     <Scroll>
-      <div className="flex flex-wrap gap-4 p-2">
-        {overview &&
-          Object.entries(overview).map(([name, content]: [string, string]) => {
-            const title = titlesOveviews[name];
-            const icon = iconsOveviews[name];
-            const color = iconsColors[name];
-            return (
+      <motion.div
+        className="flex flex-wrap gap-4 p-2"
+        variants={staggerContainer}
+        initial="initial"
+        animate="animate"
+      >
+        <AnimatePresence mode="wait">
+          {overview && typeof overview === "object"
+            ? Object.entries(overview).map(
+                ([name, content]: [string, any], index) => {
+                  const title = titlesOveviews[name];
+                  const icon = iconsOveviews[name];
+                  const color = iconsColors[name];
+                  // Handle different data types properly
+                  let displayContent = content;
+                  if (typeof content === "object" && content !== null) {
+                    // If it's an object, try to extract a meaningful value
+                    if ("value" in content) {
+                      displayContent = content.value;
+                    } else if ("count" in content) {
+                      displayContent = content.count;
+                    } else if ("total" in content) {
+                      displayContent = content.total;
+                    } else {
+                      // Fallback to string representation or 0
+                      displayContent = "0";
+                    }
+                  } else if (content === undefined || content === null) {
+                    displayContent = "0";
+                  } else {
+                    displayContent = String(content);
+                  }
+                  // Format numbers for better display
+                  if (!isNaN(Number(displayContent))) {
+                    const num = Number(displayContent);
+                    if (name === "totalSales") {
+                      // Format as currency
+                      displayContent =
+                        num
+                          .toLocaleString("en-DZ", {
+                            style: "currency",
+                            currency: "DZD",
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0,
+                          })
+                          .replace("DZD", "")
+                          .trim() + " DA";
+                    } else {
+                      // Format as regular number
+                      displayContent = num.toLocaleString();
+                    }
+                  }
+                  // Ensure we have a valid title and icon
+                  if (!title || !icon) {
+                    return null;
+                  }
+                  return (
+                    <AnimatedListItem key={name} index={index}>
+                      <Card
+                        onClick={() => {
+                          if (name === "orders") {
+                            document.getElementById("pending-orders")?.click();
+                          } else if (name === "totalSales") {
+                            if (displayContent == "0") {
+                              showToast("No sales yet");
+                              return;
+                            }
+                            document
+                              .getElementById("completed-orders")
+                              ?.click();
+                          }
+                        }}
+                        className="flex-1 p-3 min-w-[200px] h-[70px] cursor-pointer"
+                      >
+                        <div className="flex justify-between items-center gap-4 h-full">
+                          <div>
+                            <p className="text-gray-500 text-sm">
+                              <Translate content={title} />
+                            </p>
+                            <motion.p
+                              className="font-semibold text-xl"
+                              initial={{ scale: 0.8, opacity: 0 }}
+                              animate={{ scale: 1, opacity: 1 }}
+                              transition={{ delay: index * 0.2 + 0.3 }}
+                            >
+                              {displayContent}
+                            </motion.p>
+                          </div>
+                          <motion.span
+                            style={{
+                              color,
+                            }}
+                            className="inline-flex justify-center items-center bg-[--biqpod-gray-opacity] rounded-full w-[40px] h-[40px] text-xl"
+                            initial={{ rotate: -180, scale: 0 }}
+                            animate={{ rotate: 0, scale: 1 }}
+                            transition={{
+                              delay: index * 0.2 + 0.1,
+                              type: "spring",
+                              stiffness: 300,
+                              damping: 20,
+                            }}
+                          >
+                            <Icon icon={icon} />
+                          </motion.span>
+                        </div>
+                      </Card>
+                    </AnimatedListItem>
+                  );
+                }
+              )
+            : range(3).map((index) => {
+                return (
+                  <motion.div
+                    key={index}
+                    variants={loadingVariants}
+                    initial="initial"
+                    animate="animate"
+                  >
+                    <CardWait className="flex-1 rounded-2xl min-w-[200px] h-[70px]" />
+                  </motion.div>
+                );
+              })}
+        </AnimatePresence>
+      </motion.div>
+      <div className="flex max-md:flex-col md:items-center p-2">
+        <AnimatePresence mode="wait">
+          {salesData && (
+            <FadeIn className="md:w-2/3">
+              <AnimatedCard>
+                <h2 className="font-semibold text-lg capitalize">
+                  <Translate content="sales this week" />
+                </h2>
+                <motion.div
+                  className="p-2 w-full"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
+                >
+                  <ResponsiveContainer width="100%" height={250}>
+                    <LineChart data={salesData}>
+                      <CartesianGrid strokeDasharray="3 3" />
+                      <XAxis dataKey="day" />
+                      <YAxis
+                        width={120}
+                        tickFormatter={(value) => {
+                          const amount = +value.toString();
+                          const result = amount
+                            .toLocaleString("en-US", {
+                              style: "currency",
+                              currency: "DZD",
+                            })
+                            .replace(/\.[0-9]+/gi, "");
+                          return result;
+                        }}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: "var(--biqpod-gray-opacity)",
+                          border: "var(--biqpod-borders)",
+                        }}
+                        wrapperClassName="rounded-2xl backdrop-blur-sm"
+                      />
+                      <RechartsLine
+                        type="monotone"
+                        dataKey="sales"
+                        stroke="var(--biqpod-primary)"
+                        strokeWidth={2}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </motion.div>
+              </AnimatedCard>
+            </FadeIn>
+          )}
+          {!salesData && (
+            <motion.div
+              variants={loadingVariants}
+              initial="initial"
+              animate="animate"
+              className="p-2 md:w-2/3"
+            >
+              <CardWait className="rounded-2xl h-[250px]" />
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <AnimatePresence mode="wait">
+          {todayOrders === null && (
+            <motion.div
+              className="md:w-1/3"
+              variants={loadingVariants}
+              initial="initial"
+              animate="animate"
+            >
+              <CardWait className="rounded-2xl w-full h-[150px]" />
+            </motion.div>
+          )}
+          {todayOrders !== null && (
+            <FadeIn className="md:w-1/3" delay={0.4}>
               <Card
                 onClick={() => {
-                  if (name === "orders") {
-                    document.getElementById("pending-orders")?.click();
-                  } else if (name === "totalSales") {
-                    if (content == "0") {
-                      showToast("No sales yet");
-                      return;
-                    }
-                    document.getElementById("completed-orders")?.click();
+                  if (todayOrders == 0) {
+                    showToast("No orders yet");
+                    return;
                   }
+                  document.getElementById("today-orders")?.click();
                 }}
-                key={name}
-                className="flex-1 p-3 min-w-[200px] h-[70px] cursor-pointer"
+                className="flex flex-col justify-evenly active:bg-[--biqpod-gray-opacity] p-3 w-full h-[150px] cursor-pointer"
               >
-                <div className="flex justify-between items-center gap-4 h-full">
-                  <div>
-                    <p className="text-gray-500 text-sm">
-                      <Translate content={title} />
-                    </p>
-                    <p className="font-semibold text-xl">{content}</p>
-                  </div>
-                  <span
-                    style={{
-                      color,
-                    }}
-                    className="inline-flex justify-center items-center bg-[--biqpod-gray-opacity] rounded-full w-[40px] h-[40px] text-xl"
-                  >
-                    <Icon icon={icon} />
-                  </span>
-                </div>
+                <h2 className="mb-2 font-semibold text-lg capitalize">
+                  <Translate content="today's orders" />
+                </h2>
+                <motion.p
+                  className="font-bold text-[--biqpod-primary] text-5xl"
+                  initial={{ scale: 0, rotate: -180 }}
+                  animate={{ scale: 1, rotate: 0 }}
+                  transition={{
+                    delay: 0.6,
+                    type: "spring",
+                    stiffness: 300,
+                    damping: 20,
+                  }}
+                >
+                  {todayOrders}
+                </motion.p>
+                <p className="mt-2 text-gray-500 text-sm">
+                  <Translate content="orders placed today" />
+                </p>
               </Card>
-            );
-          })}
-        {!overview &&
-          range(3).map((index) => {
-            return (
-              <CardWait
-                key={index}
-                className="flex-1 rounded-2xl min-w-[200px] h-[70px]"
-              />
-            );
-          })}
-      </div>
-      <div className="flex max-md:flex-col md:items-center gap-2 p-2">
-        {salesData && (
-          <Card className="md:w-2/3">
-            <div className="p-2">
-              <h2 className="font-semibold text-lg capitalize">
-                <Translate content="sales this week" />
-              </h2>
-            </div>
-            <Line />
-            <div className="p-2">
-              <ResponsiveContainer width="100%" height={250}>
-                <LineChart data={salesData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="day" />
-                  <YAxis
-                    width={120}
-                    tickFormatter={(value) => {
-                      const amount = +value.toString();
-                      const result = amount
-                        .toLocaleString("en-US", {
-                          style: "currency",
-                          currency: "DZD",
-                        })
-                        .replace(/\.[0-9]+/gi, "");
-                      return result;
-                    }}
-                  />
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: "var(--biqpod-gray-opacity)",
-                      border: "var(--biqpod-borders)",
-                    }}
-                    wrapperClassName="rounded-2xl backdrop-blur-sm"
-                  />
-                  <RechartsLine
-                    type="monotone"
-                    dataKey="sales"
-                    stroke="var(--biqpod-primary)"
-                    strokeWidth={2}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        )}
-        {!salesData && <CardWait className="rounded-2xl w-full h-[250px]" />}
-        {todayOrders === null && (
-          <CardWait className="rounded-2xl w-full h-[150px]" />
-        )}
-        {todayOrders !== null && (
-          <Card
-            onClick={() => {
-              if (todayOrders == 0) {
-                showToast("No orders yet");
-                return;
-              }
-              document.getElementById("today-orders")?.click();
-            }}
-            className="flex flex-col justify-evenly active:bg-[--biqpod-gray-opacity] p-3 md:w-1/3 h-[150px] cursor-pointer"
-          >
-            <h2 className="mb-2 font-semibold text-lg capitalize">
-              <Translate content="today's orders" />
-            </h2>
-            <p className="font-bold text-[--biqpod-primary] text-5xl">
-              {todayOrders}
-            </p>
-            <p className="mt-2 text-gray-500 text-sm">
-              <Translate content="orders placed today" />
-            </p>
-          </Card>
-        )}
+            </FadeIn>
+          )}
+        </AnimatePresence>
       </div>
       <Link
         id="pending-orders"

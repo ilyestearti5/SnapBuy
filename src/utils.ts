@@ -20,7 +20,6 @@ import deliveryPhoto from "./assets/delivery.png";
 import androidPhoto from "./assets/android.png";
 import integrationsPhoto from "./assets/integrations.png";
 import edge from "./assets/platforms/edge.png";
-import accountsPhoto from "./assets/accounts.png";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { IconProps } from "@biqpod/app/ui/components";
 import {
@@ -38,61 +37,33 @@ import { useLocation } from "react-router";
 import productsPhoto from "./assets/products.png";
 import shoppingPhoto from "./assets/shopping.png";
 import overviewPhoto from "./assets/overview.png";
-import formsPhoto from "./assets/forms.png";
 import settingsPhoto from "./assets/settings.png";
 import { mergeArray } from "@biqpod/app/ui/utils";
-const varientsPhoto =
-  "https://cdn3d.iconscout.com/3d/premium/thumb/variable-5591050-4652827.png";
 export const userTabs = [
   {
-    name: "overview",
-    link: `/store/{storeId}/overview`,
+    name: "dashboard",
+    link: `/store/{storeId}/dashboard`,
     photo: overviewPhoto,
   },
   {
-    name: "products",
-    link: `/store/{storeId}/products`,
+    name: "catalog",
+    link: `/store/{storeId}/catalog`,
     photo: productsPhoto,
   },
   {
-    name: "brands",
-    link: `/store/{storeId}/brands`,
-    photo: offersPhoto,
-  },
-  {
-    name: "orders",
-    link: `/store/{storeId}/orders`,
+    name: "sales",
+    link: `/store/{storeId}/sales`,
     photo: shoppingPhoto,
   },
   {
-    name: "customers",
-    link: `/store/{storeId}/customers`,
-    photo: accountsPhoto,
-  },
-  {
-    name: "Stores",
-    link: `/store/{storeId}/stores`,
-    photo: storePhoto,
-  },
-  {
-    name: "Form's",
-    link: "/store/{storeId}/forms",
-    photo: formsPhoto,
-  },
-  {
-    name: "settings",
-    link: "/store/{storeId}/settings",
+    name: "configuration",
+    link: `/store/{storeId}/configuration`,
     photo: settingsPhoto,
   },
   {
     name: "integrations",
     link: `/store/{storeId}/integrations`,
     photo: integrationsPhoto,
-  },
-  {
-    name: "varients",
-    link: `/store/{storeId}/varients`,
-    photo: varientsPhoto,
   },
 ];
 export const toId = (value: string) => {
@@ -218,6 +189,12 @@ export const extraTabs = [
     link: "/developer",
     photo:
       "https://static.vecteezy.com/system/resources/previews/041/317/508/original/3d-developer-icon-on-transparent-background-png.png",
+  },
+  {
+    name: "agent",
+    link: "/agent",
+    photo:
+      "https://cdn3d.iconscout.com/3d/premium/thumb/robot-reading-a-book-3d-icon-png-download-11431719.png",
   },
 ];
 
@@ -1078,6 +1055,72 @@ export const translations = [
     word: "enter%20delivery%20price",
   },
   {
+    en: "Delivery Prices",
+    fr: "Prix de livraison",
+    ar: "أسعار التوصيل",
+    word: "delivery%20prices",
+  },
+  {
+    en: "Manage different delivery pricing options",
+    fr: "Gérer différentes options de tarification de livraison",
+    ar: "إدارة خيارات تسعير التوصيل المختلفة",
+    word: "manage%20different%20delivery%20pricing%20options",
+  },
+  {
+    en: "Add Delivery Price",
+    fr: "Ajouter un prix de livraison",
+    ar: "إضافة سعر توصيل",
+    word: "add%20delivery%20price",
+  },
+  {
+    en: "Edit Delivery Price",
+    fr: "Modifier le prix de livraison",
+    ar: "تعديل سعر التوصيل",
+    word: "edit%20delivery%20price",
+  },
+  {
+    en: "No delivery prices set",
+    fr: "Aucun prix de livraison défini",
+    ar: "لم يتم تحديد أسعار التوصيل",
+    word: "no%20delivery%20prices%20set",
+  },
+  {
+    en: "Add First Delivery Price",
+    fr: "Ajouter le premier prix de livraison",
+    ar: "إضافة أول سعر توصيل",
+    word: "add%20first%20delivery%20price",
+  },
+  {
+    en: "Name",
+    fr: "Nom",
+    ar: "الاسم",
+    word: "name",
+  },
+  {
+    en: "Description",
+    fr: "Description",
+    ar: "الوصف",
+    word: "description",
+  },
+  {
+    en: "Price (DA)",
+    fr: "Prix (DA)",
+    ar: "السعر (دج)",
+    word: "price%20da",
+  },
+  {
+    en: "View Delivery",
+    fr: "Voir la livraison",
+    ar: "عرض التوصيل",
+    word: "view%20delivery",
+  },
+  {
+    en: "Add New Delivery Price",
+    fr: "Ajouter un nouveau prix de livraison",
+    ar: "إضافة سعر توصيل جديد",
+    word: "add%20new%20delivery%20price",
+  },
+  {
     en: "Free",
     fr: "Gratuit",
     ar: "مجاني",
@@ -1348,6 +1391,66 @@ export const translations = [
     word: "add%20product",
   },
   {
+    en: "Add Field",
+    fr: "Ajouter un champ",
+    ar: "إضافة حقل",
+    word: "add%20field",
+  },
+  {
+    en: "Add New Field",
+    fr: "Ajouter un nouveau champ",
+    ar: "إضافة حقل جديد",
+    word: "add%20new%20field",
+  },
+  {
+    en: "Product Metadata",
+    fr: "Métadonnées du produit",
+    ar: "بيانات وصفية للمنتج",
+    word: "product%20metadata",
+  },
+  {
+    en: "No Metadata Fields Added",
+    fr: "Aucun champ de métadonnées ajouté",
+    ar: "لم يتم إضافة حقول بيانات وصفية",
+    word: "no%20metadata%20fields%20added",
+  },
+  {
+    en: "Quick Colors",
+    fr: "Couleurs rapides",
+    ar: "ألوان سريعة",
+    word: "quick%20colors",
+  },
+  {
+    en: "Custom Color",
+    fr: "Couleur personnalisée",
+    ar: "لون مخصص",
+    word: "custom%20color",
+  },
+  {
+    en: "Advanced Color Picker",
+    fr: "Sélecteur de couleur avancé",
+    ar: "منتقي الألوان المتقدم",
+    word: "advanced%20color%20picker",
+  },
+  {
+    en: "Open Color Picker",
+    fr: "Ouvrir le sélecteur de couleur",
+    ar: "فتح منتقي الألوان",
+    word: "open%20color%20picker",
+  },
+  {
+    en: "Clear All",
+    fr: "Tout effacer",
+    ar: "مسح الكل",
+    word: "clear%20all",
+  },
+  {
+    en: "Selected Colors",
+    fr: "Couleurs sélectionnées",
+    ar: "الألوان المحددة",
+    word: "selected%20colors",
+  },
+  {
     en: "Back",
     fr: "Retour",
     ar: "رجوع",
@@ -1436,6 +1539,60 @@ export const translations = [
     fr: "aucune plateforme configurée",
     ar: "لم يتم تكوين أي منصات",
     word: "no%20platforms%20configured",
+  },
+  {
+    en: "Variables",
+    fr: "Variables",
+    ar: "المتغيرات",
+    word: "Variables",
+  },
+  {
+    en: "Store Variables",
+    fr: "Variables du Magasin",
+    ar: "متغيرات المتجر",
+    word: "Store%20Variables",
+  },
+  {
+    en: "Add Variable",
+    fr: "Ajouter une Variable",
+    ar: "إضافة متغير",
+    word: "Add%20Variable",
+  },
+  {
+    en: "Edit Variable",
+    fr: "Modifier la Variable",
+    ar: "تعديل المتغير",
+    word: "Edit%20Variable",
+  },
+  {
+    en: "Variable Name",
+    fr: "Nom de la Variable",
+    ar: "اسم المتغير",
+    word: "Variable%20Name",
+  },
+  {
+    en: "Variable Value",
+    fr: "Valeur de la Variable",
+    ar: "قيمة المتغير",
+    word: "Variable%20Value",
+  },
+  {
+    en: "No Variables",
+    fr: "Aucune Variable",
+    ar: "لا توجد متغيرات",
+    word: "No%20Variables",
+  },
+  {
+    en: "Create your first variable to get started",
+    fr: "Créez votre première variable pour commencer",
+    ar: "أنشئ متغيرك الأول للبدء",
+    word: "Create%20your%20first%20variable%20to%20get%20started",
+  },
+  {
+    en: "Search variables...",
+    fr: "Rechercher des variables...",
+    ar: "البحث في المتغيرات...",
+    word: "Search%20variables...",
   },
 ];
 export const useSub = () => {

@@ -1,7 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  AsyncComponent,
-  CardWait,
   EmptyComponent,
   Icon,
   Key,
@@ -13,18 +11,10 @@ import {
 import { setTemp } from "@biqpod/app/ui/hooks";
 import {} from "@biqpod/app/ui/utils";
 import { useFormProduct } from "../../../apis/getFns";
-import { snapbuyApi } from "../../../apis";
 export const ProductDataBeforeCreate = () => {
   const product = useFormProduct();
   return (
     <div className="flex flex-col">
-      <div className="p-4">
-        <h2 className="flex justify-center items-center gap-2 font-bold text-primary text-3xl capitalize">
-          <Icon icon={allIcons.solid.faInfoCircle} />
-          <Translate content="post details" />
-        </h2>
-      </div>
-      <Line />
       <div>
         <div className="flex items-center gap-2 p-2 w-full">
           <div className="flex items-center gap-2 w-full">
@@ -37,44 +27,6 @@ export const ProductDataBeforeCreate = () => {
             {product.name || (
               <span className="text-[--biqpod-gray-opacity] capitalize">
                 <Translate content="no title" />
-              </span>
-            )}
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 1);
-              }}
-            />
-          </div>
-        </div>
-        <div className="flex items-center gap-2 p-2 w-full">
-          <div className="flex items-center gap-2 w-full">
-            <Icon icon={allIcons.solid.faX} />
-            <p className="font-semibold capitalize">
-              <Translate content="varient" />:
-            </p>
-          </div>
-          <div className="flex items-center gap-1 w-full">
-            {product.varientId ? (
-              <AsyncComponent
-                deps={[product.varientId]}
-                render={async () => {
-                  const varient = await snapbuyApi.varient.getOne(
-                    product.varientId!
-                  );
-                  return (
-                    <EmptyComponent>
-                      {varient?.name || "Unnamed Varient"}
-                    </EmptyComponent>
-                  );
-                }}
-                loading={
-                  <CardWait className="rounded-full w-[250px] h-[25px]" />
-                }
-              />
-            ) : (
-              <span className="text-[--biqpod-gray-opacity] capitalize">
-                <Translate content="no varient" />
               </span>
             )}
             <Tip

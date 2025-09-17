@@ -33,7 +33,8 @@ export const ProductDescription = () => {
         multiLines
         placeholder="Enter Description"
         propositions={allWords}
-        className="rounded-2xl h-full"
+        rows={10}
+        className="rounded-2xl h-full min-h-[150px]"
       />
       <span className="top-4 right-4 absolute">
         <CircleTip

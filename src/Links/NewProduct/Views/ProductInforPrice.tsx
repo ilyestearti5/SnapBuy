@@ -41,178 +41,176 @@ export const PostInforPrice = () => {
   }, [pricesList.get]);
   const limited = getFormLimited();
   return (
-    <EmptyComponent>
-      <div className="flex flex-col">
-        <div>
-          <div
-            className={tw(
-              "h-[0px] transition-[height] overflow-hidden",
-              limited && "h-[60px] max-md:h-[80px]"
-            )}
-          >
+    <div className="flex flex-col">
+      <div>
+        <div
+          className={tw(
+            "h-[0px] transition-[height] overflow-hidden",
+            limited && "h-[60px] max-md:h-[80px]"
+          )}
+        >
+          <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+            <label
+              className="w-full md:text-right capitalize"
+              htmlFor="post-qunatity"
+            >
+              <Translate content="quantity" /> :
+            </label>
+            <div className="relative w-full">
+              <NumberField
+                state={quantity}
+                config={{
+                  placeholder: "Enter Quantity",
+                  autoChange: true,
+                }}
+                id="post-qunatity"
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      {limited && <Line />}
+      {isSingle && (
+        <EmptyComponent>
+          <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+            <label
+              className="w-full md:text-right capitalize"
+              htmlFor="product-client"
+            >
+              <Translate content="client price" /> :
+            </label>
+            <div className="relative w-full">
+              <NumberField
+                state={clientPrice}
+                config={{
+                  placeholder: "Enter Client Price",
+                  autoChange: true,
+                }}
+                id="product-client-price"
+              />
+              <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
+                DA
+              </div>
+            </div>
+          </div>
+          <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+            <label
+              className="w-full md:text-right capitalize"
+              htmlFor="product-customer-price"
+            >
+              <Translate content="customer price" /> :
+            </label>
+            <div className="relative w-full">
+              <NumberField
+                state={customerPrice}
+                config={{
+                  placeholder: "Enter Customer Price",
+                  autoChange: true,
+                }}
+                id="product-customer-price"
+              />
+              <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
+                DA
+              </div>
+            </div>
+          </div>
+        </EmptyComponent>
+      )}
+      {isMultiple && (
+        <EmptyComponent>
+          <div className="flex flex-wrap p-2">
+            {pricesList.get?.map(({ price, quantity }, index) => {
+              return (
+                <div
+                  key={index}
+                  className="flex justify-between items-center gap-2 bg-[--biqpod-gray-opacity] px-2 py-1 border border-transparent border-solid rounded-2xl"
+                >
+                  <span>
+                    {price}
+                    <span>DA</span>{" "}
+                    <sub>
+                      <Icon icon={allIcons.solid.faChevronRight} /> {quantity}
+                    </sub>
+                  </span>
+                  <Tip
+                    className="rounded-full w-[20px] h-[20px]"
+                    icon={allIcons.solid.faTimes}
+                    onClick={() => {
+                      pricesList.set((pricesList) => {
+                        return (
+                          pricesList?.filter((_price, i) => i !== index) || []
+                        );
+                      });
+                    }}
+                  />
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex max-md:items-end md:items-center">
             <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
               <label
                 className="w-full md:text-right capitalize"
-                htmlFor="post-qunatity"
+                htmlFor="temp-quantity"
               >
                 <Translate content="quantity" /> :
               </label>
               <div className="relative w-full">
                 <NumberField
-                  state={quantity}
+                  state={tempQuantity}
                   config={{
-                    placeholder: "Enter Quantity",
                     autoChange: true,
+                    placeholder: "Enter Quantity",
+                    min: maxCount,
                   }}
-                  id="post-qunatity"
+                  id="temp-quantity"
                 />
               </div>
+            </div>
+            <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
+              <label
+                className="w-full md:text-right capitalize"
+                htmlFor="temp-price"
+              >
+                <Translate content="price for one" /> :
+              </label>
+              <div className="relative w-full">
+                <NumberField
+                  state={tempPrice}
+                  config={{
+                    placeholder: "Enter Price",
+                    autoChange: true,
+                  }}
+                  id="post-temp-price"
+                />
+                <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
+                  DA
+                </div>
+              </div>
+            </div>
+            <div className="p-2">
+              <TitleView title="Add">
+                <CircleTip
+                  icon={allIcons.solid.faPlus}
+                  onClick={() => {
+                    pricesList.set((pricesList) => {
+                      return [
+                        ...(pricesList || []),
+                        {
+                          price: tempPrice.get || 0,
+                          quantity: tempQuantity.get || 0,
+                        },
+                      ];
+                    });
+                    tempPrice.set(undefined);
+                    tempQuantity.set(undefined);
+                  }}
+                />
+              </TitleView>
             </div>
           </div>
-        </div>
-        <Line />
-        {isSingle && (
-          <EmptyComponent>
-            <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-              <label
-                className="w-full md:text-right capitalize"
-                htmlFor="product-client"
-              >
-                <Translate content="client price" /> :
-              </label>
-              <div className="relative w-full">
-                <NumberField
-                  state={clientPrice}
-                  config={{
-                    placeholder: "Enter Client Price",
-                    autoChange: true,
-                  }}
-                  id="product-client-price"
-                />
-                <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
-                  DA
-                </div>
-              </div>
-            </div>
-            <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-              <label
-                className="w-full md:text-right capitalize"
-                htmlFor="product-customer-price"
-              >
-                <Translate content="customer price" /> :
-              </label>
-              <div className="relative w-full">
-                <NumberField
-                  state={customerPrice}
-                  config={{
-                    placeholder: "Enter Customer Price",
-                    autoChange: true,
-                  }}
-                  id="product-customer-price"
-                />
-                <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
-                  DA
-                </div>
-              </div>
-            </div>
-          </EmptyComponent>
-        )}
-        {isMultiple && (
-          <EmptyComponent>
-            <div className="flex flex-wrap p-2">
-              {pricesList.get?.map(({ price, quantity }, index) => {
-                return (
-                  <div
-                    key={index}
-                    className="flex justify-between items-center gap-2 bg-[--biqpod-gray-opacity] px-2 py-1 border border-transparent border-solid rounded-2xl"
-                  >
-                    <span>
-                      {price}
-                      <span>DA</span>{" "}
-                      <sub>
-                        <Icon icon={allIcons.solid.faChevronRight} /> {quantity}
-                      </sub>
-                    </span>
-                    <Tip
-                      className="rounded-full w-[20px] h-[20px]"
-                      icon={allIcons.solid.faTimes}
-                      onClick={() => {
-                        pricesList.set((pricesList) => {
-                          return (
-                            pricesList?.filter((_price, i) => i !== index) || []
-                          );
-                        });
-                      }}
-                    />
-                  </div>
-                );
-              })}
-            </div>
-            <div className="flex max-md:items-end md:items-center">
-              <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-                <label
-                  className="w-full md:text-right capitalize"
-                  htmlFor="temp-quantity"
-                >
-                  <Translate content="quantity" /> :
-                </label>
-                <div className="relative w-full">
-                  <NumberField
-                    state={tempQuantity}
-                    config={{
-                      autoChange: true,
-                      placeholder: "Enter Quantity",
-                      min: maxCount,
-                    }}
-                    id="temp-quantity"
-                  />
-                </div>
-              </div>
-              <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-                <label
-                  className="w-full md:text-right capitalize"
-                  htmlFor="temp-price"
-                >
-                  <Translate content="price for one" /> :
-                </label>
-                <div className="relative w-full">
-                  <NumberField
-                    state={tempPrice}
-                    config={{
-                      placeholder: "Enter Price",
-                      autoChange: true,
-                    }}
-                    id="post-temp-price"
-                  />
-                  <div className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none transform">
-                    DA
-                  </div>
-                </div>
-              </div>
-              <div className="p-2">
-                <TitleView title="Add">
-                  <CircleTip
-                    icon={allIcons.solid.faPlus}
-                    onClick={() => {
-                      pricesList.set((pricesList) => {
-                        return [
-                          ...(pricesList || []),
-                          {
-                            price: tempPrice.get || 0,
-                            quantity: tempQuantity.get || 0,
-                          },
-                        ];
-                      });
-                      tempPrice.set(undefined);
-                      tempQuantity.set(undefined);
-                    }}
-                  />
-                </TitleView>
-              </div>
-            </div>
-          </EmptyComponent>
-        )}
-      </div>
-    </EmptyComponent>
+        </EmptyComponent>
+      )}
+    </div>
   );
 };

@@ -99,10 +99,10 @@ export const {
   use: useFormBrand,
 } = getFns<string | Nothing>("product-brand");
 export const {
-  get: getFormVarient,
-  set: setFormVarient,
-  use: useFormVarient,
-} = getFns<string | Nothing>("product-varient");
+  get: getFormMetadata,
+  set: setFormMetadata,
+  use: useFormMetadata,
+} = getFns<SnapBuy.MetadataField[]>("product-metadata");
 export const useFormProduct = () => {
   const photos = getFormPhotos();
   const clientPrice = getFormClientPrice();
@@ -116,17 +116,19 @@ export const useFormProduct = () => {
   const isAvailable = getFormAvailable();
   const type = getFormType();
   const brandId = getFormBrand();
-  const varient = getFormVarient();
+  const metadata = getFormMetadata();
   const product = useMemo(() => {
+    // Convert metadata array to object format
     const result: Partial<SnapBuy.Product> = {
       photos: photos || [],
       type: type || "single",
       name: name || "",
-      available: isAvailable || false,
+      available: isAvailable ?? true,
       keys: keys || [],
       quantity: quantity || 0,
       description: description || "",
       limited: limited || false,
+      metaData: metadata || [],
     };
     if (type === "multiple") {
       result.multiple = {
@@ -142,11 +144,8 @@ export const useFormProduct = () => {
       }
       result.single = options;
     }
-    if (brandId && brandId !== "no-varient") {
+    if (brandId && brandId !== "") {
       result.brandId = brandId;
-    }
-    if (varient && varient !== "no-varient") {
-      result.varientId = varient;
     }
     return result;
   }, [
@@ -161,23 +160,53 @@ export const useFormProduct = () => {
     isAvailable,
     type,
     brandId,
+    metadata,
   ]);
   return product;
 };
-
 export const setFormProduct = (value?: Partial<SnapBuy.Product>) => {
-  typeof value?.available !== "undefined" && setFormAvailable(value.available);
-  typeof value?.keys !== "undefined" && setFormKeys(value.keys);
-  typeof value?.quantity !== "undefined" && setFormQuantity(value.quantity);
-  typeof value?.description !== "undefined" &&
-    setFormDescription(value.description);
-  typeof value?.name !== "undefined" && setFormName(value.name);
-  typeof value?.photos !== "undefined" && setFormPhotos(value.photos);
-  typeof value?.single?.client !== "undefined" &&
-    setFormClientPrice(value.single.client);
-  typeof value?.single?.customer !== "undefined" &&
-    setFormCustomerPrice(value.single.customer);
-  typeof value?.limited !== "undefined" && setFormLimited(value.limited);
-  typeof value?.brandId !== "undefined" && setFormBrand(value.brandId);
-  typeof value?.varientId !== "undefined" && setFormVarient(value.varientId);
+  // Always set all form fields, using the provided value or appropriate defaults
+  setFormAvailable(value?.available ?? true);
+  setFormKeys(value?.keys ?? []);
+  setFormQuantity(value?.quantity ?? 0);
+  setFormDescription(value?.description ?? "");
+  setFormName(value?.name ?? "");
+  setFormPhotos(value?.photos ?? []);
+  setFormClientPrice(value?.single?.client ?? undefined);
+  setFormCustomerPrice(value?.single?.customer ?? undefined);
+  setFormLimited(value?.limited ?? false);
+  setFormBrand(value?.brandId ?? "");
+  setFormType(value?.type ?? "single");
+
+  // Handle multiple prices
+  if (value?.type === "multiple" && value?.multiple?.prices) {
+    setFormPrices(value.multiple.prices);
+  } else {
+    setFormPrices(undefined);
+  }
+
+  // Convert metaData object back to array format for form
+  if (value?.metaData) {
+    setFormMetadata(value?.metaData);
+  } else {
+    // Clear metadata if not provided
+    setFormMetadata([]);
+  }
+};
+
+// Function to clear all form data (useful for creating new products)
+export const clearFormProduct = () => {
+  setFormAvailable(true); // Default to available for new products
+  setFormKeys([]);
+  setFormQuantity(0);
+  setFormDescription("");
+  setFormName("");
+  setFormPhotos([]);
+  setFormClientPrice(undefined);
+  setFormCustomerPrice(undefined);
+  setFormLimited(false);
+  setFormBrand("");
+  setFormType("single");
+  setFormPrices(undefined);
+  setFormMetadata([]);
 };

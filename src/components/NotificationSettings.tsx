@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import {
   Button,
   Icon,
-  Line,
   Scroll,
   Translate,
   BooleanField,
   IconProps,
   EmptyComponent,
   Field,
+  Line,
 } from "@biqpod/app/ui/components";
 import {
   execAction,
@@ -27,6 +27,121 @@ import { useStoreId } from "../utils";
 import { notificationService } from "../utils/notifications";
 import { motion, AnimatePresence } from "framer-motion";
 import { tw } from "@biqpod/app/ui/utils";
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+const cardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+    },
+  },
+  hover: {
+    y: -2,
+    scale: 1.01,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
+const toggleVariants = {
+  hidden: {
+    opacity: 0,
+    x: -20,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.4,
+    },
+  },
+  hover: {
+    x: 4,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
+const iconVariants = {
+  hidden: { scale: 0 },
+  visible: {
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 200,
+      damping: 15,
+    },
+  },
+  hover: {
+    scale: 1.2,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
+const searchResultsVariants = {
+  hidden: {
+    opacity: 0,
+    height: 0,
+  },
+  visible: {
+    opacity: 1,
+    height: "auto",
+    transition: {
+      duration: 0.3,
+    },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: {
+      duration: 0.2,
+    },
+  },
+};
+const floatingButtonVariants = {
+  hidden: {
+    opacity: 0,
+    y: 50,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      damping: 25,
+      stiffness: 300,
+      duration: 0.4,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: 50,
+    scale: 0.95,
+    transition: {
+      duration: 0.3,
+    },
+  },
+};
 // Fuzzy search function
 function filterFuzzySearch<T>(
   list: T[],
@@ -103,10 +218,7 @@ const HighlightText: React.FC<{ text: string; searchQuery: string }> = ({
     }
     // Add highlighted match
     parts.push(
-      <span
-        key={i}
-        className="bg-[--biqpod-primary-opacity] px-1 rounded font-semibold text-[--biqpod-primary]"
-      >
+      <span key={i} className="font-bold text-[--biqpod-primary]">
         {text.slice(match.start, match.end)}
       </span>
     );
@@ -135,21 +247,52 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({
   searchQuery = "",
 }) => {
   return (
-    <div className="flex justify-between items-center p-3 border-[--biqpod-border] border-b">
+    <motion.div
+      className="flex justify-between items-center px-4 py-3 border-[--biqpod-border] border-b"
+      variants={toggleVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+      layout
+    >
       <div className="flex items-center gap-3">
-        <div className="flex justify-center items-center bg-[--biqpod-primary-opacity] rounded-full w-8 h-8">
+        <motion.div
+          className="flex justify-center items-center bg-[--biqpod-primary-opacity] rounded-full w-8 h-8"
+          variants={iconVariants}
+          initial="hidden"
+          animate="visible"
+          whileHover="hover"
+        >
           <Icon icon={icon} />
-        </div>
-        <div>
-          <h4 className="font-medium text-[--biqpod-text] capitalize">
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <motion.h4
+            className="font-medium text-[--biqpod-text] capitalize"
+            whileHover={{ x: 2 }}
+            transition={{ duration: 0.2 }}
+          >
             <HighlightText text={title} searchQuery={searchQuery} />
-          </h4>
-          <p className="text-[--biqpod-text-secondary] text-sm">
+          </motion.h4>
+          <motion.p
+            className="w-3/4 text-[--biqpod-text-secondary] text-sm"
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <HighlightText text={description} searchQuery={searchQuery} />
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
       </div>
-      <label className="inline-flex relative items-center cursor-pointer">
+      <motion.label
+        className="inline-flex relative items-center cursor-pointer"
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        transition={{ duration: 0.1 }}
+      >
         <BooleanField
           state={{
             get: enabled,
@@ -161,8 +304,8 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({
           }}
           id={`notification-toggle-${title}`}
         />
-      </label>
-    </div>
+      </motion.label>
+    </motion.div>
   );
 };
 export const NotificationSettings: React.FC = () => {
@@ -455,22 +598,70 @@ export const NotificationSettings: React.FC = () => {
   return (
     <EmptyComponent>
       {!store ? (
-        <div className="p-6 text-center">
-          <div className="mx-auto mb-4 border-[--biqpod-primary] border-2 border-t-transparent rounded-full w-8 h-8 animate-spin" />
-          <p className="text-[--biqpod-text-secondary]">
+        <motion.div
+          className="p-6 text-center"
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div
+            className="mx-auto mb-4 border-[--biqpod-primary] border-2 border-t-transparent rounded-full w-8 h-8"
+            animate={{
+              scale: [1, 1.1, 1],
+            }}
+            transition={{
+              duration: 1.5,
+              repeat: Infinity,
+            }}
+          />
+          <motion.p
+            className="text-[--biqpod-text-secondary]"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
             <Translate content="Loading store settings..." />
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
       ) : (
-        <div className="relative flex flex-col h-full overflow-hidden">
-          <div className="p-4">
-            <div className="bg-[--biqpod-gray-opacity] p-4 rounded-lg">
-              <div className="flex justify-between items-center">
-                <div>
-                  <h3 className="mb-1 font-medium text-[--biqpod-text]">
+        <div className="relative flex flex-col w-full h-full overflow-hidden">
+          <motion.div
+            initial={{ y: -20, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ delay: 0.1, duration: 0.5 }}
+            className="px-5 py-2"
+          >
+            <motion.div
+              className="bg-[--biqpod-gray-opacity] px-4 py-1 rounded-xl"
+              variants={cardVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.div
+                className="flex justify-between items-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+              >
+                <motion.div
+                  initial={{ x: -20, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                  className="p-2"
+                >
+                  <motion.h3
+                    className="mb-1 font-medium text-[--biqpod-text]"
+                    whileHover={{ x: 2 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <Translate content="Browser Notifications" />
-                  </h3>
-                  <p className="text-[--biqpod-text-secondary] text-sm">
+                  </motion.h3>
+                  <motion.p
+                    className="text-[--biqpod-text-secondary] text-sm"
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                  >
                     {permissionStatus === "granted" && (
                       <EmptyComponent>
                         ✅ <Translate content="Notifications are enabled" />
@@ -486,127 +677,207 @@ export const NotificationSettings: React.FC = () => {
                         ⏳ <Translate content="Notifications not configured" />
                       </EmptyComponent>
                     )}
-                  </p>
-                </div>
-                {permissionStatus !== "granted" && (
-                  <Button
-                    className="px-2 py-1 w-fit"
-                    icon={allIcons.solid.faBell}
-                    onClick={requestPermission}
-                  >
-                    <Translate content="Enable" />
-                  </Button>
-                )}
-                {permissionStatus === "granted" && (
-                  <Button
-                    onClick={testNotification}
-                    className="px-2 py-1 w-fit"
-                    icon={allIcons.solid.faPlay}
-                  >
-                    <Translate content="Test" />
-                  </Button>
-                )}
-              </div>
-            </div>
-          </div>
+                  </motion.p>
+                </motion.div>
+                <motion.div
+                  initial={{ x: 20, opacity: 0, scale: 0.8 }}
+                  animate={{ x: 0, opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  {permissionStatus !== "granted" && (
+                    <Button
+                      className="px-2 py-1 w-fit"
+                      icon={allIcons.solid.faBell}
+                      onClick={requestPermission}
+                    >
+                      <Translate content="Enable" />
+                    </Button>
+                  )}
+                  {permissionStatus === "granted" && (
+                    <Button
+                      onClick={testNotification}
+                      className="px-2 py-1 w-fit"
+                      icon={allIcons.solid.faPlay}
+                    >
+                      <Translate content="Test" />
+                    </Button>
+                  )}
+                </motion.div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
           {/* Search Input */}
-          <div className="p-4 pb-2">
-            <div className="relative">
+          <Line />
+          <motion.div
+            initial={{ y: -10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            className="px-2 py-1"
+            transition={{ delay: 0.7, duration: 0.4 }}
+          >
+            <motion.div className="relative">
               <Field
                 inputName="notification-search"
                 placeholder="Search notification settings..."
                 className="rounded-2xl"
               />
-              <div className="top-1/2 right-3 absolute flex justify-center items-center w-5 h-5 -translate-y-1/2 pointer-events-none">
+              <motion.div
+                className="top-1/2 right-3 absolute flex justify-center items-center -translate-y-1/2 pointer-events-none transform"
+                transition={{ delay: 0.9, duration: 0.3 }}
+              >
                 <Icon
                   icon={allIcons.solid.faSearch}
                   iconClassName="text-[--biqpod-text-secondary] text-sm opacity-60"
                 />
-              </div>
-            </div>
-          </div>
+              </motion.div>
+            </motion.div>
+          </motion.div>
           <Line />
           {/* Search Results Info */}
-          {searchFieldValue?.get && (
-            <div className="bg-[--biqpod-gray-opacity] px-4 py-2">
-              <p className="text-[--biqpod-text-secondary] text-sm">
-                {filteredNotificationSettings.length > 0 ? (
-                  <Translate
-                    content={`Showing ${filteredNotificationSettings.length} of ${notificationSettingsData.length} notification settings`}
-                  />
-                ) : (
-                  <Translate content="No matching notification settings found" />
-                )}
-              </p>
-            </div>
-          )}
+          <AnimatePresence>
+            {searchFieldValue?.get && (
+              <EmptyComponent>
+                <motion.div
+                  className="bg-[--biqpod-gray-opacity] m-2 px-4 py-2 rounded-2xl"
+                  variants={searchResultsVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                >
+                  <motion.p
+                    className="text-[--biqpod-text-secondary] text-sm"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    {filteredNotificationSettings.length > 0 ? (
+                      <Translate
+                        content={`Showing ${filteredNotificationSettings.length} of ${notificationSettingsData.length} notification settings`}
+                      />
+                    ) : (
+                      <Translate content="No matching notification settings found" />
+                    )}
+                  </motion.p>
+                </motion.div>
+                <Line />
+              </EmptyComponent>
+            )}
+          </AnimatePresence>
           {/* Permission Status */}
           {/* Notification Settings */}
           <Scroll className="h-full">
-            <div className="space-y-0">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+            >
               {filteredNotificationSettings.length > 0 ? (
-                filteredNotificationSettings.map((setting) => (
-                  <NotificationToggle
-                    key={setting.key}
-                    icon={setting.icon}
-                    title={setting.title}
-                    description={setting.description}
-                    enabled={notifications[setting.key] || false}
-                    onChange={(enabled) =>
-                      updateNotificationSetting(setting.key, enabled)
-                    }
-                    searchQuery={searchFieldValue?.get || ""}
-                  />
-                ))
+                <AnimatePresence mode="wait">
+                  {filteredNotificationSettings.map((setting, index) => (
+                    <motion.div
+                      key={setting.key}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      transition={{
+                        delay: index * 0.05,
+                        duration: 0.3,
+                      }}
+                      layout
+                    >
+                      <NotificationToggle
+                        icon={setting.icon}
+                        title={setting.title}
+                        description={setting.description}
+                        enabled={notifications[setting.key] || false}
+                        onChange={(enabled) =>
+                          updateNotificationSetting(setting.key, enabled)
+                        }
+                        searchQuery={searchFieldValue?.get || ""}
+                      />
+                    </motion.div>
+                  ))}
+                </AnimatePresence>
               ) : (
-                <div className="flex flex-col justify-center items-center gap-3 p-8 text-center">
-                  <Icon
-                    icon={allIcons.solid.faSearch}
-                    iconClassName="text-4xl text-[--biqpod-text-secondary]"
-                  />
-                  <div>
-                    <h3 className="mb-1 font-medium text-[--biqpod-text]">
-                      <Translate content="No results found" />
-                    </h3>
-                    <p className="text-[--biqpod-text-secondary] text-sm">
-                      <Translate content="Try adjusting your search terms" />
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => setFieldValue("notification-search", "")}
-                    className="px-3 py-1 text-sm"
-                    icon={allIcons.solid.faTimes}
+                <motion.div
+                  className="flex flex-col justify-center items-center gap-3 p-8 text-center"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 200,
+                      delay: 0.2,
+                    }}
                   >
-                    <Translate content="Clear search" />
-                  </Button>
-                </div>
+                    <Icon
+                      icon={allIcons.solid.faSearch}
+                      iconClassName="text-4xl text-[--biqpod-text-secondary]"
+                    />
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                  >
+                    <motion.h3
+                      className="mb-1 font-medium text-[--biqpod-text]"
+                      initial={{ scale: 0.9 }}
+                      animate={{ scale: 1 }}
+                      transition={{ delay: 0.4 }}
+                    >
+                      <Translate content="No results found" />
+                    </motion.h3>
+                    <motion.p
+                      className="text-[--biqpod-text-secondary] text-sm"
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.5 }}
+                    >
+                      <Translate content="Try adjusting your search terms" />
+                    </motion.p>
+                  </motion.div>
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.6 }}
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <Button
+                      onClick={() => setFieldValue("notification-search", "")}
+                      className="px-3 py-1 text-sm"
+                      icon={allIcons.solid.faTimes}
+                    >
+                      <Translate content="Clear search" />
+                    </Button>
+                  </motion.div>
+                </motion.div>
               )}
-            </div>
+            </motion.div>
           </Scroll>
-          <Line />
           {/* Save/Cancel Buttons */}
           <AnimatePresence>
             {hasUnsavedChanges && (
               <motion.div
-                initial={{ opacity: 0, y: 50, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 50, scale: 0.95 }}
-                transition={{
-                  type: "spring",
-                  damping: 25,
-                  stiffness: 300,
-                  duration: 0.4,
-                }}
+                variants={floatingButtonVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
                 className={tw(
-                  "flex flex-col p-4",
+                  "flex flex-col",
                   !hasUnsavedChanges && "overflow-hidden"
                 )}
               >
+                <Line />
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1, duration: 0.3 }}
-                  className="bg-[--biqpod-warning-opacity] mb-3 p-3 border-[--biqpod-warning] border-l-4 rounded-lg"
+                  className="bg-[--biqpod-warning-opacity] p-3 border-[--biqpod-warning] border-l-4"
                 >
                   <motion.p
                     initial={{ opacity: 0 }}
@@ -616,7 +887,6 @@ export const NotificationSettings: React.FC = () => {
                   >
                     <motion.div
                       animate={{
-                        rotate: [0, -10, 10, -10, 0],
                         scale: [1, 1.1, 1, 1.1, 1],
                       }}
                       transition={{
@@ -631,123 +901,115 @@ export const NotificationSettings: React.FC = () => {
                     <Translate content="You have unsaved changes" />
                   </motion.p>
                 </motion.div>
+                <Line />
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2, duration: 0.3 }}
-                  className="flex gap-3"
+                  className="flex gap-3 p-2"
                 >
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="flex-1"
+                  <Button
+                    onClick={resetNotificationSettings}
+                    disabled={isLoading}
+                    className="bg-[--biqpod-gray-opacity] disabled:opacity-50 hover:shadow-lg w-full text-[--biqpod-text] transition-all duration-200"
+                    icon={allIcons.solid.faUndo}
                   >
-                    <Button
-                      onClick={resetNotificationSettings}
-                      disabled={isLoading}
-                      className="bg-[--biqpod-gray] disabled:opacity-50 hover:shadow-lg w-full text-[--biqpod-text] transition-all duration-200"
-                      icon={allIcons.solid.faUndo}
-                    >
-                      <Translate content="Cancel" />
-                    </Button>
-                  </motion.div>
-                  <motion.div
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    className="relative flex-1"
+                    <Translate content="Cancel" />
+                  </Button>
+                  <Button
+                    onClick={() => execAction("save-notification-settings")}
+                    disabled={isLoading}
+                    className="relative disabled:opacity-50 hover:shadow-lg w-full overflow-hidden transition-all duration-200"
+                    icon={
+                      isLoading
+                        ? allIcons.solid.faSpinner
+                        : allIcons.solid.faSave
+                    }
                   >
-                    <Button
-                      onClick={() => execAction("save-notification-settings")}
-                      disabled={isLoading}
-                      className="relative disabled:opacity-50 hover:shadow-lg w-full overflow-hidden transition-all duration-200"
-                      icon={
-                        isLoading
-                          ? allIcons.solid.faSpinner
-                          : allIcons.solid.faSave
-                      }
+                    <motion.span
+                      animate={{ opacity: isLoading ? 0.7 : 1 }}
+                      transition={{ duration: 0.2 }}
                     >
-                      <motion.span
-                        animate={{ opacity: isLoading ? 0.7 : 1 }}
-                        transition={{ duration: 0.2 }}
-                      >
-                        <Translate content="Save Changes" />
-                      </motion.span>
-                      <AnimatePresence>
-                        {isLoading && (
+                      <Translate content="Save Changes" />
+                    </motion.span>
+                    <AnimatePresence>
+                      {isLoading && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0, scale: 0.8 }}
+                          transition={{ duration: 0.2 }}
+                          className="absolute inset-0 flex justify-center items-center bg-[--biqpod-primary]"
+                        >
                           <motion.div
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ duration: 0.2 }}
-                            className="absolute inset-0 flex justify-center items-center bg-[--biqpod-primary]"
+                            animate={{
+                              scale: [1, 1.2, 1],
+                            }}
+                            transition={{
+                              duration: 1,
+                              repeat: Infinity,
+                            }}
                           >
-                            <motion.div
-                              animate={{ rotate: 360 }}
-                              transition={{
-                                duration: 1,
-                                repeat: Infinity,
-                                ease: "linear",
-                              }}
-                            >
-                              <Icon
-                                icon={allIcons.solid.faSpinner}
-                                iconClassName="text-white"
-                              />
-                            </motion.div>
+                            <Icon
+                              icon={allIcons.solid.faSpinner}
+                              iconClassName="text-white"
+                            />
                           </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </Button>
-                  </motion.div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </Button>
                 </motion.div>
               </motion.div>
             )}
-            <Line />
           </AnimatePresence>
           {/* Info Section */}
-          <div className="p-4">
-            <div className="bg-[--biqpod-gray-opacity] p-4 rounded-lg">
-              <div className="flex items-start gap-3">
-                <Icon icon={allIcons.solid.faInfoCircle} />
-                <div className="text-sm">
-                  <p className="mb-1 font-medium">
-                    <Translate content="How notifications work:" />
-                  </p>
-                  <ul className="space-y-1">
-                    <li>
-                      •{" "}
-                      <Translate content="Notifications work even when SnapBuy is closed" />
-                    </li>
-                    <li>
-                      •{" "}
-                      <Translate content="You'll receive alerts on your computer desktop" />
-                    </li>
-                    <li>
-                      •{" "}
-                      <Translate content="Click notifications to quickly navigate to relevant pages" />
-                    </li>
-                    <li>
-                      •{" "}
-                      <Translate content="You can change these settings anytime" />
-                    </li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-          </div>
-          {isLoading && (
-            <div className="absolute inset-0 flex justify-center items-center bg-black/10 rounded-lg">
-              <div className="flex items-center gap-3 bg-[--biqpod-primary-background] shadow-lg p-4 border border-[--biqpod-borders] border-solid rounded-lg">
-                <Icon
-                  icon={allIcons.solid.faSpinner}
-                  iconClassName="animate-spin text-[--biqpod-primary]"
-                />
-                <span className="text-[--biqpod-text]">
-                  <Translate content="updating settings..." />
-                </span>
-              </div>
-            </div>
-          )}
+          <AnimatePresence>
+            {isLoading && (
+              <motion.div
+                className="absolute inset-0 flex justify-center items-center bg-black/10 rounded-lg"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <motion.div
+                  className="flex items-center gap-3 bg-[--biqpod-primary-background] shadow-lg p-4 border border-[--biqpod-borders] border-solid rounded-lg"
+                  initial={{ scale: 0.8, y: 20 }}
+                  animate={{ scale: 1, y: 0 }}
+                  exit={{ scale: 0.8, y: 20 }}
+                  transition={{
+                    type: "spring",
+                    stiffness: 200,
+                    damping: 20,
+                  }}
+                >
+                  <motion.div
+                    animate={{
+                      scale: [1, 1.2, 1],
+                    }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                    }}
+                  >
+                    <Icon
+                      icon={allIcons.solid.faSpinner}
+                      iconClassName="text-[--biqpod-primary]"
+                    />
+                  </motion.div>
+                  <motion.span
+                    className="text-[--biqpod-text]"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.2 }}
+                  >
+                    <Translate content="updating settings..." />
+                  </motion.span>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
     </EmptyComponent>

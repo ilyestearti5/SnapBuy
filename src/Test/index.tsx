@@ -1679,23 +1679,6 @@ export const Test = () => {
         }
       });
     }
-    // Add product categories based on actual products
-    if (products && products.length > 0) {
-      const categories = new Set<string>();
-      products.forEach((product) => {
-        if (
-          product.metaData?.category &&
-          typeof product.metaData.category === "string"
-        ) {
-          categories.add(product.metaData.category);
-        }
-      });
-      Array.from(categories)
-        .slice(0, 3)
-        .forEach((category) => {
-          placeholders.push(category);
-        });
-    }
     // Add some popular product names
     if (products && products.length > 0) {
       products.slice(0, 3).forEach((product) => {
@@ -1746,32 +1729,30 @@ export const Test = () => {
         appliedBrands.includes(product.brandId || "")
       );
     }
-    // Filter by size (from product.metaData.sizes)
+    // Filter by size (from product.metaData array)
     if (appliedSizes.length > 0) {
       filtered = filtered.filter((product) => {
-        const productSizes = product.metaData?.sizes;
-        if (!productSizes || typeof productSizes !== "object") return false;
-        if (Array.isArray(productSizes)) {
-          return appliedSizes.some((size) =>
-            (productSizes as string[]).includes(size)
-          );
-        }
-        return false;
+        const sizesField = product.metaData?.find(
+          (field) => field.key === "sizes"
+        );
+        if (!sizesField || !Array.isArray(sizesField.value)) return false;
+        const productSizes = sizesField.value as string[];
+        return appliedSizes.some((size) => productSizes.includes(size));
       });
     }
-    // Filter by color (from product.metaData.colors)
+    // Filter by color (from product.metaData array)
     if (appliedColors.length > 0) {
       filtered = filtered.filter((product) => {
-        const productColors = product.metaData?.colors;
-        if (!productColors || typeof productColors !== "object") return false;
-        if (Array.isArray(productColors)) {
-          return appliedColors.some((color) =>
-            (productColors as string[]).some((productColor: string) =>
-              productColor.toLowerCase().includes(color.toLowerCase())
-            )
-          );
-        }
-        return false;
+        const colorsField = product.metaData?.find(
+          (field) => field.key === "colors"
+        );
+        if (!colorsField || !Array.isArray(colorsField.value)) return false;
+        const productColors = colorsField.value as string[];
+        return appliedColors.some((color) =>
+          productColors.some((productColor: string) =>
+            productColor.toLowerCase().includes(color.toLowerCase())
+          )
+        );
       });
     }
     // Filter by price range (min/max)
@@ -1864,9 +1845,13 @@ export const Test = () => {
     if (!products) return [];
     const sizes = new Set<string>();
     products.forEach((product) => {
-      const productSizes = product.metaData?.sizes;
-      if (productSizes && Array.isArray(productSizes)) {
-        (productSizes as string[]).forEach((size: string) => sizes.add(size));
+      const sizesField = product.metaData?.find(
+        (field) => field.key === "sizes"
+      );
+      if (sizesField && Array.isArray(sizesField.value)) {
+        (sizesField.value as string[]).forEach((size: string) =>
+          sizes.add(size)
+        );
       }
     });
     return Array.from(sizes).sort();
@@ -1875,9 +1860,11 @@ export const Test = () => {
     if (!products) return [];
     const colors = new Set<string>();
     products.forEach((product) => {
-      const productColors = product.metaData?.colors;
-      if (productColors && Array.isArray(productColors)) {
-        (productColors as string[]).forEach((color: string) =>
+      const colorsField = product.metaData?.find(
+        (field) => field.key === "colors"
+      );
+      if (colorsField && Array.isArray(colorsField.value)) {
+        (colorsField.value as string[]).forEach((color: string) =>
           colors.add(color)
         );
       }

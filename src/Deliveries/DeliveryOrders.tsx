@@ -194,10 +194,11 @@ export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
                           <OrderClientWilaya order={order} />
                           <p>
                             <strong>
-                              <Translate content="products" />:
+                              <Translate content="items" />:
                             </strong>{" "}
                             <span className="bg-[--biqpod-primary-background] px-1 border border-[--biqpod-borders] border-solid rounded-xl font-semibold">
-                              {Object.values(order.products || {}).length}
+                              {Object.values(order.products || {}).length +
+                                Object.values(order.packs || {}).length}
                             </span>
                           </p>
                           {order.createdAt && (

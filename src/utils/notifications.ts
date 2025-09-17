@@ -247,6 +247,26 @@ export class StoreNotificationHandler {
     });
   }
 
+  // Order deleted notification
+  public async notifyOrderDeleted(order: SnapBuy.Order): Promise<void> {
+    if (!this.storeNotifySettings?.orderCancelled) return; // Use same setting as cancelled
+
+    const clientInfo = await getOrderClientInfo(order);
+    const clientName = getOrderClientDisplayName(clientInfo);
+
+    await this.notificationService.sendNotification({
+      title: "🗑️ Order Deleted",
+      body: `Order from ${clientName} has been deleted`,
+      icon: "/assets/snapbuy.png",
+      tag: `deleted-${order.id}`,
+      data: {
+        type: "order-deleted",
+        orderId: order.id,
+        storeId: this.storeId,
+      },
+    });
+  }
+
   // Order processing notification
   public async notifyOrderProcessing(order: SnapBuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderProcessing) return;

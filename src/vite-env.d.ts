@@ -23,6 +23,31 @@ declare namespace SnapBuy {
     | "processing"
     | "delivery";
   type PixelId = "facebook" | "instagram" | "tiktok" | "snapchat";
+  interface DeliveryPricing {
+    id?: string;
+    description: string;
+    price: number;
+    name: string;
+    createdAt: number;
+  }
+  interface DeliveryOptions {
+    id?: string;
+    storeId: string;
+    description: string;
+    name: string;
+    type: "store" | "domicile" | "office";
+    createdAt: number;
+    uid?: string;
+  }
+  interface DeliveryPrice {
+    id?: string;
+    name: string;
+    price: number;
+    deliveryOptionId: string;
+    storeId: string;
+    uid?: string;
+    createdAt: number;
+  }
   interface Store {
     id: string;
     name: string;
@@ -56,6 +81,7 @@ declare namespace SnapBuy {
       chrome?: string;
       edge?: string;
       safari?: string;
+      mail?: string;
     };
     template?: string | null;
     notify?: {
@@ -70,7 +96,6 @@ declare namespace SnapBuy {
       newClient?: boolean;
       accountAutoAccept?: boolean;
     };
-    orderVarientId?: string | null;
   }
   type Platform =
     | "facebook"
@@ -91,7 +116,8 @@ declare namespace SnapBuy {
     | "chrome"
     | "safari"
     | "firefox"
-    | "unknown";
+    | "unknown"
+    | "agent";
   interface Order {
     status: OrderStatus;
     id: string;
@@ -106,7 +132,7 @@ declare namespace SnapBuy {
     uid?: string;
     platform?: Platform;
     totalPrice?: number;
-    isDelivery?: boolean;
+    deliveryPrice?: number;
     delivery?: {
       uid: string;
       assignedAt: number;
@@ -119,6 +145,8 @@ declare namespace SnapBuy {
       latitude?: number;
       longitude?: number;
     };
+    couponId?: string;
+    discountAmount?: number;
   }
   export type Zone = Partial<{
     id: string;
@@ -212,15 +240,10 @@ declare namespace SnapBuy {
     createdAt?: number;
     updatedAt?: number;
   }
-  interface Varient {
-    id?: string;
-    name?: string;
-    description?: string;
-    uid?: string;
-    storeId?: string;
-    createdAt?: number;
-    status: "public" | "private";
-    expression?: string;
+  interface MetadataField {
+    key: string;
+    type: "number" | "string" | "boolean" | "array" | "colors";
+    value: number | string | boolean | string[];
   }
   interface Product {
     storeId?: string;
@@ -239,7 +262,7 @@ declare namespace SnapBuy {
       client?: number;
       customer?: number;
     };
-    metaData?: Partial<Record<string, SettingType[keyof SettingType]>>;
+    metaData?: MetadataField[];
     multiple?: {
       prices?: {
         quantity: number;
@@ -247,7 +270,50 @@ declare namespace SnapBuy {
       }[];
     };
     brandId?: string;
-    varientId?: string;
+  }
+  interface Coupon {
+    id?: string;
+    code: string;
+    name: string;
+    description?: string;
+    type: "percentage" | "fixed" | "freeShipping";
+    value: number;
+    minOrderAmount?: number;
+    maxDiscountAmount?: number;
+    usageLimit?: number;
+    usedCount: number;
+    userUsageLimit?: number;
+    startDate: string;
+    endDate: string;
+    isActive: boolean;
+    storeId?: string;
+    applicableProducts?: string[] | null;
+    applicableCategories?: string[];
+    createdAt?: number;
+    updatedAt?: number;
+    createdBy?: string;
+    uid?: string;
+  }
+  interface Var {
+    id: string;
+    name: string;
+    value: string;
+    createdAt: number;
+    storeId?: string;
+    uid?: string;
+  }
+
+  interface StoreUserAccess {
+    id: string;
+    storeId: string;
+    ownerUserId: string;
+    userEmail?: string;
+    username?: string;
+    userId?: string | null;
+    permissions: "read" | "edit";
+    status: "pending" | "accepted" | "rejected";
+    createdAt: number;
+    updatedAt: number;
   }
 }
 declare interface SnapBuyApi {
@@ -274,6 +340,11 @@ declare type keys =
   | "multiple.counts";
 
 declare interface ProductsResult extends SnapBuy.Product {
+  price: number;
+  count: number;
+}
+
+declare interface PackResult extends SnapBuy.Pack {
   price: number;
   count: number;
 }

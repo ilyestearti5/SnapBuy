@@ -15,7 +15,6 @@ import {
   setDoc,
   ClientCloud,
   updateDoc,
-  toPath,
 } from "@biqpod/app/ui/apis";
 import {
   delay,
@@ -362,96 +361,12 @@ export const createApi = (cloud: ClientCloud) => {
         uid,
       });
     },
-
     deleteStore: async (id: string) => {
       const fn = await getUserFunction("delete-store");
       await fn?.({
         id,
       });
     },
-    varient: {
-      async add(varient: SnapBuy.Varient) {
-        const auth = await getCurrentAuth();
-        if (!auth) {
-          throw "User not authenticated";
-        }
-        const id = crypto.randomUUID();
-        await setDoc(["projects", appProjectId, "varients", id], {
-          ...varient,
-          id,
-          uid: auth,
-        });
-      },
-      async update(varientId: string, varient: SnapBuy.Varient) {
-        const auth = await getCurrentAuth();
-        if (!auth) {
-          throw "User not authenticated";
-        }
-        await updateDoc(["projects", appProjectId, "varients", varientId], {
-          ...varient,
-          id: varientId,
-        });
-      },
-      async delete(id: string) {
-        const auth = await getCurrentAuth();
-        if (!auth) {
-          throw "User not authenticated";
-        }
-        await deleteDoc(["projects", appProjectId, "varients", id]);
-      },
-      async getList(startAt?: string, limit = 1000) {
-        var uid = await getCurrentAuth();
-        if (!uid) {
-          return [];
-        }
-        const varients = await getDocs<SnapBuy.Varient>(
-          ["projects", appProjectId, "varients"],
-          {
-            limit,
-            startAt: startAt ? [startAt] : undefined,
-            orders: [orderBy("id", "desc")],
-            where: and(where("uid", "==", uid)),
-          }
-        );
-        const list = varients?.map((varient) => ({
-          ...varient.data,
-          id: varient.id,
-        }));
-        list?.forEach((varient) => {
-          setTemp(toPath("varients", varient.id), varient);
-        });
-        return list || [];
-      },
-      async getOne(id: string) {
-        const varient = getTempFromStore<SnapBuy.Varient>(
-          toPath("varients", id)
-        );
-        if (varient) {
-          return varient;
-        }
-        const doc = await getDoc<SnapBuy.Varient>([
-          "projects",
-          appProjectId,
-          "varients",
-          id,
-        ]);
-        if (doc) {
-          setTemp(toPath("varients", id), doc);
-        }
-        return doc;
-      },
-      async getUsedByProducts(varientId: string) {
-        const products = await getDocs(["projects", appProjectId, "products"], {
-          limit: 10,
-          where: and(where("varientId", "==", varientId)),
-        });
-        return products?.map((product) => ({
-          ...product.data,
-          id: product.id,
-        }));
-      },
-    },
-
     async deleteAccount(accountId: string) {
       await deleteDoc(["projects", appProjectId, "accounts", accountId]);
     },
@@ -463,10 +378,12 @@ export const createApi = (cloud: ClientCloud) => {
           return ["stores", storeId];
         });
         store.photo = file;
+      } else {
       }
       await setDoc(["projects", appProjectId, "stores", storeId], {
         id: storeId,
         ...store,
+        photo: store.photo || null,
       });
     },
     async upsertAccount(account: SnapBuy.Account) {
@@ -843,6 +760,20 @@ export const createApi = (cloud: ClientCloud) => {
       setTemp("order-products." + orderId, products || []);
       return products;
     },
+    async getOrderPacks(orderId: string) {
+      const order = getTempFromStore<ProductsResult[]>(
+        "order-packs." + orderId
+      );
+      if (order) {
+        return order;
+      }
+      const fn = await getUserFunction<PackResult[]>("get-order-packs");
+      const packs = await fn?.({
+        orderId,
+      });
+      setTemp("order-packs." + orderId, packs || []);
+      return packs;
+    },
     async todayOrdersCount(storeId: string) {
       const fn = await getUserFunction<number>("get-today-orders-count");
       const result = await fn?.({
@@ -1094,25 +1025,206 @@ export const createApi = (cloud: ClientCloud) => {
       }>("get-delivery-stats");
       return await getDeliveryStats?.({ storeId });
     },
-    async updateDeliveryPrice(storeId: string, deliveryPrice: number) {
+    // Legacy delivery pricing functions (deprecated - use new delivery options/prices functions)
+    async addStoreDeliveryPrice(
+      storeId: string,
+      deliveryPrice: SnapBuy.DeliveryPrice
+    ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      // Get existing store data
-      const existingStore = await getDoc<SnapBuy.Store>([
+      const deliveryPriceData: SnapBuy.DeliveryPrice = {
+        ...deliveryPrice,
+        id: deliveryPrice.id || crypto.randomUUID(),
+        storeId,
+        uid,
+      };
+      await setDoc(
+        ["projects", appProjectId, "deliveryPrices", deliveryPriceData.id!],
+        deliveryPriceData
+      );
+    },
+    async updateStoreDeliveryPrice(
+      storeId: string,
+      deliveryPrice: SnapBuy.DeliveryPrice
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const deliveryPriceData: SnapBuy.DeliveryPrice = {
+        ...deliveryPrice,
+        storeId,
+        uid,
+      };
+      await setDoc(
+        ["projects", appProjectId, "deliveryPrices", deliveryPrice.id!],
+        deliveryPriceData
+      );
+    },
+    async deleteStoreDeliveryPrice(_storeId: string, deliveryPriceId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc([
         "projects",
         appProjectId,
-        "stores",
-        storeId,
+        "deliveryPrices",
+        deliveryPriceId,
       ]);
-      if (!existingStore) throw "Store not found";
-      await setDoc(["projects", appProjectId, "stores", storeId], {
-        ...existingStore,
-        deliveryPrice,
+    },
+    async getStoreDeliveryPrices(storeId: string) {
+      const deliveryPrices = await getDocs<SnapBuy.DeliveryOptions>(
+        ["projects", appProjectId, "deliveryPrices"],
+        {
+          where: and(where("storeId", "==", storeId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      return (
+        deliveryPrices?.map((price) => ({ ...price.data, id: price.id })) || []
+      );
+    },
+    // New API functions for delivery options (without price)
+    async addStoreDeliveryOption(
+      storeId: string,
+      deliveryOption: Omit<SnapBuy.DeliveryOptions, "id" | "uid" | "storeId">
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const id = crypto.randomUUID();
+      await setDoc(["projects", appProjectId, "deliveryOptions", id], {
+        ...deliveryOption,
+        id,
+        uid,
+        storeId,
       });
+      return id;
+    },
+    async updateStoreDeliveryOption(
+      deliveryOptionId: string,
+      deliveryOption: Partial<SnapBuy.DeliveryOptions>
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await setDoc(
+        ["projects", appProjectId, "deliveryOptions", deliveryOptionId],
+        {
+          ...deliveryOption,
+          uid,
+        }
+      );
+    },
+    async deleteStoreDeliveryOption(deliveryOptionId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      // Also delete all associated delivery prices
+      const prices = await this.getDeliveryPricesForOption(deliveryOptionId);
+      for (const price of prices) {
+        if (price.id) {
+          await deleteDoc([
+            "projects",
+            appProjectId,
+            "deliveryPrices",
+            price.id,
+          ]);
+        }
+      }
+      await deleteDoc([
+        "projects",
+        appProjectId,
+        "deliveryOptions",
+        deliveryOptionId,
+      ]);
+    },
+    async getStoreDeliveryOptions(storeId: string) {
+      const deliveryOptions = await getDocs<SnapBuy.DeliveryOptions>(
+        ["projects", appProjectId, "deliveryOptions"],
+        {
+          where: and(where("storeId", "==", storeId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      return (
+        deliveryOptions?.map((deliveryOption) => ({
+          ...deliveryOption.data,
+          id: deliveryOption.id,
+        })) || []
+      );
+    },
+    // New API functions for delivery prices
+    async addDeliveryPrice(
+      deliveryPrice: Omit<SnapBuy.DeliveryPrice, "id" | "uid">
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const id = crypto.randomUUID();
+      await setDoc(["projects", appProjectId, "deliveryPrices", id], {
+        ...deliveryPrice,
+        id,
+        uid,
+      });
+      return id;
+    },
+    async updateDeliveryPrice(
+      deliveryPriceId: string,
+      deliveryPrice: Partial<SnapBuy.DeliveryPrice>
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await setDoc(
+        ["projects", appProjectId, "deliveryPrices", deliveryPriceId],
+        {
+          ...deliveryPrice,
+          uid,
+        }
+      );
+    },
+    async deleteDeliveryPrice(deliveryPriceId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc([
+        "projects",
+        appProjectId,
+        "deliveryPrices",
+        deliveryPriceId,
+      ]);
+    },
+    async getDeliveryPricesForOption(deliveryOptionId: string) {
+      const deliveryPrices = await getDocs<SnapBuy.DeliveryPrice>(
+        ["projects", appProjectId, "deliveryPrices"],
+        {
+          where: and(where("deliveryOptionId", "==", deliveryOptionId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      return (
+        deliveryPrices?.map((deliveryPrice) => ({
+          ...deliveryPrice.data,
+          id: deliveryPrice.id,
+        })) || []
+      );
+    },
+    async getAllDeliveryPricesForStore(storeId: string) {
+      const deliveryPrices = await getDocs<SnapBuy.DeliveryPrice>(
+        ["projects", appProjectId, "deliveryPrices"],
+        {
+          where: and(where("storeId", "==", storeId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      return (
+        deliveryPrices?.map((deliveryPrice) => ({
+          ...deliveryPrice.data,
+          id: deliveryPrice.id,
+        })) || []
+      );
     },
     async deletePack(packId: string) {
       const deletePack = await getUserFunction("delete-pack");
       await deletePack?.({ packId });
+    },
+    async deleteOrder(orderId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc(["projects", appProjectId, "orders", orderId]);
+      setTemp("order-products." + orderId, null);
     },
     async getNotificationSettings(storeId: string) {
       const store = await getDoc<Required<SnapBuy.Store>>([
@@ -1178,8 +1290,244 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       await deleteDoc(["projects", appProjectId, "customers", customerId]);
     },
+    // Coupon Management Functions
+    async upsertCoupon(coupon: SnapBuy.Coupon) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const { id = crypto.randomUUID(), ...rest } = coupon;
+      const now = Date.now();
+      await setDoc(["projects", appProjectId, "coupons", id], {
+        ...rest,
+        id,
+        uid,
+        createdAt: coupon.createdAt || now,
+        updatedAt: now,
+        createdBy: uid,
+      });
+      return id;
+    },
+    async getCoupons(storeId: string) {
+      const coupons = await getDocs<SnapBuy.Coupon>(
+        ["projects", appProjectId, "coupons"],
+        {
+          where: and(where("storeId", "==", storeId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      return (
+        coupons?.map((coupon) => ({ ...coupon.data, id: coupon.id })) || []
+      );
+    },
+    async getCoupon(couponId: string) {
+      const coupon = getTempFromStore<SnapBuy.Coupon>("coupons." + couponId);
+      if (coupon) {
+        return coupon;
+      }
+      const doc = await getDoc<SnapBuy.Coupon>([
+        "projects",
+        appProjectId,
+        "coupons",
+        couponId,
+      ]);
+      if (doc) {
+        setTemp("coupons." + couponId, doc);
+      }
+      return doc;
+    },
+    async deleteCoupon(couponId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc(["projects", appProjectId, "coupons", couponId]);
+      setTemp("coupons." + couponId, null);
+    },
+    async validateCoupon(code: string, storeId: string, orderAmount: number) {
+      const coupons = await getDocs<SnapBuy.Coupon>(
+        ["projects", appProjectId, "coupons"],
+        {
+          where: and(
+            where("code", "==", code),
+            where("storeId", "==", storeId),
+            where("isActive", "==", true)
+          ),
+        }
+      );
+      const coupon = coupons?.at(0)?.data;
+      if (!coupon) return { valid: false, error: "Coupon not found" };
+      const now = new Date();
+      const startDate = new Date(coupon.startDate);
+      const endDate = new Date(coupon.endDate);
+      if (now < startDate)
+        return { valid: false, error: "Coupon not yet active" };
+      if (now > endDate) return { valid: false, error: "Coupon expired" };
+      if (coupon.minOrderAmount && orderAmount < coupon.minOrderAmount) {
+        return {
+          valid: false,
+          error: `Minimum order amount is $${coupon.minOrderAmount}`,
+        };
+      }
+      if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) {
+        return { valid: false, error: "Coupon usage limit reached" };
+      }
+      return { valid: true, coupon };
+    },
+    // Vars Management Functions
+    async upsertVar(variable: SnapBuy.Var) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const { id = crypto.randomUUID(), ...rest } = variable;
+      const now = Date.now();
+      await setDoc(["projects", appProjectId, "vars", id], {
+        ...rest,
+        id,
+        uid,
+        createdAt: variable.createdAt || now,
+      });
+      return id;
+    },
+    async getVars(storeId: string) {
+      const vars = await getDocs<SnapBuy.Var>(
+        ["projects", appProjectId, "vars"],
+        {
+          where: and(where("storeId", "==", storeId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      return (
+        vars?.map((variable) => ({ ...variable.data, id: variable.id })) || []
+      );
+    },
+    async getVar(varId: string) {
+      const variable = getTempFromStore<SnapBuy.Var>("vars." + varId);
+      if (variable) {
+        return variable;
+      }
+      const doc = await getDoc<SnapBuy.Var>([
+        "projects",
+        appProjectId,
+        "vars",
+        varId,
+      ]);
+      if (doc) {
+        setTemp("vars." + varId, doc);
+      }
+      return doc;
+    },
+    async deleteVar(varId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc(["projects", appProjectId, "vars", varId]);
+      setTemp("vars." + varId, null);
+    },
+    // Store User Access Management Functions
+    async addUserAccessToStore(
+      storeId: string,
+      userAccess: {
+        email?: string;
+        username?: string;
+        permissions: "read" | "edit";
+        userId?: string;
+      }
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const accessId = crypto.randomUUID();
+      const now = Date.now();
+      const accessData: SnapBuy.StoreUserAccess = {
+        id: accessId,
+        storeId,
+        ownerUserId: uid,
+        userEmail: userAccess.email,
+        username: userAccess.username,
+        userId: userAccess.userId || null,
+        permissions: userAccess.permissions,
+        status: "pending",
+        createdAt: now,
+        updatedAt: now,
+      };
+      await setDoc(
+        ["projects", appProjectId, "store-access", accessId],
+        accessData
+      );
+      setTemp("store-access." + accessId, accessData);
+      return accessData;
+    },
+    async updateUserAccessToStore(
+      accessId: string,
+      updates: {
+        permissions?: "read" | "edit";
+        status?: "pending" | "accepted" | "rejected";
+      }
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const existingAccess = await getDoc<SnapBuy.StoreUserAccess>([
+        "projects",
+        appProjectId,
+        "store-access",
+        accessId,
+      ]);
+      if (!existingAccess) throw "Access record not found";
+      const updatedAccess: SnapBuy.StoreUserAccess = {
+        ...existingAccess,
+        ...updates,
+        updatedAt: Date.now(),
+      };
+      await setDoc(
+        ["projects", appProjectId, "store-access", accessId],
+        updatedAccess
+      );
+      setTemp("store-access." + accessId, updatedAccess);
+      return updatedAccess;
+    },
+    async getUsersAccessForStore(storeId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const accessRecords = await getDocs<SnapBuy.StoreUserAccess>(
+        ["projects", appProjectId, "store-access"],
+        {
+          where: and(
+            where("storeId", "==", storeId),
+            where("ownerUserId", "==", uid)
+          ),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      const result =
+        accessRecords?.map((record) => ({
+          ...record.data,
+          id: record.id,
+        })) || [];
+      result.forEach((access) => {
+        setTemp("store-access." + access.id, access);
+      });
+      return result;
+    },
+    async removeUserAccessFromStore(accessId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc(["projects", appProjectId, "store-access", accessId]);
+      setTemp("store-access." + accessId, null);
+    },
+    async getUserAccessToStore(
+      storeId: string,
+      identifier: string,
+      type: "email" | "username" = "email"
+    ) {
+      const field = type === "email" ? "userEmail" : "username";
+      const accessRecords = await getDocs<SnapBuy.StoreUserAccess>(
+        ["projects", appProjectId, "store-access"],
+        {
+          where: and(
+            where("storeId", "==", storeId),
+            where(field, "==", identifier),
+            where("status", "==", "accepted")
+          ),
+          limit: 1,
+        }
+      );
+      return accessRecords?.[0]?.data || null;
+    },
   };
   return snapbuyApi;
 };
-
 export const snapbuyApi = createApi(cloud);

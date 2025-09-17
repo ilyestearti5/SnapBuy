@@ -30,10 +30,158 @@ import { Link } from "react-router-dom";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { delay, tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "../../apis";
-import { isMobile } from "@biqpod/app/ui/app";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { CartPopup } from "./CartPopup";
 import { deleteCart } from "../../apis/snapbuy";
+// Animation variants
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.1,
+    },
+  },
+};
+const userCardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 200,
+      damping: 25,
+    },
+  },
+  hover: {
+    scale: 1.02,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+};
+const storeCardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 200,
+      damping: 25,
+    },
+  },
+  hover: {
+    scale: 1.02,
+    y: -2,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+};
+const buttonVariants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 300,
+      damping: 20,
+    },
+  },
+  hover: {
+    scale: 1.05,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 15,
+    },
+  },
+  tap: {
+    scale: 0.95,
+  },
+};
+const cartItemVariants = {
+  hidden: {
+    opacity: 0,
+    x: -20,
+    scale: 0.95,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    scale: 1,
+    transition: {
+      type: "spring" as const,
+      stiffness: 200,
+      damping: 25,
+    },
+  },
+  hover: {
+    scale: 1.01,
+    x: 5,
+    transition: {
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+  exit: {
+    opacity: 0,
+    x: -50,
+    scale: 0.8,
+    transition: {
+      duration: 0.3,
+    },
+  },
+};
+const emptyStateVariants = {
+  hidden: {
+    opacity: 0,
+    scale: 0.9,
+    y: 20,
+  },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 150,
+      damping: 20,
+      delay: 0.5,
+    },
+  },
+};
+const loadMoreButtonVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      type: "spring" as const,
+      stiffness: 200,
+      damping: 20,
+    },
+  },
+};
 interface UserLineProps {
   user: Biqpod.Account.User;
 }
@@ -46,82 +194,91 @@ export const UserLine = ({ user }: UserLineProps) => {
     isFollow.set(!!result);
   }, []);
   return (
-    <Card className="cursor-pointer">
-      <div className="flex justify-between items-center gap-2 p-2">
-        <div className="flex items-center gap-2">
-          <Image
-            className="border-none outline-none w-[50px] h-[50px]"
-            src={photo ?? undefined}
-            alt={<Icon iconClassName="text-5xl" icon={allIcons.solid.faBox} />}
-          />
-          <div>{nickname}</div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Button
-            className={tw(
-              "py-1 rounded-full",
-              !isFollow.get &&
-                "bg-[--biqpod-gray-opacity] text-[--biqpod-color]"
-            )}
-            onClick={async () => {
-              if (!user) {
-                showProfile();
-                return;
+    <motion.div
+      variants={userCardVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+    >
+      <Card className="cursor-pointer">
+        <div className="flex justify-between items-center gap-2 p-2">
+          <div className="flex items-center gap-2">
+            <Image
+              className="border-none outline-none w-[50px] h-[50px]"
+              src={photo ?? undefined}
+              alt={
+                <Icon iconClassName="text-5xl" icon={allIcons.solid.faBox} />
               }
-              if (!uid) {
-                return;
-              }
-              if (isFollow.get === null) {
-                return;
-              }
-              var state = isFollow.get;
-              if (state) {
-                isFollow.set(null);
-                await snapbuyApi.unfollow(uid);
-              } else {
-                isFollow.set(null);
-                await snapbuyApi.follow(uid);
-              }
-              await delay(300);
-              isFollow.set(!state);
-            }}
-          >
-            <div
+            />
+            <div>{nickname}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
               className={tw(
-                "inline-flex items-center gap-0 transition-[gap] duration-200",
-                typeof isFollow.get === "boolean" && "gap-2"
+                "py-1 rounded-full",
+                !isFollow.get &&
+                  "bg-[--biqpod-gray-opacity] text-[--biqpod-color]"
               )}
-            >
-              <Icon
-                icon={
-                  typeof isFollow.get === "boolean"
-                    ? !isFollow.get
-                      ? allIcons.solid.faPlus
-                      : allIcons.solid.faMinus
-                    : allIcons.solid.faCircleNotch
+              onClick={async () => {
+                if (!user) {
+                  showProfile();
+                  return;
                 }
-                iconClassName={tw(isFollow.get === null && "animate-spin")}
-              />
-              <span
+                if (!uid) {
+                  return;
+                }
+                if (isFollow.get === null) {
+                  return;
+                }
+                var state = isFollow.get;
+                if (state) {
+                  isFollow.set(null);
+                  await snapbuyApi.unfollow(uid);
+                } else {
+                  isFollow.set(null);
+                  await snapbuyApi.follow(uid);
+                }
+                await delay(300);
+                isFollow.set(!state);
+              }}
+            >
+              <div
                 className={tw(
-                  "inline-block overflow-hidden h-[0px] w-[0px] transition-[width,height] duration-200",
-                  typeof isFollow.get === "boolean" && "w-[55px] h-[20px]"
+                  "inline-flex items-center gap-0 transition-[gap] duration-200",
+                  typeof isFollow.get === "boolean" && "gap-2"
                 )}
               >
-                {isFollow.get ? (
-                  <Translate content="unfollow" />
-                ) : (
-                  <Translate content="follow" />
-                )}
-              </span>
-            </div>
-          </Button>
-          <Link to={"/client/stores/" + uid}>
-            <CircleTip icon={allIcons.solid.faChevronRight} />
-          </Link>
+                <Icon
+                  icon={
+                    typeof isFollow.get === "boolean"
+                      ? !isFollow.get
+                        ? allIcons.solid.faPlus
+                        : allIcons.solid.faMinus
+                      : allIcons.solid.faCircleNotch
+                  }
+                  iconClassName={tw(isFollow.get === null && "animate-spin")}
+                />
+                <span
+                  className={tw(
+                    "inline-block overflow-hidden h-[0px] w-[0px] transition-[width,height] duration-200",
+                    typeof isFollow.get === "boolean" && "w-[55px] h-[20px]"
+                  )}
+                >
+                  {isFollow.get ? (
+                    <Translate content="unfollow" />
+                  ) : (
+                    <Translate content="follow" />
+                  )}
+                </span>
+              </div>
+            </Button>
+            <Link to={"/client/stores/" + uid}>
+              <CircleTip icon={allIcons.solid.faChevronRight} />
+            </Link>
+          </div>
         </div>
-      </div>
-    </Card>
+      </Card>
+    </motion.div>
   );
 };
 interface StoreRecordProps {
@@ -131,9 +288,10 @@ export const StoreRecord = ({ store }: StoreRecordProps) => {
   const { name, photo } = store;
   return (
     <motion.div
-      initial={isMobile ? { opacity: 0, y: 40 } : { opacity: 0, scale: 0.95 }}
-      animate={isMobile ? { opacity: 1, y: 0 } : { opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
+      variants={storeCardVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
     >
       <Card
         className="active:bg-[--biqpod-gray-opacity] shadow-md hover:shadow-lg cursor-pointer"
@@ -183,70 +341,81 @@ export const Carts = () => {
       <CardHeaderForPopup title="carts" className="font-bold uppercase" />
       <Line />
       <Scroll>
-        <div className="flex flex-col gap-2 p-2">
-          {cartsInList.map(([storeId, products]) => {
-            const cartInArray = Object.entries(products || {});
-            const length = cartInArray.length;
-            return (
-              <Card
-                className="active:bg-[--biqpod-gray-opacity-2] cursor-pointer"
-                key={storeId}
-              >
-                <div className="flex justify-between items-center gap-2 px-5 py-2">
-                  <div className="flex items-center gap-2">
-                    <AsyncComponent
-                      render={async () => {
-                        const store = await snapbuyApi.getStore(storeId);
-                        return (
-                          <EmptyComponent>
-                            <Image
-                              className="w-[50px] h-[50px]"
-                              src={store?.photo ?? undefined}
-                            />
-                            <h1 className="text-xl">{store?.name}</h1>
-                          </EmptyComponent>
-                        );
-                      }}
-                      loading={
-                        <CardWait className="rounded-lg w-[150px] h-[30px]" />
-                      }
-                    />
-                  </div>
-                  <div className="flex items-center">
-                    <Key>{length}</Key>
-                    <div className="ml-1">
-                      <CircleTip
-                        className="rounded-full"
-                        onClick={async () => {
-                          const isYes = await confirm({
-                            title: "Delete Cart",
-                            message:
-                              "Are you sure you want to delete this cart?",
-                          });
-                          if (isYes) {
-                            deleteCart(storeId);
+        <motion.div
+          className="flex flex-col gap-2 p-2"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <AnimatePresence>
+            {cartsInList.map(([storeId, products]) => {
+              const cartInArray = Object.entries(products || {});
+              const length = cartInArray.length;
+              return (
+                <motion.div key={storeId} variants={cartItemVariants} layout>
+                  <Card className="active:bg-[--biqpod-gray-opacity-2] cursor-pointer">
+                    <div className="flex justify-between items-center gap-2 px-5 py-2">
+                      <div className="flex items-center gap-2">
+                        <AsyncComponent
+                          render={async () => {
+                            const store = await snapbuyApi.getStore(storeId);
+                            return (
+                              <EmptyComponent>
+                                <Image
+                                  className="w-[50px] h-[50px]"
+                                  src={store?.photo ?? undefined}
+                                />
+                                <h1 className="text-xl">{store?.name}</h1>
+                              </EmptyComponent>
+                            );
+                          }}
+                          loading={
+                            <CardWait className="rounded-lg w-[150px] h-[30px]" />
                           }
-                        }}
-                        icon={allIcons.solid.faTrashCan}
-                      />
+                        />
+                      </div>
+                      <div className="flex items-center">
+                        <Key>{length}</Key>
+                        <div className="ml-1">
+                          <CircleTip
+                            className="rounded-full"
+                            onClick={async () => {
+                              const isYes = await confirm({
+                                title: "Delete Cart",
+                                message:
+                                  "Are you sure you want to delete this cart?",
+                              });
+                              if (isYes) {
+                                deleteCart(storeId);
+                              }
+                            }}
+                            icon={allIcons.solid.faTrashCan}
+                          />
+                        </div>
+                        <div>
+                          <CircleTip
+                            icon={allIcons.solid.faChevronRight}
+                            onClick={() => {
+                              showPopup(
+                                <CartPopup storeId={storeId} backToCarts />
+                              );
+                            }}
+                          />
+                        </div>
+                      </div>
                     </div>
-                    <div>
-                      <CircleTip
-                        icon={allIcons.solid.faChevronRight}
-                        onClick={() => {
-                          showPopup(
-                            <CartPopup storeId={storeId} backToCarts />
-                          );
-                        }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+                  </Card>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
           {!cartsInList.length && (
-            <div className="flex justify-center items-center p-4">
+            <motion.div
+              variants={emptyStateVariants}
+              initial="hidden"
+              animate="visible"
+              className="flex justify-center items-center p-4"
+            >
               <div className="flex flex-col items-center gap-2 text-[--biqpod-gray-opacity-2]">
                 <Icon
                   icon={allIcons.solid.faCartPlus}
@@ -256,9 +425,9 @@ export const Carts = () => {
                   <Translate content="no carts found" />
                 </p>
               </div>
-            </div>
+            </motion.div>
           )}
-        </div>
+        </motion.div>
       </Scroll>
     </Card>
   );
@@ -298,13 +467,23 @@ export const ExploreStores = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <Scroll>
-        <div className="flex flex-col gap-2 p-2">
+        <motion.div
+          className="flex flex-col gap-2 p-2"
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
           {stores.get.map((store, index) => {
             return <StoreRecord store={store} key={index} />;
           })}
-        </div>
+        </motion.div>
         {hasMore.get && (
-          <div className="flex justify-center items-center gap-2 p-2">
+          <motion.div
+            className="flex justify-center items-center gap-2 p-2"
+            variants={loadMoreButtonVariants}
+            initial="hidden"
+            animate="visible"
+          >
             <span>
               <motion.button
                 onClick={() => {
@@ -353,13 +532,20 @@ export const ExploreStores = () => {
                 </motion.span>
               </motion.button>
             </span>
-          </div>
+          </motion.div>
         )}
       </Scroll>
       {hasCarts && (
         <EmptyComponent>
           <Line />
-          <div className="p-2">
+          <motion.div
+            className="p-2"
+            variants={buttonVariants}
+            initial="hidden"
+            animate="visible"
+            whileHover="hover"
+            whileTap="tap"
+          >
             <Button
               onClick={() => {
                 showPopup(<Carts />);
@@ -368,7 +554,7 @@ export const ExploreStores = () => {
             >
               <Translate content="see all carts" />
             </Button>
-          </div>
+          </motion.div>
         </EmptyComponent>
       )}
     </div>

@@ -86,6 +86,17 @@ export const notifyOrderCancelled = async (
   }
 };
 
+// Convenience function for order deletion notifications
+export const notifyOrderDeleted = async (
+  storeId: string,
+  order: SnapBuy.Order
+): Promise<void> => {
+  const handler = await getNotificationHandler(storeId);
+  if (handler) {
+    await handler.notifyOrderDeleted(order);
+  }
+};
+
 // Convenience function for low stock notifications
 export const notifyLowStock = async (
   storeId: string,

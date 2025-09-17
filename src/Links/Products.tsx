@@ -6,6 +6,7 @@ import {
   Card,
   CircleLoading,
   CircleTip,
+  EmptyComponent,
   Field,
   Icon,
   Line,
@@ -39,12 +40,11 @@ import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRender } from "./ProductRender";
 import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStoreId } from "../utils";
 import { loadFromExcel } from "./loadFromExcel";
 import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
-import { Collections } from "./Collections";
-import { Packs } from "./Packs";
+import { AnimatedCard, FadeIn } from "../animations/components";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
   "createdAt",
@@ -245,164 +245,74 @@ const ToolsCard = memo(
         drag
         dragMomentum={false}
         className="right-4 bottom-4 z-[5000000000000000000000000000000] absolute"
+        initial={{ scale: 0, rotate: -180 }}
+        animate={{ scale: 1, rotate: 0 }}
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30,
+          delay: 0.5,
+        }}
       >
         <Card className="flex flex-col items-center p-3 rounded-3xl">
-          {/* <CircleTip
-          icon={allIcons.solid.faArrowUpRightFromSquare}
-          className={tw(
-            "transition-[width,height] bg-[--biqpod-gray-opacity] animate-pulse hover:animate-none active:animate-ping text-yellow-600",
-            !showTools && "w-[0px] h-[0px]"
-          )}
-          onClick={async () => {
-            if (!storeId) {
-              showToast("Store ID is not set", "error");
-              return;
-            }
-            const ok = await confirm({
-              title: "Deploy Products",
-              message: "Are you sure you want to deploy products?",
-              detail: "This will deploy all products to the server.",
-              type: "warning",
-            });
-            if (ok) {
-              setTemp("loading-text", "Start Retrieving Products");
-              const allProducts = await snapbuyApi.getProductsOf(storeId);
-              setTemp("loading-text", `Found ${allProducts?.length} Products`);
-              const workbook = new ExcelJS.Workbook();
-              const worksheet = workbook.addWorksheet("Products");
-              // Add header
-              worksheet.columns = allKeys.map((key) => ({
-                header: key.replaceAll(".", " "),
-                key: key,
-              }));
-              allProducts?.forEach(async (product) => {
-                var option: Partial<Record<keys, string>> = {};
-                allKeys.forEach((key) => {
-                  if (key === "multiple.prices") {
-                    option["multiple.prices"] = product?.multiple?.prices
-                      ?.map((price) => price.price)
-                      .join(arraySeparator);
-                    return;
-                  } else if (key === "multiple.counts") {
-                    option["multiple.counts"] = product?.multiple?.prices
-                      ?.map((price) => price.quantity)
-                      .join(arraySeparator);
-                    return;
-                  } else if (key === "single.price") {
-                    option["single.price"] = product?.single?.price?.toString();
-                    return;
-                  } else {
-                    var value = String(product?.[key]);
-                  }
-                  if (value === undefined) {
-                    switch (key) {
-                      case "available":
-                        value = "false";
-                        break;
-                      case "limited":
-                        value = "false";
-                        break;
-                      case "quantity":
-                        value = "0";
-                        break;
-                    }
-                  }
-                  option[key] = value;
-                });
-                worksheet.addRow(option);
-              }); // Add rows
-              setTemp("loading-text", "Writing to Excel File");
-              const buffer = await workbook.xlsx.writeBuffer();
-              const blob = new Blob([buffer], {
-                type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-              });
-              setTemp("loading-text", "Uploading Excel File");
-              const ref = [
-                "projects",
-                import.meta.env.VITE_PROJECT_ID,
-                "stores",
-                storeId,
-                "products.xlsx",
-              ];
-              await uploadFile(ref, blob);
-              setTemp("loading-text", "Setting Access Link");
-              const accessLink = await getDownloadURL(ref);
-              await setDoc(
-                [
-                  "projects",
-                  import.meta.env.VITE_PROJECT_ID,
-                  "stores",
-                  storeId,
-                ],
-                {
-                  accessLink,
-                }
-              );
-              setTemp("loading-text", "Done");
-              await delay(1000);
-              setTemp("loading-text", "");
-            }
-          }}
-        /> */}
-          <CircleTip
-            icon={allIcons.solid.faCodeFork}
-            className={tw(
-              "transition-[width,height] text-red-300",
-              !showTools && "w-[0px] h-[0px]"
+          <AnimatePresence>
+            {showTools && (
+              <EmptyComponent>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  <CircleTip
+                    icon={allIcons.regular.faFileExcel}
+                    className="text-green-600"
+                    onClick={async () => {
+                      showPopup(<ExcelImportFrom />);
+                    }}
+                  />
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ delay: 0.1 }}
+                >
+                  <CircleTip
+                    className="text-green-600"
+                    onClick={() => {
+                      showPopup(<ExportExcelPopupProducts />);
+                    }}
+                    icon={allIcons.solid.faFileExcel}
+                  />
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ delay: 0 }}
+                >
+                  <CircleTip
+                    icon={allIcons.solid.faPlus}
+                    className="text-violet-500"
+                    onClick={async () => {
+                      showPopup(<PostNewProduct />);
+                    }}
+                  />
+                </motion.div>
+              </EmptyComponent>
             )}
-            onClick={async () => {
-              showPopup(<Collections />);
-            }}
-          />
-          <CircleTip
-            icon={allIcons.solid.faBoxesPacking}
-            className={tw(
-              "transition-[width,height] text-blue-300",
-              !showTools && "w-[0px] h-[0px]"
-            )}
-            onClick={async () => {
-              showPopup(<Packs />);
-            }}
-          />
-          <CircleTip
-            icon={allIcons.regular.faFileExcel}
-            className={tw(
-              "transition-[width,height] text-green-600",
-              !showTools && "w-[0px] h-[0px]"
-            )}
-            onClick={async () => {
-              showPopup(<ExcelImportFrom />);
-            }}
-          />
-          <CircleTip
-            className={tw(
-              "transition-[width,height] text-green-600",
-              !showTools && "w-[0px] h-[0px]"
-            )}
-            onClick={() => {
-              // export excel file (upload)
-              showPopup(<ExportExcelPopupProducts />);
-            }}
-            icon={allIcons.solid.faFileExcel}
-          />
-          <CircleTip
-            icon={allIcons.solid.faPlus}
-            className={tw(
-              "transition-[width,height] text-violet-500",
-              !showTools && "w-[0px] h-[0px]"
-            )}
-            onClick={async () => {
-              showPopup(<PostNewProduct />);
-            }}
-          />
-          <CircleTip
-            onClick={onToggleTools}
-            icon={allIcons.solid.faPlus}
-            iconClassName={tw(
-              "transition-transform",
-              showTools ? "rotate-45 text-sky-700" : "rotate-0"
-            )}
-          />
+          </AnimatePresence>
+          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+            <CircleTip
+              onClick={onToggleTools}
+              icon={allIcons.solid.faPlus}
+              iconClassName={tw(
+                "transition-transform duration-300",
+                showTools ? "rotate-45 text-sky-700" : "rotate-0"
+              )}
+            />
+          </motion.div>
         </Card>
       </motion.div>
     );
@@ -479,7 +389,7 @@ export const Products = () => {
             const isPromoted = options.get.promoted === "true";
             // Assuming promoted is a field in your product structure
             // If not implemented, you can add it to the Product interface
-            if (prod.metaData?.promoted !== isPromoted) {
+            if (!!prod.multiple?.prices !== isPromoted) {
               return false;
             }
           }
@@ -626,18 +536,34 @@ export const Products = () => {
   const MainContent = useMemo(() => {
     if (loading) {
       return (
-        <div className="flex justify-center items-center h-full">
-          <CircleLoading />
-        </div>
+        <FadeIn className="flex justify-center items-center h-full">
+          <motion.div
+            animate={{
+              rotate: 360,
+            }}
+            transition={{
+              duration: 1,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <CircleLoading />
+          </motion.div>
+        </FadeIn>
       );
     }
     if (!success) {
       return null;
     }
     return (
-      <div className="relative h-full overflow-hidden">
+      <motion.div
+        className="relative h-full overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
         {showShadow && (
-          <div
+          <motion.div
             style={{
               ...colorMerge({
                 boxShadow: handelShadowColor([
@@ -652,6 +578,9 @@ export const Products = () => {
               }),
             }}
             className="top-[-30px] z-[10000] absolute inset-x-0 shadow-xl h-[30px]"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3 }}
           />
         )}
         {!!filterProducts?.length && (
@@ -668,22 +597,29 @@ export const Products = () => {
           </List>
         )}
         {filterProducts && filterProducts?.length === 0 && (
-          <div className="flex justify-center items-center w-full h-full">
-            <Card>
-              <div className="flex justify-center items-center p-2 h-full">
-                <Icon
-                  icon={allIcons.solid.faBoxOpen}
-                  iconClassName="text-9xl text-[--biqpod-primary]"
-                />
-              </div>
-              <Line />
-              <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
-                <Translate content="no products found" />
-              </div>
-            </Card>
-          </div>
+          <FadeIn className="flex justify-center items-center w-full h-full">
+            <AnimatedCard>
+              <Card>
+                <motion.div
+                  className="flex justify-center items-center p-2 h-full"
+                  initial={{ scale: 0.8 }}
+                  animate={{ scale: 1 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
+                >
+                  <Icon
+                    icon={allIcons.solid.faBoxOpen}
+                    iconClassName="text-9xl text-[--biqpod-primary]"
+                  />
+                </motion.div>
+                <Line />
+                <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
+                  <Translate content="no products found" />
+                </div>
+              </Card>
+            </AnimatedCard>
+          </FadeIn>
         )}
-      </div>
+      </motion.div>
     );
   }, [
     loading,
@@ -698,20 +634,40 @@ export const Products = () => {
     RenderItem,
   ]);
   return (
-    <div className="relative flex flex-col h-full overflow-hidden">
+    <motion.div
+      className="relative flex flex-col h-full overflow-hidden"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
+    >
       <PositionView positionId="searching">
-        <div className="flex justify-between items-center gap-2 p-2">
+        <motion.div
+          className="flex justify-between items-center gap-2 p-2"
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
           <div className="relative flex justify-center w-full">
             <Field
               inputName="producer-search-product"
               placeholder="Search Product"
               className="rounded-xl"
             />
-            <span className="top-1/2 right-2 absolute font-bold text-[--biqpod-primary] -translate-y-1/2">
-              / {filterProducts?.length || 0}
+            <span className="top-1/2 right-2 absolute font-bold text-[--biqpod-primary] -translate-y-1/2 transform">
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+              >
+                / {filterProducts?.length || 0}
+              </motion.span>
             </span>
           </div>
-          <div className="flex">
+          <motion.div
+            className="flex"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
             <CircleTip
               icon={allIcons.solid.faFilter}
               onClick={() => {
@@ -720,8 +676,8 @@ export const Products = () => {
                 );
               }}
             />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
         <Line />
       </PositionView>
       {MainContent}
@@ -730,6 +686,6 @@ export const Products = () => {
         onToggleTools={toggleTools}
         storeId={storeId}
       />
-    </div>
+    </motion.div>
   );
 };

@@ -121,6 +121,13 @@ export const platformsInfo: PlatformInfo[] = [
     placeholder: "https://apps.apple.com/app/app-name/id",
     color: "#006CFF",
   },
+  {
+    id: "mail",
+    name: "Email",
+    icon: "https://cdn3d.iconscout.com/3d/premium/thumb/email-3d-icon-png-download-5523022.png",
+    placeholder: "@exmple.com",
+    color: "red",
+  },
 ];
 
 export const getPlatformInfo = (
@@ -147,4 +154,5 @@ export const platformsPhoto: Record<
   chrome: chromeIcon,
   edge: edgeIcon,
   safari: safariIcon,
+  mail: "https://cdn3d.iconscout.com/3d/premium/thumb/email-3d-icon-png-download-5523022.png",
 };

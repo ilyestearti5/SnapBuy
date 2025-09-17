@@ -135,8 +135,8 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
   return (
     <EmptyComponent>
       <Line />
-      <div className="flex md:max-h-[70vh] items-stretch md:w-[80vw] max-md:h-full overflow-hidden">
-        <div className="border-r border-solid border-[--biqpod-borders]">
+      <div className="flex items-stretch md:w-[80vw] max-md:h-full md:max-h-[70vh] overflow-hidden">
+        <div className="border-[--biqpod-borders] border-r border-solid">
           <div className="w-[200px] overflow-hidden">
             <div className="p-2">
               <Field
@@ -182,8 +182,8 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
             </Scroll>
           </div>
         </div>
-        <div className="flex flex-col justify-between overflow-hidden items-center w-full">
-          <div className="flex relative h-[60px] justify-center w-full items-stretch gap-2">
+        <div className="flex flex-col justify-between items-center w-full overflow-hidden">
+          <div className="relative flex justify-center items-stretch gap-2 w-full h-[60px]">
             {[
               {
                 name: "mobile",
@@ -212,7 +212,7 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
                 </div>
               );
             })}
-            <div className="absolute right-4 top-1/2 -translate-y-1/2">
+            <div className="top-1/2 right-4 absolute -translate-y-1/2">
               <CircleTip
                 icon={allIcons.solid.faEllipsisV}
                 onClick={() => {
@@ -407,7 +407,7 @@ export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
             click: async () => {
               closeBottomSheet();
               showPopup(
-                <Card className="max-md:rounded-none relative max-md:w-full max-md:h-full">
+                <Card className="relative max-md:rounded-none max-md:w-full max-md:h-full">
                   <CardHeaderForPopup title="Copy Link" />
                   <CopyLinkPickColor product={product} />
                 </Card>
@@ -433,6 +433,18 @@ export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
           },
           {
             type: "separator",
+          },
+          {
+            label: "Duplicate",
+            click: () => {
+              const duplicatedProduct = {
+                ...product,
+                id: undefined, // This will generate a new ID when creating
+                name: `${product.name} (Copy)`,
+              };
+              showPopup(<PostNewProduct product={duplicatedProduct} />);
+            },
+            defaultIcon: allIcons.solid.faCodeFork,
           },
           {
             label: product.available ? "Disable" : "Enable",

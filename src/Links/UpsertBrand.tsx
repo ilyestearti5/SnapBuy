@@ -17,6 +17,7 @@ import {
   showToast,
   useAction,
   useCopyState,
+  setFieldValue,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
@@ -32,6 +33,14 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
   const photo = useCopyState<string | Nothing>(brand?.photo || null);
   const [isPasting, setIsPasting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Set field values when editing a brand
+  useEffect(() => {
+    if (brand) {
+      setFieldValue("brand-name", brand.name || "");
+      setFieldValue("brand-description", brand.description || "");
+    }
+  }, [brand]);
   // Handle file upload (paste, drag & drop, or file input)
   const handleFileUpload = (file: File) => {
     if (file && file.type.startsWith("image/")) {
@@ -265,7 +274,6 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
           <Field
             inputName="brand-name"
             placeholder="Enter brand name"
-            defaultValue={brand?.name || ""}
             required
           />
         </div>
@@ -283,7 +291,6 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
           <Field
             inputName="brand-description"
             placeholder="Enter brand description"
-            defaultValue={brand?.description || ""}
             rows={3}
           />
         </div>

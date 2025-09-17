@@ -10,7 +10,7 @@ import {
   TitleView,
   Translate,
 } from "@biqpod/app/ui/components";
-import { imageExtensions, openPath, useCopyState } from "@biqpod/app/ui/hooks";
+import { useCopyState } from "@biqpod/app/ui/hooks";
 import { useFormPhotos } from "../../../apis/getFns";
 import { useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
@@ -109,22 +109,41 @@ export const ProductImages = () => {
           <CircleTip
             className="flex justify-center items-center p-2 rounded-3xl w-[100px] h-[100px]"
             onClick={async () => {
-              const files = await openPath({
-                filters: [
-                  {
-                    name: "*",
-                    extensions: imageExtensions,
-                  },
-                ],
-                properties: ["multiSelections"],
-              });
-              images.set((s) => {
-                if (s) {
-                  return [...s, ...files];
-                } else {
-                  return files;
+              // Create a hidden file input element
+              const fileInput = document.createElement("input");
+              fileInput.type = "file";
+              fileInput.accept = "image/*";
+              fileInput.multiple = true; // Allow multiple file selection
+              fileInput.style.display = "none";
+
+              // Handle file selection
+              fileInput.onchange = (event) => {
+                const files = (event.target as HTMLInputElement).files;
+                if (files) {
+                  Array.from(files).forEach((file) => {
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                      const imageSrc = e.target?.result as string;
+                      if (imageSrc) {
+                        images.set((s) => {
+                          if (s) {
+                            return [...s, imageSrc];
+                          } else {
+                            return [imageSrc];
+                          }
+                        });
+                      }
+                    };
+                    reader.readAsDataURL(file);
+                  });
                 }
-              });
+                // Clean up the input element
+                document.body.removeChild(fileInput);
+              };
+
+              // Add to DOM and trigger click
+              document.body.appendChild(fileInput);
+              fileInput.click();
             }}
             icon={allIcons.solid.faAdd}
           />

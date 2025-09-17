@@ -9,6 +9,7 @@ import {
   CircleTip,
   CircleLoading,
   Icon,
+  EmptyComponent,
 } from "@biqpod/app/ui/components";
 import {
   useTemp,
@@ -18,7 +19,6 @@ import {
   closeBottomSheet,
   closePopup,
   getAction,
-  confirm,
   showPopup,
 } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
@@ -31,24 +31,17 @@ interface UpsertStoreProps {
 }
 export const UpsertStore = ({ store }: UpsertStoreProps) => {
   const photoState = useTemp<string | Nothing>("store-photo");
-  const deliveryPriceState = useTemp<number | null | undefined>(
-    "store-delivery-price"
-  );
-
   useEffect(() => {
     setFieldValue("store-name", store?.name || "");
     setFieldValue("store-phone", store?.phone || "");
     setTemp("store-photo", store?.photo || null);
   }, []);
-
   const action = getAction("upsert-store");
   const loadingAction = action?.status === "loading";
-
   const activePlatforms = useMemo(() => {
     if (!store?.platforms) return [];
     return Object.entries(store.platforms).filter(([_, value]) => value);
   }, [store?.platforms]);
-
   return (
     <Card className="relative max-md:rounded-none max-md:w-full min-w-[400px] max-md:h-full overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-3">
@@ -87,10 +80,9 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
           />
         </div>
       </div>
-
       {/* Platforms Section - Only show for existing stores */}
       {store && (
-        <>
+        <EmptyComponent>
           <Line />
           <div className="p-3">
             <div className="flex justify-between items-center mb-3">
@@ -107,7 +99,6 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
                 <Translate content="manage platforms" />
               </Button>
             </div>
-
             {activePlatforms.length > 0 ? (
               <div className="flex flex-wrap gap-2">
                 {activePlatforms.map(([platformId, _]) => {
@@ -116,7 +107,7 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
                   return (
                     <div
                       key={platformId}
-                      className="flex items-center gap-1 bg-gray-100 px-2 py-1 rounded-full"
+                      className="flex items-center gap-1 bg-[--biqpod-gray-opacity] px-2 py-1 rounded-full"
                     >
                       {photo && (
                         <img
@@ -142,9 +133,8 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
               </div>
             )}
           </div>
-        </>
+        </EmptyComponent>
       )}
-
       <Line />
       <div className="flex justify-between items-center gap-2 p-2">
         {!loadingAction && (
@@ -162,19 +152,6 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
           }
           iconClassName={tw(loadingAction && "animate-spin")}
           onClick={async () => {
-            if (!deliveryPriceState.get) {
-              const response = await confirm({
-                title: "Delivery Pricing",
-                message:
-                  "Are you sure you want to set the delivery price to free?",
-                detail:
-                  "Setting the delivery price to free means that you will not charge any delivery fee for your customers.",
-                type: "warning",
-              });
-              if (!response) {
-                return;
-              }
-            }
             execAction("upsert-store", store?.id);
           }}
           className="p-3"
