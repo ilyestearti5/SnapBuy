@@ -63,9 +63,131 @@ import {
   useInViewAnimation,
   springTransition,
 } from "../animations";
-
+const NoOrdersFound = () => {
+  return (
+    <motion.div className="flex justify-center items-center h-full min-h-[400px]">
+      <ScaleIn delay={0.2}>
+        <Card className="relative mx-auto max-w-md overflow-hidden text-center">
+          {/* Animated background pattern */}
+          <motion.div
+            className="absolute inset-0 opacity-5"
+            initial={{ scale: 0, rotate: 0 }}
+            animate={{ scale: 1, rotate: 360 }}
+            transition={{
+              duration: 20,
+              repeat: Infinity,
+              ease: "linear",
+            }}
+          >
+            <div className="bg-gradient-to-br from-[--biqpod-primary] to-[--biqpod-secondary] w-full h-full" />
+          </motion.div>
+          <div className="z-10 relative">
+            <motion.div
+              className="p-5"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.3 }}
+            >
+              <motion.div
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Icon
+                  icon={allIcons.solid.faShoppingCart}
+                  iconClassName="text-8xl text-[--biqpod-gray-opacity]"
+                />
+              </motion.div>
+              {/* Floating particles animation */}
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute bg-[--biqpod-primary] opacity-30 rounded-full w-2 h-2"
+                  style={{
+                    left: `${20 + i * 10}%`,
+                    top: `${30 + (i % 2) * 20}%`,
+                  }}
+                  animate={{
+                    y: [-10, 10, -10],
+                    opacity: [0.3, 0.7, 0.3],
+                  }}
+                  transition={{
+                    duration: 3,
+                    repeat: Infinity,
+                    delay: i * 0.5,
+                  }}
+                />
+              ))}
+            </motion.div>
+            <Line />
+            <motion.div
+              className="flex flex-col gap-2 p-3"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.5 }}
+            >
+              <motion.h3
+                className="font-semibold text-[--biqpod-text-color] text-xl uppercase"
+                animate={{
+                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
+                }}
+                transition={{ duration: 3, repeat: Infinity }}
+                style={{
+                  background:
+                    "linear-gradient(90deg, var(--biqpod-text-color), var(--biqpod-primary), var(--biqpod-text-color))",
+                  backgroundSize: "200% 100%",
+                  WebkitBackgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  backgroundClip: "text",
+                }}
+              >
+                <Translate content="no orders found" />
+              </motion.h3>
+              <motion.p
+                className="text-[--biqpod-gray-opacity-2]"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.6, delay: 0.7 }}
+              >
+                <Translate content="there are no orders matching your criteria" />
+              </motion.p>
+            </motion.div>
+            <Line />
+            <motion.div
+              className="p-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.9 }}
+            >
+              <HoverScale scale={1.05}>
+                <motion.div
+                  whileTap={{ scale: 0.95 }}
+                  transition={{ type: "spring", stiffness: 400 }}
+                >
+                  <Button
+                    icon={allIcons.solid.faRefresh}
+                    onClick={() => execAction("fetch-orders", {})}
+                    className="relative mx-auto rounded-full overflow-hidden"
+                  >
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
+                      initial={{ x: "-100%" }}
+                      whileHover={{ x: "100%" }}
+                      transition={{ duration: 0.6 }}
+                    />
+                    <span className="z-10 relative">
+                      <Translate content="refresh" />
+                    </span>
+                  </Button>
+                </motion.div>
+              </HoverScale>
+            </motion.div>
+          </div>
+        </Card>
+      </ScaleIn>
+    </motion.div>
+  );
+};
 const PAGE_SIZE = 40;
-
 // Custom shimmer loading component
 const OrderLoadingSkeleton = ({ index }: { index: number }) => {
   return (
@@ -87,7 +209,6 @@ const OrderLoadingSkeleton = ({ index }: { index: number }) => {
           delay: index * 0.1,
         }}
       />
-
       {/* Content skeleton */}
       <div className="space-y-3 p-4">
         <div className="flex items-center gap-3">
@@ -97,14 +218,11 @@ const OrderLoadingSkeleton = ({ index }: { index: number }) => {
             <div className="bg-[--biqpod-border] rounded w-1/2 h-3 animate-pulse" />
           </div>
         </div>
-
         <div className="bg-[--biqpod-border] h-px" />
-
         <div className="space-y-2">
           <div className="bg-[--biqpod-border] rounded w-full h-3 animate-pulse" />
           <div className="bg-[--biqpod-border] rounded w-5/6 h-3 animate-pulse" />
         </div>
-
         <div className="flex justify-between items-center">
           <div className="flex gap-2">
             <div className="bg-[--biqpod-border] rounded-full w-8 h-6 animate-pulse" />
@@ -116,7 +234,6 @@ const OrderLoadingSkeleton = ({ index }: { index: number }) => {
     </motion.div>
   );
 };
-
 // Desktop loading skeleton
 const DesktopOrderLoadingSkeleton = ({ index }: { index: number }) => {
   return (
@@ -138,7 +255,6 @@ const DesktopOrderLoadingSkeleton = ({ index }: { index: number }) => {
           delay: index * 0.05,
         }}
       />
-
       {/* Content skeleton */}
       <div className="flex items-center gap-2 w-full">
         <div className="bg-[--biqpod-border] rounded-full w-8 h-8 animate-pulse" />
@@ -164,7 +280,6 @@ const DesktopOrderLoadingSkeleton = ({ index }: { index: number }) => {
     </motion.div>
   );
 };
-
 interface StatusUiProps {
   status: SnapBuy.OrderStatus;
 }
@@ -187,7 +302,6 @@ export const StatusUi = ({ status }: StatusUiProps) => {
         whileHover={{ x: "100%" }}
         transition={{ duration: 0.6 }}
       />
-
       <motion.div
         whileHover={{ rotate: 360 }}
         transition={{ duration: 0.5 }}
@@ -195,7 +309,6 @@ export const StatusUi = ({ status }: StatusUiProps) => {
       >
         <Icon icon={icons[status]} />
       </motion.div>
-
       <span className="z-10 relative">
         <Translate content={status} />
       </span>
@@ -209,7 +322,6 @@ export const Orders = () => {
     0.1,
     false
   );
-
   useEffect(() => {
     return () => {
       isFocused.set(false);
@@ -520,6 +632,10 @@ export const Orders = () => {
               <Translate content="status" />
             </span>
             <span className="inline-flex items-center gap-2 w-full capitalize">
+              <Icon icon={allIcons.solid.faNoteSticky} />
+              <Translate content="note" />
+            </span>
+            <span className="inline-flex items-center gap-2 w-full capitalize">
               <Icon icon={allIcons.solid.faDashboard} />
               <Translate content="ads" />
             </span>
@@ -557,70 +673,7 @@ export const Orders = () => {
               </motion.div>
             )}
             {ordersState && ordersState.length === 0 && !isLoading && (
-              <ScaleIn delay={0.2}>
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex justify-center items-center h-full min-h-[400px]"
-                >
-                  <Card className="bg-gradient-to-br from-[--biqpod-primary-background] to-[--biqpod-secondary-background] shadow-lg mx-auto p-12 border border-[--biqpod-border] max-w-lg text-center">
-                    <motion.div
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{
-                        duration: 0.6,
-                        delay: 0.2,
-                        type: "spring",
-                        stiffness: 200,
-                      }}
-                    >
-                      <div className="inline-block relative">
-                        <div className="absolute inset-0 bg-[--biqpod-primary] opacity-10 rounded-full animate-pulse"></div>
-                        <div className="relative bg-[--biqpod-primary] bg-opacity-20 mb-4 p-6 rounded-full">
-                          <Icon
-                            icon={allIcons.solid.faShoppingCart}
-                            iconClassName="text-5xl text-[--biqpod-primary]"
-                          />
-                        </div>
-                      </div>
-                    </motion.div>
-                    <Line />
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ duration: 0.5, delay: 0.4 }}
-                    >
-                      <h3 className="mb-3 font-bold text-[--biqpod-text-color] text-2xl uppercase">
-                        <Translate content="no orders found" />
-                      </h3>
-                      <p className="mb-6 text-[--biqpod-gray-opacity] leading-relaxed">
-                        <Translate content="there are no orders matching your current filters. try adjusting your search criteria or create your first order." />
-                      </p>
-                      <div className="flex sm:flex-row flex-col justify-center items-center gap-3">
-                        <HoverScale scale={1.05}>
-                          <Button
-                            icon={allIcons.solid.faRefresh}
-                            onClick={() => execAction("fetch-orders", {})}
-                            className="bg-[--biqpod-primary] hover:bg-[--biqpod-primary-hover] px-6 py-3 rounded-xl font-semibold text-[--biqpod-primary-content] hover:scale-105 transition-all duration-200"
-                          >
-                            <Translate content="refresh orders" />
-                          </Button>
-                        </HoverScale>
-                        <HoverScale scale={1.05}>
-                          <Button
-                            icon={allIcons.solid.faFilter}
-                            onClick={() => showPopup(<FilterOrders />)}
-                            className="bg-transparent hover:bg-[--biqpod-primary] px-6 py-3 border-[--biqpod-primary] border-2 rounded-xl font-semibold text-[--biqpod-primary] hover:text-[--biqpod-primary-content] hover:scale-105 transition-all duration-200"
-                          >
-                            <Translate content="clear filters" />
-                          </Button>
-                        </HoverScale>
-                      </div>
-                    </motion.div>
-                  </Card>
-                </motion.div>
-              </ScaleIn>
+              <NoOrdersFound />
             )}
             <AnimatedList staggerDelay={0.05}>
               {ordersState?.map(({ order, timeAgo, productCount }, index) => {
@@ -648,6 +701,9 @@ export const Orders = () => {
                         <div className="w-full">
                           <StatusUi status={order.status} />
                         </div>
+                        <span className="w-full text-[--biqpod-gray-opacity] text-sm truncate">
+                          {order.note || "-"}
+                        </span>
                         <span className="flex items-center gap-1 py-2 w-full overflow-hidden">
                           <motion.span
                             whileHover={{ scale: 1.05 }}
@@ -661,12 +717,13 @@ export const Orders = () => {
                           <span className="capitalize">{order.platform}</span>
                         </span>
                         <span className="flex items-center gap-2 py-2 w-full">
-                          <motion.div
-                            whileHover={{ rotate: 360 }}
-                            transition={{ duration: 0.5 }}
-                          >
-                            {order.deliveryPrice}
-                          </motion.div>
+                          <div className="flex items-center gap-2 text-[--biqpod-primary]">
+                            <span className="font-semibold">
+                              {order.deliveryPrice
+                                ? order.deliveryPrice.toString().concat("DA")
+                                : "Free"}
+                            </span>
+                          </div>
                           {order.delivery?.uid && (
                             <AsyncComponent
                               deps={[order.delivery.uid]}
@@ -821,7 +878,6 @@ export const Orders = () => {
                       whileHover={{ x: "100%" }}
                       transition={{ duration: 0.6 }}
                     />
-
                     <motion.div
                       animate={isLoading ? { rotate: 360 } : { rotate: 0 }}
                       transition={
@@ -838,7 +894,6 @@ export const Orders = () => {
                         }
                       />
                     </motion.div>
-
                     <motion.span
                       className="z-10 relative ml-2 whitespace-nowrap"
                       animate={{
@@ -876,265 +931,154 @@ export const Orders = () => {
             </div>
           )}
           {ordersState && ordersState.length === 0 && !isLoading && (
-            <motion.div className="flex justify-center items-center h-full min-h-[400px]">
-              <ScaleIn delay={0.2}>
-                <Card className="relative mx-auto max-w-md overflow-hidden text-center">
-                  {/* Animated background pattern */}
-                  <motion.div
-                    className="absolute inset-0 opacity-5"
-                    initial={{ scale: 0, rotate: 0 }}
-                    animate={{ scale: 1, rotate: 360 }}
-                    transition={{
-                      duration: 20,
-                      repeat: Infinity,
-                      ease: "linear",
-                    }}
-                  >
-                    <div className="bg-gradient-to-br from-[--biqpod-primary] to-[--biqpod-secondary] w-full h-full" />
-                  </motion.div>
-
-                  <div className="z-10 relative">
-                    <motion.div
-                      className="p-5"
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.3 }}
-                    >
-                      <motion.div
-                        whileHover={{ scale: 1.1, rotate: 5 }}
-                        transition={{ type: "spring", stiffness: 300 }}
-                      >
-                        <Icon
-                          icon={allIcons.solid.faShoppingCart}
-                          iconClassName="text-8xl text-[--biqpod-gray-opacity]"
-                        />
-                      </motion.div>
-
-                      {/* Floating particles animation */}
-                      {[...Array(6)].map((_, i) => (
-                        <motion.div
-                          key={i}
-                          className="absolute bg-[--biqpod-primary] opacity-30 rounded-full w-2 h-2"
-                          style={{
-                            left: `${20 + i * 10}%`,
-                            top: `${30 + (i % 2) * 20}%`,
-                          }}
-                          animate={{
-                            y: [-10, 10, -10],
-                            opacity: [0.3, 0.7, 0.3],
-                          }}
-                          transition={{
-                            duration: 3,
-                            repeat: Infinity,
-                            delay: i * 0.5,
-                          }}
-                        />
-                      ))}
-                    </motion.div>
-
-                    <Line />
-
-                    <motion.div
-                      className="flex flex-col gap-2 p-3"
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.5 }}
-                    >
-                      <motion.h3
-                        className="font-semibold text-[--biqpod-text-color] text-xl uppercase"
-                        animate={{
-                          backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                        }}
-                        transition={{ duration: 3, repeat: Infinity }}
-                        style={{
-                          background:
-                            "linear-gradient(90deg, var(--biqpod-text-color), var(--biqpod-primary), var(--biqpod-text-color))",
-                          backgroundSize: "200% 100%",
-                          WebkitBackgroundClip: "text",
-                          WebkitTextFillColor: "transparent",
-                          backgroundClip: "text",
-                        }}
-                      >
-                        <Translate content="no orders found" />
-                      </motion.h3>
-                      <motion.p
-                        className="text-[--biqpod-gray-opacity-2]"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.7 }}
-                      >
-                        <Translate content="there are no orders matching your criteria" />
-                      </motion.p>
-                    </motion.div>
-
-                    <Line />
-
-                    <motion.div
-                      className="p-3"
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.9 }}
-                    >
-                      <HoverScale scale={1.05}>
-                        <motion.div
-                          whileTap={{ scale: 0.95 }}
-                          transition={{ type: "spring", stiffness: 400 }}
-                        >
-                          <Button
-                            icon={allIcons.solid.faRefresh}
-                            onClick={() => execAction("fetch-orders", {})}
-                            className="relative mx-auto rounded-full overflow-hidden"
-                          >
-                            <motion.div
-                              className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
-                              initial={{ x: "-100%" }}
-                              whileHover={{ x: "100%" }}
-                              transition={{ duration: 0.6 }}
-                            />
-                            <span className="z-10 relative">
-                              <Translate content="refresh" />
-                            </span>
-                          </Button>
-                        </motion.div>
-                      </HoverScale>
-                    </motion.div>
-                  </div>
-                </Card>
-              </ScaleIn>
-            </motion.div>
+            <NoOrdersFound />
           )}
-          <div className="flex flex-col gap-2 p-2">
-            <AnimatedList staggerDelay={0.05}>
-              {ordersState?.map(({ order, timeAgo, productCount }, index) => {
-                return (
-                  <AnimatedListItem key={order.id} index={index}>
-                    <HoverScale scale={1.02}>
-                      <motion.div
-                        initial={{ opacity: 0, y: 30 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.05 }}
-                      >
-                        <Card className="overflow-hidden">
-                          <div className="flex justify-between items-center gap-2 p-2">
-                            <div className="flex items-center gap-2">
-                              <motion.span
-                                whileHover={{ scale: 1.1, rotate: 5 }}
-                                className="inline-block w-[40px] h-[40px]"
-                              >
-                                <img
-                                  className="rounded-lg w-full h-full object-cover"
-                                  src={getImageByPlatform(order.platform)}
-                                />
-                              </motion.span>
-                              <OrderClientDisplay
-                                order={order}
-                                className="text-xl"
-                                showCustomerBadge={true}
+          <AnimatedList className="flex flex-col gap-4 p-2" staggerDelay={0.05}>
+            {ordersState?.map(({ order, timeAgo, productCount }, index) => {
+              return (
+                <AnimatedListItem key={order.id} index={index}>
+                  <HoverScale scale={1.01}>
+                    <motion.div
+                      initial={{ opacity: 0, y: 30 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.05 }}
+                    >
+                      <Card className="overflow-hidden">
+                        <div className="flex justify-between items-center gap-2 p-2">
+                          <div className="flex items-center gap-2">
+                            <motion.span
+                              whileHover={{ scale: 1.1, rotate: 5 }}
+                              className="inline-block w-[40px] h-[40px]"
+                            >
+                              <img
+                                className="rounded-lg w-full h-full object-cover"
+                                src={getImageByPlatform(order.platform)}
                               />
-                            </div>
-                            {!!order.totalPrice && (
-                              <motion.span
-                                whileHover={{ scale: 1.05 }}
-                                className="font-bold text-green-600 max-md:text-base md:text-xl"
-                              >
-                                {order.totalPrice}DA
-                              </motion.span>
-                            )}
+                            </motion.span>
+                            <OrderClientDisplay
+                              order={order}
+                              className="text-xl"
+                              showCustomerBadge={true}
+                            />
                           </div>
-                          <Line />
-                          <div className="flex justify-end items-center p-2">
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-green-600">
-                                {order.deliveryPrice
-                                  ? order.deliveryPrice.toString().concat("DA")
-                                  : "Free"}
-                              </span>
-                              <Icon icon={allIcons.solid.faTruck} />
-                            </div>
-                          </div>
-                          <Line />
-                          <div className="flex justify-between items-center p-2">
-                            <div className="flex items-center gap-2">
-                              <motion.span
-                                whileHover={{ scale: 1.1, rotate: 10 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]"
-                              >
-                                {productCount}
-                              </motion.span>
-                              <StatusUi status={order.status} />
-                            </div>
+                          {!!order.totalPrice && (
                             <motion.span
                               whileHover={{ scale: 1.05 }}
-                              className="text-sm"
+                              className="font-bold text-green-600 max-md:text-base md:text-xl"
                             >
-                              {timeAgo}
+                              {order.totalPrice}DA
                             </motion.span>
+                          )}
+                        </div>
+                        <Line />
+                        <div className="flex justify-end items-center p-2">
+                          <div className="flex items-center gap-2 text-[--biqpod-primary]">
+                            <span className="font-semibold">
+                              {order.deliveryPrice
+                                ? order.deliveryPrice.toString().concat("DA")
+                                : "Free"}
+                            </span>
+                            <Icon icon={allIcons.solid.faTruck} />
                           </div>
-                          <Line />
-                          <div className="flex justify-between items-center p-2">
-                            <OrderClientLocation order={order} />
-                            <div className="flex items-center">
-                              <OrderClientActions order={order} />
-                              <motion.div
-                                whileHover={{ scale: 1.2 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                <CircleTip
-                                  icon={allIcons.solid.faEllipsisV}
-                                  onClick={async ({ clientX, clientY }) => {
-                                    openOrderMenu({
-                                      x: clientX,
-                                      y: clientY,
-                                      order,
-                                    });
-                                  }}
-                                />
-                              </motion.div>
+                        </div>
+                        <Line />
+                        <div className="flex justify-between items-center p-2">
+                          <div className="flex items-center gap-2">
+                            <motion.span
+                              whileHover={{ scale: 1.1, rotate: 10 }}
+                              whileTap={{ scale: 0.95 }}
+                              className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]"
+                            >
+                              {productCount}
+                            </motion.span>
+                            <StatusUi status={order.status} />
+                          </div>
+                          <motion.span
+                            whileHover={{ scale: 1.05 }}
+                            className="text-sm"
+                          >
+                            {timeAgo}
+                          </motion.span>
+                        </div>
+                        <Line />
+                        <div className="flex justify-between items-center p-2">
+                          <OrderClientLocation order={order} />
+                          <div className="flex items-center">
+                            <OrderClientActions order={order} />
+                            <motion.div
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <CircleTip
+                                icon={allIcons.solid.faEllipsisV}
+                                onClick={async ({ clientX, clientY }) => {
+                                  openOrderMenu({
+                                    x: clientX,
+                                    y: clientY,
+                                    order,
+                                  });
+                                }}
+                              />
+                            </motion.div>
+                          </div>
+                        </div>
+                        {order.note && (
+                          <>
+                            <Line />
+                            <div className="flex items-start gap-2 p-2">
+                              <Icon
+                                icon={allIcons.solid.faNoteSticky}
+                                iconClassName="text-[--biqpod-primary] mt-1 flex-shrink-0"
+                              />
+                              <div className="flex-1">
+                                <span className="font-medium text-[--biqpod-text-color] text-sm capitalize">
+                                  <Translate content="note" />:
+                                </span>
+                                <p className="mt-1 text-[--biqpod-gray-opacity] text-sm break-words">
+                                  {order.note}
+                                </p>
+                              </div>
                             </div>
-                          </div>
-                        </Card>
-                      </motion.div>
-                    </HoverScale>
-                  </AnimatedListItem>
-                );
-              })}
+                          </>
+                        )}
+                      </Card>
+                    </motion.div>
+                  </HoverScale>
+                </AnimatedListItem>
+              );
+            })}
+          </AnimatedList>
+          {isLoading && (
+            <AnimatedList staggerDelay={0.05}>
+              {range(PAGE_SIZE).map((index) => (
+                <AnimatedListItem key={`mobile-loading-${index}`} index={index}>
+                  <OrderLoadingSkeleton index={index} />
+                </AnimatedListItem>
+              ))}
             </AnimatedList>
-            {isLoading && (
-              <AnimatedList staggerDelay={0.05}>
-                {range(PAGE_SIZE).map((index) => (
-                  <AnimatedListItem
-                    key={`mobile-loading-${index}`}
-                    index={index}
-                  >
-                    <OrderLoadingSkeleton index={index} />
-                  </AnimatedListItem>
-                ))}
-              </AnimatedList>
-            )}
-            {hasMore.get && !isLoading && (
-              <HoverScale scale={1.05}>
-                <Card className="justify-center items-center w-full h-[180px]">
-                  <motion.div
-                    whileHover={{ rotate: 360 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <CircleTip
-                      icon={
-                        isLoading
-                          ? allIcons.solid.faCircleNotch
-                          : allIcons.solid.faChevronRight
-                      }
-                      iconClassName={tw(isLoading && "animate-spin")}
-                      onClick={() => {
-                        execAction("fetch-orders", { next: true });
-                      }}
-                    />
-                  </motion.div>
-                </Card>
-              </HoverScale>
-            )}
-          </div>
+          )}
+          {hasMore.get && !isLoading && (
+            <HoverScale scale={1.05}>
+              <Card className="justify-center items-center w-full h-[180px]">
+                <motion.div
+                  whileHover={{ rotate: 360 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <CircleTip
+                    icon={
+                      isLoading
+                        ? allIcons.solid.faCircleNotch
+                        : allIcons.solid.faChevronRight
+                    }
+                    iconClassName={tw(isLoading && "animate-spin")}
+                    onClick={() => {
+                      execAction("fetch-orders", { next: true });
+                    }}
+                  />
+                </motion.div>
+              </Card>
+            </HoverScale>
+          )}
         </Scroll>
       )}
     </motion.div>

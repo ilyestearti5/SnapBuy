@@ -101,7 +101,6 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             <div className="flex-1">
               {highlightMatch(product.name!, search)}
             </div>
-            {brand && <Key className="italic">{brand.name}</Key>}
           </div>
         </div>
         <Line />

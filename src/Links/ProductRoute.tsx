@@ -143,6 +143,7 @@ export const ProductRoute = () => {
   const phone = getFieldValue("client-phone");
   const address = getFieldValue("client-address");
   const wilaya = getFieldValue("client-wilaya");
+  const note = getFieldValue("client-note");
   const magic = getTemp<Record<string, any>>("magic-fields");
   const createOrderAction = useAction(
     "create-order-in-product",
@@ -230,6 +231,7 @@ export const ProductRoute = () => {
         place,
         delivery: deliveryState.get || false,
         metaData,
+        note,
       };
       const orderInfo = await snapbuyApi.createOrder(options);
       if (!orderInfo?.id) {
@@ -248,6 +250,7 @@ export const ProductRoute = () => {
       phone,
       address,
       wilaya,
+      note,
       deliveryState.get,
       latitude.get,
       longitude.get,
@@ -336,6 +339,18 @@ export const ProductRoute = () => {
                 <Field
                   inputName="client-wilaya"
                   placeholder="Enter Your Wilaya"
+                />
+              </div>
+              <div className="flex flex-col gap-2 p-2">
+                <label className="capitalize">
+                  <Translate content="note" /> :
+                </label>
+                <Field
+                  inputName="client-note"
+                  multiLines
+                  maxRows={3}
+                  rows={3}
+                  placeholder="Enter Your Note (optional)"
                 />
               </div>
               <div className="flex justify-between p-2">

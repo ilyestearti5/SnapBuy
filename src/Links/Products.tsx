@@ -1,5 +1,11 @@
 import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
-import { delay, filterFuzzySearch, mergeArray, tw } from "@biqpod/app/ui/utils";
+import {
+  delay,
+  filterFuzzySearch,
+  mergeArray,
+  range,
+  tw,
+} from "@biqpod/app/ui/utils";
 import {
   BooleanField,
   Button,
@@ -27,10 +33,10 @@ import {
   useAction,
   useColorMerge,
   useCopyState,
+  useDeviceResolution,
   useMemoDelay,
   useResolution,
   useTemp,
-  useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
 import { FixedSizeList as List, ListOnScrollProps } from "react-window";
@@ -42,6 +48,7 @@ import ExcelJS from "exceljs";
 import { saveAs } from "file-saver";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStoreId } from "../utils";
+import { useIndexedDBProducts } from "../hooks/useIndexedDBProducts";
 import { loadFromExcel } from "./loadFromExcel";
 import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
 import { AnimatedCard, FadeIn } from "../animations/components";
@@ -114,6 +121,91 @@ const ExcelImportFrom = () => {
             }
           />
         </div>
+      </div>
+    </Card>
+  );
+};
+const JsonImportFrom = () => {
+  const storeId = useStoreId();
+  const action = useAction(
+    "import-json",
+    async () => {
+      const files = await openPath({
+        filters: [
+          {
+            name: "*",
+            extensions: ["json"],
+          },
+        ],
+      });
+      const file = files.at(0);
+      if (!file) {
+        showToast("Please select a file");
+        return;
+      }
+      const text = await (file as unknown as File).text();
+      const data = JSON.parse(text);
+      if (data.products && Array.isArray(data.products)) {
+        await snapbuyApi.upsertProducts(
+          storeId!,
+          data.products.map((p: Partial<SnapBuy.Product>) => ({
+            ...p,
+            storeId,
+          }))
+        );
+      }
+      if (data.brands && Array.isArray(data.brands)) {
+        for (const brand of data.brands) {
+          await snapbuyApi.createBrand({ ...brand, storeId });
+        }
+      }
+      if (data.packs && Array.isArray(data.packs)) {
+        for (const pack of data.packs) {
+          await snapbuyApi.addPack({ ...pack, storeId });
+        }
+      }
+      if (data.collections && Array.isArray(data.collections)) {
+        for (const collection of data.collections) {
+          await snapbuyApi.upsertCollection({ ...collection, storeId });
+        }
+      }
+      if (data.coupons && Array.isArray(data.coupons)) {
+        for (const coupon of data.coupons) {
+          await snapbuyApi.upsertCoupon({ ...coupon, storeId });
+        }
+      }
+      showToast("Import completed successfully");
+      closePopup();
+    },
+    [storeId]
+  );
+  const loading = isLoading(action);
+  return (
+    <Card className="flex">
+      <div className="flex items-center gap-2 p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="import from json" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex justify-center items-center p-4">
+        <Button
+          onClick={() => {
+            execAction("import-json");
+          }}
+          icon={
+            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faUpload
+          }
+          iconClassName={tw(loading && "animate-spin")}
+        >
+          <Translate content="select json file" />
+        </Button>
       </div>
     </Card>
   );
@@ -231,6 +323,324 @@ const exportExcel = async (
   });
   saveAs(blob, "products.xlsx");
 };
+export const ExportJsonPopup = () => {
+  const storeId = useStoreId();
+  const [previewData, setPreviewData] = useState<any>(null);
+  const [loadingPreview, setLoadingPreview] = useState(false);
+  const loadPreview = useCallback(async () => {
+    if (!storeId) return;
+    setLoadingPreview(true);
+    try {
+      const exportData: {
+        products?: SnapBuy.Product[];
+        brands?: SnapBuy.Brand[];
+        packs?: SnapBuy.Pack[];
+        collections?: SnapBuy.Collection[];
+        coupons?: SnapBuy.Coupon[];
+      } = {};
+      // Fetch all products
+      try {
+        const products = await snapbuyApi.getProductsOf(storeId);
+        exportData.products = products || [];
+      } catch (error) {
+        exportData.products = [];
+      }
+      // Fetch all brands
+      try {
+        const brands = await snapbuyApi.getAllBrands(storeId);
+        exportData.brands = brands || [];
+      } catch (error) {
+        exportData.brands = [];
+      }
+      // Fetch all packs
+      try {
+        const packs = await snapbuyApi.getPacks(storeId);
+        exportData.packs = packs || [];
+      } catch (error) {
+        exportData.packs = [];
+      }
+      // Fetch all collections
+      try {
+        const collections = await snapbuyApi.getCollections(storeId);
+        exportData.collections = collections || [];
+      } catch (error) {
+        exportData.collections = [];
+      }
+      // Fetch all coupons
+      try {
+        const coupons = await snapbuyApi.getCoupons(storeId);
+        exportData.coupons = coupons || [];
+      } catch (error) {
+        exportData.coupons = [];
+      }
+      setPreviewData(exportData);
+    } catch (error) {
+      showToast("Failed to load preview data");
+    } finally {
+      setLoadingPreview(false);
+    }
+  }, [storeId]);
+  const action = useAction(
+    "export-json",
+    async () => {
+      if (!previewData) return;
+      // Create and download JSON file
+      const jsonString = JSON.stringify(previewData, null, 2);
+      const blob = new Blob([jsonString], { type: "application/json" });
+      saveAs(
+        blob,
+        `snapbuy_export_${new Date().toISOString().split("T")[0]}.json`
+      );
+      showToast("Export completed successfully");
+      closePopup();
+    },
+    [previewData]
+  );
+  const loading = isLoading(action);
+  useEffect(() => {
+    loadPreview();
+  }, [loadPreview]);
+  const renderTable = (
+    title: string,
+    data: any[],
+    columns: string[],
+    productsData?: any[]
+  ) => {
+    if (!data || data.length === 0) {
+      return (
+        <div className="mb-6">
+          <h3 className="mb-2 font-semibold text-lg">{title}</h3>
+          <div className="py-4 text-gray-500 text-center">
+            <Translate content="no" /> {title.toLowerCase()}{" "}
+            <Translate content="found" />
+          </div>
+        </div>
+      );
+    }
+    // Create product name lookup map for packs
+    const productNameMap = productsData
+      ? productsData.reduce((map: Record<string, string>, product: any) => {
+          if (product.id && product.name) {
+            map[product.id] = product.name;
+          }
+          return map;
+        }, {})
+      : {};
+    return (
+      <div className="mb-6">
+        <h3 className="mb-2 font-semibold text-lg">
+          {title} ({data.length})
+        </h3>
+        <div className="border rounded-lg overflow-x-auto">
+          <table className="border-[var(--biqpod-borders)] divide-y min-w-full">
+            <thead className="bg-[var(--biqpod-secondary-background)]">
+              <tr>
+                {columns.map((col) => (
+                  <th
+                    key={col}
+                    className="px-3 py-2 font-medium text-[var(--biqpod-secondary-content)] text-xs text-left uppercase tracking-wider"
+                  >
+                    {col}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="bg-[var(--biqpod-primary-background)] divide-y divide-[var(--biqpod-borders)]">
+              {data.slice(0, 5).map((item, index) => (
+                <tr key={index}>
+                  {columns.map((col) => {
+                    let value = item[col];
+                    if (
+                      title === "Packs" &&
+                      col === "products" &&
+                      Array.isArray(value)
+                    ) {
+                      // Special formatting for packs products - show product names instead of IDs
+                      value = value
+                        .map((prod: any) => {
+                          const productName =
+                            productNameMap[prod.prodId] || prod.prodId;
+                          return `${productName} (${prod.count})`;
+                        })
+                        .join(", ");
+                    } else if (
+                      title === "Collections" &&
+                      col === "products" &&
+                      Array.isArray(value)
+                    ) {
+                      // Special formatting for collections products - show product names instead of IDs
+                      value = value
+                        .map((prodId: string) => {
+                          const productName = productNameMap[prodId] || prodId;
+                          return productName;
+                        })
+                        .join(", ");
+                    } else if (
+                      col === "available" &&
+                      typeof value === "boolean"
+                    ) {
+                      // Special formatting for available field - show checkmark/cross
+                      value = value ? "✅" : "❌";
+                    } else if (col === "price (client/customer)") {
+                      // Special formatting for price field
+                      if (item.type === "single" && item.single) {
+                        const clientPrice = item.single.client
+                          ? `DA${item.single.client}`
+                          : "-";
+                        const customerPrice = item.single.customer
+                          ? `DA${item.single.customer}`
+                          : "-";
+                        value = `(${clientPrice})/(${customerPrice})`;
+                      } else if (
+                        item.type === "multiple" &&
+                        item.multiple?.prices?.length
+                      ) {
+                        value = item.multiple.prices
+                          .map((p: any) => `DA${p.price}`)
+                          .join(", ");
+                      } else {
+                        value = "-";
+                      }
+                    } else if (typeof value === "object" && value !== null) {
+                      value =
+                        JSON.stringify(value).substring(0, 50) +
+                        (JSON.stringify(value).length > 50 ? "..." : "");
+                    }
+                    return (
+                      <td
+                        key={col}
+                        className="px-3 py-2 max-w-xs text-sm truncate"
+                      >
+                        {value?.toString() || "-"}
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              {data.length > 5 && (
+                <tr>
+                  <td
+                    colSpan={columns.length}
+                    className="px-3 py-2 text-[var(--biqpod-secondary-content)] text-sm italic"
+                  >
+                    <Translate content="... and" /> {data.length - 5}{" "}
+                    <Translate content="more items" />
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-4/5 max-md:h-full md:max-h-[90vh] overflow-hidden">
+      <div className="flex justify-between items-center gap-2 p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="export to json" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex flex-col h-full md:max-h-[calc(90vh-120px)] overflow-y-auto">
+        {loadingPreview ? (
+          <div className="flex justify-center items-center py-8">
+            <CircleLoading />
+            <span className="ml-2">
+              <Translate content="loading preview..." />
+            </span>
+          </div>
+        ) : previewData ? (
+          <div className="p-4">
+            <div className="bg-blue-50 mb-4 p-3 rounded-lg">
+              <p className="text-blue-800 text-sm">
+                <strong>
+                  <Translate content="preview:" />
+                </strong>{" "}
+                <Translate content="below is a sample of your data that will be exported. each table shows the first 5 items from each category." />
+              </p>
+            </div>
+            {renderTable("Products", previewData.products, [
+              "name",
+              "description",
+              "quantity",
+              "available",
+              "type",
+              "price (client/customer)",
+            ])}
+            {renderTable("Brands", previewData.brands, ["name", "description"])}
+            {renderTable(
+              "Packs",
+              previewData.packs,
+              ["name", "price", "products"],
+              previewData.products
+            )}
+            {renderTable(
+              "Collections",
+              previewData.collections,
+              ["name", "products"],
+              previewData.products
+            )}
+            {renderTable("Coupons", previewData.coupons, [
+              "code",
+              "name",
+              "type",
+              "value",
+              "isActive",
+            ])}
+            <div className="bg-green-800/25 p-4 rounded-lg">
+              <p className="mb-3 text-green-500 text-sm">
+                <strong>
+                  <Translate content="total items:" />
+                </strong>{" "}
+                {previewData.products?.length || 0}{" "}
+                <Translate content="products" />,{" "}
+                {previewData.brands?.length || 0} <Translate content="brands" />
+                ,{previewData.packs?.length || 0} <Translate content="packs" />,{" "}
+                {previewData.collections?.length || 0}{" "}
+                <Translate content="collections" />,
+                {previewData.coupons?.length || 0}{" "}
+                <Translate content="coupons" />
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-center items-center py-8">
+            <span className="text-gray-500">
+              <Translate content="failed to load preview" />
+            </span>
+          </div>
+        )}
+      </div>
+      {previewData && (
+        <EmptyComponent>
+          <Line />
+          <div className="p-3">
+            <Button
+              onClick={() => {
+                execAction("export-json");
+              }}
+              icon={
+                loading
+                  ? allIcons.solid.faCircleNotch
+                  : allIcons.solid.faDownload
+              }
+              iconClassName={tw(loading && "animate-spin")}
+            >
+              <Translate content="export all data to json" />
+            </Button>
+          </div>
+        </EmptyComponent>
+      )}
+    </Card>
+  );
+};
 const ToolsCard = memo(
   ({
     showTools,
@@ -263,6 +673,34 @@ const ToolsCard = memo(
                   animate={{ scale: 1, opacity: 1 }}
                   exit={{ scale: 0, opacity: 0 }}
                   transition={{ delay: 0.4 }}
+                >
+                  <CircleTip
+                    icon={allIcons.solid.faFileCode}
+                    className="text-blue-600"
+                    onClick={async () => {
+                      showPopup(<JsonImportFrom />);
+                    }}
+                  />
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ delay: 0.3 }}
+                >
+                  <CircleTip
+                    icon={allIcons.solid.faFileCode}
+                    className="text-purple-600"
+                    onClick={() => {
+                      showPopup(<ExportJsonPopup />);
+                    }}
+                  />
+                </motion.div>
+                <motion.div
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0, opacity: 0 }}
+                  transition={{ delay: 0.2 }}
                 >
                   <CircleTip
                     icon={allIcons.regular.faFileExcel}
@@ -320,11 +758,15 @@ const ToolsCard = memo(
 );
 const PAGE_SIZE = 20;
 export const Products = () => {
-  const user = useUser();
-  const products = useTemp<SnapBuy.Product[]>("fetched-products"); // Replace with your actual product data
-  const lastDoc = useCopyState<SnapBuy.Product | null>(null);
-  const hasMore = useCopyState(true);
   const storeId = useStoreId();
+  const {
+    products,
+    lastDoc,
+    isLoading: cacheLoading,
+    updateProducts,
+    addProducts,
+  } = useIndexedDBProducts(storeId);
+  const hasMore = useCopyState(true);
   const action = useAction(
     "fetch-products",
     async (next = false) => {
@@ -340,7 +782,7 @@ export const Products = () => {
           ),
           orders: mergeArray(orderBy("id", "asc")),
           limit: PAGE_SIZE,
-          startAt: next && lastDoc.get?.id && mergeArray(lastDoc.get?.id),
+          startAt: next && lastDoc?.id && mergeArray(lastDoc?.id),
         }
       );
       if (!newProducts) {
@@ -350,23 +792,31 @@ export const Products = () => {
         ...order.data,
         id: order.id,
       }));
-      products.set((prev) => (next ? [...(prev || []), ...list] : list));
-      const lastDocRef = newProducts.at(-1)?.data;
-      lastDoc.set(lastDocRef ? lastDocRef : null);
+      if (next) {
+        addProducts(list, newProducts.at(-1)?.data || null);
+      } else {
+        updateProducts(list, newProducts.at(-1)?.data || null);
+      }
       hasMore.set(newProducts.length === PAGE_SIZE);
     },
-    [storeId]
+    [storeId, lastDoc]
   );
   const success = isSuccess(action);
   useEffect(() => {
-    execAction("fetch-products");
-  }, [user]);
+    if (cacheLoading) return;
+    if (products.length === 0) {
+      execAction("fetch-products", false);
+    } else if (lastDoc) {
+      // Try to fetch more products
+      execAction("fetch-products", true);
+    }
+  }, [cacheLoading, products.length, lastDoc]);
   const showTools = useCopyState(false);
   const options = useTemp<FilterOptionsForProduct>("filter-products-options");
   const search = getFieldValue("producer-search-product");
   const [_, filterProducts] = useMemoDelay(
     () => {
-      let filteredProducts = products.get?.filter((prod) => {
+      let filteredProducts = products?.filter((prod: SnapBuy.Product) => {
         // Apply filter options with AND logic
         if (options.get) {
           // Filter by availability
@@ -377,6 +827,16 @@ export const Products = () => {
           ) {
             const isAvailable = options.get.available === "true";
             if (prod.available !== isAvailable) {
+              return false;
+            }
+          }
+          // Filter by brand
+          if (
+            options.get.brand !== null &&
+            options.get.brand !== undefined &&
+            options.get.brand !== ""
+          ) {
+            if (prod.brandId !== options.get.brand) {
               return false;
             }
           }
@@ -445,7 +905,7 @@ export const Products = () => {
       }
       return filterFuzzySearch(filteredProducts || [], search, "name");
     },
-    [search, products.get, options.get],
+    [search, products, options.get],
     500
   );
   const loading = isLoading(action);
@@ -477,10 +937,17 @@ export const Products = () => {
   const listItemData = useMemo(() => {
     return filterProducts ? [...filterProducts, 0] : [];
   }, [filterProducts]);
+  const { isMobile, isDesktop, isTablet } = useDeviceResolution();
+  const columns = useMemo(() => {
+    if (isMobile) return 2;
+    if (isTablet) return 3;
+    if (isDesktop) return 4;
+    return 2; // fallback
+  }, [isMobile, isTablet, isDesktop]);
   // Memoize the item count to prevent recalculation
   const itemCount = useMemo(() => {
-    return Math.ceil((filterProducts?.length || 0 + 1) / 2);
-  }, [filterProducts?.length]);
+    return Math.ceil((filterProducts?.length || 0 + 1) / columns);
+  }, [filterProducts?.length, columns]);
   // Stable onScroll callback
   const handleScroll = useCallback(
     (e: ListOnScrollProps) => {
@@ -492,12 +959,12 @@ export const Products = () => {
       const isNearBottom =
         scrollDirection === "forward" &&
         scrollOffset + listHeight >=
-          Math.ceil((filterProducts?.length || 0) / 2) * 340 - threshold;
+          Math.ceil((filterProducts?.length || 0) / columns) * 340 - threshold;
       if (isNearBottom && hasMore.get && !loading) {
         execAction("fetch-products", true);
       }
     },
-    [listHeight, filterProducts?.length, hasMore.get, loading]
+    [listHeight, filterProducts?.length, hasMore.get, loading, columns]
   );
   // Memoized render item function
   const RenderItem = useCallback(
@@ -511,122 +978,131 @@ export const Products = () => {
       data: (SnapBuy.Product | number)[];
     }) => {
       if (typeof data === "number") {
-        return <div style={style} />;
+        // Loading placeholder card
+        return (
+          <div style={style} className="flex items-center gap-2 p-2">
+            {Array.from({ length: columns }, (_, colIndex) => (
+              <div
+                key={`loading-${index}-${colIndex}`}
+                className="flex flex-col bg-[var(--biqpod-primary-background)] p-3 border border-[var(--biqpod-borders)] rounded-lg animate-pulse"
+                style={{ width: "100%", maxWidth: "300px" }}
+              >
+                {/* Image placeholder */}
+                <div className="bg-[var(--biqpod-secondary-background)] mb-3 rounded-lg w-full h-32"></div>
+
+                {/* Title placeholder */}
+                <div className="bg-[var(--biqpod-secondary-background)] mb-2 rounded h-4"></div>
+                <div className="bg-[var(--biqpod-secondary-background)] mb-3 rounded w-3/4 h-3"></div>
+
+                {/* Price placeholder */}
+                <div className="bg-[var(--biqpod-secondary-background)] mb-2 rounded w-1/2 h-5"></div>
+
+                {/* Button placeholder */}
+                <div className="bg-[var(--biqpod-secondary-background)] rounded w-full h-8"></div>
+              </div>
+            ))}
+          </div>
+        );
       }
-      const first = data?.at(index * 2);
-      const second = data?.at(index * 2 + 1);
       return (
         <div style={style} className="flex items-center gap-2 p-2">
-          {typeof first == "object" && (
-            <ProductRender index={index * 2} product={first} key={first.id} />
-          )}
-          {typeof second == "object" && (
-            <ProductRender
-              index={index * 2 + 1}
-              product={second}
-              key={second.id}
-            />
-          )}
+          {Array.from({ length: columns }, (_, colIndex) => {
+            const product = data?.at(index * columns + colIndex);
+            return (
+              typeof product === "object" && (
+                <ProductRender
+                  index={index * columns + colIndex}
+                  product={product}
+                  key={product.id}
+                />
+              )
+            );
+          })}
         </div>
       );
     },
-    []
+    [columns]
   );
   // Memoized main content section to prevent unnecessary re-renders
   const MainContent = useMemo(() => {
-    if (loading) {
+    if (filterProducts && filterProducts.length > 0) {
       return (
-        <FadeIn className="flex justify-center items-center h-full">
-          <motion.div
-            animate={{
-              rotate: 360,
-            }}
-            transition={{
-              duration: 1,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            <CircleLoading />
-          </motion.div>
-        </FadeIn>
-      );
-    }
-    if (!success) {
-      return null;
-    }
-    return (
-      <motion.div
-        className="relative h-full overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3 }}
-      >
-        {showShadow && (
-          <motion.div
-            style={{
-              ...colorMerge({
-                boxShadow: handelShadowColor([
-                  {
-                    x: 0,
-                    y: 0,
-                    blur: 20,
-                    size: 5,
-                    colorId: "shadow.color",
-                  },
-                ]),
-              }),
-            }}
-            className="top-[-30px] z-[10000] absolute inset-x-0 shadow-xl h-[30px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          />
-        )}
-        {!!filterProducts?.length && (
+        <motion.div
+          className="relative h-full overflow-hidden"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {showShadow && (
+            <motion.div
+              style={{
+                ...colorMerge({
+                  boxShadow: handelShadowColor([
+                    {
+                      x: 0,
+                      y: 0,
+                      blur: 20,
+                      size: 5,
+                      colorId: "shadow.color",
+                    },
+                  ]),
+                }),
+              }}
+              className="top-[-30px] z-[10000] absolute inset-x-0 shadow-xl h-[30px]"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            />
+          )}
           <List
             ref={listRef}
             height={listHeight}
             itemCount={itemCount}
             itemSize={340}
             width={"100%"}
-            itemData={listItemData}
+            itemData={
+              loading || cacheLoading
+                ? [...listItemData, ...range(0, columns)]
+                : listItemData
+            }
             onScroll={handleScroll}
           >
             {RenderItem}
           </List>
-        )}
-        {filterProducts && filterProducts?.length === 0 && (
-          <FadeIn className="flex justify-center items-center w-full h-full">
-            <AnimatedCard>
-              <Card>
-                <motion.div
-                  className="flex justify-center items-center p-2 h-full"
-                  initial={{ scale: 0.8 }}
-                  animate={{ scale: 1 }}
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                >
-                  <Icon
-                    icon={allIcons.solid.faBoxOpen}
-                    iconClassName="text-9xl text-[--biqpod-primary]"
-                  />
-                </motion.div>
-                <Line />
-                <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
-                  <Translate content="no products found" />
-                </div>
-              </Card>
-            </AnimatedCard>
-          </FadeIn>
-        )}
-      </motion.div>
+        </motion.div>
+      );
+    }
+    return (
+      <FadeIn className="flex justify-center items-center w-full h-full">
+        <AnimatedCard>
+          <Card>
+            <motion.div
+              className="flex justify-center items-center p-2 h-full"
+              initial={{ scale: 0.8 }}
+              animate={{ scale: 1 }}
+              transition={{ type: "spring", stiffness: 300, damping: 30 }}
+            >
+              <Icon
+                icon={allIcons.solid.faBoxOpen}
+                iconClassName="text-9xl text-[--biqpod-primary]"
+              />
+            </motion.div>
+            <Line />
+            <div className="flex justify-center items-center p-4 h-full text-2xl capitalize">
+              <Translate content="no products found" />
+            </div>
+          </Card>
+        </AnimatedCard>
+      </FadeIn>
     );
   }, [
     loading,
+    cacheLoading,
     success,
+    products.length,
+    filterProducts,
     showShadow,
     colorMerge,
-    filterProducts?.length,
     listHeight,
     itemCount,
     listItemData,

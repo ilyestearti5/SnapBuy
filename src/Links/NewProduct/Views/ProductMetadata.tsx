@@ -59,10 +59,9 @@ const RenderField = ({ field }: RenderFieldProps) => {
       setFormMetadata(result);
     }
   }, [value, metadata]);
-
   const options =
     field.type === "string"
-      ? { hint: "Enter text" }
+      ? { hint: "Enter text", autoChange: true }
       : field.type === "number"
       ? { placeholder: "Enter a number", autoChange: true }
       : field.type === "colors"
@@ -72,7 +71,6 @@ const RenderField = ({ field }: RenderFieldProps) => {
           separator: ",",
         }
       : {};
-
   // For colors type, we'll use array type but with special handling
   const fieldType = field.type === "colors" ? "array" : field.type;
   return (
@@ -98,36 +96,29 @@ export const ProductMetadata = () => {
   const metadata = metadataState?.get;
   const [newFieldKey, setNewFieldKey] = useState("");
   const [expandedFields, setExpandedFields] = useState<Set<number>>(new Set());
-
   // Use useCopyState for the field type selection with EnumField
   const fieldTypeState = useCopyState<string | false | 0 | null | undefined>(
     undefined
   );
-
   // Create field value state for the new field key input
   const newFieldKeyValue = useFieldValue("new-field-key");
-
   const addMetadataField = () => {
     // Get the field value from the form field using the hook
     const fieldKeyValue = newFieldKeyValue.get || newFieldKey;
     if (!fieldKeyValue.trim()) return;
-
     const selectedFieldType = fieldTypeState.get as MetadataField["type"];
     if (!selectedFieldType) {
       showToast("Field type is required", "error");
       return;
     }
-
     const defaultValue = getDefaultValueForType(selectedFieldType);
     const newField: MetadataField = {
       key: fieldKeyValue.trim(),
       type: selectedFieldType,
       value: defaultValue,
     };
-
     const updatedMetadata = [...(metadata || []), newField];
     setFormMetadata(updatedMetadata);
-
     // Clear the fields
     newFieldKeyValue.set("");
     setNewFieldKey("");
@@ -138,7 +129,6 @@ export const ProductMetadata = () => {
     const updatedMetadata = metadata.filter((_: any, i: number) => i !== index);
     setFormMetadata(updatedMetadata);
   };
-
   const toggleFieldExpansion = (index: number) => {
     const newExpandedFields = new Set(expandedFields);
     if (newExpandedFields.has(index)) {
@@ -148,7 +138,6 @@ export const ProductMetadata = () => {
     }
     setExpandedFields(newExpandedFields);
   };
-
   const getDefaultValueForType = (type: MetadataField["type"]) => {
     switch (type) {
       case "number":

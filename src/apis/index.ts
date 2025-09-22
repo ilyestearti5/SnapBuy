@@ -48,6 +48,7 @@ export interface CreateOrderOptions {
   delivery: boolean;
   metaData?: Record<string, SettingValueType>;
   place: SnapBuy.Order["place"];
+  note?: string;
 }
 export interface Action {
   name: string;
@@ -66,6 +67,13 @@ export interface ActionInterpret {
   action: string;
   params?: Record<string, string | number | undefined>;
 }
+export const isAccountLinkedWithDrive = async () => {
+  const isAccountLinkedCallback = await cloud.app.functions.getUserFunction<{
+    linked: boolean;
+  }>("is-account-linked");
+  const result = await isAccountLinkedCallback?.({ name: "google-drive" });
+  return result?.linked || false;
+};
 export const createApi = (cloud: ClientCloud) => {
   const buildFunction = (name: string) => {
     return {
@@ -1339,6 +1347,18 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       await deleteDoc(["projects", appProjectId, "coupons", couponId]);
       setTemp("coupons." + couponId, null);
+    },
+    async syncPhotosInDocument(
+      type: "product" | "brand" | "collection" | "store",
+      id: string,
+      documentId: string
+    ) {
+      const syncPhotos = await getUserFunction("sync-photos-in-document");
+      await syncPhotos?.({
+        type,
+        id,
+        documentId,
+      });
     },
     async validateCoupon(code: string, storeId: string, orderAmount: number) {
       const coupons = await getDocs<SnapBuy.Coupon>(

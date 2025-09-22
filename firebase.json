@@ -1,46 +1,13 @@
 {
   "hosting": {
-    "public": "folder",
-    "ignore": [
-      "firebase.json",
-      "**/.*",
-      "**/node_modules/**"
+    "public": "./dist",
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "site": "snapbuy",
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
     ]
-  },
-  "firestore": {
-    "database": "(default)",
-    "location": "nam5",
-    "rules": "firestore.rules",
-    "indexes": "firestore.indexes.json"
-  },
-  "storage": {
-    "rules": "storage.rules"
-  },
-  "emulators": {
-    "auth": {
-      "port": 6660
-    },
-    "firestore": {
-      "port": 6661
-    },
-    "database": {
-      "port": 6662
-    },
-    "hosting": {
-      "port": 6663
-    },
-    "pubsub": {
-      "port": 6664
-    },
-    "storage": {
-      "port": 6665
-    },
-    "ui": {
-      "enabled": true
-    },
-    "singleProjectMode": true
-  },
-  "database": {
-    "rules": "database.rules.json"
   }
 }

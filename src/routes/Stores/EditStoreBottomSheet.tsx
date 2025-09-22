@@ -34,6 +34,7 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
   useEffect(() => {
     setFieldValue("store-name", store?.name || "");
     setFieldValue("store-phone", store?.phone || "");
+    setFieldValue("store-email", store?.email || "");
     setTemp("store-photo", store?.photo || null);
   }, []);
   const action = getAction("upsert-store");
@@ -73,6 +74,17 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
             inputMode="tel"
             controls={{
               "[0-9]{10}": {
+                succ: "valid",
+                err: "invalid",
+              },
+            }}
+          />
+          <Field
+            inputName="store-email"
+            placeholder="Enter Store Email"
+            inputMode="email"
+            controls={{
+              "[^@\\s]+@[^@\\s]+\\.[^@\\s]+": {
                 succ: "valid",
                 err: "invalid",
               },

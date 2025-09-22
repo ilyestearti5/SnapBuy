@@ -54,6 +54,7 @@ declare namespace SnapBuy {
     photo?: string;
     uid?: string;
     phone: string;
+    email?: string;
     address?: {
       latitude: number;
       longitude: number;
@@ -81,7 +82,6 @@ declare namespace SnapBuy {
       chrome?: string;
       edge?: string;
       safari?: string;
-      mail?: string;
     };
     template?: string | null;
     notify?: {
@@ -147,6 +147,7 @@ declare namespace SnapBuy {
     };
     couponId?: string;
     discountAmount?: number;
+    note?: string;
   }
   export type Zone = Partial<{
     id: string;
