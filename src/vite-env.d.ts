@@ -316,6 +316,24 @@ declare namespace SnapBuy {
     createdAt: number;
     updatedAt: number;
   }
+  interface Invoice {
+    id: string;
+    storeId: string;
+    orderId?: string;
+    customerId?: string;
+    customerName?: string;
+    customerEmail?: string;
+    products: Record<string, { count: number; price: number }>;
+    tax?: number;
+    discount?: number;
+    total: number;
+    status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+    dueDate?: number;
+    createdAt: number;
+    updatedAt: number;
+    notes?: string;
+    uid: string;
+  }
 }
 declare interface SnapBuyApi {
   markets: string[];

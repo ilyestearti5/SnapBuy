@@ -2,6 +2,7 @@ import {
   Button,
   Card,
   CardHeaderForPopup,
+  Icon,
   Line,
   Scroll,
   Translate,
@@ -11,10 +12,13 @@ import { Link } from "react-router-dom";
 import { StoreOverview } from "./StoreOverview";
 import { Route, Switch, useLocation, useParams } from "react-router";
 import {
+  execAction,
   isLoading,
   setTemp,
+  showPopup,
   showToast,
   useAction,
+  useAsyncEffect,
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect } from "react";
@@ -25,11 +29,11 @@ import { ProductsAndBrands } from "./components/ProductsAndBrands";
 import { OrdersAndCustomers } from "./components/OrdersAndCustomers";
 import { StoreConfiguration } from "./components/StoreConfiguration";
 import { getUserFunction } from "@biqpod/app/ui/apis";
+import { allIcons } from "@biqpod/app/ui/apis";
 import { motion } from "framer-motion";
-import { snapbuyApi } from "../../apis";
+import { isAccountLinkedWithDrive, snapbuyApi } from "../../apis";
 import { useState } from "react";
 export const DriveTransform = () => {
-  const user = useUser();
   const storeId = useStoreId();
   const [currentSync, setCurrentSync] = useState<{
     type: string;
@@ -80,7 +84,7 @@ export const DriveTransform = () => {
     <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
       <CardHeaderForPopup title="Transform Drive" />
       <Line />
-      <div className="flex justify-evenly items-center p-3 h-full">
+      <div className="flex flex-col justify-between items-center gap-12 p-3 h-full">
         <img src={googleDriveHref} className="h-[100px]" />
         {/* Animated Connection Design */}
         <div className="flex justify-center items-center mx-3">
@@ -92,9 +96,9 @@ export const DriveTransform = () => {
           >
             {/* Animated Connection Line */}
             <motion.div className="relative">
-              <div className="bg-gray-300 rounded-full w-12 h-[5px]" />
+              <div className="bg-gray-300 rounded-full w-40 h-[4px]" />
               <motion.div
-                className="top-0 absolute bg-[--biqpod-primary] rounded-full h-[5px]"
+                className="top-0 absolute bg-[--biqpod-primary] rounded-full h-[4px]"
                 initial={{ width: 0, left: 0 }}
                 animate={{
                   width: ["0%", "100%", "0%"],
@@ -107,40 +111,62 @@ export const DriveTransform = () => {
                   times: [0, 0.5, 1],
                 }}
               />
-              {/* Pulsing particles */}
+              {/* Moving data icons */}
               <motion.div
-                className="-top-1 absolute bg-[--biqpod-primary] rounded-full w-1 h-1"
+                className="-top-6 absolute"
                 animate={{
-                  x: [0, 48, 0],
+                  x: [0, 160, 0],
                   opacity: [0, 1, 0],
-                  scale: [0.5, 1, 0.5],
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 3,
                   repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 0.3,
+                  delay: 0,
                 }}
-              />
+              >
+                <Icon
+                  icon={allIcons.solid.faBox}
+                  iconClassName="text-lg text-blue-500"
+                />
+              </motion.div>
               <motion.div
-                className="-top-1 absolute bg-[--biqpod-primary] rounded-full w-1 h-1"
+                className="-top-6 absolute"
                 animate={{
-                  x: [48, 0, 48],
+                  x: [0, 160, 0],
                   opacity: [0, 1, 0],
-                  scale: [0.5, 1, 0.5],
                 }}
                 transition={{
-                  duration: 2,
+                  duration: 3,
                   repeat: Infinity,
-                  ease: "easeInOut",
-                  delay: 1.0,
+                  delay: 1,
                 }}
-              />
+              >
+                <Icon
+                  icon={allIcons.solid.faTag}
+                  iconClassName="text-lg text-green-500"
+                />
+              </motion.div>
+              <motion.div
+                className="-top-6 absolute"
+                animate={{
+                  x: [0, 160, 0],
+                  opacity: [0, 1, 0],
+                }}
+                transition={{
+                  duration: 3,
+                  repeat: Infinity,
+                  delay: 2,
+                }}
+              >
+                <Icon
+                  icon={allIcons.solid.faFolder}
+                  iconClassName="text-lg text-purple-500"
+                />
+              </motion.div>
             </motion.div>
             {/* Second Connection Dot */}
           </motion.div>
         </div>
-        <UserAvatar user={user} className="w-[100px] h-[100px]" />
       </div>
       <Line />
       <div className="p-3">
@@ -153,19 +179,12 @@ export const DriveTransform = () => {
         )}
         <Button
           onClick={async () => {
-            try {
-              const fn = await getUserFunction<{ url: string }>("link-account");
-              const response = await fn?.({ name: "google-drive" });
-              const url = response?.url;
-              window.open(url);
-              showToast("Success");
-            } catch {
-              showToast("Error");
-            }
+            execAction("sync-photos-in-document");
           }}
           disabled={loading}
+          rightIcon={allIcons.solid.faArrowRight}
         >
-          <Translate content="start" />
+          <Translate content="move" />
         </Button>
       </div>
     </Card>
@@ -208,7 +227,7 @@ export const DriveConnect = () => {
               <motion.div
                 className="-top-1 absolute bg-[--biqpod-primary] rounded-full w-1 h-1"
                 animate={{
-                  x: [0, 48, 0],
+                  x: [0, 160, 0],
                   opacity: [0, 1, 0],
                   scale: [0.5, 1, 0.5],
                 }}
@@ -281,16 +300,16 @@ export const Store = () => {
     const result = ["store", ":storeId", ...path].join("/");
     return "/" + result;
   };
-  // const user = useUser();
-  // useAsyncEffect(async () => {
-  //   if (!user) {
-  //     return;
-  //   }
-  //   const isLinked = await isAccountLinkedWithDrive();
-  //   console.log("isLinked", isLinked);
-  //   if (!isLinked) showPopup(<DriveConnect />);
-  //   else showPopup(<DriveTransform />);
-  // }, [user]);
+  const user = useUser();
+  useAsyncEffect(async () => {
+    if (!user) {
+      return;
+    }
+    const isLinked = await isAccountLinkedWithDrive();
+    console.log("isLinked", isLinked);
+    if (!isLinked) showPopup(<DriveConnect />);
+    else showPopup(<DriveTransform />);
+  }, [user]);
   return (
     <div className="flex gap-1 h-full">
       <div className="flex items-center h-full">

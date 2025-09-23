@@ -125,7 +125,7 @@ export const extraTabs = [
     name: "developer",
     link: "/developer",
     photo:
-      "https://static.vecteezy.com/system/resources/previews/041/317/508/original/3d-developer-icon-on-transparent-background-png-download-11431719.png",
+      "https://cdn1.iconfinder.com/data/icons/3d-web-design/512/11._Developer.png",
   },
   {
     name: "agent",

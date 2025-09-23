@@ -67,6 +67,24 @@ export interface ActionInterpret {
   action: string;
   params?: Record<string, string | number | undefined>;
 }
+export interface Invoice {
+  id: string;
+  storeId: string;
+  orderId?: string;
+  customerId?: string;
+  customerName?: string;
+  customerEmail?: string;
+  products: Record<string, { count: number; price: number }>;
+  tax?: number;
+  discount?: number;
+  total: number;
+  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
+  dueDate?: number;
+  createdAt: number;
+  updatedAt: number;
+  notes?: string;
+  uid: string;
+}
 export const isAccountLinkedWithDrive = async () => {
   const isAccountLinkedCallback = await cloud.app.functions.getUserFunction<{
     linked: boolean;
@@ -1546,6 +1564,115 @@ export const createApi = (cloud: ClientCloud) => {
         }
       );
       return accessRecords?.[0]?.data || null;
+    },
+    // Invoice Management Functions
+    async createInvoice(
+      invoice: Pick<
+        SnapBuy.Invoice,
+        | "storeId"
+        | "orderId"
+        | "customerId"
+        | "customerName"
+        | "customerEmail"
+        | "products"
+        | "tax"
+        | "discount"
+        | "status"
+        | "dueDate"
+        | "notes"
+      >
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const id = crypto.randomUUID();
+      const now = Date.now();
+
+      // Calculate total from products
+      const subtotal = Object.values(invoice.products).reduce(
+        (sum: number, product: { count: number; price: number }) =>
+          sum + product.count * product.price,
+        0
+      );
+      const tax = invoice.tax || 0;
+      const discount = invoice.discount || 0;
+      const total = subtotal + tax - discount;
+
+      const invoiceData: SnapBuy.Invoice = {
+        ...invoice,
+        id,
+        uid,
+        total,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await setDoc(["projects", appProjectId, "invoices", id], invoiceData);
+      setTemp("invoices." + id, invoiceData);
+      return invoiceData;
+    },
+    async getInvoices(storeId: string) {
+      const invoices = await getDocs<SnapBuy.Invoice>(
+        ["projects", appProjectId, "invoices"],
+        {
+          where: and(where("storeId", "==", storeId)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      const result =
+        invoices?.map((invoice) => ({ ...invoice.data, id: invoice.id })) || [];
+      result.forEach((invoice) => {
+        setTemp("invoices." + invoice.id, invoice);
+      });
+      return result;
+    },
+    async getInvoice(invoiceId: string) {
+      const invoice = getTempFromStore<SnapBuy.Invoice>(
+        "invoices." + invoiceId
+      );
+      if (invoice) {
+        return invoice;
+      }
+      const doc = await getDoc<SnapBuy.Invoice>([
+        "projects",
+        appProjectId,
+        "invoices",
+        invoiceId,
+      ]);
+      if (doc) {
+        setTemp("invoices." + invoiceId, doc);
+      }
+      return doc;
+    },
+    async updateInvoice(
+      invoiceId: string,
+      invoice: Partial<Omit<SnapBuy.Invoice, "id" | "createdAt" | "uid">>
+    ) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const now = Date.now();
+      const existingInvoice = await getDoc<SnapBuy.Invoice>([
+        "projects",
+        appProjectId,
+        "invoices",
+        invoiceId,
+      ]);
+      if (!existingInvoice) throw "Invoice not found";
+      const updatedInvoice: SnapBuy.Invoice = {
+        ...existingInvoice,
+        ...invoice,
+        updatedAt: now,
+      };
+      await setDoc(
+        ["projects", appProjectId, "invoices", invoiceId],
+        updatedInvoice
+      );
+      setTemp("invoices." + invoiceId, updatedInvoice);
+      return updatedInvoice;
+    },
+    async deleteInvoice(invoiceId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      await deleteDoc(["projects", appProjectId, "invoices", invoiceId]);
+      setTemp("invoices." + invoiceId, null);
     },
   };
   return snapbuyApi;

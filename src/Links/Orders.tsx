@@ -63,6 +63,7 @@ import {
   useInViewAnimation,
   springTransition,
 } from "../animations";
+import { AnimatedMarkdownRenderer } from "../components/AnimatedMarkdownRenderer";
 const NoOrdersFound = () => {
   return (
     <motion.div className="flex justify-center items-center h-full min-h-[400px]">
@@ -1023,7 +1024,7 @@ export const Orders = () => {
                           </div>
                         </div>
                         {order.note && (
-                          <>
+                          <EmptyComponent>
                             <Line />
                             <div className="flex items-start gap-2 p-2">
                               <Icon
@@ -1034,12 +1035,13 @@ export const Orders = () => {
                                 <span className="font-medium text-[--biqpod-text-color] text-sm capitalize">
                                   <Translate content="note" />:
                                 </span>
-                                <p className="mt-1 text-[--biqpod-gray-opacity] text-sm break-words">
-                                  {order.note}
-                                </p>
+                                <AnimatedMarkdownRenderer
+                                  content={order.note}
+                                  className="mt-1 text-[--biqpod-gray-opacity] text-sm break-words"
+                                />
                               </div>
                             </div>
-                          </>
+                          </EmptyComponent>
                         )}
                       </Card>
                     </motion.div>

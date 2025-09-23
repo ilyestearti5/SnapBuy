@@ -188,7 +188,12 @@ export const Vars = () => {
   return (
     <EmptyComponent>
       {/* Search and Add Section */}
-      <div className="flex justify-between items-center gap-2 p-4">
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="flex justify-between items-center gap-2 p-4"
+      >
         <div className="flex-1">
           <Field
             inputName="search-vars"
@@ -203,12 +208,17 @@ export const Vars = () => {
         >
           <Translate content="add" />
         </Button>
-      </div>
+      </motion.div>
       <Line />
       {/* Variables List */}
       <Scroll>
         {filteredVars && filteredVars.length > 0 ? (
-          <div className="flex flex-col gap-2 p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col gap-2 p-4"
+          >
             <AnimatePresence>
               {filteredVars.map((variable, index) => (
                 <motion.div
@@ -224,7 +234,7 @@ export const Vars = () => {
                         <div className="flex items-center gap-2 mb-2">
                           <Icon
                             icon={allIcons.solid.faTag}
-                            iconClassName="text-sm text-gray-500"
+                            iconClassName="text-sm"
                           />
                           <h3 className="font-semibold text-lg">
                             {variable.name}
@@ -233,18 +243,16 @@ export const Vars = () => {
                         <div className="flex items-start gap-2">
                           <Icon
                             icon={allIcons.solid.faFileText}
-                            iconClassName="text-sm text-gray-500 mt-1"
+                            iconClassName="text-sm mt-1"
                           />
-                          <p className="flex-1 text-gray-700 break-words">
-                            {variable.value}
-                          </p>
+                          <p className="flex-1 break-words">{variable.value}</p>
                         </div>
                         <div className="flex items-center gap-2 mt-2">
                           <Icon
                             icon={allIcons.solid.faClock}
-                            iconClassName="text-xs text-gray-400"
+                            iconClassName="text-xs"
                           />
-                          <span className="text-gray-400 text-xs">
+                          <span className="text-xs">
                             {new Date(variable.createdAt).toLocaleDateString()}
                           </span>
                         </div>
@@ -288,18 +296,20 @@ export const Vars = () => {
                 </motion.div>
               ))}
             </AnimatePresence>
-          </div>
+          </motion.div>
         ) : (
-          <div className="flex flex-col justify-center items-center gap-4 p-8 w-full h-full">
-            <Icon
-              icon={allIcons.solid.faCodeBranch}
-              iconClassName="text-6xl text-gray-300"
-            />
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="flex flex-col justify-center items-center gap-4 p-8 w-full h-full"
+          >
+            <Icon icon={allIcons.solid.faCodeBranch} iconClassName="text-6xl" />
             <div className="text-center">
-              <h3 className="mb-2 font-semibold text-gray-600 text-xl">
+              <h3 className="mb-2 font-semibold text-xl">
                 <Translate content="No Variables" />
               </h3>
-              <p className="mb-4 text-gray-500">
+              <p className="mb-4">
                 <Translate content="Create your first variable to get started" />
               </p>
               <Button
@@ -309,7 +319,7 @@ export const Vars = () => {
                 <Translate content="Add Variable" />
               </Button>
             </div>
-          </div>
+          </motion.div>
         )}
       </Scroll>
     </EmptyComponent>

@@ -1,6 +1,7 @@
 import { TabsView } from "../../../components/TabsView";
 import { Orders } from "../../../Links/Orders";
 import { Customers } from "../Customers";
+import { Invoices } from "../../../Links/Invoices";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { useTemp } from "@biqpod/app/ui/hooks";
 import { useMemo } from "react";
@@ -30,6 +31,12 @@ export const OrdersAndCustomers = () => {
       label: "Customers",
       icon: allIcons.solid.faUsers,
       content: <Customers />,
+    },
+    {
+      id: "invoices" as const,
+      label: "Invoices",
+      icon: allIcons.solid.faFileInvoice,
+      content: <Invoices />,
     },
   ];
 
