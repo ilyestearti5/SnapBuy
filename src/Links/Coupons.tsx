@@ -5,7 +5,6 @@ import {
   Card,
   CardWait,
   CircleTip,
-  EmptyComponent,
   Field,
   Icon,
   Key,
@@ -32,9 +31,11 @@ import {
 import { useMemo, useRef, useCallback, memo, useEffect } from "react";
 import { FixedSizeList as List } from "react-window";
 import { getDocs } from "../server";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
+import { useUsedBy } from "../routes/Stores/Stores";
 import { useStoreId } from "../utils";
 import { UpsertCoupon } from "./UpsertCoupon";
+import { SlidingFilter, FilterOption } from "../components/SlidingFilter";
 const PAGE_SIZE = 20;
 
 // Highlight component for search terms
@@ -133,150 +134,110 @@ const SlidingCouponFilter = ({
   const activeFilter = useCopyState<string | null>(value?.isActive || null);
   const typeFilter = useCopyState<string | null>(value?.type || null);
   const expiredFilter = useCopyState<string | null>(value?.expired || null);
+
+  const filterOptions: FilterOption[] = [
+    {
+      key: "isActive",
+      label: "status",
+      component: (
+        <div className="flex gap-2">
+          {[
+            { value: null, label: "all" },
+            { value: "true", label: "active" },
+            { value: "false", label: "inactive" },
+          ].map((option) => (
+            <Button
+              key={option.value || "all"}
+              onClick={() => activeFilter.set(option.value)}
+              className={tw(
+                "px-4 py-2 rounded-full text-sm transition-all",
+                activeFilter.get === option.value
+                  ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] shadow-md"
+                  : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color] hover:bg-[--biqpod-gray-opacity-2]"
+              )}
+            >
+              <Translate content={option.label} />
+            </Button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: "type",
+      label: "type",
+      component: (
+        <div className="flex flex-wrap gap-2">
+          {[
+            { value: null, label: "all types" },
+            { value: "percentage", label: "percentage" },
+            { value: "fixed", label: "fixed amount" },
+            { value: "freeShipping", label: "free shipping" },
+          ].map((option) => (
+            <Button
+              key={option.value || "all"}
+              onClick={() => typeFilter.set(option.value)}
+              className={tw(
+                "px-4 py-2 rounded-full text-sm transition-all",
+                typeFilter.get === option.value
+                  ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] shadow-md"
+                  : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color] hover:bg-[--biqpod-gray-opacity-2]"
+              )}
+            >
+              <Translate content={option.label} />
+            </Button>
+          ))}
+        </div>
+      ),
+    },
+    {
+      key: "expired",
+      label: "expiry status",
+      component: (
+        <div className="flex gap-2">
+          {[
+            { value: null, label: "all" },
+            { value: "false", label: "valid" },
+            { value: "true", label: "expired" },
+          ].map((option) => (
+            <Button
+              key={option.value || "all"}
+              onClick={() => expiredFilter.set(option.value)}
+              className={tw(
+                "px-4 py-2 rounded-full text-sm transition-all",
+                expiredFilter.get === option.value
+                  ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] shadow-md"
+                  : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color] hover:bg-[--biqpod-gray-opacity-2]"
+              )}
+            >
+              <Translate content={option.label} />
+            </Button>
+          ))}
+        </div>
+      ),
+    },
+  ];
+
   return (
-    <EmptyComponent>
-      {/* Overlay */}
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="z-[1000] absolute inset-0"
-            onClick={onClose}
-          />
-        )}
-      </AnimatePresence>
-      {/* Sliding Filter Panel */}
-      <motion.div
-        initial={{ x: "100%" }}
-        animate={{ x: isOpen ? 0 : "100%" }}
-        exit={{ x: "100%" }}
-        transition={{ type: "spring", damping: 25, stiffness: 200 }}
-        className="top-0 right-0 z-[1001] absolute flex flex-col shadow-2xl backdrop-blur-md border-[--biqpod-borders] border-l border-solid w-96 max-w-[90vw] h-full overflow-hidden"
-      >
-        <div className="flex justify-between items-center p-4 border-b">
-          <h1 className="font-semibold text-xl capitalize">
-            <Translate content="filter coupons" />
-          </h1>
-          <CircleTip icon={allIcons.solid.faXmark} onClick={onClose} />
-        </div>
-        <Line />
-        <div className="flex flex-col flex-1 gap-6 p-6 h-full overflow-y-auto">
-          {/* Active Status Filter */}
-          <div className="flex flex-col gap-3">
-            <label className="font-semibold text-sm capitalize">
-              <Translate content="status" />
-            </label>
-            <div className="flex gap-2">
-              {[
-                { value: null, label: "all" },
-                { value: "true", label: "active" },
-                { value: "false", label: "inactive" },
-              ].map((option) => (
-                <Button
-                  key={option.value || "all"}
-                  onClick={() => activeFilter.set(option.value)}
-                  className={tw(
-                    "px-4 py-2 rounded-full text-sm transition-all",
-                    activeFilter.get === option.value
-                      ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] shadow-md"
-                      : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color] hover:bg-[--biqpod-gray-opacity-2]"
-                  )}
-                >
-                  <Translate content={option.label} />
-                </Button>
-              ))}
-            </div>
-          </div>
-          {/* Type Filter */}
-          <div className="flex flex-col gap-3">
-            <label className="font-semibold text-sm capitalize">
-              <Translate content="type" />
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {[
-                { value: null, label: "all types" },
-                { value: "percentage", label: "percentage" },
-                { value: "fixed", label: "fixed amount" },
-                { value: "freeShipping", label: "free shipping" },
-              ].map((option) => (
-                <Button
-                  key={option.value || "all"}
-                  onClick={() => typeFilter.set(option.value)}
-                  className={tw(
-                    "px-4 py-2 rounded-full text-sm transition-all",
-                    typeFilter.get === option.value
-                      ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] shadow-md"
-                      : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color] hover:bg-[--biqpod-gray-opacity-2]"
-                  )}
-                >
-                  <Translate content={option.label} />
-                </Button>
-              ))}
-            </div>
-          </div>
-          {/* Expired Filter */}
-          <div className="flex flex-col gap-3">
-            <label className="font-semibold text-sm capitalize">
-              <Translate content="expiry status" />
-            </label>
-            <div className="flex gap-2">
-              {[
-                { value: null, label: "all" },
-                { value: "false", label: "valid" },
-                { value: "true", label: "expired" },
-              ].map((option) => (
-                <Button
-                  key={option.value || "all"}
-                  onClick={() => expiredFilter.set(option.value)}
-                  className={tw(
-                    "px-4 py-2 rounded-full text-sm transition-all",
-                    expiredFilter.get === option.value
-                      ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] shadow-md"
-                      : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color] hover:bg-[--biqpod-gray-opacity-2]"
-                  )}
-                >
-                  <Translate content={option.label} />
-                </Button>
-              ))}
-            </div>
-          </div>
-        </div>
-        {/* Action Buttons */}
-        <div className="flex gap-3 bg-[--biqpod-background] p-6 border-t">
-          <Button
-            onClick={() => {
-              activeFilter.set(null);
-              typeFilter.set(null);
-              expiredFilter.set(null);
-              onChange({});
-              onClose();
-            }}
-            className="flex-1 bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-2] rounded-xl text-[--biqpod-text-color]"
-          >
-            <Translate content="clear filters" />
-          </Button>
-          <Button
-            onClick={() => {
-              onChange({
-                isActive: activeFilter.get,
-                type: typeFilter.get,
-                expired: expiredFilter.get,
-              });
-              onClose();
-            }}
-            className="flex-1 rounded-xl"
-          >
-            <Translate content="apply filters" />
-          </Button>
-        </div>
-      </motion.div>
-    </EmptyComponent>
+    <SlidingFilter
+      isOpen={isOpen}
+      onClose={onClose}
+      title="filter coupons"
+      value={value}
+      onChange={onChange}
+      options={filterOptions}
+    />
   );
 };
 const CouponRender = memo(
-  ({ coupon, searchTerm }: { coupon: SnapBuy.Coupon; searchTerm?: string }) => {
+  ({
+    coupon,
+    searchTerm,
+    usedBy,
+  }: {
+    coupon: SnapBuy.Coupon;
+    searchTerm?: string;
+    usedBy: string | null;
+  }) => {
     const isExpired = new Date(coupon.endDate) < new Date();
     const isActive = coupon.isActive && !isExpired;
     const getTypeIcon = () => {
@@ -318,12 +279,17 @@ const CouponRender = memo(
       >
         <Card
           className={tw(
-            "relative overflow-hidden border-l-4 transition-all cursor-pointer",
-            isActive ? "border-l-green-500" : "border-l-red-500 opacity-70"
+            "relative overflow-hidden border-l-4 transition-all",
+            isActive ? "border-l-green-500" : "border-l-red-500 opacity-70",
+            usedBy === "owned" || usedBy === "read/edit" ? "cursor-pointer" : ""
           )}
-          onClick={() => {
-            showPopup(<UpsertCoupon back coupon={coupon} />);
-          }}
+          onClick={
+            usedBy === "owned" || usedBy === "read/edit"
+              ? () => {
+                  showPopup(<UpsertCoupon back coupon={coupon} />);
+                }
+              : undefined
+          }
         >
           <div className="flex justify-between items-center p-4">
             <div className="flex items-center gap-3">
@@ -445,6 +411,7 @@ export const Coupons = () => {
   const lastDoc = useCopyState<SnapBuy.Coupon | null>(null);
   const hasMore = useCopyState(true);
   const storeId = useStoreId();
+  const usedBy = useUsedBy();
   const showFilter = useCopyState(false); // Add filter state
   const action = useAction(
     "fetch-coupons",
@@ -579,11 +546,11 @@ export const Coupons = () => {
       if (!coupon) return <div style={style} />;
       return (
         <div style={style} className="p-2">
-          <CouponRender coupon={coupon} searchTerm={search} />
+          <CouponRender coupon={coupon} searchTerm={search} usedBy={usedBy} />
         </div>
       );
     },
-    [filterCoupons, search]
+    [filterCoupons, search, usedBy]
   );
   return (
     <motion.div
@@ -657,11 +624,19 @@ export const Coupons = () => {
             </List>
           </motion.div>
           <Line />
-          <div className="p-2">
-            <Button className="rounded-full" icon={allIcons.solid.faPlus}>
-              <Translate content="create" />
-            </Button>
-          </div>
+          {usedBy === "owned" || usedBy === "read/edit" ? (
+            <div className="p-2">
+              <Button
+                onClick={() => {
+                  showPopup(<UpsertCoupon />);
+                }}
+                className="rounded-full"
+                icon={allIcons.solid.faPlus}
+              >
+                <Translate content="create" />
+              </Button>
+            </div>
+          ) : null}
         </div>
       ) : (
         <motion.div
@@ -705,28 +680,30 @@ export const Coupons = () => {
             </div>
           </motion.div>
           <Line />
-          <motion.div
-            className="p-2"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-          >
+          {usedBy === "owned" || usedBy === "read/edit" ? (
             <motion.div
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              transition={{ duration: 0.2 }}
+              className="p-2"
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
             >
-              <Button
-                onClick={() => {
-                  showPopup(<UpsertCoupon />);
-                }}
-                icon={allIcons.solid.faPlus}
-                className="rounded-full"
+              <motion.div
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ duration: 0.2 }}
               >
-                <Translate content="create coupon" />
-              </Button>
+                <Button
+                  onClick={() => {
+                    showPopup(<UpsertCoupon />);
+                  }}
+                  icon={allIcons.solid.faPlus}
+                  className="rounded-full"
+                >
+                  <Translate content="create coupon" />
+                </Button>
+              </motion.div>
             </motion.div>
-          </motion.div>
+          ) : null}
         </motion.div>
       )}
       {/* Sliding Filter */}

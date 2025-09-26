@@ -24,15 +24,16 @@ import { useStoreId } from "../utils";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Nothing } from "@biqpod/app/ui/types";
 import { useEffect, useState } from "react";
+import { compressImage } from "../utils/utilities";
 export interface UpsertBrandProps {
   brand?: SnapBuy.Brand;
-  back?: boolean;
 }
-export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
+export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
   const storeId = useStoreId();
   const photo = useCopyState<string | Nothing>(brand?.photo || null);
   const [isPasting, setIsPasting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadMode, setUploadMode] = useState<"upload" | "url">("upload");
 
   // Set field values when editing a brand
   useEffect(() => {
@@ -42,26 +43,54 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
     }
   }, [brand]);
   // Handle file upload (paste, drag & drop, or file input)
-  const handleFileUpload = (file: File) => {
+  const handleFileUpload = async (file: File) => {
     if (file && file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const result = event.target?.result as string;
-        photo.set(result);
-        showToast("Image uploaded successfully!", "success");
+      try {
+        // First read the file as data URL
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const result = event.target?.result as string;
+          try {
+            // Compress the image before setting it
+            const compressedImage = await compressImage(result, 0.8, 800, 800);
+            photo.set(compressedImage);
+            showToast("Image uploaded and compressed successfully!", "success");
+          } catch (compressError) {
+            console.error("Image compression failed:", compressError);
+            // Fallback to original image if compression fails
+            photo.set(result);
+            showToast(
+              "Image uploaded successfully (compression failed)!",
+              "success"
+            );
+          }
+          setIsPasting(false);
+          setIsDragging(false);
+        };
+        reader.onerror = () => {
+          showToast("Failed to upload image", "error");
+          setIsPasting(false);
+          setIsDragging(false);
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        showToast("Failed to process image", "error");
         setIsPasting(false);
         setIsDragging(false);
-      };
-      reader.onerror = () => {
-        showToast("Failed to upload image", "error");
-        setIsPasting(false);
-        setIsDragging(false);
-      };
-      reader.readAsDataURL(file);
+      }
     } else {
       showToast("Please select a valid image file", "error");
       setIsPasting(false);
       setIsDragging(false);
+    }
+  };
+
+  // Handle URL image loading
+  const url = getFieldValue("brand-photo-url");
+  const handleUrlUpload = async () => {
+    if (!url?.trim()) {
+      showToast("Please enter a valid image URL", "error");
+      return;
     }
   };
   // Handle paste events for image upload
@@ -120,6 +149,7 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
   }, [photo]);
   const name = getFieldValue("brand-name");
   const description = getFieldValue("brand-description");
+  const imageUrl = getFieldValue("brand-photo-url");
   const createBrandAction = useAction(
     "create-brand",
     async () => {
@@ -163,14 +193,6 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
           )}
         </h1>
         <div className="flex">
-          {back && (
-            <CircleTip
-              icon={allIcons.solid.faArrowLeft}
-              onClick={() => {
-                closePopup();
-              }}
-            />
-          )}
           <CircleTip
             icon={allIcons.solid.faXmark}
             onClick={() => {
@@ -190,81 +212,141 @@ export const UpsertBrand = ({ brand, back }: UpsertBrandProps) => {
             <Icon icon={allIcons.solid.faInfoCircle} iconClassName="text-xs" />
             <span>
               <span className="text-[--biqpod-gray-opacity-2]">
-                <Translate content="upload drag drop or paste image" />
+                <Translate content="upload drag drop paste image or use url" />
               </span>
               <KeyPanding shortcut={["Ctrl+v"]} />
             </span>
           </div>
-          <div className="flex max-md:flex-col justify-between items-center gap-4">
-            {photo.get ? (
-              <div className="relative">
-                <img
-                  src={photo.get}
-                  className="border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"
-                  alt="Brand"
-                />
-              </div>
-            ) : (
-              <div
-                className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${
-                  isPasting || isDragging
-                    ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
-                    : ""
-                }`}
-              >
-                {isPasting ? (
-                  <Icon
-                    icon={allIcons.solid.faSpinner}
-                    iconClassName="text-2xl animate-spin text-[--biqpod-primary]"
-                  />
-                ) : isDragging ? (
-                  <Icon
-                    icon={allIcons.solid.faCloudArrowUp}
-                    iconClassName="text-2xl text-[--biqpod-primary]"
-                  />
-                ) : (
-                  <Icon
-                    icon={allIcons.solid.faImage}
-                    iconClassName="text-2xl"
-                  />
-                )}
-              </div>
-            )}
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) {
-                  handleFileUpload(file);
-                }
-              }}
-              style={{ display: "none" }}
-              id="brand-photo-upload"
-            />
-            <div className="flex items-center gap-2">
-              {photo.get && (
-                <Button
-                  onClick={() => {
-                    photo.set(null);
-                  }}
-                  icon={allIcons.solid.faXmark}
-                  className="bg-[--biqpod-error] px-3 py-1 w-fit text-[--biqpod-primary-content]"
-                >
-                  <Translate content="remove" />
-                </Button>
-              )}
-              <Button
-                icon={allIcons.solid.faUpload}
-                className="px-3 py-1 w-fit"
-                onClick={() => {
-                  document.getElementById("brand-photo-upload")?.click();
-                }}
-              >
-                <Translate content="upload" />
-              </Button>
-            </div>
+          {/* Mode Selection */}
+          <div className="flex gap-2 mb-2">
+            <Button
+              onClick={() => setUploadMode("upload")}
+              className={`px-3 py-1 text-sm ${
+                uploadMode === "upload"
+                  ? "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+                  : "bg-[--biqpod-gray-opacity] text-[--biqpod-text]"
+              }`}
+            >
+              <Translate content="upload file" />
+            </Button>
+            <Button
+              onClick={() => setUploadMode("url")}
+              className={`px-3 py-1 text-sm ${
+                uploadMode === "url"
+                  ? "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+                  : "bg-[--biqpod-gray-opacity] text-[--biqpod-text]"
+              }`}
+            >
+              <Translate content="use url" />
+            </Button>
           </div>
+          {uploadMode === "upload" ? (
+            <div className="flex max-md:flex-col justify-between items-center gap-4">
+              {photo.get ? (
+                <div className="relative">
+                  <img
+                    src={photo.get}
+                    className="border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"
+                    alt="Brand"
+                  />
+                </div>
+              ) : (
+                <div
+                  className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${
+                    isPasting || isDragging
+                      ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
+                      : ""
+                  }`}
+                >
+                  {isPasting ? (
+                    <Icon
+                      icon={allIcons.solid.faSpinner}
+                      iconClassName="text-2xl animate-spin text-[--biqpod-primary]"
+                    />
+                  ) : isDragging ? (
+                    <Icon
+                      icon={allIcons.solid.faCloudArrowUp}
+                      iconClassName="text-2xl text-[--biqpod-primary]"
+                    />
+                  ) : (
+                    <Icon
+                      icon={allIcons.solid.faImage}
+                      iconClassName="text-2xl"
+                    />
+                  )}
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleFileUpload(file);
+                  }
+                }}
+                style={{ display: "none" }}
+                id="brand-photo-upload"
+              />
+              <div className="flex items-center gap-2">
+                {photo.get && (
+                  <Button
+                    onClick={() => {
+                      photo.set(null);
+                    }}
+                    icon={allIcons.solid.faXmark}
+                    className="bg-[--biqpod-error] px-3 py-1 w-fit text-[--biqpod-primary-content]"
+                  >
+                    <Translate content="remove" />
+                  </Button>
+                )}
+                <Button
+                  icon={allIcons.solid.faUpload}
+                  className="px-3 py-1 w-fit"
+                  onClick={() => {
+                    document.getElementById("brand-photo-upload")?.click();
+                  }}
+                >
+                  <Translate content="upload" />
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2">
+              <div className="flex items-center gap-2">
+                <Field
+                  inputName="brand-photo-url"
+                  placeholder="Enter image URL"
+                  className="flex-1"
+                />
+                <Button
+                  onClick={handleUrlUpload}
+                  className="px-3 py-2 w-fit"
+                  disabled={!imageUrl?.trim()}
+                >
+                  <Translate content="load" />
+                </Button>
+              </div>
+              {photo.get && (
+                <div className="flex items-center gap-2">
+                  <img
+                    src={photo.get}
+                    className="border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"
+                    alt="Brand"
+                  />
+                  <Button
+                    onClick={() => {
+                      photo.set(null);
+                    }}
+                    icon={allIcons.solid.faXmark}
+                    className="bg-[--biqpod-error] px-3 py-1 w-fit text-[--biqpod-primary-content]"
+                  >
+                    <Translate content="remove" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          )}
         </div>
         {/* Brand Name */}
         <div className="flex flex-col gap-2">

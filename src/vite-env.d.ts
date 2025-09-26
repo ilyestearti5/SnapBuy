@@ -307,10 +307,8 @@ declare namespace SnapBuy {
   interface StoreUserAccess {
     id: string;
     storeId: string;
-    ownerUserId: string;
-    userEmail?: string;
-    username?: string;
-    userId?: string | null;
+    uid: string;
+    relatedUid?: string | null;
     permissions: "read" | "edit";
     status: "pending" | "accepted" | "rejected";
     createdAt: number;
@@ -334,9 +332,6 @@ declare namespace SnapBuy {
     notes?: string;
     uid: string;
   }
-}
-declare interface SnapBuyApi {
-  markets: string[];
 }
 declare interface AddClientActionProps {
   exists?: SnapBuy.Client[];

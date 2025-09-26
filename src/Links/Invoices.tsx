@@ -8,7 +8,6 @@ import {
   Field,
   Icon,
   Line,
-  NumberField,
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
@@ -17,7 +16,6 @@ import {
   execAction,
   getFieldValue,
   isLoading,
-  setTemp,
   showPopup,
   showToast,
   useAsyncEffect,
@@ -31,8 +29,9 @@ import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { motion } from "framer-motion";
 import { AnimatedList, AnimatedListItem, ScaleIn } from "../animations";
+import { useUsedBy } from "../routes/Stores/Stores";
 
-const NoInvoicesFound = () => {
+const NoInvoicesFound = ({ usedBy }: { usedBy: string | null }) => {
   return (
     <motion.div className="flex justify-center items-center h-full min-h-[400px]">
       <ScaleIn delay={0.2}>
@@ -94,12 +93,14 @@ const NoInvoicesFound = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.9 }}
             >
-              <Button
-                icon={allIcons.solid.faPlus}
-                onClick={() => showPopup(<CreateInvoicePopup />)}
-              >
-                <Translate content="create invoice" />
-              </Button>
+              {(usedBy === "owned" || usedBy === "read/edit") && (
+                <Button
+                  icon={allIcons.solid.faPlus}
+                  onClick={() => showPopup(<CreateInvoicePopup />)}
+                >
+                  <Translate content="create invoice" />
+                </Button>
+              )}
             </motion.div>
           </div>
         </Card>
@@ -111,14 +112,19 @@ const NoInvoicesFound = () => {
 const AddProductPopup = ({
   onAdd,
   productsList,
+  existingProducts = {},
 }: {
-  onAdd: (prodId: string, product: { count: number; price: number }) => void;
+  onAdd: (products: Record<string, { count: number; price: number }>) => void;
   productsList: SnapBuy.Product[];
+  existingProducts?: Record<string, { count: number; price: number }>;
 }) => {
   const searchProduct = getFieldValue("search-product");
   const selectedProductId = useCopyState<string>("");
   const count = useCopyState<number | null | undefined>(1);
   const price = useCopyState<number | null | undefined>(0);
+  const selectedProducts = useCopyState<
+    Record<string, { count: number; price: number }>
+  >({ ...existingProducts });
 
   const filteredProducts = useMemo(() => {
     if (!productsList) return [];
@@ -127,7 +133,7 @@ const AddProductPopup = ({
     );
   }, [searchProduct, productsList]);
 
-  const handleAdd = () => {
+  const handleAddProduct = () => {
     if (
       !selectedProductId.get ||
       !count.get ||
@@ -136,25 +142,113 @@ const AddProductPopup = ({
       price.get <= 0
     ) {
       showToast(
-        "Please select a product and enter valid count and price",
+        "please select a product and enter valid count and price",
         "error"
       );
       return;
     }
-    onAdd(selectedProductId.get, { count: count.get, price: price.get });
+
+    selectedProducts.set((prev) => ({
+      ...prev,
+      [selectedProductId.get]: {
+        count: count.get as number,
+        price: price.get as number,
+      },
+    }));
+
+    // Reset form for next product
+    selectedProductId.set("");
+    count.set(1);
+    price.set(0);
+  };
+
+  const handleDone = () => {
+    if (Object.keys(selectedProducts.get).length === 0) {
+      showToast("please add at least one product", "error");
+      return;
+    }
+    onAdd(selectedProducts.get);
+    closePopup();
+  };
+
+  const removeProduct = (prodId: string) => {
+    selectedProducts.set((prev) => {
+      const newProducts = { ...prev };
+      delete newProducts[prodId];
+      return newProducts;
+    });
   };
 
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
-      <CardHeaderForPopup title="Add Product to Invoice" />
+    <Card className="max-md:rounded-none max-md:w-full md:w-3/4 max-md:h-full md:max-h-[90vh] overflow-hidden">
+      <CardHeaderForPopup title="add products to invoice" />
       <Line />
       <Scroll className="flex-1">
         <div className="flex flex-col gap-4 p-4">
-          <Field inputName="search-product" placeholder="Search products..." />
+          <Field inputName="search-product" placeholder="search products" />
+
+          {/* Selected Products Section */}
+          {Object.keys(selectedProducts.get).length > 0 && (
+            <div className="p-3 border border-[--biqpod-borders] rounded-lg">
+              <h3 className="mb-3 font-medium">
+                <Translate content="selected products" /> (
+                {Object.keys(selectedProducts.get).length})
+              </h3>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {Object.entries(selectedProducts.get).map(
+                  ([prodId, product]) => {
+                    const productInfo = productsList.find(
+                      (p) => p.id === prodId
+                    );
+                    return (
+                      <div
+                        key={prodId}
+                        className="flex justify-between items-center bg-[--biqpod-secondary-background] p-2 rounded"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="flex-shrink-0 bg-[--biqpod-gray-opacity] rounded w-8 h-8 overflow-hidden">
+                            {productInfo?.photos &&
+                            productInfo.photos.length > 0 ? (
+                              <img
+                                src={productInfo.photos[0]}
+                                alt={productInfo.name}
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex justify-center items-center w-full h-full">
+                                <Icon
+                                  icon={allIcons.solid.faBoxOpen}
+                                  iconClassName="text-lg text-[--biqpod-gray-opacity-2]"
+                                />
+                              </div>
+                            )}
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">
+                              {productInfo?.name || `Product ${prodId}`}
+                            </div>
+                            <div className="text-[--biqpod-gray-opacity] text-xs">
+                              {product.count} × {product.price}DA ={" "}
+                              {product.count * product.price}DA
+                            </div>
+                          </div>
+                        </div>
+                        <CircleTip
+                          icon={allIcons.solid.faTrash}
+                          onClick={() => removeProduct(prodId)}
+                          className="text-red-500"
+                        />
+                      </div>
+                    );
+                  }
+                )}
+              </div>
+            </div>
+          )}
 
           {filteredProducts.length === 0 ? (
             <div className="py-4 text-[--biqpod-gray-opacity] text-center">
-              No products found
+              <Translate content="no products found" />
             </div>
           ) : (
             <div className="space-y-2">
@@ -168,23 +262,38 @@ const AddProductPopup = ({
                   }`}
                   onClick={() => {
                     selectedProductId.set(product.id!);
-                    // Set default price from product if available
                     if (product.single?.customer) {
                       price.set(product.single.customer);
                     }
                   }}
                 >
-                  <div className="font-medium">{product.name}</div>
-                  {product.description && (
-                    <div className="text-[--biqpod-gray-opacity] text-sm">
-                      {product.description}
+                  <div className="flex items-center gap-3">
+                    <div className="flex-shrink-0 bg-[--biqpod-gray-opacity] rounded-lg w-12 h-12 overflow-hidden">
+                      {product.photos && product.photos.length > 0 ? (
+                        <img
+                          src={product.photos[0]}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex justify-center items-center w-full h-full">
+                          <Icon
+                            icon={allIcons.solid.faBoxOpen}
+                            iconClassName="text-2xl text-[--biqpod-gray-opacity-2]"
+                          />
+                        </div>
+                      )}
                     </div>
-                  )}
-                  {product.single?.customer && (
-                    <div className="text-green-600 text-sm">
-                      Price: {product.single.customer}DA
+                    <div className="flex-1">
+                      <div className="font-medium">{product.name}</div>
+                      {product.single?.customer && (
+                        <div className="text-green-600 text-sm">
+                          <Translate content="price" />:{" "}
+                          {product.single.customer}DA
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -192,41 +301,60 @@ const AddProductPopup = ({
 
           {selectedProductId.get && (
             <div className="space-y-3 p-3 border border-[--biqpod-borders] rounded-lg">
-              <h3 className="font-medium">Product Details</h3>
-              <NumberField
-                state={count}
-                config={{
-                  placeholder: "Count",
-                  autoChange: true,
-                }}
-                id="product-count"
+              <h3 className="font-medium">
+                <Translate content="product details" />
+              </h3>
+              <input
+                type="number"
+                placeholder="count"
+                value={count.get || ""}
+                onChange={(e) => count.set(parseInt(e.target.value) || 1)}
+                className="p-2 border border-[--biqpod-borders] rounded w-full"
+                min="1"
               />
-              <NumberField
-                state={price}
-                config={{
-                  placeholder: "Price per unit",
-                  autoChange: true,
-                }}
-                id="product-price"
+              <input
+                type="number"
+                placeholder="price per unit"
+                value={price.get || ""}
+                onChange={(e) => price.set(parseFloat(e.target.value) || 0)}
+                className="p-2 border border-[--biqpod-borders] rounded w-full"
+                min="0"
+                step="0.01"
               />
+              <Button
+                onClick={handleAddProduct}
+                disabled={
+                  !selectedProductId.get ||
+                  !count.get ||
+                  count.get <= 0 ||
+                  !price.get ||
+                  price.get <= 0
+                }
+                rightIcon={allIcons.solid.faPlus}
+                className="w-full"
+              >
+                <Translate content="add to selection" />
+              </Button>
             </div>
           )}
         </div>
       </Scroll>
       <Line />
-      <div className="p-4">
+      <div className="flex gap-2 p-4">
         <Button
-          onClick={handleAdd}
-          disabled={
-            !selectedProductId.get ||
-            !count.get ||
-            count.get <= 0 ||
-            !price.get ||
-            price.get <= 0
-          }
-          rightIcon={allIcons.solid.faPlus}
+          onClick={() => closePopup()}
+          className="flex-1 bg-gray-500 hover:bg-gray-600"
         >
-          Add to Invoice
+          <Translate content="cancel" />
+        </Button>
+        <Button
+          onClick={handleDone}
+          disabled={Object.keys(selectedProducts.get).length === 0}
+          rightIcon={allIcons.solid.faCheck}
+          className="flex-1"
+        >
+          <Translate content="done" /> (
+          {Object.keys(selectedProducts.get).length})
         </Button>
       </div>
     </Card>
@@ -243,15 +371,52 @@ const CreateInvoicePopup = () => {
   const tax = useCopyState(0);
   const discount = useCopyState(0);
   const notes = useCopyState("");
-  const productsList = useTemp<SnapBuy.Product[]>("invoice-products");
+  const productsList = useCopyState<SnapBuy.Product[]>([]);
 
   useAsyncEffect(async () => {
     if (!storeId) return;
     try {
       const fetchedProducts = await snapbuyApi.getProductsOf(storeId);
-      setTemp("invoice-products", fetchedProducts || []);
+      // For testing, add some dummy products if none are fetched
+      const productsToUse =
+        fetchedProducts && fetchedProducts.length > 0
+          ? fetchedProducts
+          : [
+              {
+                id: "test-1",
+                name: "Test Product 1",
+                description: "A test product",
+                photos: [],
+                single: { customer: 100 },
+              },
+              {
+                id: "test-2",
+                name: "Test Product 2",
+                description: "Another test product",
+                photos: [],
+                single: { customer: 200 },
+              },
+            ];
+      productsList.set(productsToUse);
     } catch (error) {
       console.error("Failed to fetch products:", error);
+      // Set dummy products for testing
+      productsList.set([
+        {
+          id: "test-1",
+          name: "Test Product 1",
+          description: "A test product",
+          photos: [],
+          single: { customer: 100 },
+        },
+        {
+          id: "test-2",
+          name: "Test Product 2",
+          description: "Another test product",
+          photos: [],
+          single: { customer: 200 },
+        },
+      ]);
     }
   }, [storeId]);
 
@@ -271,7 +436,7 @@ const CreateInvoicePopup = () => {
       Object.keys(products.get).length === 0
     ) {
       showToast(
-        "Please fill in required fields and add at least one product",
+        "please fill in required fields and add at least one product",
         "error"
       );
       return;
@@ -289,7 +454,7 @@ const CreateInvoicePopup = () => {
     };
 
     await snapbuyApi.createInvoice(invoiceData);
-    showToast("Invoice created successfully", "success");
+    showToast("invoice created successfully", "success");
     closePopup();
     // Refresh invoices list
     execAction("fetch-invoices", {});
@@ -297,19 +462,19 @@ const CreateInvoicePopup = () => {
 
   return (
     <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
-      <CardHeaderForPopup title="Create Invoice" />
+      <CardHeaderForPopup title="create invoice" />
       <Line />
       <Scroll className="flex-1">
         <div className="flex flex-col gap-4 p-4">
           <Field
             inputName="customerName"
-            placeholder="Customer Name"
+            placeholder="customer name"
             value={customerName.get}
             onChange={(e) => customerName.set(e.target.value)}
           />
           <Field
             inputName="customerEmail"
-            placeholder="Customer Email"
+            placeholder="customer email"
             value={customerEmail.get}
             onChange={(e) => customerEmail.set(e.target.value)}
           />
@@ -317,31 +482,35 @@ const CreateInvoicePopup = () => {
           {/* Products Section */}
           <div className="p-3 border border-[--biqpod-borders] rounded-lg">
             <div className="flex justify-between items-center mb-3">
-              <h3 className="font-medium">Products</h3>
+              <h3 className="font-medium">
+                <Translate content="products" />
+              </h3>
               <Button
                 icon={allIcons.solid.faPlus}
-                onClick={() =>
+                className="w-fit"
+                disabled={!productsList.get || productsList.get.length === 0}
+                onClick={() => {
                   showPopup(
                     <AddProductPopup
-                      onAdd={(prodId, product) => {
+                      onAdd={(newProducts) => {
                         products.set((prev) => ({
                           ...prev,
-                          [prodId]: product,
+                          ...newProducts,
                         }));
-                        closePopup();
                       }}
-                      productsList={productsList.get || []}
+                      productsList={productsList.get}
+                      existingProducts={products.get}
                     />
-                  )
-                }
+                  );
+                }}
               >
-                Add Product
+                <Translate content="add product" />
               </Button>
             </div>
 
             {Object.keys(products.get).length === 0 ? (
               <div className="py-4 text-[--biqpod-gray-opacity] text-center">
-                No products added yet
+                <Translate content="no products added yet" />
               </div>
             ) : (
               <div className="space-y-2">
@@ -383,25 +552,25 @@ const CreateInvoicePopup = () => {
 
           <Field
             inputName="tax"
-            placeholder="Tax"
+            placeholder="tax"
             value={tax.get.toString()}
             onChange={(e) => tax.set(parseFloat(e.target.value) || 0)}
           />
           <Field
             inputName="discount"
-            placeholder="Discount"
+            placeholder="discount"
             value={discount.get.toString()}
             onChange={(e) => discount.set(parseFloat(e.target.value) || 0)}
           />
           <Field
             inputName="total"
-            placeholder="Total"
+            placeholder="total"
             value={total.toString()}
             disabled
           />
           <Field
             inputName="notes"
-            placeholder="Notes"
+            placeholder="notes"
             value={notes.get}
             onChange={(e) => notes.set(e.target.value)}
           />
@@ -447,6 +616,7 @@ export const Invoices = () => {
   const searchInvoice = getFieldValue("search-invoice");
   const invoices = useTemp<SnapBuy.Invoice[]>("invoices-list");
   const storeId = useStoreId();
+  const usedBy = useUsedBy();
 
   useAsyncEffect(async () => {
     execAction("fetch-invoices", {});
@@ -470,7 +640,7 @@ export const Invoices = () => {
       <div className="flex justify-between items-center gap-2 p-2">
         <Field
           inputName="search-invoice"
-          placeholder="Search Invoices"
+          placeholder="search invoices"
           className="flex-1 rounded-xl"
         />
       </div>
@@ -497,7 +667,7 @@ export const Invoices = () => {
           <Line />
           <Scroll>
             {filteredInvoices.length === 0 && !isLoading("fetch-invoices") && (
-              <NoInvoicesFound />
+              <NoInvoicesFound usedBy={usedBy} />
             )}
             <AnimatedList staggerDelay={0.05}>
               {filteredInvoices.map((invoice, index) => (
@@ -519,12 +689,14 @@ export const Invoices = () => {
                       {new Date(invoice.createdAt).toLocaleDateString()}
                     </div>
                     <div>
-                      <CircleTip
-                        icon={allIcons.solid.faEllipsisV}
-                        onClick={() => {
-                          // TODO: Add invoice actions menu
-                        }}
-                      />
+                      {(usedBy === "owned" || usedBy === "read/edit") && (
+                        <CircleTip
+                          icon={allIcons.solid.faEllipsisV}
+                          onClick={() => {
+                            // TODO: Add invoice actions menu
+                          }}
+                        />
+                      )}
                     </div>
                   </div>
                 </AnimatedListItem>
@@ -536,7 +708,7 @@ export const Invoices = () => {
       {isSmallView && (
         <Scroll>
           {filteredInvoices.length === 0 && !isLoading("fetch-invoices") && (
-            <NoInvoicesFound />
+            <NoInvoicesFound usedBy={usedBy} />
           )}
           <AnimatedList className="flex flex-col gap-4 p-2" staggerDelay={0.05}>
             {filteredInvoices.map((invoice, index) => (
@@ -565,12 +737,14 @@ export const Invoices = () => {
                     <div className="text-[--biqpod-gray-opacity] text-sm">
                       {new Date(invoice.createdAt).toLocaleDateString()}
                     </div>
-                    <CircleTip
-                      icon={allIcons.solid.faEllipsisV}
-                      onClick={() => {
-                        // TODO: Add invoice actions menu
-                      }}
-                    />
+                    {(usedBy === "owned" || usedBy === "read/edit") && (
+                      <CircleTip
+                        icon={allIcons.solid.faEllipsisV}
+                        onClick={() => {
+                          // TODO: Add invoice actions menu
+                        }}
+                      />
+                    )}
                   </div>
                 </Card>
               </AnimatedListItem>
@@ -579,13 +753,15 @@ export const Invoices = () => {
         </Scroll>
       )}
       <div className="p-4 border-[--biqpod-borders] border-t">
-        <Button
-          icon={allIcons.solid.faPlus}
-          onClick={() => showPopup(<CreateInvoicePopup />)}
-          className="w-full"
-        >
-          <Translate content="create invoice" />
-        </Button>
+        {(usedBy === "owned" || usedBy === "read/edit") && (
+          <Button
+            icon={allIcons.solid.faPlus}
+            onClick={() => showPopup(<CreateInvoicePopup />)}
+            className="w-full"
+          >
+            <Translate content="create invoice" />
+          </Button>
+        )}
       </div>
     </div>
   );

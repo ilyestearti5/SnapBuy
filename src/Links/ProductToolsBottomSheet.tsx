@@ -29,7 +29,6 @@ import { ChromePicker as ColorPicker } from "react-color";
 import { snapbuyApi } from "../apis";
 import { colorsInListWithNames } from "../utils";
 import { PostNewProduct } from "./NewProduct/NewProduct";
-import { ProductRenderProps } from "./ProductRender";
 import { sharSocialMedia } from "../utils";
 interface CopyLinkPickColorProps {
   product: SnapBuy.Product;
@@ -357,7 +356,14 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
     </EmptyComponent>
   );
 };
-export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
+export const ProductToolsBottomSheet = ({
+  product,
+  usedBy,
+}: {
+  index: number;
+  product: SnapBuy.Product;
+  usedBy: "owned" | "random" | "read/edit" | "read" | null;
+}) => {
   const uri = useMemo(() => {
     const uri = new URL(location.href);
     uri.pathname = "/product/" + product.id;
@@ -391,18 +397,7 @@ export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
         <Line />
         {[
           {
-            label: "Share",
-            defaultIcon: allIcons.solid.faShare,
-            async click() {
-              await navigator.share({
-                title: product.name,
-                text: product.description || "",
-                url: uri.href,
-              });
-            },
-          },
-          {
-            label: "Link",
+            label: "copy link",
             defaultIcon: allIcons.regular.faCopy,
             click: async () => {
               closeBottomSheet();
@@ -414,69 +409,55 @@ export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
               );
             },
           },
-          {
-            label: "Name",
-            click: async () => {
-              product.name &&
-                (await navigator.clipboard.writeText(product.name));
-              showToast("Name Copyed :)");
-            },
-            defaultIcon: allIcons.regular.faCopy,
-          },
-          {
-            label: "Description",
-            click: async () => {
-              await navigator.clipboard.writeText(product.description || "");
-              showToast("Description Copyed :)");
-            },
-            defaultIcon: allIcons.regular.faCopy,
-          },
-          {
-            type: "separator",
-          },
-          {
-            label: "Duplicate",
-            click: () => {
-              const duplicatedProduct = {
-                ...product,
-                id: undefined, // This will generate a new ID when creating
-                name: `${product.name} (Copy)`,
-              };
-              showPopup(<PostNewProduct product={duplicatedProduct} />);
-            },
-            defaultIcon: allIcons.solid.faCodeFork,
-          },
-          {
-            label: product.available ? "Disable" : "Enable",
-            click: async () => {
-              await snapbuyApi.upsertProducts(product.storeId!, [
+          ...(usedBy !== "read"
+            ? [
                 {
-                  ...product,
-                  available: !product.available,
+                  type: "separator" as const,
                 },
-              ]);
-              execAction("fetch-products");
-            },
-            defaultIcon: product.available
-              ? allIcons.solid.faEyeSlash
-              : allIcons.solid.faEye,
-          },
-          {
-            label: "Edit Product",
-            click: () => {
-              showPopup(<PostNewProduct product={product} />);
-            },
-            defaultIcon: allIcons.solid.faPen,
-          },
-          {
-            label: "Delete Product",
-            click: async () => {
-              await snapbuyApi.deleteProduct(product.id!);
-              execAction("fetch-products");
-              showToast("Product Deleted");
-            },
-            defaultIcon: allIcons.solid.faTrashCan,
-          },
+                {
+                  label: "Duplicate",
+                  click: () => {
+                    const duplicatedProduct = {
+                      ...product,
+                      id: undefined, // This will generate a new ID when creating
+                    };
+                    showPopup(<PostNewProduct product={duplicatedProduct} />);
+                  },
+                  defaultIcon: allIcons.solid.faCodeFork,
+                },
+                {
+                  label: product.available ? "Disable" : "Enable",
+                  click: async () => {
+                    await snapbuyApi.upsertProducts(product.storeId!, [
+                      {
+                        ...product,
+                        available: !product.available,
+                      },
+                    ]);
+                    execAction("fetch-products");
+                  },
+                  defaultIcon: product.available
+                    ? allIcons.solid.faEyeSlash
+                    : allIcons.solid.faEye,
+                },
+                {
+                  label: "Edit Product",
+                  click: () => {
+                    showPopup(<PostNewProduct product={product} />);
+                  },
+                  defaultIcon: allIcons.solid.faPen,
+                },
+                {
+                  label: "Delete Product",
+                  click: async () => {
+                    await snapbuyApi.deleteProduct(product.id!);
+                    execAction("fetch-products");
+                    showToast("Product Deleted");
+                  },
+                  defaultIcon: allIcons.solid.faTrashCan,
+                },
+              ]
+            : []),
         ].map(({ label, type, click, defaultIcon }, index) => {
           if (type === "separator") {
             return <Line key={index} />;
@@ -500,17 +481,6 @@ export const ProductToolsBottomSheet = ({ product }: ProductRenderProps) => {
             </div>
           );
         })}
-        <Line />
-        <div className="p-3">
-          <Button
-            onClick={() => {
-              closeBottomSheet();
-            }}
-            className="bg-[--biqpod-gray-opacity] rounded-full w-full text-[--biqpod-text-color]"
-          >
-            <Translate content="cancel" />
-          </Button>
-        </div>
       </div>
     </EmptyComponent>
   );

@@ -12,11 +12,36 @@ import {
 } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 import { useFormPhotos } from "../../../apis/getFns";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
+import { compressImage } from "../../../utils/utilities";
 export const ProductImages = () => {
   const images = useFormPhotos();
   const url = useCopyState("");
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+  const addCompressedImage = async (imageSrc: string) => {
+    try {
+      const compressedSrc = await compressImage(imageSrc, 0.3); // 80% quality
+      images.set((s) => {
+        if (s) {
+          return [...s, compressedSrc];
+        } else {
+          return [compressedSrc];
+        }
+      });
+    } catch (error) {
+      console.error("Failed to compress image:", error);
+      // Fallback to original image if compression fails
+      images.set((s) => {
+        if (s) {
+          return [...s, imageSrc];
+        } else {
+          return [imageSrc];
+        }
+      });
+    }
+  };
   useEffect(() => {
     const handlePaste = (e: ClipboardEvent) => {
       const items = e.clipboardData?.items;
@@ -27,16 +52,10 @@ export const ProductImages = () => {
           const file = item.getAsFile();
           if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
+            reader.onload = async (event) => {
               const imageSrc = event.target?.result as string;
               if (imageSrc) {
-                images.set((s) => {
-                  if (s) {
-                    return [...s, imageSrc];
-                  } else {
-                    return [imageSrc];
-                  }
-                });
+                await addCompressedImage(imageSrc);
               }
             };
             reader.readAsDataURL(file);
@@ -87,15 +106,9 @@ export const ProductImages = () => {
         </div>
         <Button
           className="px-4 py-1 rounded-full w-fit"
-          onClick={() => {
+          onClick={async () => {
             if (url.get && !images.get?.includes(url.get)) {
-              images.set((s) => {
-                if (s) {
-                  return [...s, url.get];
-                } else {
-                  return [url.get];
-                }
-              });
+              await addCompressedImage(url.get);
             }
             url.set("");
           }}
@@ -120,18 +133,12 @@ export const ProductImages = () => {
               fileInput.onchange = (event) => {
                 const files = (event.target as HTMLInputElement).files;
                 if (files) {
-                  Array.from(files).forEach((file) => {
+                  Array.from(files).forEach(async (file) => {
                     const reader = new FileReader();
-                    reader.onload = (e) => {
+                    reader.onload = async (e) => {
                       const imageSrc = e.target?.result as string;
                       if (imageSrc) {
-                        images.set((s) => {
-                          if (s) {
-                            return [...s, imageSrc];
-                          } else {
-                            return [imageSrc];
-                          }
-                        });
+                        await addCompressedImage(imageSrc);
                       }
                     };
                     reader.readAsDataURL(file);
@@ -151,7 +158,8 @@ export const ProductImages = () => {
             return (
               <div
                 key={index}
-                className="relative border border-[--biqpod-borders] border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden"
+                className="relative border border-[--biqpod-borders] border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden cursor-pointer"
+                onClick={() => setSelectedImage(src)}
               >
                 <img
                   draggable={false}
@@ -160,7 +168,8 @@ export const ProductImages = () => {
                 />
                 <TitleView title="remove" className="right-1 bottom-1 absolute">
                   <Tip
-                    onClick={() => {
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent triggering the image click
                       images.set(
                         images.get?.filter((file) => {
                           return file != src;
@@ -176,6 +185,39 @@ export const ProductImages = () => {
           })}
         </div>
       </Scroll>
+
+      {/* Image Modal */}
+      <AnimatePresence>
+        {selectedImage && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="z-50 fixed inset-0 flex justify-center items-center bg-black bg-opacity-75"
+            onClick={() => setSelectedImage(null)}
+          >
+            <motion.div
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="relative flex flex-col gap-2 max-w-[90vw] max-h-[90vh]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex justify-end w-full">
+                <CircleTip
+                  icon={allIcons.solid.faXmark}
+                  onClick={() => setSelectedImage(null)}
+                />
+              </div>
+              <img
+                src={selectedImage}
+                className="rounded-lg max-w-full max-h-full object-contain"
+                alt="Product image"
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -620,11 +620,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
                 await snapbuyApi.deleteCoupon(coupon.id!);
                 showToast("Coupon deleted successfully", "success");
                 execAction("fetch-coupons");
-                if (back) {
-                  showPopup(<Coupons />);
-                } else {
-                  closePopup();
-                }
+                closePopup();
               }
             }}
             className="bg-[--biqpod-error] rounded-full"

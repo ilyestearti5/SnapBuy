@@ -139,6 +139,15 @@ export const createApi = (cloud: ClientCloud) => {
       const result = await fn?.({ storeId });
       return result?.token;
     },
+    async hasAccessToStore(storeId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const fn = await getUserFunction<SnapBuy.StoreUserAccess>(
+        "has-access-to-store"
+      );
+      const result = await fn?.({ storeId, uid });
+      return result?.permissions;
+    },
     async getPartOfToken(storeId: string) {
       const fn = await getUserFunction<{ token: string }>(
         "get-part-store-api-token"
@@ -620,42 +629,59 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       await mapAsync(products, async (product, index) => {
         var {
-          available = null,
-          description = null,
+          available,
+          description,
           id: prodId,
-          keys = null,
-          limited = null,
-          photos: images = null,
-          quantity = null,
+          keys,
+          limited,
+          photos: images,
+          quantity,
           type = "single",
           ...rest
         } = product;
         await unpackPromise(() => {
           return onBeforeStart?.(product, index);
         });
-        const photos = images
-          ? await uploadFiles(images, (index) => {
-              return [
-                "products",
-                prodId + " " + Date.now(),
-                "photos",
-                index.toString(),
-              ];
-            })
-          : null;
-        const options = {
+        var photos: string[] | undefined | null = null;
+        if (images !== undefined) {
+          photos = images
+            ? await uploadFiles(images, (index) => {
+                return [
+                  "products",
+                  prodId + " " + Date.now(),
+                  "photos",
+                  index.toString(),
+                ];
+              })
+            : null;
+        }
+        const options: any = {
           ...rest,
-          available,
-          description,
           id: prodId,
-          keys,
-          limited,
-          photos,
-          quantity,
-          type,
           uid,
           storeId,
         };
+        if (typeof available !== "undefined") {
+          options.available = available;
+        }
+        if (typeof description !== "undefined") {
+          options.description = description;
+        }
+        if (typeof keys !== "undefined") {
+          options.keys = keys;
+        }
+        if (typeof limited !== "undefined") {
+          options.limited = limited;
+        }
+        if (typeof quantity !== "undefined") {
+          options.quantity = quantity;
+        }
+        if (typeof type !== "undefined") {
+          options.type = type;
+        }
+        if (photos) {
+          options.photos = photos;
+        }
         await setDoc(["projects", appProjectId, "products", prodId!], options);
         setTemp("products." + prodId, options);
       });
@@ -675,7 +701,7 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       const id = crypto.randomUUID();
       const now = Date.now();
-      let photo: string | null = null;
+      let photo: string | undefined = undefined;
       if (brand.photo) {
         const [uploadedPhoto] = await uploadFiles([brand.photo], () => {
           return ["brands", id];
@@ -685,12 +711,15 @@ export const createApi = (cloud: ClientCloud) => {
       const brandData: SnapBuy.Brand = {
         ...brand,
         id,
-        photo: photo || undefined,
+        photo,
         uid,
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(["projects", appProjectId, "brands", id], brandData);
+      await setDoc(["projects", appProjectId, "brands", id], {
+        ...brand,
+        photo: photo || null,
+      });
       setTemp("brands." + id, brandData);
       return brandData;
     },
@@ -699,7 +728,6 @@ export const createApi = (cloud: ClientCloud) => {
         ["projects", appProjectId, "brands"],
         {
           where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
         }
       );
       const result =
@@ -707,6 +735,7 @@ export const createApi = (cloud: ClientCloud) => {
       result.forEach((brand) => {
         setTemp("brands." + brand.id, brand);
       });
+      console.log(result);
       return result;
     },
     async getBrand(brandId: string) {
@@ -1473,10 +1502,8 @@ export const createApi = (cloud: ClientCloud) => {
       const accessData: SnapBuy.StoreUserAccess = {
         id: accessId,
         storeId,
-        ownerUserId: uid,
-        userEmail: userAccess.email,
-        username: userAccess.username,
-        userId: userAccess.userId || null,
+        uid: uid,
+        relatedUid: userAccess.userId || null,
         permissions: userAccess.permissions,
         status: "pending",
         createdAt: now,
@@ -1523,10 +1550,7 @@ export const createApi = (cloud: ClientCloud) => {
       const accessRecords = await getDocs<SnapBuy.StoreUserAccess>(
         ["projects", appProjectId, "store-access"],
         {
-          where: and(
-            where("storeId", "==", storeId),
-            where("ownerUserId", "==", uid)
-          ),
+          where: and(where("storeId", "==", storeId), where("uid", "==", uid)),
           orders: [orderBy("createdAt", "desc")],
         }
       );
@@ -1540,11 +1564,51 @@ export const createApi = (cloud: ClientCloud) => {
       });
       return result;
     },
-    async removeUserAccessFromStore(accessId: string) {
+    async getInvitedStoresForUser() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "store-access", accessId]);
-      setTemp("store-access." + accessId, null);
+      const accessRecords = await getDocs<SnapBuy.StoreUserAccess>(
+        ["projects", appProjectId, "store-access"],
+        {
+          where: and(where("relatedUid", "==", uid)),
+          orders: [orderBy("createdAt", "desc")],
+        }
+      );
+      const result =
+        accessRecords?.map((record) => ({
+          ...record.data,
+          id: record.id,
+        })) || [];
+      // Get the stores for these accesses
+      const stores = await Promise.all(
+        result.map(async (access) => {
+          const store = await this.getStore(access.storeId);
+          return store!;
+        })
+      );
+      return stores.filter(Boolean);
+    },
+    async removeUserAccessFromStore(appStoreId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) {
+        throw "User not authenticated";
+      }
+      const docs = await getDocs<any>(
+        ["projects", import.meta.env.VITE_APP_PROJECT_ID, "store-access"],
+        {
+          where: and(
+            where("relatedUid", "==", uid),
+            where("storeId", "==", appStoreId)
+          ),
+          limit: 1,
+        }
+      );
+      const doc = docs?.at(0);
+      if (!doc) {
+        throw "No access record found";
+      }
+      await deleteDoc(["projects", appProjectId, "store-access", doc?.id!]);
+      setTemp("store-access." + doc?.id, null);
     },
     async getUserAccessToStore(
       storeId: string,
@@ -1564,6 +1628,26 @@ export const createApi = (cloud: ClientCloud) => {
         }
       );
       return accessRecords?.[0]?.data || null;
+    },
+    async getUsers(limit: number = 50) {
+      const users = await getDocs<Biqpod.Account.User>(["users"], {
+        limit,
+      });
+      return users?.map((user) => ({ ...user.data, id: user.id })) || [];
+    },
+    async getUser(userId: string) {
+      const user = getTempFromStore<Biqpod.Account.User & { id: string }>(
+        "users." + userId
+      );
+      if (user) {
+        return user;
+      }
+      const doc = await getDoc<Biqpod.Account.User>(["users", userId]);
+      const userWithId = doc ? { ...doc, id: userId } : null;
+      if (userWithId) {
+        setTemp("users." + userId, userWithId);
+      }
+      return userWithId;
     },
     // Invoice Management Functions
     async createInvoice(

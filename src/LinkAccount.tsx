@@ -5,14 +5,20 @@ import {
   Translate,
   Line,
   Button,
+  EmptyComponent,
 } from "@biqpod/app/ui/components";
 import { Link } from "react-router-dom";
 import { AnimatedPage } from "./animations";
+import { useUser } from "@biqpod/app/ui/hooks";
 
 export const LinkAccount = () => {
+  const user = useUser();
   return (
     <AsyncComponent
       render={async () => {
+        if (!user) {
+          return <EmptyComponent />;
+        }
         const code = new URLSearchParams(window.location.search).get("code");
         const name = new URLSearchParams(window.location.search).get("name");
         const fn = await getUserFunction("link-account-data");
@@ -79,6 +85,7 @@ export const LinkAccount = () => {
           </Card>
         </AnimatedPage>
       }
+      deps={[user]}
     />
   );
 };

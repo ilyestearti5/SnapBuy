@@ -5,7 +5,7 @@ import {
   CircleTip,
   Field,
   Icon,
-  ImageField,
+  KeyPanding,
   Line,
   Scroll,
   TabContent,
@@ -29,11 +29,12 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
 import { delay, filterFuzzySearch, mapAsync, tw } from "@biqpod/app/ui/utils";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { allIcons, getDownloadURL, updateFile } from "@biqpod/app/ui/apis";
 import { getPrice } from "../utils";
 import { Nothing } from "@biqpod/app/ui/types";
 import { Collections } from "./Collections";
+import { compressImage } from "../utils/utilities";
 interface ProductRenderProps {
   product: SnapBuy.Product;
   selectedProducts: SnapBuy.Product[];
@@ -107,6 +108,106 @@ export const UpsertCollection = ({
     setFieldValue("collection-name", collection?.name || "");
   }, []);
   const storeId = useStoreId();
+  const [isPasting, setIsPasting] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
+
+  // Handle file upload (paste, drag & drop, or file input)
+  const handleFileUpload = async (file: File) => {
+    if (file && file.type.startsWith("image/")) {
+      try {
+        // First read the file as data URL
+        const reader = new FileReader();
+        reader.onload = async (event) => {
+          const result = event.target?.result as string;
+          try {
+            // Compress the image before setting it
+            const compressedImage = await compressImage(result, 0.8, 800, 800);
+            photoState.set(compressedImage);
+            showToast("Image uploaded and compressed successfully!", "success");
+          } catch (compressError) {
+            console.error("Image compression failed:", compressError);
+            // Fallback to original image if compression fails
+            photoState.set(result);
+            showToast(
+              "Image uploaded successfully (compression failed)!",
+              "success"
+            );
+          }
+          setIsPasting(false);
+          setIsDragging(false);
+        };
+        reader.onerror = () => {
+          showToast("Failed to upload image", "error");
+          setIsPasting(false);
+          setIsDragging(false);
+        };
+        reader.readAsDataURL(file);
+      } catch (error) {
+        showToast("Failed to process image", "error");
+        setIsPasting(false);
+        setIsDragging(false);
+      }
+    } else {
+      showToast("Please select a valid image file", "error");
+      setIsPasting(false);
+      setIsDragging(false);
+    }
+  };
+
+  // Handle paste events for image upload
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      // Check if there's an image in the clipboard
+      const imageItem = Array.from(items).find(
+        (item) => item.type.indexOf("image") !== -1
+      );
+      if (imageItem) {
+        e.preventDefault();
+        setIsPasting(true);
+        try {
+          const file = imageItem.getAsFile();
+          if (file) {
+            handleFileUpload(file);
+          } else {
+            setIsPasting(false);
+          }
+        } catch (error) {
+          showToast("Failed to paste image", "error");
+          setIsPasting(false);
+        }
+      }
+    };
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+    };
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+    };
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        handleFileUpload(files[0]);
+      }
+    };
+    // Add event listeners
+    document.addEventListener("paste", handlePaste);
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("dragleave", handleDragLeave);
+    document.addEventListener("drop", handleDrop);
+    // Cleanup event listeners on component unmount
+    return () => {
+      document.removeEventListener("paste", handlePaste);
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("dragleave", handleDragLeave);
+      document.removeEventListener("drop", handleDrop);
+    };
+  }, []);
   const products = useAsyncMemo(async () => {
     if (!storeId) return [];
     return await snapbuyApi.getProductsOf(storeId);
@@ -152,6 +253,61 @@ export const UpsertCollection = ({
     setTab("upsert-collection", "upsert-collection");
   }, []);
   const photoState = useCopyState<string | Nothing>(collection?.photo);
+
+  // Handle paste events for image upload
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+      // Check if there's an image in the clipboard
+      const imageItem = Array.from(items).find(
+        (item) => item.type.indexOf("image") !== -1
+      );
+      if (imageItem) {
+        e.preventDefault();
+        setIsPasting(true);
+        try {
+          const file = imageItem.getAsFile();
+          if (file) {
+            handleFileUpload(file);
+          } else {
+            setIsPasting(false);
+          }
+        } catch (error) {
+          showToast("Failed to paste image", "error");
+          setIsPasting(false);
+        }
+      }
+    };
+    const handleDragOver = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(true);
+    };
+    const handleDragLeave = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+    };
+    const handleDrop = (e: DragEvent) => {
+      e.preventDefault();
+      setIsDragging(false);
+      const files = e.dataTransfer?.files;
+      if (files && files.length > 0) {
+        handleFileUpload(files[0]);
+      }
+    };
+    // Add event listeners
+    document.addEventListener("paste", handlePaste);
+    document.addEventListener("dragover", handleDragOver);
+    document.addEventListener("dragleave", handleDragLeave);
+    document.addEventListener("drop", handleDrop);
+    // Cleanup event listeners on component unmount
+    return () => {
+      document.removeEventListener("paste", handlePaste);
+      document.removeEventListener("dragover", handleDragOver);
+      document.removeEventListener("dragleave", handleDragLeave);
+      document.removeEventListener("drop", handleDrop);
+    };
+  }, []);
   const name = getFieldValue("collection-name");
   const upsertCollection = useAction(
     "upsert-collection",
@@ -293,7 +449,94 @@ export const UpsertCollection = ({
         value="upsert-collection-next"
       >
         <div className="p-2">
-          <ImageField state={photoState} id="collection-photo" />
+          {/* Collection Photo */}
+          <div className="flex flex-col gap-2">
+            <label className="font-semibold capitalize">
+              <Translate content="collection photo" />
+            </label>
+            <div className="flex items-center gap-2 mb-2 text-sm">
+              <Icon
+                icon={allIcons.solid.faInfoCircle}
+                iconClassName="text-xs"
+              />
+              <span>
+                <span className="text-[--biqpod-gray-opacity-2]">
+                  <Translate content="upload drag drop or paste image" />
+                </span>
+                <KeyPanding shortcut={["Ctrl+v"]} />
+              </span>
+            </div>
+            <div className="flex max-md:flex-col justify-between items-center gap-4">
+              {photoState.get ? (
+                <div className="relative">
+                  <img
+                    src={photoState.get}
+                    className="border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"
+                    alt="Collection"
+                  />
+                </div>
+              ) : (
+                <div
+                  className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${
+                    isPasting || isDragging
+                      ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
+                      : ""
+                  }`}
+                >
+                  {isPasting ? (
+                    <Icon
+                      icon={allIcons.solid.faSpinner}
+                      iconClassName="text-2xl animate-spin text-[--biqpod-primary]"
+                    />
+                  ) : isDragging ? (
+                    <Icon
+                      icon={allIcons.solid.faCloudArrowUp}
+                      iconClassName="text-2xl text-[--biqpod-primary]"
+                    />
+                  ) : (
+                    <Icon
+                      icon={allIcons.solid.faImage}
+                      iconClassName="text-2xl"
+                    />
+                  )}
+                </div>
+              )}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    handleFileUpload(file);
+                  }
+                }}
+                style={{ display: "none" }}
+                id="collection-photo-upload"
+              />
+              <div className="flex items-center gap-2">
+                {photoState.get && (
+                  <Button
+                    onClick={() => {
+                      photoState.set(null);
+                    }}
+                    icon={allIcons.solid.faXmark}
+                    className="bg-[--biqpod-error] px-3 py-1 w-fit text-[--biqpod-primary-content]"
+                  >
+                    <Translate content="remove" />
+                  </Button>
+                )}
+                <Button
+                  icon={allIcons.solid.faUpload}
+                  className="px-3 py-1 w-fit"
+                  onClick={() => {
+                    document.getElementById("collection-photo-upload")?.click();
+                  }}
+                >
+                  <Translate content="upload" />
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
         <Line />
         <div className="p-2">

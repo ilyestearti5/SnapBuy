@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   EnumField,
+  Icon,
   Translate,
 } from "@biqpod/app/ui/components";
 import {
@@ -25,6 +26,7 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { UpsertAccessUsertoStore } from "./UpsertAccessUsertoStore";
 import { UsersAccessListForStore } from "./UsersAccessListForStore";
+import { useUsedBy } from "../routes/Stores/Stores";
 
 // Animation variants
 const containerVariants = {
@@ -179,6 +181,7 @@ const errorVariants = {
 };
 export const Integrations = () => {
   const { storeId } = useParams<{ storeId: string }>();
+  const usedBy = useUsedBy();
   const origins = useCopyState<string[] | Nothing>([]);
   const apiToken = useCopyState<string | null>(null);
   const isGenerating = useCopyState(false);
@@ -378,7 +381,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
       }
     }
   };
-  return (
+  return usedBy === "owned" ? (
     <motion.div
       className="space-y-6 p-6"
       variants={containerVariants}
@@ -708,7 +711,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
             >
-              Store Access Management
+              <Translate content="Store Access Management" />
             </motion.h2>
 
             {/* Add User Button */}
@@ -726,11 +729,10 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
               >
                 <div>
                   <h3 className="font-medium text-[--biqpod-text-color] text-lg">
-                    Manage User Access
+                    <Translate content="Manage User Access" />
                   </h3>
-                  <p className="mt-1 text-gray-600 text-sm">
-                    Invite users to collaborate on your store with different
-                    permission levels
+                  <p className="opacity-70 mt-1 text-[--biqpod-text-color] text-sm">
+                    <Translate content="Invite users to collaborate on your store with different permission levels" />
                   </p>
                 </div>
                 <motion.div
@@ -753,7 +755,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                     className="px-4 py-2"
                     icon={allIcons.solid.faUserPlus}
                   >
-                    Invite User
+                    <Translate content="Invite User" />
                   </Button>
                 </motion.div>
               </motion.div>
@@ -770,6 +772,51 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
           </Card>
         </motion.div>
       )}
+    </motion.div>
+  ) : (
+    <motion.div
+      className="flex justify-center items-center h-full min-h-[400px]"
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ duration: 0.5 }}
+    >
+      <motion.div
+        className="text-center"
+        initial={{ y: 20 }}
+        animate={{ y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{
+            type: "spring",
+            stiffness: 200,
+            delay: 0.3,
+          }}
+        >
+          <Icon
+            icon={allIcons.solid.faLock}
+            iconClassName="text-4xl text-[--biqpod-gray-opacity] mb-4"
+          />
+        </motion.div>
+        <motion.p
+          className="text-xl"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.4 }}
+        >
+          <Translate content="Access Restricted" />
+        </motion.p>
+        <motion.p
+          className="text-[--biqpod-gray-opacity-2] mt-2"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+        >
+          <Translate content="You don't have permission to access integrations" />
+        </motion.p>
+      </motion.div>
     </motion.div>
   );
 };

@@ -10,11 +10,51 @@ import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { useMemo } from "react";
 import { useLocation } from "react-router";
 import { mergeArray } from "@biqpod/app/ui/utils";
-
 export const toId = (value: string) => {
   return value.toLowerCase().replaceAll(/( |\.)+/gi, "-");
 };
+/**
+ * Compress image and return Base64 DataURL
+ * @param imageUrl string - URL or Base64 of the image
+ * @param quality number - between 0 and 1 (lower = smaller file)
+ * @param maxWidth number - maximum width in pixels (default: 1200)
+ * @param maxHeight number - maximum height in pixels (default: 1200)
+ * @returns Promise<string> - Base64 Data URL of compressed image
+ */
+export async function compressImage(
+  imageUrl: string,
+  quality: number = 0.7,
+  maxWidth: number = 1200,
+  maxHeight: number = 1200
+): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous"; // allow external images
+    img.onload = () => {
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return reject("No canvas context");
 
+      // Calculate new dimensions while maintaining aspect ratio
+      let { width, height } = img;
+      if (width > maxWidth || height > maxHeight) {
+        const ratio = Math.min(maxWidth / width, maxHeight / height);
+        width *= ratio;
+        height *= ratio;
+      }
+
+      canvas.width = width;
+      canvas.height = height;
+
+      ctx.drawImage(img, 0, 0, width, height);
+      // Export as JPEG with given quality
+      const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
+      resolve(compressedDataUrl);
+    };
+    img.onerror = reject;
+    img.src = imageUrl;
+  });
+}
 export const getStringTimeLeave = (from: Date | number, to: Date | number) => {
   const fromTime = new Date(from);
   const toTime = new Date(to);
@@ -45,7 +85,6 @@ export const getStringTimeLeave = (from: Date | number, to: Date | number) => {
   }
   return time;
 };
-
 export const useSub = () => {
   return getTemp<
     {
@@ -53,7 +92,6 @@ export const useSub = () => {
     } & Biqpod.Account.Payout
   >("subed");
 };
-
 export const initStoreIdSave = () => {
   const loc = useLocation();
   return useMemo(() => {
@@ -65,17 +103,13 @@ export const initStoreIdSave = () => {
     }
   }, [loc.pathname]);
 };
-
 export let initialHeight = window.innerHeight;
-
 export const isAndroidWeb = navigator.userAgent.match(
   /Android.*(wv|Chrome)\/(\d+)\.(\d+)(?:\.(\d+))?/gi
 );
-
 export const useClientStoreId = () => {
   return getTemp<string>("client-store-id");
 };
-
 export function useFetchMoreAction<T>(
   actionName: string,
   PAGE_SIZE: number,
@@ -122,12 +156,10 @@ export function useFetchMoreAction<T>(
     },
   };
 }
-
 export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
   value: Biqpod.System.Setting.Config[T];
   onChange: (value: Biqpod.System.Setting.Config[T]) => void;
 }
-
 export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
   var total = 0;
   var choised:
@@ -161,15 +193,12 @@ export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
     choised,
   };
 };
-
 export const useStoreId = () => {
   return getTemp<string>("storeId");
 };
-
 export const getStoreId = () => {
   return getTempFromStore<string>("storeId");
 };
-
 // Generate random metadata for customers
 export const generateRandomCustomerMetadata = (): Record<string, any> => {
   const preferences = [
@@ -201,7 +230,6 @@ export const generateRandomCustomerMetadata = (): Record<string, any> => {
     "Djelfa",
     "Sidi Bel Abbes",
   ];
-
   return {
     age: Math.floor(Math.random() * 50) + 18, // 18-67 years old
     gender: Math.random() > 0.5 ? "male" : "female",

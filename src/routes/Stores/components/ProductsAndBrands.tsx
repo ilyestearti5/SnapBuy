@@ -40,5 +40,12 @@ export const ProductsAndBrands = () => {
     },
   ];
 
-  return <TabsView tabs={tabs} defaultTab="products" position="bottom" />;
+  return (
+    <TabsView
+      positionId="products-and-brands"
+      tabs={tabs}
+      defaultTab="products"
+      position="bottom"
+    />
+  );
 };

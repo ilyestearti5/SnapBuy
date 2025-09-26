@@ -1,10 +1,14 @@
 import {
+  AsyncComponent,
   Button,
   Card,
   CardHeaderForPopup,
+  CircleTip,
+  EmptyComponent,
   EnumField,
   Field,
   Line,
+  Translate,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
@@ -13,10 +17,16 @@ import {
   showToast,
   useAction,
   useCopyState,
+  useAsyncMemo,
 } from "@biqpod/app/ui/hooks";
+import { highlightMatch } from "../routes/Clients/ClientProductRender";
 import { motion, AnimatePresence } from "framer-motion";
 import { snapbuyApi } from "../apis";
 import { allIcons } from "@biqpod/app/ui/apis";
+import { Biqpod } from "@biqpod/app/ui/types";
+import { useMemo } from "react";
+
+type UserWithId = Biqpod.Account.User & { id: string };
 
 interface UpsertAccessUsertoStoreProps {
   storeId: string;
@@ -83,24 +93,33 @@ export const UpsertAccessUsertoStore = ({
   onSuccess,
 }: UpsertAccessUsertoStoreProps) => {
   const error = useCopyState<string | null>(null);
-  const identifierType = useCopyState<string | false | 0 | null | undefined>(
-    existingAccess?.userEmail
-      ? "email"
-      : existingAccess?.username
-      ? "username"
-      : "email"
-  );
-  const userIdentifier = useCopyState<string>(
-    existingAccess?.userEmail || existingAccess?.username || ""
-  );
+  const searchTerm = useCopyState<string>("");
+  const selectedUser = useCopyState<UserWithId | null>(null);
+  const showDropdown = useCopyState<boolean>(false);
   const permissions = useCopyState<string | false | 0 | null | undefined>(
     existingAccess?.permissions || "read"
   );
 
-  const identifierOptions = [
-    { value: "email", content: "Email Address" },
-    { value: "username", content: "Username" },
-  ];
+  // Fetch all users once
+  const allUsers = useAsyncMemo(async () => {
+    return await snapbuyApi.getUsers(100); // Get more users for better search
+  }, []);
+
+  // Filter users based on search term
+  const filteredUsers = useMemo((): UserWithId[] => {
+    if (!searchTerm.get || searchTerm.get.length < 1) return [];
+    const term = searchTerm.get.toLowerCase();
+    return (
+      allUsers?.filter(
+        (user) =>
+          user.firstname?.toLowerCase().includes(term) ||
+          user.lastname?.toLowerCase().includes(term) ||
+          user.email?.toLowerCase().includes(term) ||
+          user.id?.toLowerCase().includes(term) ||
+          user.username?.toLowerCase().includes(term)
+      ) || []
+    );
+  }, [searchTerm.get, allUsers]);
 
   const permissionOptions = [
     { value: "read", content: "Read Only" },
@@ -112,36 +131,14 @@ export const UpsertAccessUsertoStore = ({
     async () => {
       error.set(null);
 
-      if (!userIdentifier.get?.trim()) {
-        error.set(
-          `${identifierType.get === "email" ? "Email" : "Username"} is required`
-        );
+      if (!selectedUser.get) {
+        error.set("Please select a user to invite");
         return;
       }
 
       if (!permissions.get) {
         error.set("Permission level is required");
         return;
-      }
-
-      // Validate email format if type is email
-      if (identifierType.get === "email") {
-        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        if (!emailRegex.test(userIdentifier.get.trim())) {
-          error.set("Please enter a valid email address");
-          return;
-        }
-      }
-
-      // Validate username format if type is username
-      if (identifierType.get === "username") {
-        const usernameRegex = /^[a-zA-Z0-9_]{3,20}$/;
-        if (!usernameRegex.test(userIdentifier.get.trim())) {
-          error.set(
-            "Username must be 3-20 characters and contain only letters, numbers, and underscores"
-          );
-          return;
-        }
       }
 
       try {
@@ -155,20 +152,16 @@ export const UpsertAccessUsertoStore = ({
           // Add new access
           const accessData = {
             permissions: permissions.get as "read" | "edit",
-          } as any;
-
-          if (identifierType.get === "email") {
-            accessData.email = userIdentifier.get.trim();
-          } else {
-            accessData.username = userIdentifier.get.trim();
-          }
+            userId: selectedUser.get!.uid!,
+          };
 
           await snapbuyApi.addUserAccessToStore(storeId, accessData);
           showToast("User access invitation sent successfully", "success");
         }
 
         // Clear form
-        userIdentifier.set("");
+        searchTerm.set("");
+        selectedUser.set(null);
         permissions.set("read");
 
         onSuccess?.();
@@ -182,13 +175,7 @@ export const UpsertAccessUsertoStore = ({
         );
       }
     },
-    [
-      userIdentifier.get,
-      permissions.get,
-      identifierType.get,
-      storeId,
-      existingAccess,
-    ]
+    [selectedUser.get, permissions.get, storeId, existingAccess]
   );
 
   return (
@@ -225,67 +212,212 @@ export const UpsertAccessUsertoStore = ({
             )}
           </AnimatePresence>
 
-          {/* Identifier Type Selection */}
+          {/* User Search */}
           {!existingAccess && (
             <motion.div variants={fieldVariants}>
               <label className="block mb-2 font-medium text-sm">
-                Identification Type
+                <Translate content="Search User" />
               </label>
-              <EnumField
-                state={identifierType}
-                id="user-access-identifier-type"
-                config={{
-                  list: identifierOptions,
-                }}
-              />
+              <div className="relative">
+                <Field
+                  inputName="user-search"
+                  value={searchTerm.get}
+                  onChange={(e) => {
+                    searchTerm.set(e.target.value);
+                    showDropdown.set(true);
+                    if (selectedUser.get) {
+                      selectedUser.set(null);
+                    }
+                  }}
+                  placeholder="Search by name, email, or ID..."
+                  className="rounded-2xl"
+                />
+                {selectedUser.get && (
+                  <div className="flex items-center gap-3 bg-[--biqpod-primary]/10 mt-2 p-3 border border-[--biqpod-primary]/30 rounded-lg">
+                    <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 overflow-hidden font-bold text-[--biqpod-primary-content] text-sm">
+                      {selectedUser.get.photo ? (
+                        <img
+                          src={selectedUser.get.photo}
+                          alt={`${selectedUser.get.firstname} ${selectedUser.get.lastname}`}
+                          className="rounded-full w-full h-full object-cover"
+                          onError={(e) => {
+                            // Fallback to first letter if image fails to load
+                            const target = e.target as HTMLElement;
+                            target.style.display = "none";
+                            const parent = target.parentElement;
+                            if (parent && selectedUser.get) {
+                              parent.textContent =
+                                selectedUser.get.firstname?.[0] ||
+                                selectedUser.get.email?.[0] ||
+                                "?";
+                            }
+                          }}
+                        />
+                      ) : (
+                        selectedUser.get.firstname?.[0] ||
+                        selectedUser.get.email?.[0] ||
+                        "?"
+                      )}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-[--biqpod-text-color]">
+                        {selectedUser.get.firstname} {selectedUser.get.lastname}
+                      </div>
+                      <div className="text-sm">{selectedUser.get.email}</div>
+                    </div>
+                    <CircleTip
+                      onClick={() => {
+                        selectedUser.set(null);
+                        searchTerm.set("");
+                      }}
+                      icon={allIcons.solid.faTimes}
+                      className="hover:text-red-500"
+                    />
+                  </div>
+                )}
+                <AnimatePresence>
+                  {showDropdown.get &&
+                    searchTerm.get.length >= 1 &&
+                    filteredUsers &&
+                    filteredUsers.length > 0 &&
+                    !selectedUser.get && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="right-0 bottom-full left-0 z-50 absolute bg-[--biqpod-primary-background] shadow-xl mb-1 border border-[--biqpod-borders] rounded-lg max-h-60 overflow-y-auto"
+                      >
+                        {filteredUsers.slice(0, 10).map((user: UserWithId) => (
+                          <div
+                            key={user.id}
+                            className="hover:bg-[--biqpod-gray-opacity] p-3 border-[--biqpod-borders] border-b last:border-b-0 transition-colors duration-150 cursor-pointer"
+                            onClick={() => {
+                              selectedUser.set(user);
+                              searchTerm.set(
+                                `${user.firstname} ${user.lastname} (${user.email})`
+                              );
+                              showDropdown.set(false);
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 overflow-hidden font-bold text-[--biqpod-primary-content] text-sm">
+                                {user.photo ? (
+                                  <img
+                                    src={user.photo}
+                                    alt={`${user.firstname} ${user.lastname}`}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      // Fallback to first letter if image fails to load
+                                      const target = e.target as HTMLElement;
+                                      target.style.display = "none";
+                                      const parent = target.parentElement;
+                                      if (parent) {
+                                        parent.textContent =
+                                          user.firstname?.[0] ||
+                                          user.email?.[0] ||
+                                          "?";
+                                      }
+                                    }}
+                                  />
+                                ) : (
+                                  user.firstname?.[0] || user.email?.[0] || "?"
+                                )}
+                              </div>
+                              <div>
+                                <div className="font-medium">
+                                  {highlightMatch(
+                                    `${user.firstname || ""} ${
+                                      user.lastname || ""
+                                    }`.trim(),
+                                    searchTerm.get || ""
+                                  )}
+                                </div>
+                                <div className="text-sm">
+                                  {highlightMatch(
+                                    user.email || "",
+                                    searchTerm.get || ""
+                                  )}
+                                </div>
+                                {user.username && (
+                                  <div className="text-xs">
+                                    @
+                                    {highlightMatch(
+                                      user.username,
+                                      searchTerm.get || ""
+                                    )}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </motion.div>
+                    )}
+                  {showDropdown.get &&
+                    searchTerm.get.length >= 1 &&
+                    filteredUsers &&
+                    filteredUsers.length === 0 &&
+                    !selectedUser.get && (
+                      <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="right-0 bottom-full left-0 z-50 absolute bg-[--biqpod-primary-background] shadow-xl mb-1 p-3 border border-[--biqpod-borders] rounded-lg"
+                      >
+                        <div className="text-sm text-center">
+                          <Translate content="No users found matching" /> "
+                          {searchTerm.get}"
+                        </div>
+                      </motion.div>
+                    )}
+                </AnimatePresence>
+              </div>
+              {!existingAccess && (
+                <motion.p
+                  className="mt-1 text-xs"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.2 }}
+                >
+                  <Translate content="Start typing to search for users by name, email, or ID" />
+                </motion.p>
+              )}
             </motion.div>
           )}
 
-          {/* Email/Username Input */}
-          <motion.div variants={fieldVariants}>
-            <label className="block mb-2 font-medium text-sm">
-              {identifierType.get === "username" ? "Username" : "Email Address"}
-            </label>
-            <Field
-              inputName="user-identifier"
-              value={userIdentifier.get || ""}
-              onChange={(e) => userIdentifier.set(e.target.value)}
-              placeholder={
-                identifierType.get === "username"
-                  ? "username123"
-                  : "user@example.com"
-              }
-              disabled={!!existingAccess}
-              className="rounded-2xl"
-            />
-            {existingAccess && (
-              <motion.p
-                className="mt-1 text-gray-500 text-xs"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                {identifierType.get === "username" ? "Username" : "Email"}{" "}
-                cannot be changed for existing access
-              </motion.p>
-            )}
-            {!existingAccess && identifierType.get === "username" && (
-              <motion.p
-                className="mt-1 text-gray-500 text-xs"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.2 }}
-              >
-                Username must be 3-20 characters and contain only letters,
-                numbers, and underscores
-              </motion.p>
-            )}
-          </motion.div>
+          {/* Selected User Display for Existing Access */}
+          {existingAccess && (
+            <motion.div variants={fieldVariants}>
+              <label className="block mb-2 font-medium text-sm">
+                <Translate content="User" />
+              </label>
+              <div className="bg-[--biqpod-secondary-background] p-3 border border-[--biqpod-borders] rounded-lg">
+                <div className="text-sm">
+                  <AsyncComponent
+                    deps={[existingAccess.relatedUid]}
+                    render={async () => {
+                      if (!existingAccess.relatedUid) {
+                        return <EmptyComponent />;
+                      }
+                      const user = await snapbuyApi.getUser(
+                        existingAccess.relatedUid
+                      );
+                      return (
+                        <EmptyComponent>
+                          {user?.firstname || user?.email}
+                        </EmptyComponent>
+                      );
+                    }}
+                  />
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Permission Level */}
           <motion.div variants={fieldVariants}>
             <label className="block mb-2 font-medium text-sm">
-              Permission Level
+              <Translate content="Permission Level" />
             </label>
             <EnumField
               state={permissions}
@@ -295,7 +427,7 @@ export const UpsertAccessUsertoStore = ({
               }}
             />
             <motion.div
-              className="space-y-1 mt-2 text-gray-600 text-xs"
+              className="space-y-1 mt-2 text-xs"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.3 }}
@@ -303,14 +435,19 @@ export const UpsertAccessUsertoStore = ({
               <div className="flex items-center gap-2">
                 <span className={`fas ${allIcons.solid.faEye.iconName} w-3`} />
                 <span>
-                  <strong>Read Only:</strong> View products, orders, and store
-                  data
+                  <strong>
+                    <Translate content="Read Only:" />
+                  </strong>{" "}
+                  <Translate content="View products, orders, and store data" />
                 </span>
               </div>
               <div className="flex items-center gap-2">
                 <span className={`fas ${allIcons.solid.faPen.iconName} w-3`} />
                 <span>
-                  <strong>Read & Edit:</strong> Full access to modify store data
+                  <strong>
+                    <Translate content="Read & Edit:" />
+                  </strong>{" "}
+                  <Translate content="Full access to modify store data" />
                 </span>
               </div>
             </motion.div>
@@ -318,7 +455,7 @@ export const UpsertAccessUsertoStore = ({
 
           {/* Action Buttons */}
           <motion.div
-            className="flex gap-3 pt-4"
+            className="flex items-center gap-3 pt-4"
             variants={fieldVariants}
             transition={{ delay: 0.4 }}
           >
@@ -330,9 +467,9 @@ export const UpsertAccessUsertoStore = ({
             >
               <Button
                 onClick={closePopup}
-                className="bg-gray-100 hover:bg-gray-200 w-full text-gray-700"
+                className="bg-[--biqpod-gray-opacity] w-full text-[--biqpod-text-color]"
               >
-                Cancel
+                <Translate content="Cancel" />
               </Button>
             </motion.div>
             <motion.div
@@ -353,11 +490,13 @@ export const UpsertAccessUsertoStore = ({
                     : allIcons.solid.faUserPlus
                 }
               >
-                {isLoading(action)
-                  ? "Processing..."
-                  : existingAccess
-                  ? "Update Access"
-                  : "Send Invitation"}
+                {isLoading(action) ? (
+                  <Translate content="Processing..." />
+                ) : existingAccess ? (
+                  <Translate content="Update Access" />
+                ) : (
+                  <Translate content="Invitation" />
+                )}
               </Button>
             </motion.div>
           </motion.div>

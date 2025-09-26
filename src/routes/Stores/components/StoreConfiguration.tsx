@@ -39,5 +39,12 @@ export const StoreConfiguration = () => {
     },
   ];
 
-  return <TabsView tabs={tabs} defaultTab="stores" position="bottom" />;
+  return (
+    <TabsView
+      positionId="store-configuration"
+      tabs={tabs}
+      defaultTab="stores"
+      position="bottom"
+    />
+  );
 };

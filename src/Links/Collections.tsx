@@ -10,6 +10,7 @@ import {
 } from "@biqpod/app/ui/components";
 import { useStoreId } from "../utils";
 import { snapbuyApi } from "../apis";
+import { useUsedBy } from "../routes/Stores/Stores";
 import {
   confirm,
   getFieldValue,
@@ -102,6 +103,7 @@ function highlightMatch(
 }
 export const Collections = () => {
   const storeId = useStoreId();
+  const usedBy = useUsedBy();
   const collections = useAsyncMemo(async () => {
     if (!storeId) return null;
     return snapbuyApi.getCollections(storeId);
@@ -183,75 +185,81 @@ export const Collections = () => {
                         </span>
                       </div>
                       <div className="flex">
-                        <div>
-                          <CircleTip
-                            onClick={({ clientX, clientY }) => {
-                              openMenu({
-                                x: clientX,
-                                y: clientY,
-                                menu: [
-                                  {
-                                    label: "Copy",
-                                    defaultIcon: allIcons.regular.faCopy,
-                                    click: async () => {
-                                      const baseUrl = window.location.origin;
-                                      const collectionUrl = `${baseUrl}/collection/${collection.id}`;
-                                      await navigator.clipboard.writeText(
-                                        collectionUrl
-                                      );
-                                      showToast(
-                                        "Collection URL copied to clipboard!"
-                                      );
-                                    },
-                                  },
-                                  {
-                                    label: "Preview",
-                                    defaultIcon: allIcons.solid.faEye,
-                                    click: () => {
-                                      const baseUrl = window.location.origin;
-                                      const collectionUrl = `${baseUrl}/collection/${collection.id}`;
-                                      const a = document.createElement("a");
-                                      a.href = collectionUrl;
-                                      a.target = "_blank";
-                                      a.click();
-                                    },
-                                  },
-                                  {
-                                    type: "separator",
-                                  },
-                                  {
-                                    label: "Delete",
-                                    click: async () => {
-                                      const response = await confirm({
-                                        title: "Delete Collection",
-                                        message: `Are you sure you want to delete the collection "${collection.name}"? This action cannot be undone.`,
-                                      });
-                                      if (!response) return;
-                                      await snapbuyApi.deleteCollection(
-                                        collection.id
-                                      );
-                                    },
-                                    defaultIcon: allIcons.solid.faTrash,
-                                  },
-                                ],
-                              });
-                            }}
-                            icon={allIcons.solid.faEllipsisVertical}
-                          />
-                        </div>
-                        <div>
-                          <CircleTip
-                            onClick={() => {
-                              showPopup(
-                                <UpsertCollection
-                                  back
-                                  collection={collection}
-                                />
-                              );
-                            }}
-                            icon={allIcons.solid.faChevronRight}
-                          />
-                        </div>
+                        {usedBy === "owned" || usedBy === "read/edit" ? (
+                          <>
+                            <div>
+                              <CircleTip
+                                onClick={({ clientX, clientY }) => {
+                                  openMenu({
+                                    x: clientX,
+                                    y: clientY,
+                                    menu: [
+                                      {
+                                        label: "Copy",
+                                        defaultIcon: allIcons.regular.faCopy,
+                                        click: async () => {
+                                          const baseUrl =
+                                            window.location.origin;
+                                          const collectionUrl = `${baseUrl}/collection/${collection.id}`;
+                                          await navigator.clipboard.writeText(
+                                            collectionUrl
+                                          );
+                                          showToast(
+                                            "Collection URL copied to clipboard!"
+                                          );
+                                        },
+                                      },
+                                      {
+                                        label: "Preview",
+                                        defaultIcon: allIcons.solid.faEye,
+                                        click: () => {
+                                          const baseUrl =
+                                            window.location.origin;
+                                          const collectionUrl = `${baseUrl}/collection/${collection.id}`;
+                                          const a = document.createElement("a");
+                                          a.href = collectionUrl;
+                                          a.target = "_blank";
+                                          a.click();
+                                        },
+                                      },
+                                      {
+                                        type: "separator",
+                                      },
+                                      {
+                                        label: "Delete",
+                                        click: async () => {
+                                          const response = await confirm({
+                                            title: "Delete Collection",
+                                            message: `Are you sure you want to delete the collection "${collection.name}"? This action cannot be undone.`,
+                                          });
+                                          if (!response) return;
+                                          await snapbuyApi.deleteCollection(
+                                            collection.id
+                                          );
+                                        },
+                                        defaultIcon: allIcons.solid.faTrash,
+                                      },
+                                    ],
+                                  });
+                                }}
+                                icon={allIcons.solid.faEllipsisVertical}
+                              />
+                            </div>
+                            <div>
+                              <CircleTip
+                                onClick={() => {
+                                  showPopup(
+                                    <UpsertCollection
+                                      back
+                                      collection={collection}
+                                    />
+                                  );
+                                }}
+                                icon={allIcons.solid.faChevronRight}
+                              />
+                            </div>
+                          </>
+                        ) : null}
                       </div>
                     </motion.div>
                   );
@@ -297,27 +305,29 @@ export const Collections = () => {
         )}
       </Scroll>
       <Line />
-      <motion.div
-        className="p-2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
+      {usedBy === "owned" || usedBy === "read/edit" ? (
         <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.2 }}
+          className="p-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Button
-            onClick={() => {
-              showPopup(<UpsertCollection back />);
-            }}
-            className="rounded-full"
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <Translate content="create" />
-          </Button>
+            <Button
+              onClick={() => {
+                showPopup(<UpsertCollection back />);
+              }}
+              className="rounded-full"
+            >
+              <Translate content="create" />
+            </Button>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      ) : null}
     </motion.div>
   );
 };

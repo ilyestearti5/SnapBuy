@@ -138,7 +138,7 @@ export const extraTabs = [
 export const appTabs = [
   {
     name: "Android",
-    url: "https://drive.google.com/uc?export=download&id=11I8jEbzcbvnOzOfrHpv8Ut87EQWoExBS",
+    url: "https://drive.google.com/thumbnail?id=11I8jEbzcbvnOzOfrHpv8Ut87EQWoExBS",
     photo: androidPhoto,
   },
 ];

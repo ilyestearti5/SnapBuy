@@ -29,6 +29,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
+import { useUsedBy } from "../routes/Stores/Stores";
 import { UpsertPack } from "./UpsertPack";
 import { useEffect, useMemo } from "react";
 import { range, filterFuzzySearch } from "@biqpod/app/ui/utils";
@@ -112,6 +113,7 @@ function highlightMatch(
 }
 export const Packs = () => {
   const storeId = useStoreId();
+  const usedBy = useUsedBy();
   const packs = useCopyState<SnapBuy.Pack[]>([]);
   const fetchingAction = useAction(
     "fetch-packs",
@@ -222,65 +224,72 @@ export const Packs = () => {
                           </div>
                         </div>
                         <div className="flex">
-                          <div>
-                            <CircleTip
-                              onClick={({ clientX, clientY }) => {
-                                openMenu({
-                                  x: clientX,
-                                  y: clientY,
-                                  menu: [
-                                    {
-                                      label: "Copy",
-                                      defaultIcon: allIcons.regular.faCopy,
-                                      click: async () => {
-                                        const baseUrl = window.location.origin;
-                                        const packUrl = `${baseUrl}/pack/${pack.id}`;
-                                        await navigator.clipboard.writeText(
-                                          packUrl
-                                        );
-                                        showToast(
-                                          "Pack URL copied to clipboard"
-                                        );
-                                      },
-                                    },
-                                    {
-                                      label: "Preview",
-                                      defaultIcon: allIcons.solid.faEye,
-                                      click: () => {
-                                        const baseUrl = window.location.origin;
-                                        const packUrl = `${baseUrl}/pack/${pack.id}`;
-                                        const a = document.createElement("a");
-                                        a.href = packUrl;
-                                        a.target = "_blank";
-                                        a.click();
-                                      },
-                                    },
-                                    {
-                                      type: "separator",
-                                    },
-                                    {
-                                      label: "Delete",
-                                      click: async () => {
-                                        execAction("delete-pack", {
-                                          packId: pack.id,
-                                        });
-                                      },
-                                      defaultIcon: allIcons.solid.faTrash,
-                                    },
-                                  ],
-                                });
-                              }}
-                              icon={allIcons.solid.faEllipsisVertical}
-                            />
-                          </div>
-                          <div>
-                            <CircleTip
-                              onClick={() => {
-                                showPopup(<UpsertPack pack={pack} />);
-                              }}
-                              icon={allIcons.solid.faChevronRight}
-                            />
-                          </div>
+                          {usedBy === "owned" || usedBy === "read/edit" ? (
+                            <>
+                              <div>
+                                <CircleTip
+                                  onClick={({ clientX, clientY }) => {
+                                    openMenu({
+                                      x: clientX,
+                                      y: clientY,
+                                      menu: [
+                                        {
+                                          label: "Copy",
+                                          defaultIcon: allIcons.regular.faCopy,
+                                          click: async () => {
+                                            const baseUrl =
+                                              window.location.origin;
+                                            const packUrl = `${baseUrl}/pack/${pack.id}`;
+                                            await navigator.clipboard.writeText(
+                                              packUrl
+                                            );
+                                            showToast(
+                                              "Pack URL copied to clipboard"
+                                            );
+                                          },
+                                        },
+                                        {
+                                          label: "Preview",
+                                          defaultIcon: allIcons.solid.faEye,
+                                          click: () => {
+                                            const baseUrl =
+                                              window.location.origin;
+                                            const packUrl = `${baseUrl}/pack/${pack.id}`;
+                                            const a =
+                                              document.createElement("a");
+                                            a.href = packUrl;
+                                            a.target = "_blank";
+                                            a.click();
+                                          },
+                                        },
+                                        {
+                                          type: "separator",
+                                        },
+                                        {
+                                          label: "Delete",
+                                          click: async () => {
+                                            execAction("delete-pack", {
+                                              packId: pack.id,
+                                            });
+                                          },
+                                          defaultIcon: allIcons.solid.faTrash,
+                                        },
+                                      ],
+                                    });
+                                  }}
+                                  icon={allIcons.solid.faEllipsisVertical}
+                                />
+                              </div>
+                              <div>
+                                <CircleTip
+                                  onClick={() => {
+                                    showPopup(<UpsertPack pack={pack} />);
+                                  }}
+                                  icon={allIcons.solid.faChevronRight}
+                                />
+                              </div>
+                            </>
+                          ) : null}
                         </div>
                       </motion.div>
                     );
@@ -365,27 +374,29 @@ export const Packs = () => {
         </Scroll>
       </div>
       <Line />
-      <motion.div
-        className="p-2"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.3 }}
-      >
+      {usedBy === "owned" || usedBy === "read/edit" ? (
         <motion.div
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          transition={{ duration: 0.2 }}
+          className="p-2"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <Button
-            onClick={() => {
-              showPopup(<UpsertPack />);
-            }}
-            className="rounded-full"
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            transition={{ duration: 0.2 }}
           >
-            <Translate content="create" />
-          </Button>
+            <Button
+              onClick={() => {
+                showPopup(<UpsertPack />);
+              }}
+              className="rounded-full"
+            >
+              <Translate content="create" />
+            </Button>
+          </motion.div>
         </motion.div>
-      </motion.div>
+      ) : null}
       {loading && (
         <motion.div
           initial={{ opacity: 0 }}

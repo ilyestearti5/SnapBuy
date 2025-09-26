@@ -1,8 +1,10 @@
 import {
+  AsyncComponent,
   Button,
   Card,
   CircleTip,
   EmptyComponent,
+  Translate,
 } from "@biqpod/app/ui/components";
 import {
   confirm,
@@ -19,6 +21,7 @@ import { snapbuyApi } from "../apis";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { useEffect } from "react";
 import { UpsertAccessUsertoStore } from "./UpsertAccessUsertoStore";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 interface UsersAccessListForStoreProps {
   storeId: string;
@@ -114,14 +117,10 @@ export const UsersAccessListForStore = ({
   const usersAccess = useCopyState<SnapBuy.StoreUserAccess[]>([]);
   const error = useCopyState<string | null>(null);
 
-  // Helper function to get user display identifier
-  const getUserDisplayName = (user: SnapBuy.StoreUserAccess) => {
-    return user.userEmail || user.username || "Unknown User";
-  };
-
-  // Helper function to get identifier type
-  const getUserIdentifierType = (user: SnapBuy.StoreUserAccess) => {
-    return user.userEmail ? "email" : "username";
+  // Helper function to get identifier type (simplified since we fetch user)
+  const getUserIdentifierType = (fetchedUser: Biqpod.Account.User | null) => {
+    if (!fetchedUser) return "user";
+    return fetchedUser.email ? "email" : "username";
   };
 
   const loadUsersAction = useAction(
@@ -162,13 +161,13 @@ export const UsersAccessListForStore = ({
   const getStatusColor = (status: SnapBuy.StoreUserAccess["status"]) => {
     switch (status) {
       case "accepted":
-        return "bg-green-100 text-green-800 border-green-300";
+        return "bg-green-600/25 text-green-600 border-green-300";
       case "pending":
-        return "bg-yellow-100 text-yellow-800 border-yellow-300";
+        return "bg-yellow-600/25 text-yellow-600 border-yellow-300";
       case "rejected":
-        return "bg-red-100 text-red-800 border-red-300";
+        return "bg-red-600/25 text-red-600 border-red-300";
       default:
-        return "bg-gray-100 text-gray-800 border-gray-300";
+        return "bg-gray-600/25 text-gray-600 border-gray-300";
     }
   };
 
@@ -178,8 +177,8 @@ export const UsersAccessListForStore = ({
 
   const getPermissionColor = (permission: string) => {
     return permission === "edit"
-      ? "bg-blue-100 text-blue-800 border-blue-300"
-      : "bg-gray-100 text-gray-800 border-gray-300";
+      ? "bg-blue-400/25 text-blue-400 border-blue-300"
+      : "bg-gray-400/25 text-gray-400 border-gray-300";
   };
 
   const formatDate = (timestamp: number) => {
@@ -202,11 +201,18 @@ export const UsersAccessListForStore = ({
   };
 
   const handleRemoveUser = async (user: SnapBuy.StoreUserAccess) => {
+    let userName = "this user";
+    if (user.relatedUid) {
+      try {
+        const fetchedUser = await snapbuyApi.getUser(user.relatedUid);
+        userName = fetchedUser?.firstname || fetchedUser?.email || "this user";
+      } catch (err) {
+        console.error("Failed to fetch user for confirm:", err);
+      }
+    }
     const response = await confirm({
       title: "Remove User Access",
-      message: `Are you sure you want to remove access for ${getUserDisplayName(
-        user
-      )}?`,
+      message: `Are you sure you want to remove access for ${userName}?`,
       detail: "This user will no longer be able to access your store data.",
     });
 
@@ -254,7 +260,9 @@ export const UsersAccessListForStore = ({
             <span
               className={`fas ${allIcons.solid.faSpinner.iconName} animate-spin`}
             />
-            <span className="text-gray-600">Loading users...</span>
+            <span className="opacity-70 text-[--biqpod-text-color]">
+              <Translate content="Loading users..." />
+            </span>
           </div>
         </motion.div>
       )}
@@ -274,13 +282,56 @@ export const UsersAccessListForStore = ({
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2">
                         <span
-                          className={`fas ${allIcons.solid.faUser.iconName} text-gray-500`}
+                          className={`fas ${allIcons.solid.faUser.iconName} opacity-60 text-[--biqpod-text-color]`}
                         />
-                        <span className="font-medium text-gray-900">
-                          {getUserDisplayName(user)}
+                        <span className="font-medium text-[--biqpod-text-color]">
+                          <AsyncComponent
+                            deps={[user.relatedUid]}
+                            render={async () => {
+                              if (!user.relatedUid) {
+                                return (
+                                  <EmptyComponent>
+                                    <Translate content="Unknown User" />
+                                  </EmptyComponent>
+                                );
+                              }
+                              const fetchedUser = await snapbuyApi.getUser(
+                                user.relatedUid
+                              );
+                              return (
+                                <EmptyComponent>
+                                  {fetchedUser?.firstname ||
+                                    fetchedUser?.email || (
+                                      <Translate content="Unknown User" />
+                                    )}
+                                </EmptyComponent>
+                              );
+                            }}
+                          />
                         </span>
-                        <span className="ml-1 text-gray-500 text-xs">
-                          ({getUserIdentifierType(user)})
+                        <span className="opacity-60 ml-1 text-[--biqpod-text-color] text-xs">
+                          (
+                          <AsyncComponent
+                            deps={[user.relatedUid]}
+                            render={async () => {
+                              if (!user.relatedUid) {
+                                return (
+                                  <EmptyComponent>
+                                    <Translate content="user" />
+                                  </EmptyComponent>
+                                );
+                              }
+                              const fetchedUser = await snapbuyApi.getUser(
+                                user.relatedUid
+                              );
+                              return (
+                                <EmptyComponent>
+                                  {getUserIdentifierType(fetchedUser)}
+                                </EmptyComponent>
+                              );
+                            }}
+                          />
+                          )
                         </span>
                       </div>
                     </div>
@@ -309,13 +360,16 @@ export const UsersAccessListForStore = ({
                             getPermissionIcon(user.permissions).iconName
                           }`}
                         />
-                        {user.permissions === "edit"
-                          ? "Read & Edit"
-                          : "Read Only"}
+                        {user.permissions === "edit" ? (
+                          <Translate content="Read & Edit" />
+                        ) : (
+                          <Translate content="Read Only" />
+                        )}
                       </motion.span>
 
-                      <span className="text-gray-500 text-xs">
-                        Added {formatDate(user.createdAt)}
+                      <span className="opacity-60 text-[--biqpod-text-color] text-xs">
+                        <Translate content="Added" />{" "}
+                        {formatDate(user.createdAt)}
                       </span>
                     </div>
                   </div>
@@ -362,8 +416,7 @@ export const UsersAccessListForStore = ({
                         className={`fas ${allIcons.solid.faClock.iconName}`}
                       />
                       <span>
-                        Invitation sent. User needs to accept the invitation to
-                        access your store.
+                        <Translate content="Invitation sent. User needs to accept the invitation to access your store." />
                       </span>
                     </div>
                   </motion.div>
@@ -390,25 +443,24 @@ export const UsersAccessListForStore = ({
               transition={{ delay: 0.1 }}
             >
               <span
-                className={`fas ${allIcons.solid.faUsers.iconName} text-4xl text-gray-400`}
+                className={`fas ${allIcons.solid.faUsers.iconName} text-4xl opacity-50 text-[--biqpod-text-color]`}
               />
             </motion.div>
             <motion.h3
-              className="mb-2 font-medium text-gray-900 text-lg"
+              className="mb-2 font-medium text-[--biqpod-text-color] text-lg"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
-              No Users Added
+              <Translate content="No Users Added" />
             </motion.h3>
             <motion.p
-              className="mb-4 text-gray-600 text-sm"
+              className="opacity-70 mb-4 text-[--biqpod-text-color] text-sm"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              You haven't invited any users to access your store yet. Add users
-              to collaborate on your store management.
+              <Translate content="You haven't invited any users to access your store yet. Add users to collaborate on your store management." />
             </motion.p>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
@@ -428,7 +480,7 @@ export const UsersAccessListForStore = ({
                 className="px-4 py-2"
                 icon={allIcons.solid.faUserPlus}
               >
-                Invite First User
+                <Translate content="Invite First User" />
               </Button>
             </motion.div>
           </Card>

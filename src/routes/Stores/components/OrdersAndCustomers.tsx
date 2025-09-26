@@ -40,5 +40,12 @@ export const OrdersAndCustomers = () => {
     },
   ];
 
-  return <TabsView position="bottom" tabs={tabs} defaultTab="orders" />;
+  return (
+    <TabsView
+      positionId="orders-and-customer"
+      position="bottom"
+      tabs={tabs}
+      defaultTab="orders"
+    />
+  );
 };

@@ -1,10 +1,10 @@
 import { useState, ReactNode, useEffect } from "react";
 import {
   Button,
-  EmptyComponent,
   Icon,
   IconProps,
   Line,
+  PositionView,
   Translate,
 } from "@biqpod/app/ui/components";
 import { tw } from "@biqpod/app/ui/utils";
@@ -21,12 +21,14 @@ interface TabsViewProps<T extends string = string> {
   defaultTab?: T;
   onTabChange?: (tabId: T) => void;
   position?: "top" | "bottom";
+  positionId: string;
 }
 export function TabsView<T extends string = string>({
   tabs,
   defaultTab,
   onTabChange,
   position = "top",
+  positionId,
 }: TabsViewProps<T>) {
   const [activeTab, setActiveTab] = useState<T>(defaultTab || tabs[0]?.id);
   // Update active tab if defaultTab changes
@@ -46,7 +48,7 @@ export function TabsView<T extends string = string>({
     <div className={tw("flex flex-col h-full")}>
       {/* Tab Navigation */}
       {position === "top" && (
-        <EmptyComponent>
+        <PositionView positionId={positionId}>
           <div
             className={tw(
               "flex gap-1 justify-center bg-[--biqpod-secondary-background] p-2"
@@ -92,14 +94,14 @@ export function TabsView<T extends string = string>({
             })}
           </div>
           <Line />
-        </EmptyComponent>
+        </PositionView>
       )}
       {/* Tab Content */}
       <div className={tw("flex-1 overflow-hidden w-full")}>
         {currentTab?.content}
       </div>
       {position === "bottom" && (
-        <EmptyComponent>
+        <PositionView positionId={positionId}>
           <Line />
 
           <div
@@ -146,7 +148,7 @@ export function TabsView<T extends string = string>({
               );
             })}
           </div>
-        </EmptyComponent>
+        </PositionView>
       )}
     </div>
   );

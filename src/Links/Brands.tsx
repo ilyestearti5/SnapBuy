@@ -11,6 +11,7 @@ import {
 } from "@biqpod/app/ui/components";
 import { useStoreId } from "../utils";
 import { snapbuyApi } from "../apis";
+import { useUsedBy } from "../routes/Stores/Stores";
 import {
   confirm,
   execAction,
@@ -139,6 +140,7 @@ function highlightMatch(
 }
 export const Brands = () => {
   const storeId = useStoreId();
+  const usedBy = useUsedBy();
   const brands = useCopyState<SnapBuy.Brand[]>([]);
   const searchQuery = getFieldValue("search-brand");
   const action = useAction(
@@ -221,61 +223,73 @@ export const Brands = () => {
                         </span>
                       )}
                     </div>
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <CircleTip
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openMenu({
-                            x: e.clientX,
-                            y: e.clientY,
-                            menu: [
-                              {
-                                label: "Edit",
-                                click: () => {
-                                  showPopup(<UpsertBrand back brand={brand} />);
-                                },
-                                defaultIcon: allIcons.solid.faPen,
-                              },
-                              {
-                                type: "separator",
-                              },
-                              {
-                                label: "Delete",
-                                click: async () => {
-                                  const response = await confirm({
-                                    title: "Delete Brand",
-                                    message: `Are you sure you want to delete the brand \"${brand.name}\"? This action cannot be undone.`,
-                                  });
-                                  if (!response) return;
-                                  await snapbuyApi.deleteBrand(brand.id!);
-                                  showToast(
-                                    "Brand deleted successfully",
-                                    "success"
-                                  );
-                                  execAction("fetch-brands");
-                                },
-                                defaultIcon: allIcons.solid.faTrash,
-                              },
-                            ],
-                          });
-                        }}
-                        icon={allIcons.solid.faEllipsisVertical}
-                      />
-                    </motion.div>
-                    <motion.div
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <CircleTip
-                        onClick={() => {
-                          showPopup(<UpsertBrand back brand={brand} />);
-                        }}
-                        icon={allIcons.solid.faChevronRight}
-                      />
-                    </motion.div>
+                    {usedBy === "owned" || usedBy === "read/edit" ? (
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <CircleTip
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openMenu({
+                              x: e.clientX,
+                              y: e.clientY,
+                              menu: [
+                                ...(usedBy === "owned" || usedBy === "read/edit"
+                                  ? [
+                                      {
+                                        label: "Edit",
+                                        click: () => {
+                                          showPopup(
+                                            <UpsertBrand brand={brand} />
+                                          );
+                                        },
+                                        defaultIcon: allIcons.solid.faPen,
+                                      },
+                                      {
+                                        type: "separator" as const,
+                                      },
+                                      {
+                                        label: "Delete",
+                                        click: async () => {
+                                          const response = await confirm({
+                                            title: "Delete Brand",
+                                            message: `Are you sure you want to delete the brand \"${brand.name}\"? This action cannot be undone.`,
+                                          });
+                                          if (!response) return;
+                                          await snapbuyApi.deleteBrand(
+                                            brand.id!
+                                          );
+                                          showToast(
+                                            "Brand deleted successfully",
+                                            "success"
+                                          );
+                                          execAction("fetch-brands");
+                                        },
+                                        defaultIcon: allIcons.solid.faTrash,
+                                      },
+                                    ]
+                                  : []),
+                              ],
+                            });
+                          }}
+                          icon={allIcons.solid.faEllipsisVertical}
+                        />
+                      </motion.div>
+                    ) : null}
+                    {usedBy === "owned" || usedBy === "read/edit" ? (
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <CircleTip
+                          onClick={() => {
+                            showPopup(<UpsertBrand brand={brand} />);
+                          }}
+                          icon={allIcons.solid.faChevronRight}
+                        />
+                      </motion.div>
+                    ) : null}
                   </div>
                 </motion.div>
               );
@@ -347,25 +361,29 @@ export const Brands = () => {
           </div>
         </Scroll>
       )}
-      <Line />
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
-        className="p-2"
-      >
-        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Button
-            icon={allIcons.solid.faPlus}
-            onClick={() => {
-              showPopup(<UpsertBrand back />);
-            }}
-            className="rounded-full w-full"
+      {usedBy === "owned" || usedBy === "read/edit" ? (
+        <>
+          <Line />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+            className="p-2"
           >
-            <Translate content="create brand" />
-          </Button>
-        </motion.div>
-      </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button
+                icon={allIcons.solid.faPlus}
+                onClick={() => {
+                  showPopup(<UpsertBrand />);
+                }}
+                className="rounded-full w-full"
+              >
+                <Translate content="create brand" />
+              </Button>
+            </motion.div>
+          </motion.div>
+        </>
+      ) : null}
     </div>
   );
 };

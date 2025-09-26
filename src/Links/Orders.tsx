@@ -64,6 +64,7 @@ import {
   springTransition,
 } from "../animations";
 import { AnimatedMarkdownRenderer } from "../components/AnimatedMarkdownRenderer";
+import { useUsedBy } from "../routes/Stores/Stores";
 const NoOrdersFound = () => {
   return (
     <motion.div className="flex justify-center items-center h-full min-h-[400px]">
@@ -323,6 +324,7 @@ export const Orders = () => {
     0.1,
     false
   );
+  const usedBy = useUsedBy();
   useEffect(() => {
     return () => {
       isFocused.set(false);
@@ -744,53 +746,65 @@ export const Orders = () => {
                                           <UserAvatar user={user} />
                                           <span>{user?.email}</span>
                                           <div className="flex">
-                                            <motion.div
-                                              whileHover={{ scale: 1.2 }}
-                                              whileTap={{ scale: 0.9 }}
-                                            >
-                                              <CircleTip
-                                                onClick={() => {
-                                                  var a =
-                                                    document.createElement("a");
-                                                  a.href = `tel:${user?.phone}`;
-                                                  a.click();
-                                                }}
-                                                icon={allIcons.solid.faPhone}
-                                              />
-                                            </motion.div>
-                                            <motion.div
-                                              whileHover={{ scale: 1.2 }}
-                                              whileTap={{ scale: 0.9 }}
-                                            >
-                                              <CircleTip
-                                                onClick={async () => {
-                                                  const response =
-                                                    await confirm({
-                                                      message:
-                                                        "Remove Delivery",
-                                                      title: "Remove Delivery",
-                                                    });
-                                                  if (response) {
-                                                    snapbuyApi
-                                                      .setDeliveryToOrder({
-                                                        orderId: order.id,
-                                                        delivery: null,
-                                                      })
-                                                      .then(() => {
-                                                        showToast(
-                                                          "Delivery removed successfully",
-                                                          "success"
+                                            {(usedBy === "owned" ||
+                                              usedBy === "read/edit") && (
+                                              <>
+                                                <motion.div
+                                                  whileHover={{ scale: 1.2 }}
+                                                  whileTap={{ scale: 0.9 }}
+                                                >
+                                                  <CircleTip
+                                                    onClick={() => {
+                                                      var a =
+                                                        document.createElement(
+                                                          "a"
                                                         );
-                                                        execAction(
-                                                          "fetch-orders",
-                                                          {}
-                                                        );
-                                                      });
-                                                  }
-                                                }}
-                                                icon={allIcons.solid.faXmark}
-                                              />
-                                            </motion.div>
+                                                      a.href = `tel:${user?.phone}`;
+                                                      a.click();
+                                                    }}
+                                                    icon={
+                                                      allIcons.solid.faPhone
+                                                    }
+                                                  />
+                                                </motion.div>
+                                                <motion.div
+                                                  whileHover={{ scale: 1.2 }}
+                                                  whileTap={{ scale: 0.9 }}
+                                                >
+                                                  <CircleTip
+                                                    onClick={async () => {
+                                                      const response =
+                                                        await confirm({
+                                                          message:
+                                                            "Remove Delivery",
+                                                          title:
+                                                            "Remove Delivery",
+                                                        });
+                                                      if (response) {
+                                                        snapbuyApi
+                                                          .setDeliveryToOrder({
+                                                            orderId: order.id,
+                                                            delivery: null,
+                                                          })
+                                                          .then(() => {
+                                                            showToast(
+                                                              "Delivery removed successfully",
+                                                              "success"
+                                                            );
+                                                            execAction(
+                                                              "fetch-orders",
+                                                              {}
+                                                            );
+                                                          });
+                                                      }
+                                                    }}
+                                                    icon={
+                                                      allIcons.solid.faXmark
+                                                    }
+                                                  />
+                                                </motion.div>
+                                              </>
+                                            )}
                                           </div>
                                         </div>
                                       </Card>
@@ -802,21 +816,23 @@ export const Orders = () => {
                           )}
                         </span>
                         <div>
-                          <motion.div
-                            whileHover={{ scale: 1.2 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <CircleTip
-                              icon={allIcons.solid.faEllipsisV}
-                              onClick={({ clientY, clientX }) => {
-                                openOrderMenu({
-                                  x: clientX,
-                                  y: clientY,
-                                  order,
-                                });
-                              }}
-                            />
-                          </motion.div>
+                          {(usedBy === "owned" || usedBy === "read/edit") && (
+                            <motion.div
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <CircleTip
+                                icon={allIcons.solid.faEllipsisV}
+                                onClick={({ clientY, clientX }) => {
+                                  openOrderMenu({
+                                    x: clientX,
+                                    y: clientY,
+                                    order,
+                                  });
+                                }}
+                              />
+                            </motion.div>
+                          )}
                         </div>
                       </div>
                     </HoverScale>
@@ -1005,22 +1021,26 @@ export const Orders = () => {
                         <div className="flex justify-between items-center p-2">
                           <OrderClientLocation order={order} />
                           <div className="flex items-center">
-                            <OrderClientActions order={order} />
-                            <motion.div
-                              whileHover={{ scale: 1.2 }}
-                              whileTap={{ scale: 0.9 }}
-                            >
-                              <CircleTip
-                                icon={allIcons.solid.faEllipsisV}
-                                onClick={async ({ clientX, clientY }) => {
-                                  openOrderMenu({
-                                    x: clientX,
-                                    y: clientY,
-                                    order,
-                                  });
-                                }}
-                              />
-                            </motion.div>
+                            {(usedBy === "owned" || usedBy === "read/edit") && (
+                              <OrderClientActions order={order} />
+                            )}
+                            {(usedBy === "owned" || usedBy === "read/edit") && (
+                              <motion.div
+                                whileHover={{ scale: 1.2 }}
+                                whileTap={{ scale: 0.9 }}
+                              >
+                                <CircleTip
+                                  icon={allIcons.solid.faEllipsisV}
+                                  onClick={async ({ clientX, clientY }) => {
+                                    openOrderMenu({
+                                      x: clientX,
+                                      y: clientY,
+                                      order,
+                                    });
+                                  }}
+                                />
+                              </motion.div>
+                            )}
                           </div>
                         </div>
                         {order.note && (

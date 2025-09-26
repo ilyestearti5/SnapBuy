@@ -26,7 +26,6 @@ import { Line, Translate, Button } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import unpaidPhoto from "./assets/unpaied.jpg";
 import payChecked from "./assets/payment-checked.png";
-import { Plans } from "./routes/App/Plans";
 import { AgentAi } from "./Agent";
 import { Section } from "./routes/App/Section";
 import { ServiceCard } from "./components/ServiceCard";
@@ -234,18 +233,13 @@ export const App = () => {
                     >
                       <Translate content="check again" />
                     </Button>
-                    <Link to="/plans" className="w-full">
+                    <Link to="/store" className="w-full">
                       <Button icon={allIcons.solid.faArrowRightToBracket}>
-                        <Translate content="upgrade plan" />
+                        <Translate content="select store" />
                       </Button>
                     </Link>
                   </div>
                 </AnimatedCard>
-              </AnimatedPage>
-            </Route>
-            <Route path="/plans" exact>
-              <AnimatedPage>
-                <Plans />
               </AnimatedPage>
             </Route>
             <Route path="/store" exact>

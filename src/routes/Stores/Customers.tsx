@@ -26,6 +26,7 @@ import { snapbuyApi } from "../../apis";
 import { delay, range, tw } from "@biqpod/app/ui/utils";
 import notFoundPhoto from "../../assets/nothing.png";
 import { useStoreId } from "../../utils";
+import { useUsedBy } from "../Stores/Stores";
 import { motion, AnimatePresence } from "framer-motion";
 
 // Animation variants
@@ -172,6 +173,7 @@ const loadingSpinVariants = {
 
 export const Customers = () => {
   const storeId = useStoreId();
+  const usedBy = useUsedBy();
   const customersState = useCopyState<(SnapBuy.Customer & { id: string })[]>(
     []
   );
@@ -358,105 +360,106 @@ export const Customers = () => {
               >
                 <Translate content={customer.status} />
               </motion.div>
-              {!isProcessing && (
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.95 }}
-                  transition={{
-                    type: "spring",
-                    stiffness: 200,
-                    delay: 0.4,
-                  }}
-                >
-                  <CircleTip
-                    icon={allIcons.solid.faEllipsisVertical}
-                    onClick={({ clientX, clientY }) => {
-                      openMenu({
-                        x: clientX,
-                        y: clientY,
-                        menu: [
-                          ...(customer.status !== "accepted"
-                            ? [
-                                {
-                                  label: "Accept",
-                                  defaultIcon: allIcons.solid.faCheck,
-                                  click: async () => {
-                                    const response = await confirm({
-                                      title: "Accept Customer",
-                                      message: `Are you sure you want to accept ${customer.firstname} ${customer.lastname}?`,
-                                    });
-                                    if (response) {
-                                      execAction("update-customer-status", {
-                                        customerId: customer.id,
-                                        status: "accepted",
-                                      });
-                                    }
-                                  },
-                                },
-                              ]
-                            : []),
-                          ...(customer.status !== "rejected"
-                            ? [
-                                {
-                                  label: "Reject",
-                                  defaultIcon: allIcons.solid.faXmark,
-                                  click: async () => {
-                                    const response = await confirm({
-                                      title: "Reject Customer",
-                                      message: `Are you sure you want to reject ${customer.firstname} ${customer.lastname}?`,
-                                    });
-                                    if (response) {
-                                      execAction("update-customer-status", {
-                                        customerId: customer.id,
-                                        status: "rejected",
-                                      });
-                                    }
-                                  },
-                                },
-                              ]
-                            : []),
-                          ...(customer.status !== "pending"
-                            ? [
-                                {
-                                  label: "Mark as Pending",
-                                  defaultIcon: allIcons.solid.faClock,
-                                  click: async () => {
-                                    const response = await confirm({
-                                      title: "Mark as Pending",
-                                      message: `Are you sure you want to mark ${customer.firstname} ${customer.lastname} as pending?`,
-                                    });
-                                    if (response) {
-                                      execAction("update-customer-status", {
-                                        customerId: customer.id,
-                                        status: "pending",
-                                      });
-                                    }
-                                  },
-                                },
-                              ]
-                            : []),
-                          {
-                            label: "Delete",
-                            defaultIcon: allIcons.solid.faTrash,
-                            click: async () => {
-                              const response = await confirm({
-                                title: "Delete Customer",
-                                message: `Are you sure you want to delete ${customer.firstname} ${customer.lastname}?`,
-                                detail: "This action cannot be undone.",
-                              });
-                              if (response) {
-                                execAction("delete-customer", customer.id);
-                              }
-                            },
-                          },
-                        ],
-                      });
+              {(!isProcessing && usedBy === "owned") ||
+                (usedBy === "read/edit" && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 200,
+                      delay: 0.4,
                     }}
-                  />
-                </motion.div>
-              )}
+                  >
+                    <CircleTip
+                      icon={allIcons.solid.faEllipsisVertical}
+                      onClick={({ clientX, clientY }) => {
+                        openMenu({
+                          x: clientX,
+                          y: clientY,
+                          menu: [
+                            ...(customer.status !== "accepted"
+                              ? [
+                                  {
+                                    label: "Accept",
+                                    defaultIcon: allIcons.solid.faCheck,
+                                    click: async () => {
+                                      const response = await confirm({
+                                        title: "Accept Customer",
+                                        message: `Are you sure you want to accept ${customer.firstname} ${customer.lastname}?`,
+                                      });
+                                      if (response) {
+                                        execAction("update-customer-status", {
+                                          customerId: customer.id,
+                                          status: "accepted",
+                                        });
+                                      }
+                                    },
+                                  },
+                                ]
+                              : []),
+                            ...(customer.status !== "rejected"
+                              ? [
+                                  {
+                                    label: "Reject",
+                                    defaultIcon: allIcons.solid.faXmark,
+                                    click: async () => {
+                                      const response = await confirm({
+                                        title: "Reject Customer",
+                                        message: `Are you sure you want to reject ${customer.firstname} ${customer.lastname}?`,
+                                      });
+                                      if (response) {
+                                        execAction("update-customer-status", {
+                                          customerId: customer.id,
+                                          status: "rejected",
+                                        });
+                                      }
+                                    },
+                                  },
+                                ]
+                              : []),
+                            ...(customer.status !== "pending"
+                              ? [
+                                  {
+                                    label: "Mark as Pending",
+                                    defaultIcon: allIcons.solid.faClock,
+                                    click: async () => {
+                                      const response = await confirm({
+                                        title: "Mark as Pending",
+                                        message: `Are you sure you want to mark ${customer.firstname} ${customer.lastname} as pending?`,
+                                      });
+                                      if (response) {
+                                        execAction("update-customer-status", {
+                                          customerId: customer.id,
+                                          status: "pending",
+                                        });
+                                      }
+                                    },
+                                  },
+                                ]
+                              : []),
+                            {
+                              label: "Delete",
+                              defaultIcon: allIcons.solid.faTrash,
+                              click: async () => {
+                                const response = await confirm({
+                                  title: "Delete Customer",
+                                  message: `Are you sure you want to delete ${customer.firstname} ${customer.lastname}?`,
+                                  detail: "This action cannot be undone.",
+                                });
+                                if (response) {
+                                  execAction("delete-customer", customer.id);
+                                }
+                              },
+                            },
+                          ],
+                        });
+                      }}
+                    />
+                  </motion.div>
+                ))}
             </div>
           </motion.div>
           {/* Metadata Section */}
@@ -979,27 +982,32 @@ export const Customers = () => {
                         whileTap={{ scale: 0.95 }}
                         transition={{ delay: 0.8 }}
                       >
-                        <Button
-                          className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded w-fit text-white text-sm"
-                          icon={allIcons.solid.faTrash}
-                          onClick={async () => {
-                            const response = await confirm({
-                              title: "Delete All Rejected Customers",
-                              message: `Are you sure you want to delete all ${filteredCustomers.rejected.length} rejected customers?`,
-                              detail: "This action cannot be undone.",
-                            });
-                            if (response) {
-                              execAction("delete-all-rejected-customers");
-                            }
-                          }}
-                          disabled={isLoading("delete-all-rejected-customers")}
-                        >
-                          {isLoading("delete-all-rejected-customers") ? (
-                            <Translate content="deleting" />
-                          ) : (
-                            <Translate content="delete all" />
-                          )}
-                        </Button>
+                        {usedBy === "owned" ||
+                          (usedBy === "read/edit" && (
+                            <Button
+                              className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded w-fit text-white text-sm"
+                              icon={allIcons.solid.faTrash}
+                              onClick={async () => {
+                                const response = await confirm({
+                                  title: "Delete All Rejected Customers",
+                                  message: `Are you sure you want to delete all ${filteredCustomers.rejected.length} rejected customers?`,
+                                  detail: "This action cannot be undone.",
+                                });
+                                if (response) {
+                                  execAction("delete-all-rejected-customers");
+                                }
+                              }}
+                              disabled={isLoading(
+                                "delete-all-rejected-customers"
+                              )}
+                            >
+                              {isLoading("delete-all-rejected-customers") ? (
+                                <Translate content="deleting" />
+                              ) : (
+                                <Translate content="delete all" />
+                              )}
+                            </Button>
+                          ))}
                       </motion.div>
                     </motion.div>
                     <motion.div

@@ -2,6 +2,7 @@ import {
   Button,
   Card,
   CardHeaderForPopup,
+  CircleLoading,
   Icon,
   Line,
   Scroll,
@@ -33,6 +34,9 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { motion } from "framer-motion";
 import { isAccountLinkedWithDrive, snapbuyApi } from "../../apis";
 import { useState } from "react";
+import { Plans } from "../App/Plans";
+import { useUsedBy } from "./Stores";
+import pageNotFound from "../../assets/page-not-found.png";
 export const DriveTransform = () => {
   const storeId = useStoreId();
   const [currentSync, setCurrentSync] = useState<{
@@ -81,10 +85,10 @@ export const DriveTransform = () => {
   );
   const loading = isLoading(action);
   return (
-    <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+    <Card className="max-md:rounded-none max-md:w-full md:w-[60vw] max-md:h-full">
       <CardHeaderForPopup title="Transform Drive" />
       <Line />
-      <div className="flex flex-col justify-between items-center gap-12 p-3 h-full">
+      <div className="flex flex-col justify-center items-center gap-12 p-3 h-full">
         <img src={googleDriveHref} className="h-[100px]" />
         {/* Animated Connection Design */}
         <div className="flex justify-center items-center mx-3">
@@ -193,7 +197,7 @@ export const DriveTransform = () => {
 export const DriveConnect = () => {
   const user = useUser();
   return (
-    <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+    <Card className="max-md:rounded-none max-md:w-full md:w-[60vw] max-md:h-full">
       <CardHeaderForPopup title="Sync Drive" />
       <Line />
       <div className="flex justify-evenly items-center p-3 h-full">
@@ -266,7 +270,11 @@ export const DriveConnect = () => {
               const fn = await getUserFunction<{ url: string }>("link-account");
               const response = await fn?.({ name: "google-drive" });
               const url = response?.url;
-              window.open(url);
+              if (url) {
+                const a = document.createElement("a");
+                a.href = url.toString();
+                a.click();
+              }
               showToast("Success");
             } catch {
               showToast("Error");
@@ -301,15 +309,46 @@ export const Store = () => {
     return "/" + result;
   };
   const user = useUser();
+  const usedBy = useUsedBy(user);
+
   useAsyncEffect(async () => {
-    if (!user) {
+    if (!usedBy) {
+      return;
+    }
+    if (usedBy != "owned") {
       return;
     }
     const isLinked = await isAccountLinkedWithDrive();
-    console.log("isLinked", isLinked);
     if (!isLinked) showPopup(<DriveConnect />);
-    else showPopup(<DriveTransform />);
-  }, [user]);
+    // else showPopup(<DriveTransform />);
+  }, [user, usedBy]);
+
+  if (!usedBy) {
+    return (
+      <div className="flex flex-col justify-center items-center w-full h-full">
+        <CircleLoading />
+      </div>
+    );
+  }
+
+  if (usedBy === "random") {
+    return (
+      <motion.div
+        className="flex justify-center items-center w-full h-full"
+        initial={{ opacity: 0, scale: 0.8 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <img
+          src={pageNotFound}
+          draggable={false}
+          alt="404 - Page Not Found"
+          className="max-w-full max-h-full object-contain"
+        />
+      </motion.div>
+    );
+  }
+
   return (
     <div className="flex gap-1 h-full">
       <div className="flex items-center h-full">
@@ -351,6 +390,9 @@ export const Store = () => {
             </Route>
             <Route path={createRoute("integrations")}>
               <Integrations />
+            </Route>
+            <Route path={createRoute("plans")}>
+              <Plans />
             </Route>
           </Switch>
         </Scroll>

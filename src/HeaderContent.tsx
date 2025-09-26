@@ -50,6 +50,7 @@ import { AiAssistance } from "./AiAssistance";
 import { openNotificationSettings } from "./components/NotificationSettingsExamples";
 import { HoverScale } from "./animations/components";
 import { motion } from "framer-motion";
+import { useUsedBy } from "./routes/Stores/Stores";
 const getId = () => {
   return location.pathname.split("/").at(-1);
 };
@@ -172,6 +173,8 @@ export const HeaderContent = () => {
   const id = useMemo(() => {
     return getId();
   }, [loc.pathname]);
+
+  const usedBy = useUsedBy(user);
 
   return (
     <EmptyComponent>
@@ -305,15 +308,18 @@ export const HeaderContent = () => {
                           document.getElementById("home")?.click();
                         },
                       },
-                      {
-                        label: "Plans",
-                        click() {
-                          document.getElementById("plans")?.click();
+                      storeId &&
+                        usedBy === "owned" && {
+                          label: "Plans",
+                          click() {
+                            document.getElementById("plans")?.click();
+                          },
+                          defaultIcon: allIcons.solid.faMoneyBill,
                         },
-                        defaultIcon: allIcons.solid.faMoneyBill,
-                      },
                       user &&
-                        storeId && {
+                        storeId &&
+                        usedBy !== "read" &&
+                        usedBy !== null && {
                           defaultIcon: allIcons.solid.faBell,
                           label: "Notification Settings",
                           click() {
@@ -459,7 +465,7 @@ export const HeaderContent = () => {
       </motion.div>
       {isDesktop && <WindowControls />}
       <Link to="/profile" id="home" />
-      <Link to="/plans" id="plans" />
+      <Link to={storeId ? `/store/${storeId}/plans` : "/plans"} id="plans" />
       <Link to="/feedbacks" id="feedback" />
     </EmptyComponent>
   );

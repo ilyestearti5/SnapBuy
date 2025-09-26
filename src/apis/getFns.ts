@@ -151,6 +151,7 @@ export const useFormProduct = () => {
   }, [
     photos,
     clientPrice,
+    customerPrice,
     limited,
     prices,
     quantity,

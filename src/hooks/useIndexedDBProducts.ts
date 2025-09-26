@@ -1,24 +1,19 @@
 import { useEffect, useState, useCallback } from "react";
-
 interface CachedProductsData {
   products: SnapBuy.Product[];
   lastDoc: SnapBuy.Product | null;
   storeId: string;
   timestamp: number;
 }
-
 const DB_NAME = "SnapBuyCache";
 const STORE_NAME = "products";
 const DB_VERSION = 1;
-
 // Initialize IndexedDB
 const initDB = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
     const request = indexedDB.open(DB_NAME, DB_VERSION);
-
     request.onerror = () => reject(request.error);
     request.onsuccess = () => resolve(request.result);
-
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
       if (!db.objectStoreNames.contains(STORE_NAME)) {
@@ -27,7 +22,7 @@ const initDB = (): Promise<IDBDatabase> => {
     };
   });
 };
-
+const CACH_TIME_SEC = 1 * 60; // 1 minute
 // Get cached data for a store
 const getCachedData = async (
   storeId: string
@@ -37,11 +32,16 @@ const getCachedData = async (
     const transaction = db.transaction([STORE_NAME], "readonly");
     const store = transaction.objectStore(STORE_NAME);
     const request = store.get(storeId);
-
     return new Promise((resolve, reject) => {
       request.onsuccess = () => {
         const data = request.result as CachedProductsData | undefined;
-        resolve(data || null);
+        if (data && Date.now() - data.timestamp > CACH_TIME_SEC * 1000) {
+          // Cache expired, clear it
+          clearCachedData(storeId);
+          resolve(null);
+        } else {
+          resolve(data || null);
+        }
       };
       request.onerror = () => reject(request.error);
     });
@@ -50,7 +50,6 @@ const getCachedData = async (
     return null;
   }
 };
-
 // Save cached data for a store
 const saveCachedData = async (
   storeId: string,
@@ -61,20 +60,17 @@ const saveCachedData = async (
     const db = await initDB();
     const transaction = db.transaction([STORE_NAME], "readwrite");
     const store = transaction.objectStore(STORE_NAME);
-
     const data: CachedProductsData = {
       products,
       lastDoc,
       storeId,
       timestamp: Date.now(),
     };
-
     store.put(data);
   } catch (error) {
     console.error("Error saving cached data:", error);
   }
 };
-
 // Clear cached data for a store
 const clearCachedData = async (storeId: string): Promise<void> => {
   try {
@@ -86,12 +82,10 @@ const clearCachedData = async (storeId: string): Promise<void> => {
     console.error("Error clearing cached data:", error);
   }
 };
-
 export const useIndexedDBProducts = (storeId: string | null | undefined) => {
   const [products, setProducts] = useState<SnapBuy.Product[]>([]);
   const [lastDoc, setLastDoc] = useState<SnapBuy.Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
   // Load cached data on mount or storeId change
   useEffect(() => {
     if (!storeId) {
@@ -100,7 +94,6 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
       setIsLoading(false);
       return;
     }
-
     const loadCachedData = async () => {
       setIsLoading(true);
       try {
@@ -120,10 +113,8 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
         setIsLoading(false);
       }
     };
-
     loadCachedData();
   }, [storeId]);
-
   // Update products and save to cache
   const updateProducts = useCallback(
     (newProducts: SnapBuy.Product[], newLastDoc: SnapBuy.Product | null) => {
@@ -135,7 +126,6 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
     },
     [storeId]
   );
-
   // Add more products (for pagination)
   const addProducts = useCallback(
     (
@@ -153,7 +143,6 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
     },
     [storeId]
   );
-
   // Clear cache for current store
   const clearCache = useCallback(() => {
     if (storeId) {
@@ -162,7 +151,6 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
       setLastDoc(null);
     }
   }, [storeId]);
-
   return {
     products,
     lastDoc,
