@@ -21,6 +21,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { ColorField } from "./ColorField";
 import { motion, AnimatePresence } from "framer-motion";
+import { Nothing } from "@biqpod/app/ui/types";
 type MetadataField = SnapBuy.MetadataField;
 interface RenderFieldProps {
   field: MetadataField;
@@ -30,7 +31,7 @@ const RenderField = ({ field }: RenderFieldProps) => {
   const metadata = metadataState?.get;
   // For now, just render the value as text to avoid hooks in loops
   // This will be improved later once the basic structure works
-  const value = getTemp<string | number | boolean | string[]>(
+  const value = getTemp<string | number | boolean | string[] | Nothing>(
     ["magic-fields", "product-metadata-" + field.key].join(".")
   );
   useEffect(() => {

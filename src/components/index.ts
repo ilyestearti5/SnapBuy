@@ -5,3 +5,4 @@ export {
   UpsertDeliveryPrice,
 } from "./StoreDeliveryPricing";
 export { Vars } from "./Vars";
+export { OrderEditPopup } from "./OrderEditPopup";

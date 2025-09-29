@@ -1379,4 +1379,28 @@ export const translations = [
     ar: "البحث في المتغيرات...",
     word: "Search%20variables...",
   },
+  {
+    en: "Search Drive / Enter image url",
+    fr: "Rechercher Drive / Entrer l'URL de l'image",
+    ar: "البحث في Drive / أدخل رابط الصورة",
+    word: "search%20drive%20%2F%20enter%20image%20url",
+  },
+  {
+    en: "No photos found",
+    fr: "Aucune photo trouvée",
+    ar: "لم يتم العثور على صور",
+    word: "no%20photos%20found",
+  },
+  {
+    en: "Product image",
+    fr: "Image du produit",
+    ar: "صورة المنتج",
+    word: "product%20image",
+  },
 ];
+
+export const t = (word: string) => {
+  const translation = translations.find((t) => t.word === word);
+  if (!translation) return word;
+  return translation.en;
+};

@@ -12,14 +12,20 @@ import {
 } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 import { useFormPhotos } from "../../../apis/getFns";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { compressImage } from "../../../utils/utilities";
+import { snapbuyApi } from "../../../apis/index";
 export const ProductImages = () => {
   const images = useFormPhotos();
   const url = useCopyState("");
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
+  const [drivePhotos, setDrivePhotos] = useState<
+    { name: string; link: string }[]
+  >([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const addCompressedImage = async (imageSrc: string) => {
     try {
       const compressedSrc = await compressImage(imageSrc, 0.3); // 80% quality
@@ -40,6 +46,18 @@ export const ProductImages = () => {
           return [imageSrc];
         }
       });
+    }
+  };
+  const fetchDrivePhotos = async () => {
+    setLoadingPhotos(true);
+    try {
+      const photos = await snapbuyApi.getDrivePhotos();
+      setDrivePhotos(photos || []);
+    } catch (error) {
+      console.error("Failed to fetch drive photos:", error);
+      setDrivePhotos([]);
+    } finally {
+      setLoadingPhotos(false);
     }
   };
   useEffect(() => {
@@ -90,9 +108,15 @@ export const ProductImages = () => {
       <div className="flex items-center gap-1 p-1">
         <div className="relative w-full">
           <Input
+            ref={inputRef}
             value={url.get}
             onChange={(e) => url.set(e.target.value)}
-            placeholder="Enter image url"
+            onFocus={() => {
+              if (!drivePhotos.length) fetchDrivePhotos();
+              setShowDropdown(true);
+            }}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
+            placeholder="Search Drive / Enter image url"
             className="flex-1 rounded-2xl"
           />
           <Tip
@@ -103,6 +127,51 @@ export const ProductImages = () => {
               url.set(uri);
             }}
           />
+          {showDropdown && (
+            <div className="top-full right-0 left-0 z-10 absolute bg-white shadow-lg border border-gray-300 rounded-lg max-h-60 overflow-y-auto">
+              {loadingPhotos ? (
+                <div className="p-2 text-center">
+                  <Translate content="loading" />
+                </div>
+              ) : drivePhotos.length > 0 ? (
+                drivePhotos
+                  .filter((e) => {
+                    if (!url.get) return true;
+                    return (
+                      e.name.toLowerCase().includes(url.get.toLowerCase()) ||
+                      e.link.toLowerCase().includes(url.get.toLowerCase())
+                    );
+                  })
+                  .map((photo, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center hover:bg-gray-100 p-2 cursor-pointer"
+                      onClick={() => {
+                        setShowDropdown(false);
+                        images.set((s) => {
+                          if (s && !s.includes(photo.link)) {
+                            return [...s, photo.link];
+                          } else if (!s) {
+                            return [photo.link];
+                          }
+                        });
+                      }}
+                    >
+                      <img
+                        src={photo.link}
+                        alt={photo.name}
+                        className="mr-2 rounded w-10 h-10 object-cover"
+                      />
+                      <span className="text-sm">{photo.name}</span>
+                    </div>
+                  ))
+              ) : (
+                <div className="p-2 text-gray-500 text-center">
+                  <Translate content="no photos found" />
+                </div>
+              )}
+            </div>
+          )}
         </div>
         <Button
           className="px-4 py-1 rounded-full w-fit"
@@ -128,7 +197,6 @@ export const ProductImages = () => {
               fileInput.accept = "image/*";
               fileInput.multiple = true; // Allow multiple file selection
               fileInput.style.display = "none";
-
               // Handle file selection
               fileInput.onchange = (event) => {
                 const files = (event.target as HTMLInputElement).files;
@@ -147,7 +215,6 @@ export const ProductImages = () => {
                 // Clean up the input element
                 document.body.removeChild(fileInput);
               };
-
               // Add to DOM and trigger click
               document.body.appendChild(fileInput);
               fileInput.click();
@@ -185,7 +252,6 @@ export const ProductImages = () => {
           })}
         </div>
       </Scroll>
-
       {/* Image Modal */}
       <AnimatePresence>
         {selectedImage && (

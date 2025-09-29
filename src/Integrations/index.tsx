@@ -383,7 +383,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
   };
   return usedBy === "owned" ? (
     <motion.div
-      className="space-y-6 p-6"
+      className="space-y-6 p-0"
       variants={containerVariants}
       initial="hidden"
       animate="visible"

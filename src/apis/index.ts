@@ -22,7 +22,7 @@ import {
   mergeArray,
   unpackPromise,
 } from "@biqpod/app/ui/utils";
-import { cloud } from "../server";
+import { cloud, functions } from "../server";
 const appProjectId = "74510af6-4dc2-47b3-b5d5-b07b559aede7";
 export interface OverviewProps {
   orders: number;
@@ -693,6 +693,34 @@ export const createApi = (cloud: ClientCloud) => {
       });
       setTemp("products." + productId, null);
     },
+    async syncProductsData() {
+      const syncProductsData = await getUserFunction("sync-data-products");
+      await syncProductsData?.({});
+    },
+    async syncBrandsData() {
+      const syncBrandsData = await getUserFunction("sync-data-brands");
+      await syncBrandsData?.({});
+    },
+    async syncCollectionsData() {
+      const syncCollectionsData = await getUserFunction(
+        "sync-data-collections"
+      );
+      await syncCollectionsData?.({});
+    },
+    async syncStoresData() {
+      const syncStoresData = await getUserFunction("sync-data-stores");
+      await syncStoresData?.({});
+    },
+    async getDrivePhotos() {
+      const fn = await functions.getUserFunction<
+        {
+          name: string;
+          link: string;
+        }[]
+      >("get-photos-from-google-drive");
+      const photos = await fn?.({});
+      return photos;
+    },
     // Brand Management Functions
     async createBrand(
       brand: Omit<SnapBuy.Brand, "id" | "createdAt" | "updatedAt">
@@ -1281,6 +1309,21 @@ export const createApi = (cloud: ClientCloud) => {
       await deleteDoc(["projects", appProjectId, "orders", orderId]);
       setTemp("order-products." + orderId, null);
     },
+    async editOrder(orderId: string, edit: SnapBuy.Order["edit"]) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const existingOrder = await getDoc<SnapBuy.Order>([
+        "projects",
+        appProjectId,
+        "orders",
+        orderId,
+      ]);
+      if (!existingOrder) throw "Order not found";
+      await setDoc(["projects", appProjectId, "orders", orderId], {
+        ...existingOrder,
+        edit,
+      });
+    },
     async getNotificationSettings(storeId: string) {
       const store = await getDoc<Required<SnapBuy.Store>>([
         "projects",
@@ -1588,16 +1631,16 @@ export const createApi = (cloud: ClientCloud) => {
       );
       return stores.filter(Boolean);
     },
-    async removeUserAccessFromStore(appStoreId: string) {
+    async removeUserAccessFromStore(appStoreId: string, relatedUid: string) {
       const uid = await getCurrentAuth();
       if (!uid) {
         throw "User not authenticated";
       }
-      const docs = await getDocs<any>(
-        ["projects", import.meta.env.VITE_APP_PROJECT_ID, "store-access"],
+      const docs = await getDocs<SnapBuy.StoreUserAccess>(
+        ["projects", appProjectId, "store-access"],
         {
           where: and(
-            where("relatedUid", "==", uid),
+            where("relatedUid", "==", relatedUid),
             where("storeId", "==", appStoreId)
           ),
           limit: 1,
@@ -1609,6 +1652,24 @@ export const createApi = (cloud: ClientCloud) => {
       }
       await deleteDoc(["projects", appProjectId, "store-access", doc?.id!]);
       setTemp("store-access." + doc?.id, null);
+    },
+    async leaveStoreAccess(storeId: string) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      const docs = await getDocs<SnapBuy.StoreUserAccess>(
+        ["projects", appProjectId, "store-access"],
+        {
+          where: and(
+            where("relatedUid", "==", uid),
+            where("storeId", "==", storeId)
+          ),
+          limit: 1,
+        }
+      );
+      const doc = docs?.at(0);
+      if (!doc) throw "No access record found";
+      await deleteDoc(["projects", appProjectId, "store-access", doc.id]);
+      setTemp("store-access." + doc.id, null);
     },
     async getUserAccessToStore(
       storeId: string,
@@ -1757,6 +1818,9 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       await deleteDoc(["projects", appProjectId, "invoices", invoiceId]);
       setTemp("invoices." + invoiceId, null);
+    },
+    async hasExtraLinks() {
+      return true;
     },
   };
   return snapbuyApi;

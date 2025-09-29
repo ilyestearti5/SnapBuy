@@ -26,6 +26,7 @@ import {
 import { OrderView } from "../routes/Clients/OrderView";
 import { snapbuyApi } from "../apis";
 import { notifyOrderDeleted } from "../utils/orderNotifications";
+import { OrderEditPopup } from "../components/OrderEditPopup";
 export interface OpenOrderMenuOptions {
   x: number;
   y: number;
@@ -121,6 +122,18 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
         defaultIcon: allIcons.solid.faFileInvoice,
         click: () => {
           showPopup(<OrderView order={order} />);
+        },
+      },
+      {
+        label: "Edit Order",
+        defaultIcon: allIcons.solid.faEdit,
+        click: () => {
+          showPopup(
+            <OrderEditPopup
+              order={order}
+              onSave={() => execAction("fetch-orders", {})}
+            />
+          );
         },
       },
       {

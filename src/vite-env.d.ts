@@ -148,6 +148,10 @@ declare namespace SnapBuy {
     couponId?: string;
     discountAmount?: number;
     note?: string;
+    edit?: {
+      products?: Partial<Record<string, { count?: number; price?: number }>>;
+      packs?: Partial<Record<string, { count?: number; price?: number }>>;
+    };
   }
   export type Zone = Partial<{
     id: string;

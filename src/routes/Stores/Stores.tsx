@@ -28,12 +28,13 @@ import {
   showPopup,
   showToast,
   useAction,
+  useAsyncEffect,
   useAsyncMemo,
   useCopyState,
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect } from "react";
-import { snapbuyApi } from "../../apis";
+import { isAccountLinkedWithDrive, snapbuyApi } from "../../apis";
 import { delay, range } from "@biqpod/app/ui/utils";
 import notFoundPhoto from "../../assets/nothing.png";
 import { Link } from "react-router-dom";
@@ -46,6 +47,7 @@ import { SetTemplate } from "./SetTemplate";
 import { platformsPhoto } from "../../utils/platforms";
 import { SetStorePlatforms } from "./SetStorePlatforms";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { DriveConnect, DriveTransform } from "./Drive";
 // Enhanced Animation variants
 const containerVariants = {
   hidden: {
@@ -298,7 +300,6 @@ export function useUsedBy(
     if (!store) return null;
     if (store.uid === currentUser.uid) return "owned";
     const accesses = await snapbuyApi.hasAccessToStore(storeId);
-    console.log(accesses);
     if (accesses) {
       return accesses === "read" ? "read" : "read/edit";
     }
@@ -388,6 +389,17 @@ export const Stores = () => {
     []
   );
   const deletionStore = getTemp<string>("deletion-store");
+  useAsyncEffect(async () => {
+    const isLinked = await isAccountLinkedWithDrive();
+    if (!isLinked) {
+      showPopup(<DriveConnect />);
+      return;
+    }
+    const hasExtraLinks = await snapbuyApi.hasExtraLinks();
+    if (hasExtraLinks) {
+      showPopup(<DriveTransform />);
+    }
+  }, [user]);
   return (
     <Scroll>
       <motion.div
@@ -882,9 +894,9 @@ export const Stores = () => {
                                               detail:
                                                 "You will lose access to this store and all its data.",
                                             });
-                                            if (response && user?.uid) {
+                                            if (response) {
                                               // Find and remove the access record
-                                              await snapbuyApi.removeUserAccessFromStore(
+                                              await snapbuyApi.leaveStoreAccess(
                                                 store.id
                                               );
                                               execAction("load-invited-stores");
@@ -1021,6 +1033,27 @@ export const Stores = () => {
                 </div>
               </div>
             )}
+            {/* Add Store Button when no owned stores but invited stores exist */}
+            {invitedStoresState.get.length > 0 &&
+              storesState.get.length === 0 && (
+                <motion.div
+                  variants={addButtonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                  className="max-md:w-full md:w-[150px]"
+                >
+                  <Card
+                    className="flex justify-center items-center active:bg-[--biqpod-gray-opacity] rounded-2xl w-full h-[80px] cursor-pointer"
+                    onClick={() => {
+                      showPopup(<UpsertStore />, {
+                        type: "blur",
+                      });
+                    }}
+                  >
+                    <CircleTip icon={allIcons.solid.faPlus} />
+                  </Card>
+                </motion.div>
+              )}
           </div>
         )}
         {actionLoading &&

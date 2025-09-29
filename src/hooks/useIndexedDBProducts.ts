@@ -134,11 +134,14 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
     ) => {
       setProducts((prev) => {
         const updated = [...prev, ...additionalProducts];
+        const newArray = Array.from(new Set(updated.map((p) => p.id))).map(
+          (id) => updated.find((p) => p.id === id)!
+        );
         setLastDoc(newLastDoc);
         if (storeId) {
-          saveCachedData(storeId, updated, newLastDoc);
+          saveCachedData(storeId, newArray, newLastDoc);
         }
-        return updated;
+        return newArray;
       });
     },
     [storeId]

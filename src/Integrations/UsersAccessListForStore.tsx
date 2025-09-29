@@ -116,6 +116,7 @@ export const UsersAccessListForStore = ({
 }: UsersAccessListForStoreProps) => {
   const usersAccess = useCopyState<SnapBuy.StoreUserAccess[]>([]);
   const error = useCopyState<string | null>(null);
+  const selectedUsers = useCopyState<string[]>([]);
 
   // Helper function to get identifier type (simplified since we fetch user)
   const getUserIdentifierType = (fetchedUser: Biqpod.Account.User | null) => {
@@ -140,9 +141,9 @@ export const UsersAccessListForStore = ({
 
   useAction(
     "remove-user-access",
-    async (accessId: string) => {
+    async ({ storeId, relatedUid }) => {
       try {
-        await snapbuyApi.removeUserAccessFromStore(accessId);
+        await snapbuyApi.removeUserAccessFromStore(storeId, relatedUid);
         showToast("User access removed successfully", "success");
         execAction("load-users-access");
       } catch (err) {
@@ -152,6 +153,35 @@ export const UsersAccessListForStore = ({
     },
     []
   );
+
+  const handleSelectAll = () => {
+    const allUids = usersAccess.get
+      .map((u) => u.relatedUid)
+      .filter((uid): uid is string => Boolean(uid));
+    if (selectedUsers.get.length === allUids.length) {
+      selectedUsers.set([]);
+    } else {
+      selectedUsers.set(allUids);
+    }
+  };
+
+  const handleBulkRemove = async () => {
+    const selected = selectedUsers.get;
+    if (selected.length === 0) return;
+
+    const response = await confirm({
+      title: "Remove Multiple Users",
+      message: `Are you sure you want to remove access for ${selected.length} users?`,
+      detail: "These users will no longer be able to access your store data.",
+    });
+
+    if (response) {
+      for (const relatedUid of selected) {
+        execAction("remove-user-access", { storeId, relatedUid });
+      }
+      selectedUsers.set([]);
+    }
+  };
 
   // Load users on component mount
   useEffect(() => {
@@ -210,6 +240,10 @@ export const UsersAccessListForStore = ({
         console.error("Failed to fetch user for confirm:", err);
       }
     }
+    if (!user.relatedUid) {
+      showToast("Cannot remove access for unknown user.", "error");
+      return;
+    }
     const response = await confirm({
       title: "Remove User Access",
       message: `Are you sure you want to remove access for ${userName}?`,
@@ -217,7 +251,10 @@ export const UsersAccessListForStore = ({
     });
 
     if (response) {
-      execAction("remove-user-access", user.id);
+      execAction("remove-user-access", {
+        storeId,
+        relatedUid: user.relatedUid,
+      });
     }
   };
 
@@ -248,6 +285,48 @@ export const UsersAccessListForStore = ({
         )}
       </AnimatePresence>
 
+      {/* Bulk Actions */}
+      {!isLoading(loadUsersAction) && usersAccess.get.length > 0 && (
+        <motion.div
+          className="flex justify-between items-center bg-gray-50 mb-4 p-3 border rounded-lg"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={
+                usersAccess.get.filter((u) => u.relatedUid).length > 0 &&
+                selectedUsers.get.length ===
+                  usersAccess.get.filter((u) => u.relatedUid).length
+              }
+              onChange={handleSelectAll}
+              className="w-4 h-4"
+            />
+            <span className="font-medium text-[--biqpod-text-color] text-sm">
+              <Translate content="Select All" />
+            </span>
+          </div>
+          {selectedUsers.get.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.2 }}
+            >
+              <Button
+                onClick={handleBulkRemove}
+                icon={allIcons.solid.faTrash}
+                className="bg-red-500 hover:bg-red-600 px-3 py-1 text-white text-sm"
+              >
+                <Translate content="Delete Selected" /> (
+                {selectedUsers.get.length})
+              </Button>
+            </motion.div>
+          )}
+        </motion.div>
+      )}
+
       {/* Loading State */}
       {isLoading(loadUsersAction) && (
         <motion.div
@@ -277,7 +356,23 @@ export const UsersAccessListForStore = ({
               whileHover="hover"
             >
               <Card className="p-4">
-                <div className="flex justify-between items-start gap-4">
+                <div className="flex items-start gap-4">
+                  <input
+                    type="checkbox"
+                    checked={selectedUsers.get.includes(user.relatedUid || "")}
+                    onChange={() => {
+                      const current = selectedUsers.get;
+                      const uid = user.relatedUid || "";
+                      if (current.includes(uid)) {
+                        selectedUsers.set(
+                          current.filter((id: string) => id !== uid)
+                        );
+                      } else {
+                        selectedUsers.set([...current, uid]);
+                      }
+                    }}
+                    className="mt-1 w-4 h-4"
+                  />
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <div className="flex items-center gap-2">

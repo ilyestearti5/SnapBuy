@@ -22,6 +22,7 @@ import {
   PositionView,
   Translate,
   MagicField,
+  ArrayField,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
@@ -60,6 +61,7 @@ import { loadFromExcel } from "./loadFromExcel";
 import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
 import { AnimatedCard, FadeIn } from "../animations/components";
 import { useUsedBy } from "../routes/Stores/Stores";
+import { Nothing } from "@biqpod/app/ui/types";
 const productKeys: (keyof SnapBuy.Product)[] = [
   "available",
   "createdAt",
@@ -339,18 +341,19 @@ const AddMetadataPopup = ({
   onSuccess: () => void;
 }) => {
   const storeId = useStoreId();
-
   // Use proper form field management like ProductMetadata
   const metadataKeyField = useFieldValue("add-metadata-key");
   const metadataType = useCopyState<string | false | 0 | null | undefined>(
     "string"
   );
-
+  const fullMagicFields =
+    getTemp<
+      Partial<Record<string, Nothing | string | number | string[] | boolean>>
+    >("magic-fields");
   // Create a temporary metadata field for form management
   const tempMetadata = useTemp<SnapBuy.MetadataField[]>(
     "temp-bulk-metadata-fields"
   );
-
   const addMetadataField = () => {
     const fieldKeyValue = metadataKeyField.get || "";
     if (!fieldKeyValue.trim()) {
@@ -362,35 +365,29 @@ const AddMetadataPopup = ({
       showToast("Field type is required", "error");
       return;
     }
-
     // Check if field key already exists in the list
     const existingFields = tempMetadata.get || [];
     if (existingFields.some((field) => field.key === fieldKeyValue.trim())) {
       showToast("Field key already exists in the list", "error");
       return;
     }
-
     const defaultValue = getDefaultValueForType(selectedFieldType);
     const newField: SnapBuy.MetadataField = {
       key: fieldKeyValue.trim(),
       type: selectedFieldType,
       value: defaultValue,
     };
-
     // Add to the list of fields
     const updatedFields = [...existingFields, newField];
     tempMetadata.set(updatedFields);
-
     // Clear the key field
     metadataKeyField.set("");
   };
-
   const removeMetadataField = (index: number) => {
     const existingFields = tempMetadata.get || [];
     const updatedFields = existingFields.filter((_, i) => i !== index);
     tempMetadata.set(updatedFields);
   };
-
   const getDefaultValueForType = (type: SnapBuy.MetadataField["type"]) => {
     switch (type) {
       case "number":
@@ -407,29 +404,36 @@ const AddMetadataPopup = ({
         return "";
     }
   };
-
+  const requiredFields = useMemo(() => {
+    return tempMetadata.get?.map((field) => {
+      return {
+        ...field,
+        value:
+          fullMagicFields?.[`${field.type}-temp-bulk-metadata-${field.key}`] ||
+          getDefaultValueForType(field.type),
+      };
+    });
+  }, [tempMetadata.get, fullMagicFields]);
   const action = useAction(
     "add-metadata",
     async () => {
-      const metadataFields = tempMetadata.get || [];
+      const metadataFields = requiredFields || [];
       if (metadataFields.length === 0) {
         showToast("Please add a metadata field first", "error");
         return;
       }
-
+      console.log({ metadataFields });
       // Update each selected product with all metadata fields
       const updatePromises = selectedProducts.map(async (productId) => {
         try {
           const product = await snapbuyApi.getProduct(productId);
           if (product) {
             let updatedMetaData = [...(product.metaData || [])];
-
             // Add or update each metadata field
             metadataFields.forEach((field) => {
               const existingFieldIndex = updatedMetaData.findIndex(
                 (f) => f.key === field.key
               );
-
               if (existingFieldIndex >= 0) {
                 // Update existing field
                 updatedMetaData[existingFieldIndex] = field;
@@ -438,7 +442,6 @@ const AddMetadataPopup = ({
                 updatedMetaData.push(field);
               }
             });
-
             const updatedProduct: Partial<SnapBuy.Product> = {
               id: productId,
               metaData: updatedMetaData,
@@ -449,7 +452,6 @@ const AddMetadataPopup = ({
           console.error(`Failed to update product ${productId}:`, error);
         }
       });
-
       await Promise.all(updatePromises);
       const fieldNames = metadataFields.map((f) => f.key).join(", ");
       showToast(
@@ -463,10 +465,8 @@ const AddMetadataPopup = ({
     },
     [selectedProducts, storeId, tempMetadata]
   );
-
   const loading = isLoading(action);
   const metadataFields = tempMetadata.get || [];
-
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-3">
@@ -481,143 +481,148 @@ const AddMetadataPopup = ({
         />
       </div>
       <Line />
-      <div className="flex flex-col gap-4 p-4">
-        <div className="bg-blue-50 p-3 rounded-lg">
-          <p className="text-blue-800 text-sm">
-            <strong>Selected Products:</strong> {selectedProducts.length}
-          </p>
-        </div>
-
-        {/* Add new field section - same as ProductMetadata */}
-        <Card>
-          <h3 className="p-2 font-semibold text-lg capitalize">
-            <Translate content="add metadata field" />
-          </h3>
-          <Line />
-          <div className="flex flex-col gap-2 p-2">
-            <Field
-              inputName="add-metadata-key"
-              className="rounded-2xl"
-              placeholder="Enter field name"
-            />
-            <EnumField
-              state={metadataType}
-              config={{
-                list: [
-                  {
-                    value: "string",
-                    content: "Text",
-                  },
-                  {
-                    value: "number",
-                    content: "Number",
-                  },
-                  {
-                    value: "boolean",
-                    content: "Boolean",
-                  },
-                  {
-                    value: "array",
-                    content: "Text Array",
-                  },
-                  {
-                    value: "colors",
-                    content: "Colors",
-                  },
-                ],
-              }}
-              id="add-metadata-field-type-selector"
-            />
+      <div className="flex flex-col justify-between gap-4 p-4 h-full">
+        <div className="flex flex-col gap-2">
+          <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
+            <p className="text-sm">
+              <strong>Selected Products:</strong> {selectedProducts.length}
+            </p>
           </div>
-          <Line />
-          <div className="p-2">
-            <Button
-              onClick={addMetadataField}
-              disabled={!(metadataKeyField.get || "")?.trim()}
-              className="disabled:opacity-50 p-2 rounded-full w-full disabled:cursor-not-allowed"
-              icon={allIcons.solid.faPlus}
-            >
-              <Translate content="add field" />
-            </Button>
-          </div>
-        </Card>
-
-        {/* Field preview - same as ProductMetadata */}
-        {metadataFields.length > 0 && (
-          <div>
-            <h4 className="mb-2 font-semibold text-lg">
-              Metadata Fields to Add ({metadataFields.length}):
-            </h4>
-            <div className="space-y-3 max-h-60 overflow-y-auto">
-              {metadataFields.map((field, index) => (
-                <div
-                  key={index}
-                  className="bg-[--biqpod-primary-background] p-3 border border-[--biqpod-borders] border-solid rounded-xl"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold">{field.key}</span>
-                      <Key className="inline-flex items-center gap-1">
-                        <Icon
-                          icon={
-                            field.type === "number"
-                              ? allIcons.solid.faHashtag
-                              : field.type === "boolean"
-                              ? allIcons.solid.faToggleOn
-                              : field.type === "array"
-                              ? allIcons.solid.faList
-                              : field.type === "colors"
-                              ? allIcons.solid.faPalette
-                              : allIcons.solid.faTextHeight
-                          }
+          {/* Add new field section - same as ProductMetadata */}
+          <Card>
+            <h3 className="p-2 font-semibold text-lg capitalize">
+              <Translate content="add metadata field" />
+            </h3>
+            <Line />
+            <div className="flex flex-col gap-2 p-2">
+              <Field
+                inputName="add-metadata-key"
+                className="rounded-2xl"
+                placeholder="Enter field name"
+              />
+              <EnumField
+                state={metadataType}
+                config={{
+                  list: [
+                    {
+                      value: "string",
+                      content: "Text",
+                    },
+                    {
+                      value: "number",
+                      content: "Number",
+                    },
+                    {
+                      value: "boolean",
+                      content: "Boolean",
+                    },
+                    {
+                      value: "array",
+                      content: "Text Array",
+                    },
+                    {
+                      value: "colors",
+                      content: "Colors",
+                    },
+                  ],
+                }}
+                id="add-metadata-field-type-selector"
+              />
+            </div>
+            <Line />
+            <div className="p-2">
+              <Button
+                onClick={addMetadataField}
+                disabled={!(metadataKeyField.get || "")?.trim()}
+                className="disabled:opacity-50 p-2 rounded-full w-full disabled:cursor-not-allowed"
+                icon={allIcons.solid.faPlus}
+              >
+                <Translate content="add field" />
+              </Button>
+            </div>
+          </Card>
+          {/* Field preview - same as ProductMetadata */}
+          {metadataFields.length > 0 && (
+            <div className="flex flex-col gap-3">
+              <h4 className="mb-2 font-semibold text-lg">
+                Metadata Fields to Add ({metadataFields.length}):
+              </h4>
+              <div className="space-y-3 max-h-60 overflow-y-auto">
+                {metadataFields.map((field, index) => {
+                  const options: any =
+                    field.type === "string"
+                      ? { hint: "Enter text", autoChange: true }
+                      : field.type === "number"
+                      ? { placeholder: "Enter a number", autoChange: true }
+                      : field.type === "colors"
+                      ? {
+                          placeholder: "Enter colors (comma separated)",
+                          hint: "e.g. red, blue, green, #ff0000, rgb(255,0,0)",
+                          separator: ",",
+                        }
+                      : {};
+                  return (
+                    <div
+                      key={index}
+                      className="bg-[--biqpod-primary-background] border border-[--biqpod-borders] border-solid rounded-xl"
+                    >
+                      <div className="flex justify-between items-center p-3">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold">{field.key}</span>
+                          <Key className="inline-flex items-center gap-1">
+                            <Icon
+                              icon={
+                                field.type === "number"
+                                  ? allIcons.solid.faHashtag
+                                  : field.type === "boolean"
+                                  ? allIcons.solid.faToggleOn
+                                  : field.type === "array"
+                                  ? allIcons.solid.faList
+                                  : field.type === "colors"
+                                  ? allIcons.solid.faPalette
+                                  : allIcons.solid.faTextHeight
+                              }
+                            />
+                            <Translate content={field.type} />
+                          </Key>
+                        </div>
+                        <CircleTip
+                          icon={allIcons.solid.faTrash}
+                          onClick={() => removeMetadataField(index)}
+                          className="text-red-500 hover:text-red-700"
                         />
-                        <Translate content={field.type} />
-                      </Key>
-                    </div>
-                    <CircleTip
-                      icon={allIcons.solid.faTrash}
-                      onClick={() => removeMetadataField(index)}
-                      className="text-red-500 hover:text-red-700"
-                    />
-                  </div>
-                  {field.type === "colors" ? (
-                    <div className="space-y-2">
-                      <p className="text-[--biqpod-gray-opacity-2] text-sm">
-                        Add colors using the color picker, predefined colors, or
-                        type color names/hex codes
-                      </p>
-                      <div className="flex flex-wrap gap-2 bg-[--biqpod-field-background] p-3 border border-[--biqpod-borders] border-solid rounded-lg min-h-[50px]">
-                        <span className="self-center text-[--biqpod-gray-opacity] text-sm">
-                          Select colors using the color picker below
-                        </span>
+                      </div>
+                      <Line />
+                      <div className="p-3">
+                        {field.type === "colors" ? (
+                          <div className="space-y-2">
+                            <p className="text-[--biqpod-gray-opacity-2] text-sm">
+                              Add colors using the color picker, predefined
+                              colors, or type color names/hex codes
+                            </p>
+                            <div className="flex flex-wrap gap-2 bg-[--biqpod-field-background] p-3 border border-[--biqpod-borders] border-solid rounded-lg min-h-[50px]">
+                              <span className="self-center text-[--biqpod-gray-opacity] text-sm">
+                                Select colors using the color picker below
+                              </span>
+                            </div>
+                          </div>
+                        ) : (
+                          <MagicField
+                            config={options}
+                            fieldId={`${field.type}-temp-bulk-metadata-${field.key}`}
+                            type={field.type}
+                          />
+                        )}
                       </div>
                     </div>
-                  ) : (
-                    <MagicField
-                      config={
-                        {
-                          placeholder:
-                            field.type === "number"
-                              ? "Enter a number"
-                              : field.type === "string"
-                              ? "Enter text"
-                              : undefined,
-                          autoChange: true,
-                          separator: field.type === "array" ? "," : undefined,
-                        } as any
-                      }
-                      fieldId={`temp-bulk-metadata-${field.key}`}
-                      type={field.type}
-                    />
-                  )}
-                </div>
-              ))}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        )}
-
-        <div className="bg-yellow-50 p-3 rounded-lg">
-          <p className="text-yellow-800 text-sm">
+          )}{" "}
+        </div>
+        <div className="bg-yellow-600/20 p-3 rounded-lg">
+          <p className="text-yellow-600 text-sm">
             <strong>Note:</strong> This will add the selected metadata fields to
             all selected products. If a product already has any of these
             metadata keys, they will be overwritten.
@@ -631,26 +636,24 @@ const AddMetadataPopup = ({
             closePopup();
             tempMetadata.set([]);
           }}
-          className="flex-1 bg-gray-500 hover:bg-gray-600"
+          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
         >
           <Translate content="cancel" />
         </Button>
         <Button
-          onClick={() => {
+          onClick={async () => {
             if (metadataFields.length === 0) {
               showToast("Please add a metadata field first", "error");
               return;
             }
             const fieldNames = metadataFields.map((f) => f.key).join(", ");
-            (async () => {
-              const response = await confirm({
-                title: "Add Metadata",
-                message: `Are you sure you want to add metadata fields "${fieldNames}" to ${selectedProducts.length} products?`,
-              });
-              if (response) {
-                execAction("add-metadata");
-              }
-            })();
+            const response = await confirm({
+              title: "Add Metadata",
+              message: `Are you sure you want to add metadata fields "${fieldNames}" to ${selectedProducts.length} products?`,
+            });
+            if (response) {
+              execAction("add-metadata");
+            }
           }}
           disabled={loading || metadataFields.length === 0}
           rightIcon={
@@ -660,6 +663,137 @@ const AddMetadataPopup = ({
           iconClassName={tw(loading && "animate-spin")}
         >
           <Translate content="add metadata" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
+const RemoveMetadataPopup = ({
+  selectedProducts,
+  onSuccess,
+}: {
+  selectedProducts: string[];
+  onSuccess: () => void;
+}) => {
+  const storeId = useStoreId();
+  const metadataKeys = useCopyState<string[] | Nothing>([]);
+  const action = useAction(
+    "remove-metadata",
+    async () => {
+      const metadataKeysList = metadataKeys.get || [];
+      if (metadataKeysList.length === 0) {
+        showToast("Please enter metadata keys to remove", "error");
+        return;
+      }
+      console.log({ metadataKeysList });
+      // Update each selected product by removing the specified metadata fields
+      const updatePromises = selectedProducts.map(async (productId) => {
+        try {
+          const product = await snapbuyApi.getProduct(productId);
+          if (product && product.metaData) {
+            let updatedMetaData = product.metaData.filter(
+              (field) => !metadataKeysList.includes(field.key)
+            );
+            const updatedProduct: Partial<SnapBuy.Product> = {
+              id: productId,
+              metaData: updatedMetaData,
+            };
+            await snapbuyApi.upsertProducts(storeId!, [updatedProduct]);
+          }
+        } catch (error) {
+          console.error(`Failed to update product ${productId}:`, error);
+        }
+      });
+      await Promise.all(updatePromises);
+      const keysString = metadataKeysList.join(", ");
+      showToast(
+        `Metadata fields "${keysString}" removed from ${selectedProducts.length} products successfully`,
+        "success"
+      );
+      onSuccess();
+      closePopup();
+      // Clear the field
+      metadataKeys.set([]);
+    },
+    [selectedProducts, storeId, metadataKeys.get]
+  );
+  const loading = isLoading(action);
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
+      <div className="flex justify-between items-center p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="remove metadata from products" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex flex-col justify-between gap-4 p-4 h-full">
+        <div className="flex flex-col gap-2">
+          <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
+            <p className="text-sm">
+              <strong>Selected Products:</strong> {selectedProducts.length}
+            </p>
+          </div>
+          <Card>
+            <h3 className="p-2 font-semibold text-lg capitalize">
+              <Translate content="metadata keys to remove" />
+            </h3>
+            <Line />
+            <div className="flex flex-col gap-2 p-2">
+              <ArrayField id="metadata-keys" state={metadataKeys} />
+            </div>
+          </Card>
+        </div>
+        <div className="bg-red-600/20 p-3 rounded-lg">
+          <p className="text-red-600 text-sm">
+            <strong>Warning:</strong> This will permanently remove the specified
+            metadata fields from all selected products. This action cannot be
+            undone.
+          </p>
+        </div>
+      </div>
+      <Line />
+      <div className="flex gap-2 p-4">
+        <Button
+          onClick={() => {
+            closePopup();
+            metadataKeys.set([]);
+          }}
+          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+        >
+          <Translate content="cancel" />
+        </Button>
+        <Button
+          onClick={async () => {
+            const metadataKeysList = metadataKeys.get || [];
+            if (metadataKeysList.length === 0) {
+              showToast("Please enter metadata keys to remove", "error");
+              return;
+            }
+            const keysString = metadataKeysList.join(", ");
+            const response = await confirm({
+              title: "Remove Metadata",
+              message: `Are you sure you want to remove metadata fields "${keysString}" from ${selectedProducts.length} products?`,
+              detail: "This action cannot be undone.",
+              type: "warning",
+            });
+            if (response) {
+              execAction("remove-metadata");
+            }
+          }}
+          disabled={loading || (metadataKeys.get || []).length === 0}
+          rightIcon={
+            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faTrash
+          }
+          className="flex-1"
+          iconClassName={tw(loading && "animate-spin")}
+        >
+          <Translate content="remove metadata" />
         </Button>
       </div>
     </Card>
@@ -1189,7 +1323,6 @@ export const Products = () => {
         showToast("No products selected for deletion", "error");
         return;
       }
-
       try {
         // Delete each selected product
         await Promise.all(
@@ -1197,11 +1330,9 @@ export const Products = () => {
             await snapbuyApi.deleteProduct(productId);
           })
         );
-
         // Clear selection and exit selection mode
         selectedProducts.set([]);
         isSelectionMode.set(false);
-
         // Show success message
         const productCount = selectedProductIds.length;
         showToast(
@@ -1210,7 +1341,6 @@ export const Products = () => {
           }`,
           "success"
         );
-
         // Refresh the product list
         execAction("fetch-products", false);
       } catch (error) {
@@ -1229,7 +1359,6 @@ export const Products = () => {
         showToast("No products selected", "error");
         return;
       }
-
       try {
         // Update availability for each selected product
         await Promise.all(
@@ -1244,11 +1373,9 @@ export const Products = () => {
             }
           })
         );
-
         // Clear selection and exit selection mode
         selectedProducts.set([]);
         isSelectionMode.set(false);
-
         // Show success message
         const productCount = selectedProductIds.length;
         const actionText = enable ? "enabled" : "disabled";
@@ -1258,7 +1385,6 @@ export const Products = () => {
           }`,
           "success"
         );
-
         // Refresh the product list
         execAction("fetch-products", false);
       } catch (error) {
@@ -1385,7 +1511,6 @@ export const Products = () => {
   const toggleTools = useCallback(() => {
     showTools.set(!showTools.get);
   }, [showTools]);
-
   const startSelectionMode = useCallback(() => {
     isSelectionMode.set(true);
     showTools.set(false);
@@ -1741,6 +1866,22 @@ export const Products = () => {
                                 isSelectionMode.set(false);
                                 selectedProducts.set([]);
                                 showToast("Metadata added successfully!");
+                              }}
+                            />
+                          );
+                        },
+                      },
+                      {
+                        label: "Remove Metadata",
+                        defaultIcon: allIcons.solid.faTrash,
+                        click: () => {
+                          showPopup(
+                            <RemoveMetadataPopup
+                              selectedProducts={selectedProducts.get || []}
+                              onSuccess={() => {
+                                isSelectionMode.set(false);
+                                selectedProducts.set([]);
+                                showToast("Metadata removed successfully!");
                               }}
                             />
                           );

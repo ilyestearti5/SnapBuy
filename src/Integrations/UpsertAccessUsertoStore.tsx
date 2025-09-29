@@ -219,19 +219,21 @@ export const UpsertAccessUsertoStore = ({
                 <Translate content="Search User" />
               </label>
               <div className="relative">
-                <Field
-                  inputName="user-search"
-                  value={searchTerm.get}
-                  onChange={(e) => {
-                    searchTerm.set(e.target.value);
-                    showDropdown.set(true);
-                    if (selectedUser.get) {
-                      selectedUser.set(null);
-                    }
-                  }}
-                  placeholder="Search by name, email, or ID..."
-                  className="rounded-2xl"
-                />
+                {!selectedUser.get && (
+                  <Field
+                    inputName="user-search"
+                    value={searchTerm.get}
+                    onChange={(e) => {
+                      searchTerm.set(e.target.value);
+                      showDropdown.set(true);
+                      if (selectedUser.get) {
+                        selectedUser.set(null);
+                      }
+                    }}
+                    placeholder="Search by name, email, or ID..."
+                    className="rounded-2xl"
+                  />
+                )}
                 {selectedUser.get && (
                   <div className="flex items-center gap-3 bg-[--biqpod-primary]/10 mt-2 p-3 border border-[--biqpod-primary]/30 rounded-lg">
                     <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 overflow-hidden font-bold text-[--biqpod-primary-content] text-sm">
