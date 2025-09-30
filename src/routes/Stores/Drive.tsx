@@ -1,7 +1,5 @@
 import { allIcons, getUserFunction } from "@biqpod/app/ui/apis";
 import {
-  Card,
-  CardHeaderForPopup,
   Translate,
   Button,
   UserAvatar,
@@ -19,7 +17,10 @@ import { motion } from "framer-motion";
 import { useState } from "react";
 import { googleDriveHref } from "./Store";
 import { snapbuyApi } from "../../apis";
-export const DriveTransform = () => {
+interface DriveTransformProps {
+  text?: string;
+}
+export const DriveTransform = ({ text }: DriveTransformProps) => {
   const [syncMessage, setSyncMessage] = useState("");
   const action = useAction(
     "sync-data",
@@ -38,9 +39,7 @@ export const DriveTransform = () => {
   );
   const loading = isLoading(action);
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-[60vw] max-md:h-full">
-      <CardHeaderForPopup title="Transform Drive" />
-      <Line />
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex flex-col justify-center items-center gap-12 p-3 h-full">
         <img src={googleDriveHref} className="h-[100px]" />
         {/* Animated Connection Design */}
@@ -124,6 +123,7 @@ export const DriveTransform = () => {
             {/* Second Connection Dot */}
           </motion.div>
         </div>
+        {text && <span className="text-lg">{text}</span>}
       </div>
       <Line />
       <div className="p-3">
@@ -147,15 +147,13 @@ export const DriveTransform = () => {
           <Translate content="move" />
         </Button>
       </div>
-    </Card>
+    </div>
   );
 };
 export const DriveConnect = () => {
   const user = useUser();
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-[60vw] max-md:h-full">
-      <CardHeaderForPopup title="Sync Drive" />
-      <Line />
+    <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-evenly items-center p-3 h-full">
         <img src={googleDriveHref} className="h-[100px]" />
         {/* Animated Connection Design */}
@@ -240,6 +238,6 @@ export const DriveConnect = () => {
           <Translate content="Connect your Google Drive account" />
         </Button>
       </div>
-    </Card>
+    </div>
   );
 };

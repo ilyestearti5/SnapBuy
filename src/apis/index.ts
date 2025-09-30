@@ -1731,7 +1731,6 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       const id = crypto.randomUUID();
       const now = Date.now();
-
       // Calculate total from products
       const subtotal = Object.values(invoice.products).reduce(
         (sum: number, product: { count: number; price: number }) =>
@@ -1741,7 +1740,6 @@ export const createApi = (cloud: ClientCloud) => {
       const tax = invoice.tax || 0;
       const discount = invoice.discount || 0;
       const total = subtotal + tax - discount;
-
       const invoiceData: SnapBuy.Invoice = {
         ...invoice,
         id,
@@ -1819,8 +1817,63 @@ export const createApi = (cloud: ClientCloud) => {
       await deleteDoc(["projects", appProjectId, "invoices", invoiceId]);
       setTemp("invoices." + invoiceId, null);
     },
-    async hasExtraLinks() {
-      return true;
+    async hasExtraLinks(callback?: (text: string) => void) {
+      const uid = await getCurrentAuth();
+      if (!uid) throw "User not authenticated";
+      callback?.("checking products");
+      const products = await getDocs<SnapBuy.Product>(
+        ["projects", appProjectId, "products"],
+        {
+          where: and(where("uid", "==", uid)),
+        }
+      );
+      const firestoreLink = "firebasestorage.googleapis.com";
+      const findedProduct = products?.find((p) =>
+        p.data.photos?.some((photo) => photo.includes(firestoreLink))
+      );
+      if (findedProduct) {
+        return findedProduct.data;
+      }
+      callback?.("checking collections");
+      const collections = await getDocs<SnapBuy.Collection>(
+        ["projects", appProjectId, "collections"],
+        {
+          where: and(where("uid", "==", uid)),
+        }
+      );
+      const findedCollection = collections?.find((c) =>
+        c.data.photo?.includes(firestoreLink)
+      );
+      if (findedCollection) {
+        return findedCollection.data;
+      }
+      callback?.("checking brands");
+      const brands = await getDocs<SnapBuy.Brand>(
+        ["projects", appProjectId, "brands"],
+        {
+          where: and(where("uid", "==", uid)),
+        }
+      );
+      const findedBrands = brands?.find((b) =>
+        b.data.photo?.includes(firestoreLink)
+      );
+      if (findedBrands) {
+        return findedBrands.data;
+      }
+      callback?.("checking stores");
+      const stores = await getDocs<SnapBuy.Store>(
+        ["projects", appProjectId, "stores"],
+        {
+          where: and(where("uid", "==", uid)),
+        }
+      );
+      const findedStore = stores?.find((s) =>
+        s.data.photo?.includes(firestoreLink)
+      );
+      if (findedStore) {
+        return findedStore.data;
+      }
+      return false;
     },
   };
   return snapbuyApi;

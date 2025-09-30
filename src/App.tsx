@@ -1,4 +1,4 @@
-import React from "react";
+import { memo, useEffect, useMemo } from "react";
 import {
   Container,
   Header,
@@ -46,8 +46,53 @@ import { range, tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 import { Stores } from "./routes/Stores/Stores";
 import { Store } from "./routes/Stores/Store";
-const TestGrid = React.memo(() => {
-  const testItems = React.useMemo(
+import { useCopyState, useUser } from "@biqpod/app/ui/hooks";
+import { isAccountLinkedWithDrive, snapbuyApi } from "./apis";
+import { DriveConnect, DriveTransform } from "./routes/Stores/Drive";
+const CheckBeforeShow = () => {
+  const user = useUser();
+  const text = useCopyState("");
+  const show = useCopyState<
+    null | "store" | "drive-transform" | "drive-connect"
+  >(null);
+  const driveTransformText = useCopyState("");
+  useEffect(() => {
+    if (user?.uid) {
+      isAccountLinkedWithDrive().then(async (response) => {
+        if (response) {
+          const has = await snapbuyApi.hasExtraLinks(text.set);
+          show.set(has ? "drive-transform" : "store");
+          if (has) {
+            has.name && driveTransformText.set(has.name);
+          }
+        } else {
+          show.set("drive-connect");
+        }
+        text.set("");
+      });
+    }
+  }, [user]);
+  return (
+    <div className="h-full overflow-hidden">
+      {show.get === "store" && (
+        <AnimatedPage>
+          <Store />
+        </AnimatedPage>
+      )}
+      {show.get === "drive-transform" && (
+        <DriveTransform text={driveTransformText.get} />
+      )}
+      {show.get === "drive-connect" && <DriveConnect />}
+      {show.get ?? (
+        <div className="flex justify-center items-center w-full h-full">
+          <Translate content="loading" />
+        </div>
+      )}
+    </div>
+  );
+};
+const TestGrid = memo(() => {
+  const testItems = useMemo(
     () =>
       range(9).map((i) => {
         const colorClasses = [
@@ -77,7 +122,7 @@ const TestGrid = React.memo(() => {
 });
 export const App = () => {
   useUrlSettings();
-  const serviceCards = React.useMemo(
+  const serviceCards = useMemo(
     () =>
       tabServices.map(({ link, name, photo }, index) => (
         <AnimatedListItem key={link} index={index}>
@@ -86,7 +131,7 @@ export const App = () => {
       )),
     []
   );
-  const extraCards = React.useMemo(
+  const extraCards = useMemo(
     () =>
       extraTabs.map((tab, index) => (
         <AnimatedListItem key={tab.link} index={index}>
@@ -100,7 +145,7 @@ export const App = () => {
       )),
     []
   );
-  const appCards = React.useMemo(
+  const appCards = useMemo(
     () =>
       isWeb
         ? appTabs.map((tab, index) => (
@@ -251,9 +296,7 @@ export const App = () => {
             </Route>
             <Route path="/store/:storeId">
               <Profile>
-                <AnimatedPage>
-                  <Store />
-                </AnimatedPage>
+                <CheckBeforeShow />
               </Profile>
             </Route>
             <Route path="/product/:prodId">

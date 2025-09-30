@@ -28,13 +28,12 @@ import {
   showPopup,
   showToast,
   useAction,
-  useAsyncEffect,
   useAsyncMemo,
   useCopyState,
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { useEffect } from "react";
-import { isAccountLinkedWithDrive, snapbuyApi } from "../../apis";
+import { snapbuyApi } from "../../apis";
 import { delay, range } from "@biqpod/app/ui/utils";
 import notFoundPhoto from "../../assets/nothing.png";
 import { Link } from "react-router-dom";
@@ -47,7 +46,6 @@ import { SetTemplate } from "./SetTemplate";
 import { platformsPhoto } from "../../utils/platforms";
 import { SetStorePlatforms } from "./SetStorePlatforms";
 import { Biqpod } from "@biqpod/app/ui/types";
-import { DriveConnect, DriveTransform } from "./Drive";
 // Enhanced Animation variants
 const containerVariants = {
   hidden: {
@@ -119,7 +117,7 @@ const addButtonVariants = {
   hover: {
     scale: 1.1,
     rotate: 5,
-    backgroundColor: "rgba(var(--biqpod-primary-rgb), 0.1)",
+    backgroundColor: "var(--biqpod-primary-rgb)",
     transition: {
       type: "spring" as const,
       stiffness: 400,
@@ -389,17 +387,7 @@ export const Stores = () => {
     []
   );
   const deletionStore = getTemp<string>("deletion-store");
-  useAsyncEffect(async () => {
-    const isLinked = await isAccountLinkedWithDrive();
-    if (!isLinked) {
-      showPopup(<DriveConnect />);
-      return;
-    }
-    const hasExtraLinks = await snapbuyApi.hasExtraLinks();
-    if (hasExtraLinks) {
-      showPopup(<DriveTransform />);
-    }
-  }, [user]);
+  const exportingStore = getTemp<string>("exporting-store");
   return (
     <Scroll>
       <motion.div
@@ -552,6 +540,128 @@ export const Stores = () => {
                                             );
                                           },
                                           defaultIcon: allIcons.solid.faGlobe,
+                                        },
+                                        {
+                                          label: "Export JSON",
+                                          defaultIcon:
+                                            allIcons.solid.faDownload,
+                                          click: async () => {
+                                            setTemp(
+                                              "exporting-store",
+                                              store.id
+                                            );
+                                            try {
+                                              const products =
+                                                await snapbuyApi.getProductsOf(
+                                                  store.id
+                                                );
+                                              if (
+                                                !products ||
+                                                products.length === 0
+                                              ) {
+                                                showToast(
+                                                  "No products found to export",
+                                                  "info"
+                                                );
+                                                setTemp(
+                                                  "exporting-store",
+                                                  null
+                                                );
+                                                return;
+                                              }
+                                              const productsWithBase64 =
+                                                await Promise.all(
+                                                  products.map(
+                                                    async (
+                                                      product: SnapBuy.Product
+                                                    ) => {
+                                                      const updatedProduct = {
+                                                        ...product,
+                                                      };
+                                                      if (
+                                                        product.photos &&
+                                                        product.photos.length >
+                                                          0
+                                                      ) {
+                                                        updatedProduct.photos =
+                                                          await Promise.all(
+                                                            product.photos.map(
+                                                              async (
+                                                                photoUrl
+                                                              ) => {
+                                                                try {
+                                                                  const response =
+                                                                    await fetch(
+                                                                      photoUrl
+                                                                    );
+                                                                  const blob =
+                                                                    await response.blob();
+                                                                  const base64 =
+                                                                    await new Promise<string>(
+                                                                      (
+                                                                        resolve
+                                                                      ) => {
+                                                                        const reader =
+                                                                          new FileReader();
+                                                                        reader.onload =
+                                                                          () =>
+                                                                            resolve(
+                                                                              reader.result as string
+                                                                            );
+                                                                        reader.readAsDataURL(
+                                                                          blob
+                                                                        );
+                                                                      }
+                                                                    );
+                                                                  return base64;
+                                                                } catch (e) {
+                                                                  console.error(
+                                                                    "Failed to convert photo to base64:",
+                                                                    e
+                                                                  );
+                                                                  return photoUrl; // fallback to original URL
+                                                                }
+                                                              }
+                                                            )
+                                                          );
+                                                      }
+                                                      return updatedProduct;
+                                                    }
+                                                  )
+                                                );
+                                              const json = JSON.stringify(
+                                                productsWithBase64,
+                                                null,
+                                                2
+                                              );
+                                              const blob = new Blob([json], {
+                                                type: "application/json",
+                                              });
+                                              const url =
+                                                URL.createObjectURL(blob);
+                                              const a =
+                                                document.createElement("a");
+                                              a.href = url;
+                                              a.download = `${store.name}-products.json`;
+                                              a.click();
+                                              URL.revokeObjectURL(url);
+                                              showToast(
+                                                "Products exported successfully",
+                                                "success"
+                                              );
+                                              setTemp("exporting-store", null);
+                                            } catch (error) {
+                                              console.error(
+                                                "Export failed:",
+                                                error
+                                              );
+                                              showToast(
+                                                "Failed to export products",
+                                                "error"
+                                              );
+                                              setTemp("exporting-store", null);
+                                            }
+                                          },
                                         },
                                         {
                                           label: "Edit",
@@ -740,6 +850,11 @@ export const Stores = () => {
                               id={linkId}
                             />
                             {deletionStore === store.id && (
+                              <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] backdrop-blur-md">
+                                <CircleLoading />
+                              </div>
+                            )}
+                            {exportingStore === store.id && (
                               <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] backdrop-blur-md">
                                 <CircleLoading />
                               </div>
