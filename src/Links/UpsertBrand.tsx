@@ -92,6 +92,7 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
       showToast("Please enter a valid image URL", "error");
       return;
     }
+    photo.set(url);
   };
   // Handle paste events for image upload
   useEffect(() => {
@@ -317,18 +318,18 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
                 <Field
                   inputName="brand-photo-url"
                   placeholder="Enter image URL"
-                  className="flex-1"
+                  className="flex-1 rounded-2xl"
                 />
                 <Button
                   onClick={handleUrlUpload}
-                  className="px-3 py-2 w-fit"
+                  className="px-3 py-2 rounded-full w-fit"
                   disabled={!imageUrl?.trim()}
                 >
                   <Translate content="load" />
                 </Button>
               </div>
               {photo.get && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-col items-center gap-2">
                   <img
                     src={photo.get}
                     className="border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"

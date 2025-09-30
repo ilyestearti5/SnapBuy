@@ -1258,7 +1258,7 @@ const ToolsCard = memo(
   }
 );
 const PAGE_SIZE = 30;
-const sortBy: keyof SnapBuy.Product = "name";
+const sortBy: keyof SnapBuy.Product = "id";
 export const Products = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();

@@ -2,6 +2,7 @@ import * as React from "react";
 import {
   Button,
   Card,
+  CardHeaderForPopup,
   CardWait,
   CircleTip,
   Field,
@@ -138,11 +139,89 @@ function highlightMatch(
   }
   return result;
 }
+const FilterBrandsPopup = ({
+  onApply,
+}: {
+  onApply: (filters: any) => void;
+}) => {
+  const tempFilters = useCopyState({
+    noPhoto: false,
+    startAt: null as string | null,
+    endAt: null as string | null,
+  });
+  return (
+    <Card>
+      <CardHeaderForPopup title="Filter Brands" />
+      <Line />
+      <div className="space-y-3 p-3">
+        <label className="flex items-center gap-2 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={tempFilters.get.noPhoto}
+            onChange={(e) =>
+              tempFilters.set({ ...tempFilters.get, noPhoto: e.target.checked })
+            }
+            className="w-4 h-4"
+          />
+          <span>Show only brands without photo</span>
+        </label>
+        {/* Time range filters - TODO: Add when brand properties are available */}
+        <div className="space-y-2">
+          <label className="block font-medium text-sm">Time Range</label>
+          <div className="flex gap-2">
+            <input
+              type="date"
+              value={tempFilters.get.startAt || ""}
+              onChange={(e) =>
+                tempFilters.set({
+                  ...tempFilters.get,
+                  startAt: e.target.value || null,
+                })
+              }
+              className="flex-1 p-2 border rounded"
+              placeholder="Start date"
+            />
+            <span className="self-center">to</span>
+            <input
+              type="date"
+              value={tempFilters.get.endAt || ""}
+              onChange={(e) =>
+                tempFilters.set({
+                  ...tempFilters.get,
+                  endAt: e.target.value || null,
+                })
+              }
+              className="flex-1 p-2 border rounded"
+              placeholder="End date"
+            />
+          </div>
+        </div>
+      </div>
+      <Line />
+      <div className="flex justify-end gap-2 p-3">
+        <Button
+          onClick={() => {
+            onApply(tempFilters.get);
+            // Popup will close automatically or user can close it
+          }}
+          className="rounded-full"
+        >
+          Apply
+        </Button>
+      </div>
+    </Card>
+  );
+};
 export const Brands = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
   const brands = useCopyState<SnapBuy.Brand[]>([]);
   const searchQuery = getFieldValue("search-brand");
+  const filters = useCopyState({
+    noPhoto: false,
+    startAt: null as string | null,
+    endAt: null as string | null,
+  });
   const action = useAction(
     "fetch-brands",
     async () => {
@@ -158,23 +237,35 @@ export const Brands = () => {
     execAction("fetch-brands");
   }, []);
   const filteredBrands = useMemo(() => {
-    return filterFuzzySearch(brands.get, searchQuery || "", [
+    let filtered = filterFuzzySearch(brands.get, searchQuery || "", [
       "name",
       "description",
     ]);
-  }, [brands.get, searchQuery]);
+    if (filters.get.noPhoto) {
+      filtered = filtered.filter((brand) => !brand.photo);
+    }
+    // TODO: Add time range filtering when brand properties are available
+    return filtered;
+  }, [brands.get, searchQuery, filters.get]);
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="p-2"
+        className="flex items-center gap-2 p-2"
       >
         <Field
           inputName="search-brand"
           placeholder="Search for a brand..."
-          className="rounded-2xl"
+          className="flex-1 rounded-2xl"
+        />
+        <CircleTip
+          onClick={(e) => {
+            e.stopPropagation();
+            showPopup(<FilterBrandsPopup onApply={(f) => filters.set(f)} />);
+          }}
+          icon={allIcons.solid.faFilter}
         />
       </motion.div>
       <Line />
