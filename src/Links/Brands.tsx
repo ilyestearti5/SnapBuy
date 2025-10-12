@@ -1,10 +1,10 @@
-import * as React from "react";
 import {
   Button,
   Card,
   CardHeaderForPopup,
   CardWait,
   CircleTip,
+  EmptyComponent,
   Field,
   Line,
   Scroll,
@@ -14,21 +14,19 @@ import { useStoreId } from "../utils";
 import { snapbuyApi } from "../apis";
 import { useUsedBy } from "../routes/Stores/Stores";
 import {
-  confirm,
   execAction,
   getFieldValue,
-  openMenu,
   showPopup,
-  showToast,
   useAction,
   useCopyState,
+  useEffectDelay,
 } from "@biqpod/app/ui/hooks";
 import { UpsertBrand } from "./UpsertBrand";
 import { allIcons } from "@biqpod/app/ui/apis";
 import notFounPhoto from "../assets/page-not-found.png";
 import { useActionStatus } from "../routes/Clients/CartPopup";
 import { delay, range, tw } from "@biqpod/app/ui/utils";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 // Fuzzy search function
 function filterFuzzySearch<T>(
@@ -75,70 +73,6 @@ function filterFuzzySearch<T>(
     .map((x) => x.item);
 }
 // Highlight component for search terms
-function highlightMatch(
-  text: string,
-  search: string | undefined
-): React.ReactNode {
-  if (!search || search.trim() === "") return text;
-  const searchLower = search.toLowerCase().trim();
-  const textLower = text.toLowerCase();
-  // Find all matches for highlighting
-  const matches: { start: number; end: number }[] = [];
-  // Exact substring matches
-  let index = textLower.indexOf(searchLower);
-  while (index !== -1) {
-    matches.push({ start: index, end: index + searchLower.length });
-    index = textLower.indexOf(searchLower, index + 1);
-  }
-  // If no exact matches, try fuzzy matching
-  if (matches.length === 0) {
-    let searchIdx = 0;
-    for (let i = 0; i < text.length && searchIdx < searchLower.length; i++) {
-      if (textLower[i] === searchLower[searchIdx]) {
-        matches.push({ start: i, end: i + 1 });
-        searchIdx++;
-      }
-    }
-  }
-  if (matches.length === 0) return text;
-  // Sort matches by start position
-  matches.sort((a, b) => a.start - b.start);
-  // Merge overlapping matches
-  const mergedMatches: { start: number; end: number }[] = [];
-  for (const match of matches) {
-    if (mergedMatches.length === 0) {
-      mergedMatches.push(match);
-    } else {
-      const last = mergedMatches[mergedMatches.length - 1];
-      if (match.start <= last.end) {
-        last.end = Math.max(last.end, match.end);
-      } else {
-        mergedMatches.push(match);
-      }
-    }
-  }
-  // Build the highlighted text
-  const result: React.ReactNode[] = [];
-  let lastEnd = 0;
-  mergedMatches.forEach((match, index) => {
-    // Add text before the match
-    if (match.start > lastEnd) {
-      result.push(text.substring(lastEnd, match.start));
-    }
-    // Add highlighted match
-    result.push(
-      <span key={index} className="font-bold text-[--biqpod-primary] underline">
-        {text.substring(match.start, match.end)}
-      </span>
-    );
-    lastEnd = match.end;
-  });
-  // Add remaining text
-  if (lastEnd < text.length) {
-    result.push(text.substring(lastEnd));
-  }
-  return result;
-}
 const FilterBrandsPopup = ({
   onApply,
 }: {
@@ -233,9 +167,9 @@ export const Brands = () => {
     [storeId]
   );
   const { isLoading, isSuccess } = useActionStatus(action);
-  useEffect(() => {
+  useEffectDelay(() => {
     execAction("fetch-brands");
-  }, []);
+  }, [], 300);
   const filteredBrands = useMemo(() => {
     let filtered = filterFuzzySearch(brands.get, searchQuery || "", [
       "name",
@@ -269,8 +203,8 @@ export const Brands = () => {
         />
       </motion.div>
       <Line />
-      {isSuccess && !!filteredBrands.length && (
-        <Scroll>
+      <Scroll>
+        {isSuccess && !!filteredBrands.length && (
           <AnimatePresence>
             {filteredBrands.map((brand, index) => {
               return (
@@ -304,70 +238,6 @@ export const Brands = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="flex flex-col">
-                      <span className="font-medium text-base">
-                        {highlightMatch(brand.name || "", searchQuery)}
-                      </span>
-                      {brand.description && (
-                        <span className="max-w-[250px] text-[--biqpod-gray-opacity] text-sm truncate">
-                          {highlightMatch(brand.description, searchQuery)}
-                        </span>
-                      )}
-                    </div>
-                    {usedBy === "owned" || usedBy === "read/edit" ? (
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <CircleTip
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openMenu({
-                              x: e.clientX,
-                              y: e.clientY,
-                              menu: [
-                                ...(usedBy === "owned" || usedBy === "read/edit"
-                                  ? [
-                                      {
-                                        label: "Edit",
-                                        click: () => {
-                                          showPopup(
-                                            <UpsertBrand brand={brand} />
-                                          );
-                                        },
-                                        defaultIcon: allIcons.solid.faPen,
-                                      },
-                                      {
-                                        type: "separator" as const,
-                                      },
-                                      {
-                                        label: "Delete",
-                                        click: async () => {
-                                          const response = await confirm({
-                                            title: "Delete Brand",
-                                            message: `Are you sure you want to delete the brand \"${brand.name}\"? This action cannot be undone.`,
-                                          });
-                                          if (!response) return;
-                                          await snapbuyApi.deleteBrand(
-                                            brand.id!
-                                          );
-                                          showToast(
-                                            "Brand deleted successfully",
-                                            "success"
-                                          );
-                                          execAction("fetch-brands");
-                                        },
-                                        defaultIcon: allIcons.solid.faTrash,
-                                      },
-                                    ]
-                                  : []),
-                              ],
-                            });
-                          }}
-                          icon={allIcons.solid.faEllipsisVertical}
-                        />
-                      </motion.div>
-                    ) : null}
                     {usedBy === "owned" || usedBy === "read/edit" ? (
                       <motion.div
                         whileHover={{ scale: 1.1 }}
@@ -386,74 +256,74 @@ export const Brands = () => {
               );
             })}
           </AnimatePresence>
-        </Scroll>
-      )}
-      {isSuccess && !filteredBrands.length && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.4 }}
-          className="flex justify-center items-center h-full"
-        >
-          <Card>
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.2 }}
-              className="flex justify-center items-center"
-            >
-              <img src={notFounPhoto} alt="" />
-            </motion.div>
-            <Line />
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.5, delay: 0.4 }}
-              className="p-2"
-            >
-              <Translate
-                content={
-                  searchQuery
-                    ? "No brands found matching your search. Try a different search term."
-                    : "No brands found. You can create a new brand by clicking the button below."
-                }
-              />
-            </motion.div>
-          </Card>
-        </motion.div>
-      )}
-      {isLoading && (
-        <Scroll>
-          <div className="flex flex-col gap-2 p-1">
-            {range(20).map((index) => {
-              return (
-                <motion.div
-                  key={index}
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{
-                    duration: 0.3,
-                    delay: index * 0.05,
-                    ease: "easeOut",
-                  }}
-                >
-                  <CardWait className="flex items-center gap-2 p-2 rounded-2xl h-[80px]">
-                    <CardWait className="rounded-full w-[60px] h-[60px]" />
-                    <CardWait
-                      className={tw(
-                        "h-[20px] rounded-full",
-                        index % 2 === 0 ? "w-[200px]" : "w-[150px]"
-                      )}
-                    />
-                  </CardWait>
-                </motion.div>
-              );
-            })}
-          </div>
-        </Scroll>
-      )}
+        )}
+        {isSuccess && !filteredBrands.length && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.4 }}
+            className="flex justify-center items-center h-full"
+          >
+            <Card>
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.2 }}
+                className="flex justify-center items-center"
+              >
+                <img src={notFounPhoto} alt="" />
+              </motion.div>
+              <Line />
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 }}
+                className="p-2"
+              >
+                <Translate
+                  content={
+                    searchQuery
+                      ? "No brands found matching your search. Try a different search term."
+                      : "No brands found. You can create a new brand by clicking the button below."
+                  }
+                />
+              </motion.div>
+            </Card>
+          </motion.div>
+        )}
+        {isLoading && (
+          <Scroll>
+            <div className="flex flex-col gap-2 p-1">
+              {range(10).map((index) => {
+                return (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: index * 0.05,
+                      ease: "easeOut",
+                    }}
+                  >
+                    <CardWait className="flex items-center gap-2 p-2 rounded-2xl h-[80px]">
+                      <CardWait className="rounded-full w-[60px] h-[60px]" />
+                      <CardWait
+                        className={tw(
+                          "h-[20px] rounded-full",
+                          index % 2 === 0 ? "w-[200px]" : "w-[150px]"
+                        )}
+                      />
+                    </CardWait>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </Scroll>
+        )}
+      </Scroll>
       {usedBy === "owned" || usedBy === "read/edit" ? (
-        <>
+        <EmptyComponent>
           <Line />
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -473,7 +343,7 @@ export const Brands = () => {
               </Button>
             </motion.div>
           </motion.div>
-        </>
+        </EmptyComponent>
       ) : null}
     </div>
   );

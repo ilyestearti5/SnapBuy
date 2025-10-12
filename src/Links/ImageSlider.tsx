@@ -3,6 +3,8 @@ import { EmptyComponent, CircleTip, Line } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import React, { useState, useEffect, useRef } from "react";
+import { MediaRenderer } from "../components/MediaRenderer";
+import { isImageFile } from "../utils/utilities";
 interface SliderProps {
   photos?: string[];
   autoSlide?: boolean;
@@ -222,33 +224,41 @@ export const ImageSlider: React.FC<SliderProps> = ({
               key={index}
               className="relative flex flex-shrink-0 justify-center items-center w-full h-full overflow-hidden cursor-pointer"
             >
-              <img
-                draggable="false"
-                src={photo}
-                loading="eager"
-                className="opacity-40 blur-lg w-full h-full object-cover"
-              />
-              <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
-                <img
-                  draggable="false"
-                  src={photo}
-                  className={tw(
-                    "absolute top-1/2 object-contain left-1/2 h-full",
-                    zoom && "transition-transform duration-200 ease-out"
-                  )}
-                  style={
-                    zoom && index === current.get && isZooming
-                      ? {
-                          transform: `translate(-50%, -50%) scale(${zoomLevel})`,
-                          transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                        }
-                      : {
-                          transform: `translate(-50%, -50%) scale(1)`,
-                          transformOrigin: `50% 50%`,
-                        }
-                  }
-                />
-              </div>
+              {isImageFile(photo) ? (
+                <>
+                  <img
+                    draggable="false"
+                    src={photo}
+                    loading="eager"
+                    className="opacity-40 blur-lg w-full h-full object-cover"
+                  />
+                  <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
+                    <img
+                      draggable="false"
+                      src={photo}
+                      className={tw(
+                        "absolute top-1/2 object-contain left-1/2 h-full",
+                        zoom && "transition-transform duration-200 ease-out"
+                      )}
+                      style={
+                        zoom && index === current.get && isZooming
+                          ? {
+                              transform: `translate(-50%, -50%) scale(${zoomLevel})`,
+                              transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                            }
+                          : {
+                              transform: `translate(-50%, -50%) scale(1)`,
+                              transformOrigin: `50% 50%`,
+                            }
+                      }
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="w-full h-full">
+                  <MediaRenderer src={photo} className="w-full h-full" />
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -290,11 +300,10 @@ export const ImageSlider: React.FC<SliderProps> = ({
                   )}
                   onClick={() => goToSlide(index)}
                 >
-                  <img
+                  <MediaRenderer
                     src={photo}
                     alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
-                    draggable="false"
                   />
                 </div>
               ))}

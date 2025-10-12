@@ -6,7 +6,8 @@ import {
   Translate,
   Line,
   Key,
-  BooleanField,
+  EmptyComponent,
+  Button,
 } from "@biqpod/app/ui/components";
 import {
   showBottomSheet,
@@ -77,6 +78,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
           "flex flex-col justify-between w-full h-full overflow-hidden"
         )}
       >
+
         <div
           className={tw(
             "relative flex justify-center items-center w-full h-[200px] overflow-hidden",
@@ -92,31 +94,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
               />
             </div>
           )}
-          {isSelectionMode && (
-            <div className="top-2 left-2 z-10 absolute pointer-events-auto">
-              <BooleanField
-                state={{
-                  get: !!isSelected,
-                  set: (value) => {
-                    const result =
-                      typeof value === "function" ? value(!!isSelected) : value;
-                    if (result && !isSelected) {
-                      setTemp("selected-products", [...selected, product.id!]);
-                    } else if (!result && isSelected) {
-                      setTemp(
-                        "selected-products",
-                        selected.filter((id) => id !== product.id)
-                      );
-                    }
-                  },
-                }}
-                config={{
-                  style: "checkbox",
-                }}
-                id={`product-selection-${product.id}`}
-              />
-            </div>
-          )}
+
           {!!product.available && (
             <div className="inline-flex top-0 right-0 absolute items-center gap-2 bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
               <Icon icon={allIcons.solid.faTag} />
@@ -166,10 +144,10 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                     usedBy === "read"
                       ? undefined
                       : async () => {
-                          showPopup(<PostNewProduct product={product} />);
-                          await delay(100);
-                          setTemp("post-focused", 3);
-                        }
+                        showPopup(<PostNewProduct product={product} />);
+                        await delay(100);
+                        setTemp("post-focused", 3);
+                      }
                   }
                   className={
                     usedBy === "read"
@@ -190,10 +168,10 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                     usedBy === "read"
                       ? undefined
                       : async () => {
-                          showPopup(<PostNewProduct product={product} />);
-                          await delay(100);
-                          setTemp("post-focused", 3);
-                        }
+                        showPopup(<PostNewProduct product={product} />);
+                        await delay(100);
+                        setTemp("post-focused", 3);
+                      }
                   }
                   className={
                     usedBy === "read"
@@ -240,6 +218,36 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             }}
           />
         </div>
+        {isSelectionMode && (
+          <EmptyComponent>
+            <Line />
+            <div className="p-3">
+              <Button
+                className={
+                  tw(
+                    "rounded-full",
+                    !isSelected && "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+                  )
+                }
+                onClick={() => {
+                  if (!isSelected) {
+                    setTemp("selected-products", [...selected, product.id!]);
+                  } else {
+                    setTemp(
+                      "selected-products",
+                      selected.filter((id) => id !== product.id)
+                    );
+                  }
+                }}
+                icon={isSelected ? allIcons.solid.faCheck : undefined}
+              >
+                <Translate
+                  content={isSelected ? "deselect" : "select"}
+                />
+              </Button>
+            </div>
+          </EmptyComponent>
+        )}
       </Card>
     </motion.div>
   );

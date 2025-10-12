@@ -20,7 +20,7 @@ const robotId = crypto.randomUUID();
 export interface RobotCheckingProps {
   onValidate: (value: boolean) => void;
 }
-const RobotChecking = () => {
+export const RobotChecking = () => {
   const b = useMemo(() => betweenInt(0, 10), []);
   const a = useMemo(() => betweenInt(b + 2, b + 10), []);
   const operator = useMemo(() => {
@@ -58,15 +58,15 @@ const RobotChecking = () => {
           check.status.get === "ready"
             ? "text-[--biqpod-primary]"
             : !check.data.get
-            ? "text-red-600"
-            : "text-green-600"
+              ? "text-red-600"
+              : "text-green-600"
         )}
         icon={
           check.status.get === "ready"
             ? allIcons.solid.faCheck
             : !check.data.get
-            ? allIcons.solid.faXmark
-            : allIcons.solid.faCheck
+              ? allIcons.solid.faXmark
+              : allIcons.solid.faCheck
         }
       />
     </div>
@@ -111,7 +111,7 @@ export const Tracking = () => {
         </div>
         <Line />
         <div className="p-3">
-          <Button rightIcon={allIcons.solid.faChevronRight} onClick={() => {}}>
+          <Button rightIcon={allIcons.solid.faChevronRight} onClick={() => { }}>
             <Translate content="validate" />
           </Button>
         </div>

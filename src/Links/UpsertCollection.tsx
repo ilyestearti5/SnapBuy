@@ -110,7 +110,6 @@ export const UpsertCollection = ({
   const storeId = useStoreId();
   const [isPasting, setIsPasting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-
   // Handle file upload (paste, drag & drop, or file input)
   const handleFileUpload = async (file: File) => {
     if (file && file.type.startsWith("image/")) {
@@ -153,7 +152,6 @@ export const UpsertCollection = ({
       setIsDragging(false);
     }
   };
-
   // Handle paste events for image upload
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
@@ -253,7 +251,6 @@ export const UpsertCollection = ({
     setTab("upsert-collection", "upsert-collection");
   }, []);
   const photoState = useCopyState<string | Nothing>(collection?.photo);
-
   // Handle paste events for image upload
   useEffect(() => {
     const handlePaste = async (e: ClipboardEvent) => {
@@ -346,6 +343,9 @@ export const UpsertCollection = ({
         options.photo = photo;
       }
       await snapbuyApi.upsertCollection(options);
+      closePopup();
+      showToast(`Collection ${collection ? "updated" : "created"} successfully!`, "success");
+      execAction("fetch-collections");
     },
     [collection, photoState.get, selectedProducts.get]
   );
@@ -477,11 +477,10 @@ export const UpsertCollection = ({
                 </div>
               ) : (
                 <div
-                  className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${
-                    isPasting || isDragging
-                      ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
-                      : ""
-                  }`}
+                  className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${isPasting || isDragging
+                    ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
+                    : ""
+                    }`}
                 >
                   {isPasting ? (
                     <Icon
@@ -582,8 +581,8 @@ export const UpsertCollection = ({
               loading
                 ? allIcons.solid.faSpinner
                 : collection
-                ? allIcons.solid.faPen
-                : allIcons.solid.faPlus
+                  ? allIcons.solid.faPen
+                  : allIcons.solid.faPlus
             }
             onClick={() => {
               execAction("upsert-collection");

@@ -26,12 +26,13 @@ import {
   getPosition,
   useMemoDelay,
   useResolution,
+  useEffectDelay,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { UpsertPack } from "./UpsertPack";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { range, filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -141,9 +142,9 @@ export const Packs = () => {
     [storeId, user]
   );
   const loading = isLoading(deleteAction);
-  useEffect(() => {
+  useEffectDelay(() => {
     execAction("fetch-packs");
-  }, [storeId]);
+  }, [storeId], 300);
   // Search functionality with fuzzy search
   const search = getFieldValue("pack-search");
   const [_, filteredPacks] = useMemoDelay(
@@ -392,7 +393,7 @@ export const Packs = () => {
               }}
               className="rounded-full"
             >
-              <Translate content="create" />
+              <Translate content="create pack" />
             </Button>
           </motion.div>
         </motion.div>

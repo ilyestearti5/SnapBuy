@@ -1,4 +1,4 @@
-import { memo, useEffect, useMemo } from "react";
+import { memo, useMemo } from "react";
 import {
   Container,
   Header,
@@ -46,48 +46,12 @@ import { range, tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 import { Stores } from "./routes/Stores/Stores";
 import { Store } from "./routes/Stores/Store";
-import { useCopyState, useUser } from "@biqpod/app/ui/hooks";
-import { isAccountLinkedWithDrive, snapbuyApi } from "./apis";
-import { DriveConnect, DriveTransform } from "./routes/Stores/Drive";
 const CheckBeforeShow = () => {
-  const user = useUser();
-  const text = useCopyState("");
-  const show = useCopyState<
-    null | "store" | "drive-transform" | "drive-connect"
-  >(null);
-  const driveTransformText = useCopyState("");
-  useEffect(() => {
-    if (user?.uid) {
-      isAccountLinkedWithDrive().then(async (response) => {
-        if (response) {
-          const has = await snapbuyApi.hasExtraLinks(text.set);
-          show.set(has ? "drive-transform" : "store");
-          if (has) {
-            has.name && driveTransformText.set(has.name);
-          }
-        } else {
-          show.set("drive-connect");
-        }
-        text.set("");
-      });
-    }
-  }, [user]);
   return (
     <div className="h-full overflow-hidden">
-      {show.get === "store" && (
-        <AnimatedPage>
-          <Store />
-        </AnimatedPage>
-      )}
-      {show.get === "drive-transform" && (
-        <DriveTransform text={driveTransformText.get} />
-      )}
-      {show.get === "drive-connect" && <DriveConnect />}
-      {show.get ?? (
-        <div className="flex justify-center items-center w-full h-full">
-          <Translate content="loading" />
-        </div>
-      )}
+      <AnimatedPage>
+        <Store />
+      </AnimatedPage>
     </div>
   );
 };
@@ -149,16 +113,16 @@ export const App = () => {
     () =>
       isWeb
         ? appTabs.map((tab, index) => (
-            <AnimatedListItem key={tab.url} index={index}>
-              <ServiceCard
-                link={tab.url}
-                name={tab.name}
-                photo={tab.photo}
-                index={index}
-                isExternal={true}
-              />
-            </AnimatedListItem>
-          ))
+          <AnimatedListItem key={tab.url} index={index}>
+            <ServiceCard
+              link={tab.url}
+              name={tab.name}
+              photo={tab.photo}
+              index={index}
+              isExternal={true}
+            />
+          </AnimatedListItem>
+        ))
         : [],
     []
   );

@@ -23,6 +23,7 @@ import {
   Translate,
   MagicField,
   ArrayField,
+  Scroll,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
@@ -422,7 +423,6 @@ const AddMetadataPopup = ({
         showToast("Please add a metadata field first", "error");
         return;
       }
-      console.log({ metadataFields });
       // Update each selected product with all metadata fields
       const updatePromises = selectedProducts.map(async (productId) => {
         try {
@@ -481,146 +481,149 @@ const AddMetadataPopup = ({
         />
       </div>
       <Line />
-      <div className="flex flex-col justify-between gap-4 p-4 h-full">
-        <div className="flex flex-col gap-2">
-          <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
-            <p className="text-sm">
-              <strong>Selected Products:</strong> {selectedProducts.length}
-            </p>
-          </div>
-          {/* Add new field section - same as ProductMetadata */}
-          <Card>
-            <h3 className="p-2 font-semibold text-lg capitalize">
-              <Translate content="add metadata field" />
-            </h3>
-            <Line />
-            <div className="flex flex-col gap-2 p-2">
-              <Field
-                inputName="add-metadata-key"
-                className="rounded-2xl"
-                placeholder="Enter field name"
-              />
-              <EnumField
-                state={metadataType}
-                config={{
-                  list: [
-                    {
-                      value: "string",
-                      content: "Text",
-                    },
-                    {
-                      value: "number",
-                      content: "Number",
-                    },
-                    {
-                      value: "boolean",
-                      content: "Boolean",
-                    },
-                    {
-                      value: "array",
-                      content: "Text Array",
-                    },
-                    {
-                      value: "colors",
-                      content: "Colors",
-                    },
-                  ],
-                }}
-                id="add-metadata-field-type-selector"
-              />
+      <div className="flex flex-col justify-between gap-4 h-full overflow-hidden">
+        <Scroll className="h-full">
+          <div className="flex flex-col gap-2 p-2">
+            <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
+              <p className="text-sm">
+                <strong>Selected Products:</strong> {selectedProducts.length}
+              </p>
             </div>
-            <Line />
-            <div className="p-2">
-              <Button
-                onClick={addMetadataField}
-                disabled={!(metadataKeyField.get || "")?.trim()}
-                className="disabled:opacity-50 p-2 rounded-full w-full disabled:cursor-not-allowed"
-                icon={allIcons.solid.faPlus}
-              >
-                <Translate content="add field" />
-              </Button>
-            </div>
-          </Card>
-          {/* Field preview - same as ProductMetadata */}
-          {metadataFields.length > 0 && (
-            <div className="flex flex-col gap-3">
-              <h4 className="mb-2 font-semibold text-lg">
-                Metadata Fields to Add ({metadataFields.length}):
-              </h4>
-              <div className="space-y-3 max-h-60 overflow-y-auto">
-                {metadataFields.map((field, index) => {
-                  const options: any =
-                    field.type === "string"
-                      ? { hint: "Enter text", autoChange: true }
-                      : field.type === "number"
-                      ? { placeholder: "Enter a number", autoChange: true }
-                      : field.type === "colors"
-                      ? {
-                          placeholder: "Enter colors (comma separated)",
-                          hint: "e.g. red, blue, green, #ff0000, rgb(255,0,0)",
-                          separator: ",",
-                        }
-                      : {};
-                  return (
-                    <div
-                      key={index}
-                      className="bg-[--biqpod-primary-background] border border-[--biqpod-borders] border-solid rounded-xl"
-                    >
-                      <div className="flex justify-between items-center p-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-semibold">{field.key}</span>
-                          <Key className="inline-flex items-center gap-1">
-                            <Icon
-                              icon={
-                                field.type === "number"
-                                  ? allIcons.solid.faHashtag
-                                  : field.type === "boolean"
-                                  ? allIcons.solid.faToggleOn
-                                  : field.type === "array"
-                                  ? allIcons.solid.faList
-                                  : field.type === "colors"
-                                  ? allIcons.solid.faPalette
-                                  : allIcons.solid.faTextHeight
-                              }
-                            />
-                            <Translate content={field.type} />
-                          </Key>
-                        </div>
-                        <CircleTip
-                          icon={allIcons.solid.faTrash}
-                          onClick={() => removeMetadataField(index)}
-                          className="text-red-500 hover:text-red-700"
-                        />
-                      </div>
-                      <Line />
-                      <div className="p-3">
-                        {field.type === "colors" ? (
-                          <div className="space-y-2">
-                            <p className="text-[--biqpod-gray-opacity-2] text-sm">
-                              Add colors using the color picker, predefined
-                              colors, or type color names/hex codes
-                            </p>
-                            <div className="flex flex-wrap gap-2 bg-[--biqpod-field-background] p-3 border border-[--biqpod-borders] border-solid rounded-lg min-h-[50px]">
-                              <span className="self-center text-[--biqpod-gray-opacity] text-sm">
-                                Select colors using the color picker below
-                              </span>
-                            </div>
-                          </div>
-                        ) : (
-                          <MagicField
-                            config={options}
-                            fieldId={`${field.type}-temp-bulk-metadata-${field.key}`}
-                            type={field.type}
-                          />
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+            {/* Add new field section - same as ProductMetadata */}
+            <Card>
+              <h3 className="p-2 font-semibold text-lg capitalize">
+                <Translate content="add metadata field" />
+              </h3>
+              <Line />
+              <div className="flex flex-col gap-2 p-2">
+                <Field
+                  inputName="add-metadata-key"
+                  className="rounded-2xl"
+                  placeholder="Enter field name"
+                />
+                <EnumField
+                  state={metadataType}
+                  config={{
+                    list: [
+                      {
+                        value: "string",
+                        content: "Text",
+                      },
+                      {
+                        value: "number",
+                        content: "Number",
+                      },
+                      {
+                        value: "boolean",
+                        content: "Boolean",
+                      },
+                      {
+                        value: "array",
+                        content: "Text Array",
+                      },
+                      {
+                        value: "colors",
+                        content: "Colors",
+                      },
+                    ],
+                  }}
+                  id="add-metadata-field-type-selector"
+                />
               </div>
-            </div>
-          )}{" "}
-        </div>
+              <Line />
+              <div className="p-2">
+                <Button
+                  onClick={addMetadataField}
+                  disabled={!(metadataKeyField.get || "")?.trim()}
+                  className="disabled:opacity-50 p-2 rounded-full w-full disabled:cursor-not-allowed"
+                  icon={allIcons.solid.faPlus}
+                >
+                  <Translate content="add field" />
+                </Button>
+              </div>
+            </Card>
+            {/* Field preview - same as ProductMetadata */}
+            {metadataFields.length > 0 && (
+              <div className="flex flex-col gap-3">
+                <h4 className="mb-2 font-semibold text-lg">
+                  Metadata Fields to Add ({metadataFields.length}):
+                </h4>
+                <div className="space-y-3">
+                  {metadataFields.map((field, index) => {
+                    const options: any =
+                      field.type === "string"
+                        ? { hint: "Enter text", autoChange: true }
+                        : field.type === "number"
+                        ? { placeholder: "Enter a number", autoChange: true }
+                        : field.type === "colors"
+                        ? {
+                            placeholder: "Enter colors (comma separated)",
+                            hint: "e.g. red, blue, green, #ff0000, rgb(255,0,0)",
+                            separator: ",",
+                          }
+                        : {};
+                    return (
+                      <div
+                        key={index}
+                        className="bg-[--biqpod-primary-background] border border-[--biqpod-borders] border-solid rounded-xl"
+                      >
+                        <div className="flex justify-between items-center p-3">
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">{field.key}</span>
+                            <Key className="inline-flex items-center gap-1">
+                              <Icon
+                                icon={
+                                  field.type === "number"
+                                    ? allIcons.solid.faHashtag
+                                    : field.type === "boolean"
+                                    ? allIcons.solid.faToggleOn
+                                    : field.type === "array"
+                                    ? allIcons.solid.faList
+                                    : field.type === "colors"
+                                    ? allIcons.solid.faPalette
+                                    : allIcons.solid.faTextHeight
+                                }
+                              />
+                              <Translate content={field.type} />
+                            </Key>
+                          </div>
+                          <CircleTip
+                            icon={allIcons.solid.faTrash}
+                            onClick={() => removeMetadataField(index)}
+                            className="text-red-500 hover:text-red-700"
+                          />
+                        </div>
+                        <Line />
+                        <div className="p-3">
+                          {field.type === "colors" ? (
+                            <div className="space-y-2">
+                              <p className="text-[--biqpod-gray-opacity-2] text-sm">
+                                Add colors using the color picker, predefined
+                                colors, or type color names/hex codes
+                              </p>
+                              <div className="flex flex-wrap gap-2 bg-[--biqpod-field-background] p-3 border border-[--biqpod-borders] border-solid rounded-lg min-h-[50px]">
+                                <span className="self-center text-[--biqpod-gray-opacity] text-sm">
+                                  Select colors using the color picker below
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <MagicField
+                              config={options}
+                              fieldId={`${field.type}-temp-bulk-metadata-${field.key}`}
+                              type={field.type}
+                            />
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}{" "}
+          </div>
+        </Scroll>
+        <Line />
         <div className="bg-yellow-600/20 p-3 rounded-lg">
           <p className="text-yellow-600 text-sm">
             <strong>Note:</strong> This will add the selected metadata fields to
@@ -685,7 +688,6 @@ const RemoveMetadataPopup = ({
         showToast("Please enter metadata keys to remove", "error");
         return;
       }
-      console.log({ metadataKeysList });
       // Update each selected product by removing the specified metadata fields
       const updatePromises = selectedProducts.map(async (productId) => {
         try {

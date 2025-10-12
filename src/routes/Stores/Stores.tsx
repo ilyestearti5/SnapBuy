@@ -814,7 +814,6 @@ export const Stores = () => {
                                   </div>
                                   <div className="flex justify-center">
                                     {platforms.map(([platform, _]) => {
-                                      console.log(platformsPhoto, platform);
                                       const photo =
                                         platformsPhoto[
                                           platform as keyof typeof platformsPhoto
@@ -1105,7 +1104,6 @@ export const Stores = () => {
                                   </div>
                                   <div className="flex justify-center">
                                     {platforms.map(([platform, _]) => {
-                                      console.log(platformsPhoto, platform);
                                       const photo =
                                         platformsPhoto[
                                           platform as keyof typeof platformsPhoto

@@ -14,39 +14,118 @@ import { useCopyState } from "@biqpod/app/ui/hooks";
 import { useFormPhotos } from "../../../apis/getFns";
 import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { compressImage } from "../../../utils/utilities";
+import {
+  compressImage,
+  createMediaFile,
+  cleanupMediaFile,
+  MediaFile,
+} from "../../../utils/utilities";
 import { snapbuyApi } from "../../../apis/index";
+import { MediaRenderer } from "../../../components/MediaRenderer";
 export const ProductImages = () => {
   const images = useFormPhotos();
   const url = useCopyState("");
-  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
   const [drivePhotos, setDrivePhotos] = useState<
     { name: string; link: string }[]
   >([]);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const inputRef = useRef<HTMLInputElement>(null);
-  const addCompressedImage = async (imageSrc: string) => {
+
+  // Cleanup object URLs when component unmounts
+  useEffect(() => {
+    return () => {
+      mediaFiles.forEach(cleanupMediaFile);
+    };
+  }, []);
+
+  // Sync mediaFiles with images state for backward compatibility
+  useEffect(() => {
+    const urlList = mediaFiles.map((file) => file.url);
+    images.set(urlList.length > 0 ? urlList : null);
+  }, [mediaFiles]);
+
+  const addMediaFile = async (file: File) => {
     try {
-      const compressedSrc = await compressImage(imageSrc, 0.3); // 80% quality
-      images.set((s) => {
-        if (s) {
-          return [...s, compressedSrc];
-        } else {
-          return [compressedSrc];
-        }
-      });
+      let mediaFile: MediaFile;
+
+      if (file.type.startsWith("image/")) {
+        // For images, compress and create object URL
+        const objectURL = URL.createObjectURL(file);
+        const compressedDataURL = await compressImage(objectURL, 0.3);
+
+        // Clean up the temporary object URL
+        URL.revokeObjectURL(objectURL);
+
+        // Create MediaFile with compressed data URL (for now, could be optimized further)
+        mediaFile = {
+          url: compressedDataURL,
+          type: "image",
+          name: file.name,
+          size: file.size,
+          isObjectURL: false,
+        };
+      } else if (
+        file.name.toLowerCase().endsWith(".gltf") ||
+        file.name.toLowerCase().endsWith(".glb")
+      ) {
+        // For GLTF files, use object URL directly for better performance
+        mediaFile = createMediaFile(file);
+      } else {
+        console.warn("Unsupported file type:", file.type);
+        return;
+      }
+
+      setMediaFiles((prev) => [...prev, mediaFile]);
     } catch (error) {
-      console.error("Failed to compress image:", error);
-      // Fallback to original image if compression fails
-      images.set((s) => {
-        if (s) {
-          return [...s, imageSrc];
-        } else {
-          return [imageSrc];
-        }
-      });
+      console.error("Failed to add media file:", error);
     }
+  };
+
+  const addUrlMedia = async (urlString: string) => {
+    try {
+      // For URLs, we still use the original approach
+      const compressedSrc = await compressImage(urlString, 0.3);
+      const mediaFile: MediaFile = {
+        url: compressedSrc,
+        type:
+          urlString.toLowerCase().includes(".gltf") ||
+          urlString.toLowerCase().includes(".glb")
+            ? "gltf"
+            : "image",
+        name: urlString.split("/").pop() || "unknown",
+        size: 0,
+        isObjectURL: false,
+      };
+      setMediaFiles((prev) => [...prev, mediaFile]);
+    } catch (error) {
+      console.error("Failed to add URL media:", error);
+      // Fallback to original URL
+      const mediaFile: MediaFile = {
+        url: urlString,
+        type:
+          urlString.toLowerCase().includes(".gltf") ||
+          urlString.toLowerCase().includes(".glb")
+            ? "gltf"
+            : "image",
+        name: urlString.split("/").pop() || "unknown",
+        size: 0,
+        isObjectURL: false,
+      };
+      setMediaFiles((prev) => [...prev, mediaFile]);
+    }
+  };
+
+  const removeMediaFile = (indexToRemove: number) => {
+    setMediaFiles((prev) => {
+      const fileToRemove = prev[indexToRemove];
+      if (fileToRemove) {
+        cleanupMediaFile(fileToRemove);
+      }
+      return prev.filter((_, index) => index !== indexToRemove);
+    });
   };
   const fetchDrivePhotos = async () => {
     setLoadingPhotos(true);
@@ -66,17 +145,10 @@ export const ProductImages = () => {
       if (!items) return;
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
-        if (item.type.startsWith("image/")) {
+        if (item.type.startsWith("image/") || item.type.includes("gltf")) {
           const file = item.getAsFile();
           if (file) {
-            const reader = new FileReader();
-            reader.onload = async (event) => {
-              const imageSrc = event.target?.result as string;
-              if (imageSrc) {
-                await addCompressedImage(imageSrc);
-              }
-            };
-            reader.readAsDataURL(file);
+            addMediaFile(file);
           }
         }
       }
@@ -85,7 +157,7 @@ export const ProductImages = () => {
     return () => {
       document.removeEventListener("paste", handlePaste);
     };
-  }, [images]);
+  }, []);
   return (
     <div className="flex flex-col h-full">
       <AnimatePresence>
@@ -98,7 +170,10 @@ export const ProductImages = () => {
                 exit={{ opacity: 0 }}
                 className="rounded-2xl overflow-hidden"
               >
-                <img src={url.get} className="w-full h-full object-cover" />
+                <MediaRenderer
+                  src={url.get}
+                  className="w-full h-full object-cover"
+                />
               </motion.div>
             </div>
             <Line />
@@ -146,15 +221,13 @@ export const ProductImages = () => {
                     <div
                       key={index}
                       className="flex items-center hover:bg-gray-100 p-2 cursor-pointer"
-                      onClick={() => {
+                      onClick={async () => {
                         setShowDropdown(false);
-                        images.set((s) => {
-                          if (s && !s.includes(photo.link)) {
-                            return [...s, photo.link];
-                          } else if (!s) {
-                            return [photo.link];
-                          }
-                        });
+                        if (
+                          !mediaFiles.some((file) => file.url === photo.link)
+                        ) {
+                          await addUrlMedia(photo.link);
+                        }
                       }}
                     >
                       <img
@@ -176,8 +249,8 @@ export const ProductImages = () => {
         <Button
           className="px-4 py-1 rounded-full w-fit"
           onClick={async () => {
-            if (url.get && !images.get?.includes(url.get)) {
-              await addCompressedImage(url.get);
+            if (url.get && !mediaFiles.some((file) => file.url === url.get)) {
+              await addUrlMedia(url.get);
             }
             url.set("");
           }}
@@ -194,7 +267,7 @@ export const ProductImages = () => {
               // Create a hidden file input element
               const fileInput = document.createElement("input");
               fileInput.type = "file";
-              fileInput.accept = "image/*";
+              fileInput.accept = "image/*,.gltf,.glb";
               fileInput.multiple = true; // Allow multiple file selection
               fileInput.style.display = "none";
               // Handle file selection
@@ -202,14 +275,7 @@ export const ProductImages = () => {
                 const files = (event.target as HTMLInputElement).files;
                 if (files) {
                   Array.from(files).forEach(async (file) => {
-                    const reader = new FileReader();
-                    reader.onload = async (e) => {
-                      const imageSrc = e.target?.result as string;
-                      if (imageSrc) {
-                        await addCompressedImage(imageSrc);
-                      }
-                    };
-                    reader.readAsDataURL(file);
+                    await addMediaFile(file);
                   });
                 }
                 // Clean up the input element
@@ -221,27 +287,22 @@ export const ProductImages = () => {
             }}
             icon={allIcons.solid.faAdd}
           />
-          {images.get?.map((src, index) => {
+          {mediaFiles.map((mediaFile, index) => {
             return (
               <div
                 key={index}
                 className="relative border border-[--biqpod-borders] border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden cursor-pointer"
-                onClick={() => setSelectedImage(src)}
+                onClick={() => setSelectedMedia(mediaFile)}
               >
-                <img
-                  draggable={false}
-                  src={src}
+                <MediaRenderer
+                  mediaFile={mediaFile}
                   className="w-full h-full object-cover"
                 />
                 <TitleView title="remove" className="right-1 bottom-1 absolute">
                   <Tip
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent triggering the image click
-                      images.set(
-                        images.get?.filter((file) => {
-                          return file != src;
-                        }) || []
-                      );
+                      removeMediaFile(index);
                     }}
                     className="bg-[--biqpod-secondary-background] rounded-full"
                     icon={allIcons.regular.faXmarkCircle}
@@ -252,15 +313,15 @@ export const ProductImages = () => {
           })}
         </div>
       </Scroll>
-      {/* Image Modal */}
+      {/* Media Modal */}
       <AnimatePresence>
-        {selectedImage && (
+        {selectedMedia && (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="z-50 fixed inset-0 flex justify-center items-center bg-black bg-opacity-75"
-            onClick={() => setSelectedImage(null)}
+            onClick={() => setSelectedMedia(null)}
           >
             <motion.div
               initial={{ scale: 0.8, opacity: 0 }}
@@ -272,13 +333,13 @@ export const ProductImages = () => {
               <div className="flex justify-end w-full">
                 <CircleTip
                   icon={allIcons.solid.faXmark}
-                  onClick={() => setSelectedImage(null)}
+                  onClick={() => setSelectedMedia(null)}
                 />
               </div>
-              <img
-                src={selectedImage}
+              <MediaRenderer
+                mediaFile={selectedMedia}
                 className="rounded-lg max-w-full max-h-full object-contain"
-                alt="Product image"
+                alt="Product media"
               />
             </motion.div>
           </motion.div>

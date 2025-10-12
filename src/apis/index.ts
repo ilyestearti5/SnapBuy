@@ -92,6 +92,16 @@ export const isAccountLinkedWithDrive = async () => {
   const result = await isAccountLinkedCallback?.({ name: "google-drive" });
   return result?.linked || false;
 };
+export type DataTypes =
+  | "products"
+  | "customers"
+  | "orders"
+  | "packs"
+  | "collections"
+  | "brands"
+  | "photos"
+  | "coupons"
+  | "vars";
 export const createApi = (cloud: ClientCloud) => {
   const buildFunction = (name: string) => {
     return {
@@ -697,6 +707,22 @@ export const createApi = (cloud: ClientCloud) => {
       const syncProductsData = await getUserFunction("sync-data-products");
       await syncProductsData?.({});
     },
+    async payUsages(
+      storeId: string,
+      usages: Partial<Record<DataTypes, number>>
+    ) {
+      const fn = await getUserFunction<{ url: string }>("pay-usages");
+      const data = await fn?.({
+        storeId,
+        usages,
+      });
+      if (data?.url) {
+        const a = document.createElement("a");
+        a.href = data.url;
+        a.target = "_blank";
+        a.click();
+      }
+    },
     async syncBrandsData() {
       const syncBrandsData = await getUserFunction("sync-data-brands");
       await syncBrandsData?.({});
@@ -763,7 +789,6 @@ export const createApi = (cloud: ClientCloud) => {
       result.forEach((brand) => {
         setTemp("brands." + brand.id, brand);
       });
-      console.log(result);
       return result;
     },
     async getBrand(brandId: string) {
@@ -1874,6 +1899,24 @@ export const createApi = (cloud: ClientCloud) => {
         return findedStore.data;
       }
       return false;
+    },
+    usage: {
+      async get(props: { storeId: string }) {
+        const fn = await getUserFunction<Partial<Record<DataTypes, number>>>(
+          "usage"
+        );
+        return fn?.({ storeId: props.storeId });
+      },
+      async getPrices() {
+        const fn = await getFunction<
+          {
+            type: DataTypes;
+            extraPrice: number;
+            unit: string;
+          }[]
+        >("get-usages-pricing");
+        return fn?.({});
+      },
     },
   };
   return snapbuyApi;

@@ -254,3 +254,210 @@ export const generateRandomCustomerMetadata = (): Record<string, any> => {
         : "english",
   };
 };
+
+/**
+ * Check if a file URL or data URL represents a GLTF file
+ * @param url string - URL or data URL of the file
+ * @returns boolean - true if it's a GLTF file
+ */
+export const isGLTFFile = (url: string): boolean => {
+  if (!url) return false;
+
+  console.log("isGLTFFile checking:", url);
+
+  // For object URLs (blob:), we can't determine type from URL alone
+  // This will be handled by the file metadata stored alongside the URL
+  if (url.startsWith("blob:")) {
+    console.log(
+      "isGLTFFile: Object URL detected, type should be determined by metadata"
+    );
+    return false; // Let the metadata handle this
+  }
+
+  // Check file extension in URL (more precise matching)
+  const lowerUrl = url.toLowerCase();
+  if (lowerUrl.endsWith(".gltf") || lowerUrl.endsWith(".glb")) {
+    console.log("isGLTFFile: Found GLTF/GLB extension");
+    return true;
+  }
+
+  // Also check for extensions anywhere in the URL (for filenames with query params)
+  if (lowerUrl.includes(".gltf") || lowerUrl.includes(".glb")) {
+    console.log("isGLTFFile: Found GLTF/GLB in URL");
+    return true;
+  }
+
+  // Check data URL MIME type or file extension
+  if (url.startsWith("data:")) {
+    const isGltfData =
+      lowerUrl.includes("gltf") ||
+      lowerUrl.includes("glb") ||
+      url.includes("application/octet-stream") ||
+      url.includes("model/gltf-binary") ||
+      url.includes("model/gltf+json");
+    console.log("isGLTFFile: Data URL check result:", isGltfData);
+    return isGltfData;
+  }
+
+  console.log("isGLTFFile: Not a GLTF file");
+  return false;
+};
+
+/**
+ * Check if a file URL or data URL represents an image
+ * @param url string - URL or data URL of the file
+ * @returns boolean - true if it's an image file
+ */
+export const isImageFile = (url: string): boolean => {
+  if (!url) return false;
+
+  // Check data URL MIME type
+  if (url.startsWith("data:image/")) return true;
+
+  // Check file extension in URL
+  const imageExtensions = [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".gif",
+    ".bmp",
+    ".webp",
+    ".svg",
+  ];
+  return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
+};
+
+/**
+ * Create an object URL from a file for memory-efficient handling
+ * @param file File - The file to create an object URL for
+ * @returns string - Object URL that should be revoked when no longer needed
+ */
+export const createObjectURL = (file: File): string => {
+  return URL.createObjectURL(file);
+};
+
+/**
+ * Revoke an object URL to free up memory
+ * @param url string - The object URL to revoke
+ */
+export const revokeObjectURL = (url: string): void => {
+  if (url.startsWith("blob:")) {
+    URL.revokeObjectURL(url);
+  }
+};
+
+/**
+ * Check if a URL is an object URL (blob:)
+ * @param url string - URL to check
+ * @returns boolean - true if it's an object URL
+ */
+export const isObjectURL = (url: string): boolean => {
+  return url.startsWith("blob:");
+};
+
+/**
+ * Get file type from File object or URL
+ * @param fileOrUrl File | string - File object or URL string
+ * @returns 'image' | 'gltf' | 'unknown'
+ */
+/**
+ * Get file type from File object or URL
+ * @param fileOrUrl File | string - File object or URL string
+ * @returns 'image' | 'gltf' | 'unknown'
+ */
+export const getFileType = (
+  fileOrUrl: File | string
+): "image" | "gltf" | "unknown" => {
+  if (fileOrUrl instanceof File) {
+    if (fileOrUrl.type.startsWith("image/")) return "image";
+    if (
+      fileOrUrl.name.toLowerCase().endsWith(".gltf") ||
+      fileOrUrl.name.toLowerCase().endsWith(".glb") ||
+      fileOrUrl.type === "model/gltf+json" ||
+      fileOrUrl.type === "model/gltf-binary"
+    )
+      return "gltf";
+    return "unknown";
+  } else {
+    if (isImageFile(fileOrUrl)) return "image";
+    if (isGLTFFile(fileOrUrl)) return "gltf";
+    return "unknown";
+  }
+};
+
+/**
+ * Interface for media file with metadata
+ */
+export interface MediaFile {
+  url: string;
+  type: "image" | "gltf" | "unknown";
+  name: string;
+  size: number;
+  isObjectURL: boolean;
+  originalFile?: File;
+  compressed?: boolean; // For images that have been compressed
+}
+
+/**
+ * Create a MediaFile object from a File
+ * @param file File - The file to create MediaFile from
+ * @param compressed boolean - Whether the file has been compressed (for images)
+ * @returns MediaFile
+ */
+export const createMediaFile = (
+  file: File,
+  compressed: boolean = false
+): MediaFile => {
+  const url = createObjectURL(file);
+  const type = getFileType(file);
+
+  return {
+    url,
+    type,
+    name: file.name,
+    size: file.size,
+    isObjectURL: true,
+    originalFile: file,
+    compressed,
+  };
+};
+
+/**
+ * Create a MediaFile object from a URL (for existing images/URLs)
+ * @param url string - The URL
+ * @param name string - Optional name
+ * @returns MediaFile
+ */
+export const createMediaFileFromURL = (
+  url: string,
+  name?: string
+): MediaFile => {
+  const type = getFileType(url);
+
+  return {
+    url,
+    type,
+    name: name || url.split("/").pop() || "Unknown",
+    size: 0, // Unknown for URLs
+    isObjectURL: isObjectURL(url),
+    compressed: false,
+  };
+};
+
+/**
+ * Clean up MediaFile by revoking object URL if needed
+ * @param mediaFile MediaFile - The media file to clean up
+ */
+export const cleanupMediaFile = (mediaFile: MediaFile): void => {
+  if (mediaFile.isObjectURL) {
+    revokeObjectURL(mediaFile.url);
+  }
+};
+
+/**
+ * Clean up multiple MediaFiles
+ * @param mediaFiles MediaFile[] - Array of media files to clean up
+ */
+export const cleanupMediaFiles = (mediaFiles: MediaFile[]): void => {
+  mediaFiles.forEach(cleanupMediaFile);
+};

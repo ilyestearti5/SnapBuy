@@ -3,6 +3,7 @@ import { Icon, Button, CircleTip } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
+import { MediaRenderer } from "./MediaRenderer";
 export interface ProductCardProps {
   product: SnapBuy.Product;
   onAddToCart?: (productId: string, quantity?: number) => void;
@@ -61,7 +62,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Image */}
         <div className="flex-shrink-0 bg-[--biqpod-gray-opacity] rounded-lg w-16 h-16 overflow-hidden">
           {product.photos && product.photos.length > 0 ? (
-            <img
+            <MediaRenderer
               src={product.photos[0]}
               alt={product.name || "Product"}
               className="w-full h-full object-cover"
@@ -110,7 +111,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Image */}
       <div className="relative bg-[--biqpod-gray-opacity] aspect-square overflow-hidden">
         {product.photos && product.photos.length > 0 ? (
-          <img
+          <MediaRenderer
             src={product.photos[0]}
             alt={product.name || "Product"}
             className="w-full h-full object-cover"

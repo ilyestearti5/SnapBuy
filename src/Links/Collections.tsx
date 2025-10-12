@@ -13,38 +13,36 @@ import { snapbuyApi } from "../apis";
 import { useUsedBy } from "../routes/Stores/Stores";
 import {
   confirm,
+  execAction,
   getFieldValue,
   openMenu,
   showPopup,
   showToast,
-  useAsyncMemo,
+  useAction,
+  useCopyState,
+  useEffectDelay,
   useMemoDelay,
 } from "@biqpod/app/ui/hooks";
 import { UpsertCollection } from "./UpsertCollection";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
-
 // Highlight component for search terms
-function highlightMatch(
+export function highlightMatch(
   text: string,
   search: string | undefined
 ): React.ReactNode {
   if (!search || search.trim() === "") return text;
-
   const searchLower = search.toLowerCase().trim();
   const textLower = text.toLowerCase();
-
   // Find all matches for highlighting
   const matches: { start: number; end: number }[] = [];
-
   // Exact substring matches
   let index = textLower.indexOf(searchLower);
   while (index !== -1) {
     matches.push({ start: index, end: index + searchLower.length });
     index = textLower.indexOf(searchLower, index + 1);
   }
-
   // If no exact matches, try fuzzy matching
   if (matches.length === 0) {
     let searchIdx = 0;
@@ -55,12 +53,9 @@ function highlightMatch(
       }
     }
   }
-
   if (matches.length === 0) return text;
-
   // Sort matches by start position
   matches.sort((a, b) => a.start - b.start);
-
   // Merge overlapping matches
   const mergedMatches: { start: number; end: number }[] = [];
   for (const match of matches) {
@@ -75,11 +70,9 @@ function highlightMatch(
       }
     }
   }
-
   // Build the highlighted text
   const result: React.ReactNode[] = [];
   let lastEnd = 0;
-
   mergedMatches.forEach((match, index) => {
     // Add text before the match
     if (match.start > lastEnd) {
@@ -93,33 +86,34 @@ function highlightMatch(
     );
     lastEnd = match.end;
   });
-
   // Add remaining text
   if (lastEnd < text.length) {
     result.push(text.substring(lastEnd));
   }
-
   return result;
 }
 export const Collections = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const collections = useAsyncMemo(async () => {
-    if (!storeId) return null;
-    return snapbuyApi.getCollections(storeId);
+  const collections = useCopyState<SnapBuy.Collection[]>([])
+  useAction("fetch-collections", async () => {
+    if (!storeId) return;
+    const data = await snapbuyApi.getCollections(storeId);
+    collections.set(data);
   }, [storeId]);
-
   // Search functionality with fuzzy search
   const search = getFieldValue("collection-search");
   const [_, filteredCollections] = useMemoDelay(
     () => {
-      if (!search) return collections;
-      return filterFuzzySearch(collections || [], search, "name");
+      if (!search) return collections.get;
+      return filterFuzzySearch(collections.get || [], search, "name");
     },
     [search, collections],
     300
   );
-
+  useEffectDelay(() => {
+    execAction("fetch-collections");
+  }, [], 300)
   return (
     <motion.div
       className="flex flex-col h-full"
@@ -186,7 +180,7 @@ export const Collections = () => {
                       </div>
                       <div className="flex">
                         {usedBy === "owned" || usedBy === "read/edit" ? (
-                          <>
+                          <EmptyComponent>
                             <div>
                               <CircleTip
                                 onClick={({ clientX, clientY }) => {
@@ -234,8 +228,10 @@ export const Collections = () => {
                                           });
                                           if (!response) return;
                                           await snapbuyApi.deleteCollection(
-                                            collection.id
+                                            collection.id!
                                           );
+                                          showToast("Collection deleted successfully", "success");
+                                          execAction("fetch-collections");
                                         },
                                         defaultIcon: allIcons.solid.faTrash,
                                       },
@@ -258,7 +254,7 @@ export const Collections = () => {
                                 icon={allIcons.solid.faChevronRight}
                               />
                             </div>
-                          </>
+                          </EmptyComponent>
                         ) : null}
                       </div>
                     </motion.div>
@@ -268,7 +264,7 @@ export const Collections = () => {
               {filteredCollections &&
                 filteredCollections.length === 0 &&
                 collections &&
-                collections.length > 0 && (
+                collections.get.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -300,6 +296,56 @@ export const Collections = () => {
                     </div>
                   </motion.div>
                 )}
+              {collections &&
+                collections.get.length === 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="flex justify-center items-center h-full"
+                  >
+                    <div className="flex flex-col items-center gap-6 p-8">
+                      <motion.img
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 0.6 }}
+                        transition={{ duration: 0.6, delay: 0.2 }}
+                        draggable={false}
+                        src="https://cdn3d.iconscout.com/3d/premium/thumb/file-not-found-3d-icon-png-download-7980703.png?f=webp"
+                        className="w-40 h-40"
+                      />
+                      <motion.div
+                        initial={{ y: 20, opacity: 0 }}
+                        animate={{ y: 0, opacity: 1 }}
+                        transition={{ duration: 0.6, delay: 0.4 }}
+                        className="text-center"
+                      >
+                        <h3 className="mb-2 font-semibold text-[--biqpod-text] text-xl">
+                          <Translate content="no collections yet" />
+                        </h3>
+                        <p className="mb-4 max-w-sm text-[--biqpod-text-secondary] text-sm">
+                          <Translate content="collections help organize your products into groups. Create your first collection to get started!" />
+                        </p>
+                        {(usedBy === "owned" || usedBy === "read/edit") && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 10 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ duration: 0.4, delay: 0.6 }}
+                          >
+                            <Button
+                              onClick={() => {
+                                showPopup(<UpsertCollection back />);
+                              }}
+                              icon={allIcons.solid.faPlus}
+                              className="px-6 py-2 rounded-full"
+                            >
+                              <Translate content="create your first collection" />
+                            </Button>
+                          </motion.div>
+                        )}
+                      </motion.div>
+                    </div>
+                  </motion.div>
+                )}
             </EmptyComponent>
           </motion.div>
         )}
@@ -321,9 +367,10 @@ export const Collections = () => {
               onClick={() => {
                 showPopup(<UpsertCollection back />);
               }}
+              icon={allIcons.solid.faPlus}
               className="rounded-full"
             >
-              <Translate content="create" />
+              <Translate content="create collection" />
             </Button>
           </motion.div>
         </motion.div>
