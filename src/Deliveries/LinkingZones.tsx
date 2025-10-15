@@ -27,7 +27,7 @@ export interface LinkingZonesProps {
 export const LinkingZones = ({ first, second }: LinkingZonesProps) => {
   const priceState = useCopyState<number | undefined | null>(null);
   const link = useAsyncMemo(async () => {
-    const record = await getDocs<SnapBuy.LinkZone>(
+    const record = await getDocs<Souqify.LinkZone>(
       ["projects", import.meta.env.VITE_PROJECT_ID, "zone-links"],
       {
         where: or(

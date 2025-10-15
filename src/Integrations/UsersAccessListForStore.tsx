@@ -114,7 +114,7 @@ const loadingVariants = {
 export const UsersAccessListForStore = ({
   storeId,
 }: UsersAccessListForStoreProps) => {
-  const usersAccess = useCopyState<SnapBuy.StoreUserAccess[]>([]);
+  const usersAccess = useCopyState<Souqify.StoreUserAccess[]>([]);
   const error = useCopyState<string | null>(null);
   const selectedUsers = useCopyState<string[]>([]);
 
@@ -188,7 +188,7 @@ export const UsersAccessListForStore = ({
     execAction("load-users-access");
   }, [storeId]);
 
-  const getStatusColor = (status: SnapBuy.StoreUserAccess["status"]) => {
+  const getStatusColor = (status: Souqify.StoreUserAccess["status"]) => {
     switch (status) {
       case "accepted":
         return "bg-green-600/25 text-green-600 border-green-300";
@@ -219,7 +219,7 @@ export const UsersAccessListForStore = ({
     });
   };
 
-  const handleEditUser = (user: SnapBuy.StoreUserAccess) => {
+  const handleEditUser = (user: Souqify.StoreUserAccess) => {
     showPopup(
       <UpsertAccessUsertoStore
         storeId={storeId}
@@ -230,7 +230,7 @@ export const UsersAccessListForStore = ({
     );
   };
 
-  const handleRemoveUser = async (user: SnapBuy.StoreUserAccess) => {
+  const handleRemoveUser = async (user: Souqify.StoreUserAccess) => {
     let userName = "this user";
     if (user.relatedUid) {
       try {

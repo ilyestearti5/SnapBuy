@@ -21,13 +21,13 @@ import {
 } from "../utils/orderClientInfo";
 
 interface OrderInvoiceProps {
-  order: SnapBuy.Order;
+  order: Souqify.Order;
 }
 export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
   const invoiceRef = React.useRef<HTMLDivElement>(null);
   const user = useUser();
   const store = useAsyncMemo(async () => {
-    return getDoc<SnapBuy.Store>([
+    return getDoc<Souqify.Store>([
       "projects",
       import.meta.env.VITE_PROJECT_ID,
       "stores",

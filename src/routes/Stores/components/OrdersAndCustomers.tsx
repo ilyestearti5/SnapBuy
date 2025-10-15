@@ -7,13 +7,13 @@ import { useTemp } from "@biqpod/app/ui/hooks";
 import { useMemo } from "react";
 
 export const OrdersAndCustomers = () => {
-  const orders = useTemp<SnapBuy.Order[]>("orders-list");
+  const orders = useTemp<Souqify.Order[]>("orders-list");
 
   // Count pending orders (pending and processing status)
   const pendingOrdersCount = useMemo(() => {
     if (!orders.get) return 0;
     return orders.get.filter(
-      (order: SnapBuy.Order) =>
+      (order: Souqify.Order) =>
         order.status === "pending" || order.status === "processing"
     ).length;
   }, [orders.get]);

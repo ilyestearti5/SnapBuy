@@ -7,6 +7,7 @@ import {
   Field,
   ImageField,
   Line,
+  Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
 import {
@@ -21,10 +22,10 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect } from "react";
-import { snapbuyApi } from "../../apis";
+import { souqifyApi } from "../../apis";
 import { Nothing } from "@biqpod/app/ui/types";
 export interface UpsertTemplateProps {
-  template?: SnapBuy.Template;
+  template?: Souqify.Template;
 }
 export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   const photoState = useCopyState<string | Nothing>(null);
@@ -56,10 +57,13 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         return "";
     }
   };
+  const selectedType = useCopyState<Nothing | string>("single");
   useEffect(() => {
     if (template) {
       setFieldValue("template-name", template.name || "");
       setFieldValue("template-description", template.description || "");
+      setFieldValue("template-price", template.price?.toString() || "0");
+      selectedType.set(template.use);
       // Try to detect the source type from existing URL
       const url = template.url || "";
       if (url.includes("github.com")) {
@@ -90,6 +94,8 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
     } else {
       setFieldValue("template-name", "");
       setFieldValue("template-description", "");
+      setFieldValue("template-price", "0");
+      selectedType.set("single");
       setFieldValue("github-username", "");
       setFieldValue("github-repo", "");
       setFieldValue("npm-package", "");
@@ -101,6 +107,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   }, [template]);
   const templateName = getFieldValue("template-name");
   const templateDescription = getFieldValue("template-description");
+  const templatePrice = getFieldValue("template-price");
   const githubUsername = getFieldValue("github-username");
   const githubRepo = getFieldValue("github-repo");
   const npmPackage = getFieldValue("npm-package");
@@ -122,6 +129,14 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         showToast("Please enter a template name", "error");
         return;
       }
+
+      // Validate price
+      const priceValue = parseFloat(templatePrice || "0");
+      if (isNaN(priceValue) || priceValue < 0) {
+        showToast("Please enter a valid price (0 or greater)", "error");
+        return;
+      }
+
       // Validate based on source type
       if (sourceTypeState.get === "github") {
         if (!githubUsername?.trim() || !githubRepo?.trim()) {
@@ -143,14 +158,16 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         }
       }
 
-      const templateData: SnapBuy.Template = {
+      const templateData: Souqify.Template = {
         id: template?.id,
         name: templateName.trim(),
         description: templateDescription?.trim() || "",
         url: templateUrl,
         photo: photoState.get?.toString(),
+        price: parseFloat(templatePrice || "0") || 0,
+        use: selectedType.get === "single" ? "single" : "multiple",
       };
-      await snapbuyApi.createTemplate(templateData);
+      await souqifyApi.createTemplate(templateData);
       showToast(
         template
           ? "Template updated successfully"
@@ -163,6 +180,8 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
     [
       templateName,
       templateDescription,
+      templatePrice,
+      selectedType.get,
       githubUsername,
       githubRepo,
       npmPackage,
@@ -183,13 +202,13 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
     );
   }
   return (
-    <Card className="max-md:rounded-none max-md:w-full min-w-[400px] max-md:h-full">
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 min-w-[400px] max-md:h-full md:max-h-[80vh]">
       <CardHeaderForPopup
         title={template ? "Edit Template" : "Create Template"}
       />
       <Line />
-      <div className="flex flex-col gap-4 p-4 h-full">
-        <div className="flex flex-col gap-2">
+      <Scroll>
+        <div className="flex flex-col gap-2 p-3">
           <label className="font-semibold">
             <Translate content="template photo" />
           </label>
@@ -202,7 +221,8 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
             }}
           />
         </div>
-        <div className="flex flex-col gap-2">
+        <Line />
+        <div className="flex flex-col gap-2 p-3">
           <label className="font-semibold">
             <Translate content="template name" />*
           </label>
@@ -212,7 +232,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
             maxLength={100}
           />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 p-3">
           <label className="font-semibold">
             <Translate content="description" />
           </label>
@@ -225,7 +245,59 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
             maxLength={500}
           />
         </div>
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col gap-2 p-3">
+          <label className="font-semibold">
+            <Translate content="price" />* ($)
+          </label>
+          <Field inputName="template-price" placeholder="0.00" maxLength={10} />
+        </div>
+        <div className="flex flex-col gap-2 p-3">
+          <label className="font-semibold">
+            <Translate content="usage type" />*
+          </label>
+          <div className="flex gap-2">
+            {[
+              {
+                photo:
+                  "https://cdn3d.iconscout.com/3d/premium/thumb/single-user-6073767-4996968.png",
+                label: "Single Use",
+                value: "single",
+                description: "Can only be used once",
+              },
+              {
+                photo:
+                  "https://cdn3d.iconscout.com/3d/premium/thumb/multiple-users-6073766-4996967.png",
+                label: "Multiple Use",
+                value: "multiple",
+                description: "Can be used multiple times",
+              },
+            ].map(({ label, photo, value, description }, index) => {
+              return (
+                <button
+                  key={index}
+                  type="button"
+                  className={tw(
+                    "flex-1 flex-col p-3 rounded-lg border border-solid font-medium transition-colors flex items-center justify-center gap-2",
+                    (selectedType.get || "single") === value
+                      ? "border-[--biqpod-primary] bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+                      : "border-[--biqpod-gray-opacity] bg-transparent text-[--biqpod-text-color] hover:bg-[--biqpod-gray-opacity]"
+                  )}
+                  onClick={() => {
+                    selectedType.set(value);
+                  }}
+                >
+                  <img src={photo} className="h-10 object-contain" />
+                  <span className="font-semibold text-sm">{label}</span>
+                  <span className="opacity-70 text-xs text-center">
+                    {description}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <Line />
+        <div className="flex flex-col gap-2 p-3">
           <label className="font-semibold">
             <Translate content="template source" />*
           </label>
@@ -270,7 +342,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           </div>
         </div>
         {sourceTypeState.get === "github" && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 p-3">
             <div className="flex flex-col flex-1 gap-2">
               <label className="font-semibold">
                 <Translate content="github username" />*
@@ -294,7 +366,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           </div>
         )}
         {sourceTypeState.get === "npm" && (
-          <div className="flex gap-2">
+          <div className="flex gap-2 p-3">
             <div className="flex flex-col flex-1 gap-2">
               <label className="font-semibold">
                 <Translate content="npm package name" />*
@@ -318,7 +390,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           </div>
         )}
         {sourceTypeState.get === "full-url" && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 p-3">
             <label className="font-semibold">
               <Translate content="template url" />*
             </label>
@@ -330,7 +402,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           </div>
         )}
         {templateUrl && (
-          <div className="flex flex-col gap-2">
+          <div className="flex flex-col gap-2 p-3">
             <label className="font-semibold text-[--biqpod-success]">
               <Translate content="generated url" />
             </label>
@@ -346,21 +418,13 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
             </div>
           </div>
         )}
-      </div>
+      </Scroll>
       <Line />
       <div className="flex justify-end gap-2 p-4">
         <Button
-          className="bg-[--biqpod-gray-opacity] rounded-full text-[--biqpod-text-color]"
-          onClick={() => {
-            closePopup();
-          }}
-        >
-          <Translate content="cancel" />
-        </Button>
-        <Button
           icon={template ? allIcons.solid.faPen : allIcons.solid.faPlus}
           className={tw(
-            "px-2 py-1",
+            "rounded-full",
             loading && "pointer-events-none opacity-50"
           )}
           onClick={() => {

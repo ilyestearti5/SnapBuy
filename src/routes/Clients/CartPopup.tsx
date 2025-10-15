@@ -43,7 +43,7 @@ import { isWeb } from "@biqpod/app/ui/app";
 import { getAddressFromCoords } from "../../getAddressFromCoords";
 import { deleteCart, useCart, useFullCart } from "../../apis/snapbuy";
 export interface ProductMore {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
   count: number;
 }
 export function useActionStatus(actionName?: string | Action) {
@@ -144,14 +144,14 @@ export const CartPopup = ({
         }
         return;
       }
-      const products: SnapBuy.Order["products"] = {};
+      const products: Souqify.Order["products"] = {};
       await mapAsync(Object.entries(carts), async ([prodId, value]) => {
         products[prodId] = {
           count: value?.count,
         };
       });
       localStorage.setItem("phone", phone);
-      const place: SnapBuy.Order["place"] = {
+      const place: Souqify.Order["place"] = {
         address,
         wilaya,
       };

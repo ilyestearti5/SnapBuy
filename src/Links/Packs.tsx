@@ -115,7 +115,7 @@ function highlightMatch(
 export const Packs = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const packs = useCopyState<SnapBuy.Pack[]>([]);
+  const packs = useCopyState<Souqify.Pack[]>([]);
   const fetchingAction = useAction(
     "fetch-packs",
     async () => {
@@ -142,9 +142,13 @@ export const Packs = () => {
     [storeId, user]
   );
   const loading = isLoading(deleteAction);
-  useEffectDelay(() => {
-    execAction("fetch-packs");
-  }, [storeId], 300);
+  useEffectDelay(
+    () => {
+      execAction("fetch-packs");
+    },
+    [storeId],
+    300
+  );
   // Search functionality with fuzzy search
   const search = getFieldValue("pack-search");
   const [_, filteredPacks] = useMemoDelay(

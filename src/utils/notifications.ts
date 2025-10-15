@@ -1,4 +1,4 @@
-// Browser notification service for SnapBuy
+// Browser notification service for Souqify
 // This handles native browser notifications that work even when the app is closed
 
 import {
@@ -140,21 +140,21 @@ export class NotificationService {
 export class StoreNotificationHandler {
   private notificationService: NotificationService;
   private storeId: string;
-  private storeNotifySettings: SnapBuy.Store["notify"];
+  private storeNotifySettings: Souqify.Store["notify"];
 
-  constructor(storeId: string, notifySettings: SnapBuy.Store["notify"]) {
+  constructor(storeId: string, notifySettings: Souqify.Store["notify"]) {
     this.notificationService = NotificationService.getInstance();
     this.storeId = storeId;
     this.storeNotifySettings = notifySettings || {};
   }
 
   // Update notification settings
-  public updateSettings(notifySettings: SnapBuy.Store["notify"]) {
+  public updateSettings(notifySettings: Souqify.Store["notify"]) {
     this.storeNotifySettings = notifySettings || {};
   }
 
   // New order notification
-  public async notifyNewOrder(order: SnapBuy.Order): Promise<void> {
+  public async notifyNewOrder(order: Souqify.Order): Promise<void> {
     if (!this.storeNotifySettings?.newOrder) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -176,12 +176,12 @@ export class StoreNotificationHandler {
 
   // Order status change notification
   public async notifyOrderStatusChanged(
-    order: SnapBuy.Order,
-    oldStatus: SnapBuy.OrderStatus
+    order: Souqify.Order,
+    oldStatus: Souqify.OrderStatus
   ): Promise<void> {
     if (!this.storeNotifySettings?.orderStatusChanged) return;
 
-    const statusEmojis: Record<SnapBuy.OrderStatus, string> = {
+    const statusEmojis: Record<Souqify.OrderStatus, string> = {
       pending: "⏳",
       processing: "🔄",
       delivery: "🚚",
@@ -208,7 +208,7 @@ export class StoreNotificationHandler {
   }
 
   // Order completed notification
-  public async notifyOrderCompleted(order: SnapBuy.Order): Promise<void> {
+  public async notifyOrderCompleted(order: Souqify.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderCompleted) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -228,7 +228,7 @@ export class StoreNotificationHandler {
   }
 
   // Order cancelled notification
-  public async notifyOrderCancelled(order: SnapBuy.Order): Promise<void> {
+  public async notifyOrderCancelled(order: Souqify.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderCancelled) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -248,7 +248,7 @@ export class StoreNotificationHandler {
   }
 
   // Order deleted notification
-  public async notifyOrderDeleted(order: SnapBuy.Order): Promise<void> {
+  public async notifyOrderDeleted(order: Souqify.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderCancelled) return; // Use same setting as cancelled
 
     const clientInfo = await getOrderClientInfo(order);
@@ -268,7 +268,7 @@ export class StoreNotificationHandler {
   }
 
   // Order processing notification
-  public async notifyOrderProcessing(order: SnapBuy.Order): Promise<void> {
+  public async notifyOrderProcessing(order: Souqify.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderProcessing) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -288,7 +288,7 @@ export class StoreNotificationHandler {
   }
 
   // Order delivery notification
-  public async notifyOrderDelivery(order: SnapBuy.Order): Promise<void> {
+  public async notifyOrderDelivery(order: Souqify.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderDelivery) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -308,7 +308,7 @@ export class StoreNotificationHandler {
   }
 
   // Low stock notification
-  public async notifyLowStock(product: SnapBuy.Product): Promise<void> {
+  public async notifyLowStock(product: Souqify.Product): Promise<void> {
     if (!this.storeNotifySettings?.lowStock) return;
 
     await this.notificationService.sendNotification({
@@ -327,7 +327,7 @@ export class StoreNotificationHandler {
   }
 
   // New product notification
-  public async notifyNewProduct(product: SnapBuy.Product): Promise<void> {
+  public async notifyNewProduct(product: Souqify.Product): Promise<void> {
     if (!this.storeNotifySettings?.newProduct) return;
 
     await this.notificationService.sendNotification({
@@ -344,7 +344,7 @@ export class StoreNotificationHandler {
   }
 
   // New client notification
-  public async notifyNewClient(client: SnapBuy.Client): Promise<void> {
+  public async notifyNewClient(client: Souqify.Client): Promise<void> {
     if (!this.storeNotifySettings?.newClient) return;
 
     await this.notificationService.sendNotification({

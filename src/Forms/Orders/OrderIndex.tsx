@@ -7,7 +7,7 @@ import {
   Icon,
 } from "@biqpod/app/ui/components";
 
-export interface SnapBuyCollection {
+export interface SouqifyCollection {
   id?: string;
   name?: string;
   storeId?: string;

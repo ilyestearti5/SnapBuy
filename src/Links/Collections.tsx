@@ -95,12 +95,16 @@ export function highlightMatch(
 export const Collections = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const collections = useCopyState<SnapBuy.Collection[]>([])
-  useAction("fetch-collections", async () => {
-    if (!storeId) return;
-    const data = await snapbuyApi.getCollections(storeId);
-    collections.set(data);
-  }, [storeId]);
+  const collections = useCopyState<Souqify.Collection[]>([]);
+  useAction(
+    "fetch-collections",
+    async () => {
+      if (!storeId) return;
+      const data = await snapbuyApi.getCollections(storeId);
+      collections.set(data);
+    },
+    [storeId]
+  );
   // Search functionality with fuzzy search
   const search = getFieldValue("collection-search");
   const [_, filteredCollections] = useMemoDelay(
@@ -111,9 +115,13 @@ export const Collections = () => {
     [search, collections],
     300
   );
-  useEffectDelay(() => {
-    execAction("fetch-collections");
-  }, [], 300)
+  useEffectDelay(
+    () => {
+      execAction("fetch-collections");
+    },
+    [],
+    300
+  );
   return (
     <motion.div
       className="flex flex-col h-full"
@@ -230,7 +238,10 @@ export const Collections = () => {
                                           await snapbuyApi.deleteCollection(
                                             collection.id!
                                           );
-                                          showToast("Collection deleted successfully", "success");
+                                          showToast(
+                                            "Collection deleted successfully",
+                                            "success"
+                                          );
                                           execAction("fetch-collections");
                                         },
                                         defaultIcon: allIcons.solid.faTrash,
@@ -296,56 +307,55 @@ export const Collections = () => {
                     </div>
                   </motion.div>
                 )}
-              {collections &&
-                collections.get.length === 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex justify-center items-center h-full"
-                  >
-                    <div className="flex flex-col items-center gap-6 p-8">
-                      <motion.img
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 0.6 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        draggable={false}
-                        src="https://cdn3d.iconscout.com/3d/premium/thumb/file-not-found-3d-icon-png-download-7980703.png?f=webp"
-                        className="w-40 h-40"
-                      />
-                      <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                        className="text-center"
-                      >
-                        <h3 className="mb-2 font-semibold text-[--biqpod-text] text-xl">
-                          <Translate content="no collections yet" />
-                        </h3>
-                        <p className="mb-4 max-w-sm text-[--biqpod-text-secondary] text-sm">
-                          <Translate content="collections help organize your products into groups. Create your first collection to get started!" />
-                        </p>
-                        {(usedBy === "owned" || usedBy === "read/edit") && (
-                          <motion.div
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.4, delay: 0.6 }}
+              {collections && collections.get.length === 0 && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                  className="flex justify-center items-center h-full"
+                >
+                  <div className="flex flex-col items-center gap-6 p-8">
+                    <motion.img
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 0.6 }}
+                      transition={{ duration: 0.6, delay: 0.2 }}
+                      draggable={false}
+                      src="https://cdn3d.iconscout.com/3d/premium/thumb/file-not-found-3d-icon-png-download-7980703.png?f=webp"
+                      className="w-40 h-40"
+                    />
+                    <motion.div
+                      initial={{ y: 20, opacity: 0 }}
+                      animate={{ y: 0, opacity: 1 }}
+                      transition={{ duration: 0.6, delay: 0.4 }}
+                      className="text-center"
+                    >
+                      <h3 className="mb-2 font-semibold text-[--biqpod-text] text-xl">
+                        <Translate content="no collections yet" />
+                      </h3>
+                      <p className="mb-4 max-w-sm text-[--biqpod-text-secondary] text-sm">
+                        <Translate content="collections help organize your products into groups. Create your first collection to get started!" />
+                      </p>
+                      {(usedBy === "owned" || usedBy === "read/edit") && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ duration: 0.4, delay: 0.6 }}
+                        >
+                          <Button
+                            onClick={() => {
+                              showPopup(<UpsertCollection back />);
+                            }}
+                            icon={allIcons.solid.faPlus}
+                            className="px-6 py-2 rounded-full"
                           >
-                            <Button
-                              onClick={() => {
-                                showPopup(<UpsertCollection back />);
-                              }}
-                              icon={allIcons.solid.faPlus}
-                              className="px-6 py-2 rounded-full"
-                            >
-                              <Translate content="create your first collection" />
-                            </Button>
-                          </motion.div>
-                        )}
-                      </motion.div>
-                    </div>
-                  </motion.div>
-                )}
+                            <Translate content="create your first collection" />
+                          </Button>
+                        </motion.div>
+                      )}
+                    </motion.div>
+                  </div>
+                </motion.div>
+              )}
             </EmptyComponent>
           </motion.div>
         )}

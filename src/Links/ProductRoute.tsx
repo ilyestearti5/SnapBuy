@@ -200,13 +200,13 @@ export const ProductRoute = () => {
         }
         return;
       }
-      const products: SnapBuy.Order["products"] = {
+      const products: Souqify.Order["products"] = {
         [product?.id!]: {
           count: count.get || 1,
         },
       };
       localStorage.setItem("phone", phone);
-      const place: SnapBuy.Order["place"] = {
+      const place: Souqify.Order["place"] = {
         address,
         wilaya,
       };

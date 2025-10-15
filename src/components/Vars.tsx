@@ -34,7 +34,7 @@ import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { Nothing, SettingConfig } from "@biqpod/app/ui/types";
 import { useEffect } from "react";
 interface UpsertVarProps {
-  variable?: SnapBuy.Var;
+  variable?: Souqify.Var;
 }
 const UpsertVar = ({ variable }: UpsertVarProps) => {
   const storeId = useStoreId();
@@ -58,7 +58,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
         showToast("Variable value is required", "error");
         return;
       }
-      const varData: SnapBuy.Var = {
+      const varData: Souqify.Var = {
         id: variable?.id || crypto.randomUUID(),
         name: name.trim(),
         value: value.get.trim(),

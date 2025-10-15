@@ -282,7 +282,7 @@ export const UserLine = ({ user }: UserLineProps) => {
   );
 };
 interface StoreRecordProps {
-  store: SnapBuy.Store;
+  store: Souqify.Store;
 }
 export const StoreRecord = ({ store }: StoreRecordProps) => {
   const { name, photo } = store;
@@ -433,8 +433,8 @@ export const Carts = () => {
   );
 };
 export const ExploreStores = () => {
-  const stores = useCopyState<SnapBuy.Store[]>([]);
-  const lastDoc = useCopyState<SnapBuy.Store | null>(null);
+  const stores = useCopyState<Souqify.Store[]>([]);
+  const lastDoc = useCopyState<Souqify.Store | null>(null);
   const hasMore = useCopyState(true);
   const action = useAction(
     "fetch-explore-stores",

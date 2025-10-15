@@ -8,7 +8,7 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { delay, tw } from "@biqpod/app/ui/utils";
-import { OrderIndex, SnapBuyCollection } from "./Orders/OrderIndex";
+import { OrderIndex, SouqifyCollection } from "./Orders/OrderIndex";
 import {
   confirm,
   showPopup,
@@ -22,7 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { AnimatedCard, AutoAnimate, StaggeredGrid } from "../animations";
 import { staggerContainer, listItemVariants } from "../animations/index";
 const forms: {
-  id: SnapBuyCollection["type"];
+  id: SouqifyCollection["type"];
   name: string;
   description: string;
 }[] = [
@@ -38,9 +38,9 @@ const forms: {
   },
 ];
 export const Forms = () => {
-  const showedForm = useCopyState<SnapBuyCollection["type"] | null>(null);
+  const showedForm = useCopyState<SouqifyCollection["type"] | null>(null);
   const storeId = useStoreId();
-  const selectedCollection = useTemp<SnapBuyCollection | null>(
+  const selectedCollection = useTemp<SouqifyCollection | null>(
     "props-collection"
   );
   return (

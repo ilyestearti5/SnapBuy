@@ -174,7 +174,7 @@ const loadingSpinVariants = {
 export const Customers = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const customersState = useCopyState<(SnapBuy.Customer & { id: string })[]>(
+  const customersState = useCopyState<(Souqify.Customer & { id: string })[]>(
     []
   );
   const action = useAction(
@@ -263,7 +263,7 @@ export const Customers = () => {
     },
     [filteredCustomers.rejected]
   );
-  const renderCustomer = (customer: SnapBuy.Customer & { id: string }) => {
+  const renderCustomer = (customer: Souqify.Customer & { id: string }) => {
     const isUpdating = updatingCustomer === customer.id;
     const isDeleting = deletingCustomer === customer.id;
     const isProcessing = isUpdating || isDeleting;

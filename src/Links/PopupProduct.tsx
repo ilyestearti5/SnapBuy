@@ -22,7 +22,7 @@ import { snapbuyApi } from "../apis";
 import { loadFromExcel } from "./loadFromExcel";
 import { useStoreId } from "../utils";
 interface PopupProductProps {
-  products: SnapBuy.Product[];
+  products: Souqify.Product[];
   file?: string;
 }
 export const PopupProduct = ({ products, file }: PopupProductProps) => {
@@ -30,7 +30,7 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
   const existsState = useCopyState<null | boolean>(false);
   const newsState = useCopyState<null | boolean>(false);
   const user = useUser();
-  const allProducts = useCopyState<SnapBuy.Product[] | null>(null);
+  const allProducts = useCopyState<Souqify.Product[] | null>(null);
   useAsyncEffect(async () => {
     if (!user?.uid) return allProducts.set(null);
     const newProducts = await snapbuyApi.getAllProducts();

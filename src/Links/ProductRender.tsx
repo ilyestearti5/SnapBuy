@@ -27,7 +27,7 @@ import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { useUsedBy } from "../routes/Stores/Stores";
 export interface ProductRenderProps {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
   index: number;
 }
 export const ProductRender = ({ product, index }: ProductRenderProps) => {
@@ -78,7 +78,6 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
           "flex flex-col justify-between w-full h-full overflow-hidden"
         )}
       >
-
         <div
           className={tw(
             "relative flex justify-center items-center w-full h-[200px] overflow-hidden",
@@ -144,10 +143,10 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                     usedBy === "read"
                       ? undefined
                       : async () => {
-                        showPopup(<PostNewProduct product={product} />);
-                        await delay(100);
-                        setTemp("post-focused", 3);
-                      }
+                          showPopup(<PostNewProduct product={product} />);
+                          await delay(100);
+                          setTemp("post-focused", 3);
+                        }
                   }
                   className={
                     usedBy === "read"
@@ -168,10 +167,10 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                     usedBy === "read"
                       ? undefined
                       : async () => {
-                        showPopup(<PostNewProduct product={product} />);
-                        await delay(100);
-                        setTemp("post-focused", 3);
-                      }
+                          showPopup(<PostNewProduct product={product} />);
+                          await delay(100);
+                          setTemp("post-focused", 3);
+                        }
                   }
                   className={
                     usedBy === "read"
@@ -223,12 +222,11 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             <Line />
             <div className="p-3">
               <Button
-                className={
-                  tw(
-                    "rounded-full",
-                    !isSelected && "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
-                  )
-                }
+                className={tw(
+                  "rounded-full",
+                  !isSelected &&
+                    "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+                )}
                 onClick={() => {
                   if (!isSelected) {
                     setTemp("selected-products", [...selected, product.id!]);
@@ -241,9 +239,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                 }}
                 icon={isSelected ? allIcons.solid.faCheck : undefined}
               >
-                <Translate
-                  content={isSelected ? "deselect" : "select"}
-                />
+                <Translate content={isSelected ? "deselect" : "select"} />
               </Button>
             </div>
           </EmptyComponent>

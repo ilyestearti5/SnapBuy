@@ -25,7 +25,7 @@ import { snapbuyApi } from "../../apis";
 import { initPixels } from "../../Links/pixles";
 import { addToCart, useCartCount } from "../../apis/snapbuy";
 export interface ProductPopupProps {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
 }
 export const useSearchParams = () => {
   const loc = useLocation();

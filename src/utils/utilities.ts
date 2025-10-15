@@ -160,11 +160,11 @@ export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
   value: Biqpod.System.Setting.Config[T];
   onChange: (value: Biqpod.System.Setting.Config[T]) => void;
 }
-export const getPrice = (product?: SnapBuy.Product | Nothing, count = 1) => {
+export const getPrice = (product?: Souqify.Product | Nothing, count = 1) => {
   var total = 0;
   var choised:
     | null
-    | Required<Required<SnapBuy.Product>["multiple"]>["prices"][number] = null;
+    | Required<Required<Souqify.Product>["multiple"]>["prices"][number] = null;
   var price: null | number = null;
   if (!product) {
     return {

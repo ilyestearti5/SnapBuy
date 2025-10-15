@@ -45,7 +45,7 @@ export const NotificationTester: React.FC = () => {
   const testAdvancedNotification = async () => {
     try {
       await notificationService.sendNotification({
-        title: "🎉 Advanced Test - SnapBuy",
+        title: "🎉 Advanced Test - Souqify",
         body: "This is an advanced notification test with all features enabled!",
         icon: "/assets/snapbuy.png",
         tag: "advanced-test",
@@ -68,7 +68,7 @@ export const NotificationTester: React.FC = () => {
         registration.active.postMessage({
           type: "SHOW_NOTIFICATION",
           payload: {
-            title: "🔧 Service Worker Test - SnapBuy",
+            title: "🔧 Service Worker Test - Souqify",
             body: "This notification was sent via Service Worker!",
             icon: "/assets/snapbuy.png",
             tag: "sw-test",

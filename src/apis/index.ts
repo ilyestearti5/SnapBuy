@@ -43,11 +43,11 @@ export interface Plan {
   company: PlanRecord;
 }
 export interface CreateOrderOptions {
-  products: SnapBuy.Order["products"];
-  client: SnapBuy.Client;
+  products: Souqify.Order["products"];
+  client: Souqify.Client;
   delivery: boolean;
   metaData?: Record<string, SettingValueType>;
-  place: SnapBuy.Order["place"];
+  place: Souqify.Order["place"];
   note?: string;
 }
 export interface Action {
@@ -58,7 +58,7 @@ export interface Action {
 export interface GetExploreStoresOptions {
   limit?: number;
   startAt?: string;
-  orderBy?: keyof SnapBuy.Store;
+  orderBy?: keyof Souqify.Store;
   orderDir?: "asc" | "desc";
   useRecommendations?: boolean;
 }
@@ -152,7 +152,7 @@ export const createApi = (cloud: ClientCloud) => {
     async hasAccessToStore(storeId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const fn = await getUserFunction<SnapBuy.StoreUserAccess>(
+      const fn = await getUserFunction<Souqify.StoreUserAccess>(
         "has-access-to-store"
       );
       const result = await fn?.({ storeId, uid });
@@ -166,11 +166,11 @@ export const createApi = (cloud: ClientCloud) => {
       return result?.token;
     },
     async getZone(zoneId: string) {
-      return getDoc<SnapBuy.Zone>(["projects", appProjectId, "zones", zoneId]);
+      return getDoc<Souqify.Zone>(["projects", appProjectId, "zones", zoneId]);
     },
     async setPixelId(
       storeId: string,
-      id: SnapBuy.PixelId,
+      id: Souqify.PixelId,
       value: string | null
     ) {
       await setDoc(["projects", appProjectId, "stores", storeId], {
@@ -179,7 +179,7 @@ export const createApi = (cloud: ClientCloud) => {
         },
       });
     },
-    async getProductsOfCollection(collection: string | SnapBuy.Collection) {
+    async getProductsOfCollection(collection: string | Souqify.Collection) {
       const collectionDoc =
         typeof collection === "string"
           ? await this.getCollection(collection)
@@ -194,7 +194,7 @@ export const createApi = (cloud: ClientCloud) => {
       return products;
     },
     async getCollection(collectionId: string) {
-      const doc = await getDoc<SnapBuy.Collection>([
+      const doc = await getDoc<Souqify.Collection>([
         "projects",
         appProjectId,
         "collections",
@@ -221,7 +221,7 @@ export const createApi = (cloud: ClientCloud) => {
       );
       return result?.length;
     },
-    async upsertCollection(props: SnapBuy.Collection) {
+    async upsertCollection(props: Souqify.Collection) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       await setDoc(["projects", appProjectId, "collections", props.id!], {
@@ -235,7 +235,7 @@ export const createApi = (cloud: ClientCloud) => {
       await deleteDoc(["projects", appProjectId, "collections", collectionId]);
     },
     async getCollections(storeId: string) {
-      const collections = await getDocs<SnapBuy.Collection>(
+      const collections = await getDocs<Souqify.Collection>(
         ["projects", appProjectId, "collections"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -249,7 +249,7 @@ export const createApi = (cloud: ClientCloud) => {
       );
     },
     async getSinglePack(storeId: string) {
-      const packs = await getDocs<SnapBuy.Pack>(
+      const packs = await getDocs<Souqify.Pack>(
         ["projects", appProjectId, "packs"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -258,7 +258,7 @@ export const createApi = (cloud: ClientCloud) => {
       );
       return packs?.at(0);
     },
-    async setStorePixels(storeId: string, pixels: SnapBuy.Store["pixels"]) {
+    async setStorePixels(storeId: string, pixels: Souqify.Store["pixels"]) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       await setDoc(["projects", appProjectId, "stores", storeId], {
@@ -269,7 +269,7 @@ export const createApi = (cloud: ClientCloud) => {
       const time = new Date();
       time.setMonth(time.getMonth() - 3);
       time.setDate(time.getDate() + 7);
-      const orders = await getDocs<SnapBuy.Order>(
+      const orders = await getDocs<Souqify.Order>(
         ["projects", appProjectId, "orders"],
         {
           where: and(
@@ -289,7 +289,7 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async todayDeliverys() {
-      const fn = await getUserFunction<SnapBuy.Order[]>("today-deliverys");
+      const fn = await getUserFunction<Souqify.Order[]>("today-deliverys");
       const result = await fn?.({});
       return result;
     },
@@ -303,7 +303,7 @@ export const createApi = (cloud: ClientCloud) => {
       const result = await fn?.({});
       return result || [];
     },
-    async addZone(zone: SnapBuy.Zone) {
+    async addZone(zone: Souqify.Zone) {
       const uid = await getCurrentAuth();
       const zoneId = crypto.randomUUID();
       await createDoc(["projects", appProjectId, "zones", zoneId], {
@@ -313,7 +313,7 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getZonesLinkTo(zoneId: string) {
-      const docs = await getDocs<SnapBuy.LinkZone>(
+      const docs = await getDocs<Souqify.LinkZone>(
         ["projects", appProjectId, "zone-links"],
         {
           where: or(
@@ -351,11 +351,11 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getProduct(productId: string) {
-      const product = getTempFromStore<SnapBuy.Product>(
+      const product = getTempFromStore<Souqify.Product>(
         "products." + productId
       );
       if (!product) {
-        const doc = await getDoc<SnapBuy.Product>([
+        const doc = await getDoc<Souqify.Product>([
           "projects",
           appProjectId,
           "products",
@@ -371,7 +371,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getAllProducts() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const products = await getDocs<SnapBuy.Product>(
+      const products = await getDocs<Souqify.Product>(
         ["projects", appProjectId, "products"],
         {
           where: and(where("uid", "==", uid)),
@@ -381,7 +381,7 @@ export const createApi = (cloud: ClientCloud) => {
         products?.map((product) => ({ ...product.data, id: product.id })) || []
       );
     },
-    async addStore(store: SnapBuy.Store) {
+    async addStore(store: Souqify.Store) {
       const { address = null, name = null, phone = null, photo = null } = store;
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -415,7 +415,7 @@ export const createApi = (cloud: ClientCloud) => {
     async deleteAccount(accountId: string) {
       await deleteDoc(["projects", appProjectId, "accounts", accountId]);
     },
-    async updateStore(storeId: string, store: Partial<SnapBuy.Store>) {
+    async updateStore(storeId: string, store: Partial<Souqify.Store>) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       if (store.photo) {
@@ -431,7 +431,7 @@ export const createApi = (cloud: ClientCloud) => {
         photo: store.photo || null,
       });
     },
-    async upsertAccount(account: SnapBuy.Account) {
+    async upsertAccount(account: Souqify.Account) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = account;
@@ -444,7 +444,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getStores() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const stores = await getDocs<SnapBuy.Store>(
+      const stores = await getDocs<Souqify.Store>(
         ["projects", appProjectId, "stores"],
         {
           where: and(where("uid", "==", uid)),
@@ -453,11 +453,11 @@ export const createApi = (cloud: ClientCloud) => {
       return stores?.map((store) => ({ ...store.data })) || [];
     },
     async getStore(storeId: string) {
-      const store = getTempFromStore<SnapBuy.Store>("stores." + storeId);
+      const store = getTempFromStore<Souqify.Store>("stores." + storeId);
       if (store) {
         return store;
       }
-      const doc = await getDoc<SnapBuy.Store>([
+      const doc = await getDoc<Souqify.Store>([
         "projects",
         appProjectId,
         "stores",
@@ -469,11 +469,11 @@ export const createApi = (cloud: ClientCloud) => {
       return doc;
     },
     async getTemplate(id: string) {
-      const store = getTempFromStore<SnapBuy.Template>("templates." + id);
+      const store = getTempFromStore<Souqify.Template>("templates." + id);
       if (store) {
         return store;
       }
-      const doc = await getDoc<SnapBuy.Template>([
+      const doc = await getDoc<Souqify.Template>([
         "projects",
         appProjectId,
         "templates",
@@ -484,7 +484,7 @@ export const createApi = (cloud: ClientCloud) => {
       }
       return doc;
     },
-    async createTemplate(template: SnapBuy.Template) {
+    async createTemplate(template: Souqify.Template) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), photo, ...rest } = template;
@@ -503,7 +503,7 @@ export const createApi = (cloud: ClientCloud) => {
           "photo",
         ]);
       }
-      const options: SnapBuy.Template = {
+      const options: Souqify.Template = {
         ...rest,
         id,
         creatorId: uid,
@@ -517,7 +517,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getMyTemplates() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const templates = await getDocs<SnapBuy.Template>(
+      const templates = await getDocs<Souqify.Template>(
         ["projects", appProjectId, "templates"],
         {
           where: and(where("creatorId", "==", uid)),
@@ -531,10 +531,10 @@ export const createApi = (cloud: ClientCloud) => {
       return allTemplates;
     },
     async getAllTemplates(startAt: string | null = null, limit: number = 10) {
-      const templates = await getDocs<SnapBuy.Template>(
+      const templates = await getDocs<Souqify.Template>(
         ["projects", appProjectId, "templates"],
         {
-          where: and(where("status", "==", "accepted")),
+          // where: and(where("status", "==", "accepted")),
           orders: [orderBy("createdAt", "desc")],
           limit,
           startAt: startAt ? [startAt] : undefined,
@@ -551,7 +551,7 @@ export const createApi = (cloud: ClientCloud) => {
       await deleteDoc(["projects", appProjectId, "templates", templateId]);
     },
     async getStoresOf(uid: string) {
-      const stores = await getDocs<SnapBuy.Store>(
+      const stores = await getDocs<Souqify.Store>(
         ["projects", appProjectId, "stores"],
         {
           where: and(where("uid", "==", uid)),
@@ -582,18 +582,18 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getOrder(orderId: string) {
-      const fn = await getUserFunction<SnapBuy.Order>("get-order");
+      const fn = await getUserFunction<Souqify.Order>("get-order");
       const order = await fn?.({
         orderId,
       });
       return order;
     },
-    async getFollowed(limit?: number, from?: SnapBuy.Follow | null) {
+    async getFollowed(limit?: number, from?: Souqify.Follow | null) {
       var uid = await getCurrentAuth();
       if (!uid) {
         throw "User not authenticated";
       }
-      const follows = await getDocs<SnapBuy.Follow>(
+      const follows = await getDocs<Souqify.Follow>(
         ["projects", appProjectId, "follows"],
         {
           where: and(where("follower", "==", uid), where("follow", "==", true)),
@@ -615,7 +615,7 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getProductsOf(storeId: string) {
-      const products = await getDocs<SnapBuy.Product>(
+      const products = await getDocs<Souqify.Product>(
         ["projects", appProjectId, "products"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -629,9 +629,9 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async upsertProducts(
       storeId: string,
-      products: Partial<SnapBuy.Product>[],
+      products: Partial<Souqify.Product>[],
       onBeforeStart?: (
-        product: Partial<SnapBuy.Product>,
+        product: Partial<Souqify.Product>,
         index: number
       ) => void | Promise<void>
     ) {
@@ -719,7 +719,6 @@ export const createApi = (cloud: ClientCloud) => {
       if (data?.url) {
         const a = document.createElement("a");
         a.href = data.url;
-        a.target = "_blank";
         a.click();
       }
     },
@@ -749,7 +748,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     // Brand Management Functions
     async createBrand(
-      brand: Omit<SnapBuy.Brand, "id" | "createdAt" | "updatedAt">
+      brand: Omit<Souqify.Brand, "id" | "createdAt" | "updatedAt">
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -762,7 +761,7 @@ export const createApi = (cloud: ClientCloud) => {
         });
         photo = uploadedPhoto;
       }
-      const brandData: SnapBuy.Brand = {
+      const brandData: Souqify.Brand = {
         ...brand,
         id,
         photo,
@@ -778,7 +777,7 @@ export const createApi = (cloud: ClientCloud) => {
       return brandData;
     },
     async getAllBrands(storeId: string) {
-      const brands = await getDocs<SnapBuy.Brand>(
+      const brands = await getDocs<Souqify.Brand>(
         ["projects", appProjectId, "brands"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -792,9 +791,9 @@ export const createApi = (cloud: ClientCloud) => {
       return result;
     },
     async getBrand(brandId: string) {
-      const brand = getTempFromStore<SnapBuy.Brand>("brands." + brandId);
+      const brand = getTempFromStore<Souqify.Brand>("brands." + brandId);
       if (!brand) {
-        const doc = await getDoc<SnapBuy.Brand>([
+        const doc = await getDoc<Souqify.Brand>([
           "projects",
           appProjectId,
           "brands",
@@ -809,13 +808,13 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async updateBrand(
       brandId: string,
-      brand: Partial<Omit<SnapBuy.Brand, "id" | "createdAt" | "uid">>
+      brand: Partial<Omit<Souqify.Brand, "id" | "createdAt" | "uid">>
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const now = Date.now();
       // Get existing brand data
-      const existingBrand = await getDoc<SnapBuy.Brand>([
+      const existingBrand = await getDoc<Souqify.Brand>([
         "projects",
         appProjectId,
         "brands",
@@ -829,7 +828,7 @@ export const createApi = (cloud: ClientCloud) => {
         });
         photo = uploadedPhoto;
       }
-      const updatedBrandData: SnapBuy.Brand = {
+      const updatedBrandData: Souqify.Brand = {
         ...existingBrand,
         ...brand,
         photo: photo || existingBrand.photo,
@@ -969,13 +968,13 @@ export const createApi = (cloud: ClientCloud) => {
       return actions || [];
     },
     async getAccount(accountId: string) {
-      const account = getTempFromStore<SnapBuy.Account>(
+      const account = getTempFromStore<Souqify.Account>(
         "accounts." + accountId
       );
       if (account) {
         return account;
       }
-      const doc = await getDoc<SnapBuy.Account>([
+      const doc = await getDoc<Souqify.Account>([
         "projects",
         appProjectId,
         "accounts",
@@ -988,7 +987,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async getExploreStores(options: GetExploreStoresOptions) {
       const action = await getUserFunction<
-        SnapBuy.Store[],
+        Souqify.Store[],
         GetExploreStoresOptions
       >("get-explore-stores");
       const result = await action?.(options);
@@ -1002,14 +1001,14 @@ export const createApi = (cloud: ClientCloud) => {
         command,
       });
     },
-    async generateProductDescription(product: Partial<SnapBuy.Product>) {
+    async generateProductDescription(product: Partial<Souqify.Product>) {
       const generateDescription = await getFunction<
         string,
-        Partial<SnapBuy.Product>
+        Partial<Souqify.Product>
       >("generate-product-description");
       return await generateDescription?.(product);
     },
-    async addPack(pack: SnapBuy.Pack) {
+    async addPack(pack: Souqify.Pack) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = pack;
@@ -1019,7 +1018,7 @@ export const createApi = (cloud: ClientCloud) => {
         uid,
       });
     },
-    async updatePack(packId: string, pack: SnapBuy.Pack) {
+    async updatePack(packId: string, pack: Souqify.Pack) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = packId, ...rest } = pack;
@@ -1030,7 +1029,7 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getPacks(storeId: string) {
-      const packs = await getDocs<SnapBuy.Pack>(
+      const packs = await getDocs<Souqify.Pack>(
         ["projects", appProjectId, "packs"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1039,11 +1038,11 @@ export const createApi = (cloud: ClientCloud) => {
       return packs?.map((pack) => ({ ...pack.data, id: pack.id })) || [];
     },
     async getPack(packId: string) {
-      const pack = getTempFromStore<SnapBuy.Pack>("packs." + packId);
+      const pack = getTempFromStore<Souqify.Pack>("packs." + packId);
       if (pack) {
         return pack;
       }
-      const doc = await getDoc<SnapBuy.Pack>([
+      const doc = await getDoc<Souqify.Pack>([
         "projects",
         appProjectId,
         "packs",
@@ -1066,7 +1065,7 @@ export const createApi = (cloud: ClientCloud) => {
       if (status && status !== "all") {
         conditions.push(where("status", "==", status));
       }
-      const orders = await getDocs<SnapBuy.Order>(
+      const orders = await getDocs<Souqify.Order>(
         ["projects", appProjectId, "orders"],
         {
           where: and(...conditions),
@@ -1092,7 +1091,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       // Get existing order data
-      const existingOrder = await getDoc<SnapBuy.Order>([
+      const existingOrder = await getDoc<Souqify.Order>([
         "projects",
         appProjectId,
         "orders",
@@ -1111,7 +1110,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getDeliveryAgents() {
       const uid = getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const agents = await getDocs<SnapBuy.Account>(
+      const agents = await getDocs<Souqify.Account>(
         ["projects", appProjectId, "accounts"],
         {
           where: and(
@@ -1136,11 +1135,11 @@ export const createApi = (cloud: ClientCloud) => {
     // Legacy delivery pricing functions (deprecated - use new delivery options/prices functions)
     async addStoreDeliveryPrice(
       storeId: string,
-      deliveryPrice: SnapBuy.DeliveryPrice
+      deliveryPrice: Souqify.DeliveryPrice
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const deliveryPriceData: SnapBuy.DeliveryPrice = {
+      const deliveryPriceData: Souqify.DeliveryPrice = {
         ...deliveryPrice,
         id: deliveryPrice.id || crypto.randomUUID(),
         storeId,
@@ -1153,11 +1152,11 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async updateStoreDeliveryPrice(
       storeId: string,
-      deliveryPrice: SnapBuy.DeliveryPrice
+      deliveryPrice: Souqify.DeliveryPrice
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const deliveryPriceData: SnapBuy.DeliveryPrice = {
+      const deliveryPriceData: Souqify.DeliveryPrice = {
         ...deliveryPrice,
         storeId,
         uid,
@@ -1178,7 +1177,7 @@ export const createApi = (cloud: ClientCloud) => {
       ]);
     },
     async getStoreDeliveryPrices(storeId: string) {
-      const deliveryPrices = await getDocs<SnapBuy.DeliveryOptions>(
+      const deliveryPrices = await getDocs<Souqify.DeliveryOptions>(
         ["projects", appProjectId, "deliveryPrices"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1192,7 +1191,7 @@ export const createApi = (cloud: ClientCloud) => {
     // New API functions for delivery options (without price)
     async addStoreDeliveryOption(
       storeId: string,
-      deliveryOption: Omit<SnapBuy.DeliveryOptions, "id" | "uid" | "storeId">
+      deliveryOption: Omit<Souqify.DeliveryOptions, "id" | "uid" | "storeId">
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -1207,7 +1206,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async updateStoreDeliveryOption(
       deliveryOptionId: string,
-      deliveryOption: Partial<SnapBuy.DeliveryOptions>
+      deliveryOption: Partial<Souqify.DeliveryOptions>
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -1242,7 +1241,7 @@ export const createApi = (cloud: ClientCloud) => {
       ]);
     },
     async getStoreDeliveryOptions(storeId: string) {
-      const deliveryOptions = await getDocs<SnapBuy.DeliveryOptions>(
+      const deliveryOptions = await getDocs<Souqify.DeliveryOptions>(
         ["projects", appProjectId, "deliveryOptions"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1258,7 +1257,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     // New API functions for delivery prices
     async addDeliveryPrice(
-      deliveryPrice: Omit<SnapBuy.DeliveryPrice, "id" | "uid">
+      deliveryPrice: Omit<Souqify.DeliveryPrice, "id" | "uid">
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -1272,7 +1271,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async updateDeliveryPrice(
       deliveryPriceId: string,
-      deliveryPrice: Partial<SnapBuy.DeliveryPrice>
+      deliveryPrice: Partial<Souqify.DeliveryPrice>
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -1295,7 +1294,7 @@ export const createApi = (cloud: ClientCloud) => {
       ]);
     },
     async getDeliveryPricesForOption(deliveryOptionId: string) {
-      const deliveryPrices = await getDocs<SnapBuy.DeliveryPrice>(
+      const deliveryPrices = await getDocs<Souqify.DeliveryPrice>(
         ["projects", appProjectId, "deliveryPrices"],
         {
           where: and(where("deliveryOptionId", "==", deliveryOptionId)),
@@ -1310,7 +1309,7 @@ export const createApi = (cloud: ClientCloud) => {
       );
     },
     async getAllDeliveryPricesForStore(storeId: string) {
-      const deliveryPrices = await getDocs<SnapBuy.DeliveryPrice>(
+      const deliveryPrices = await getDocs<Souqify.DeliveryPrice>(
         ["projects", appProjectId, "deliveryPrices"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1334,10 +1333,10 @@ export const createApi = (cloud: ClientCloud) => {
       await deleteDoc(["projects", appProjectId, "orders", orderId]);
       setTemp("order-products." + orderId, null);
     },
-    async editOrder(orderId: string, edit: SnapBuy.Order["edit"]) {
+    async editOrder(orderId: string, edit: Souqify.Order["edit"]) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const existingOrder = await getDoc<SnapBuy.Order>([
+      const existingOrder = await getDoc<Souqify.Order>([
         "projects",
         appProjectId,
         "orders",
@@ -1350,7 +1349,7 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getNotificationSettings(storeId: string) {
-      const store = await getDoc<Required<SnapBuy.Store>>([
+      const store = await getDoc<Required<Souqify.Store>>([
         "projects",
         appProjectId,
         "stores",
@@ -1359,7 +1358,7 @@ export const createApi = (cloud: ClientCloud) => {
       return store?.notify;
     },
     // Customer Management Functions
-    async createCustomer(customer: Omit<SnapBuy.Customer, "createdAt">) {
+    async createCustomer(customer: Omit<Souqify.Customer, "createdAt">) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const customerId = crypto.randomUUID();
@@ -1373,7 +1372,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getCustomer(customerId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const customer = await getDoc<SnapBuy.Customer>([
+      const customer = await getDoc<Souqify.Customer>([
         "projects",
         appProjectId,
         "customers",
@@ -1384,7 +1383,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getStoreCustomers(storeId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const customers = await getDocs<SnapBuy.Customer>(
+      const customers = await getDocs<Souqify.Customer>(
         ["projects", appProjectId, "customers"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1414,7 +1413,7 @@ export const createApi = (cloud: ClientCloud) => {
       await deleteDoc(["projects", appProjectId, "customers", customerId]);
     },
     // Coupon Management Functions
-    async upsertCoupon(coupon: SnapBuy.Coupon) {
+    async upsertCoupon(coupon: Souqify.Coupon) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = coupon;
@@ -1430,7 +1429,7 @@ export const createApi = (cloud: ClientCloud) => {
       return id;
     },
     async getCoupons(storeId: string) {
-      const coupons = await getDocs<SnapBuy.Coupon>(
+      const coupons = await getDocs<Souqify.Coupon>(
         ["projects", appProjectId, "coupons"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1442,11 +1441,11 @@ export const createApi = (cloud: ClientCloud) => {
       );
     },
     async getCoupon(couponId: string) {
-      const coupon = getTempFromStore<SnapBuy.Coupon>("coupons." + couponId);
+      const coupon = getTempFromStore<Souqify.Coupon>("coupons." + couponId);
       if (coupon) {
         return coupon;
       }
-      const doc = await getDoc<SnapBuy.Coupon>([
+      const doc = await getDoc<Souqify.Coupon>([
         "projects",
         appProjectId,
         "coupons",
@@ -1476,7 +1475,7 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async validateCoupon(code: string, storeId: string, orderAmount: number) {
-      const coupons = await getDocs<SnapBuy.Coupon>(
+      const coupons = await getDocs<Souqify.Coupon>(
         ["projects", appProjectId, "coupons"],
         {
           where: and(
@@ -1506,7 +1505,7 @@ export const createApi = (cloud: ClientCloud) => {
       return { valid: true, coupon };
     },
     // Vars Management Functions
-    async upsertVar(variable: SnapBuy.Var) {
+    async upsertVar(variable: Souqify.Var) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = variable;
@@ -1520,7 +1519,7 @@ export const createApi = (cloud: ClientCloud) => {
       return id;
     },
     async getVars(storeId: string) {
-      const vars = await getDocs<SnapBuy.Var>(
+      const vars = await getDocs<Souqify.Var>(
         ["projects", appProjectId, "vars"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1532,11 +1531,11 @@ export const createApi = (cloud: ClientCloud) => {
       );
     },
     async getVar(varId: string) {
-      const variable = getTempFromStore<SnapBuy.Var>("vars." + varId);
+      const variable = getTempFromStore<Souqify.Var>("vars." + varId);
       if (variable) {
         return variable;
       }
-      const doc = await getDoc<SnapBuy.Var>([
+      const doc = await getDoc<Souqify.Var>([
         "projects",
         appProjectId,
         "vars",
@@ -1567,7 +1566,7 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       const accessId = crypto.randomUUID();
       const now = Date.now();
-      const accessData: SnapBuy.StoreUserAccess = {
+      const accessData: Souqify.StoreUserAccess = {
         id: accessId,
         storeId,
         uid: uid,
@@ -1593,14 +1592,14 @@ export const createApi = (cloud: ClientCloud) => {
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const existingAccess = await getDoc<SnapBuy.StoreUserAccess>([
+      const existingAccess = await getDoc<Souqify.StoreUserAccess>([
         "projects",
         appProjectId,
         "store-access",
         accessId,
       ]);
       if (!existingAccess) throw "Access record not found";
-      const updatedAccess: SnapBuy.StoreUserAccess = {
+      const updatedAccess: Souqify.StoreUserAccess = {
         ...existingAccess,
         ...updates,
         updatedAt: Date.now(),
@@ -1615,7 +1614,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getUsersAccessForStore(storeId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const accessRecords = await getDocs<SnapBuy.StoreUserAccess>(
+      const accessRecords = await getDocs<Souqify.StoreUserAccess>(
         ["projects", appProjectId, "store-access"],
         {
           where: and(where("storeId", "==", storeId), where("uid", "==", uid)),
@@ -1635,7 +1634,7 @@ export const createApi = (cloud: ClientCloud) => {
     async getInvitedStoresForUser() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const accessRecords = await getDocs<SnapBuy.StoreUserAccess>(
+      const accessRecords = await getDocs<Souqify.StoreUserAccess>(
         ["projects", appProjectId, "store-access"],
         {
           where: and(where("relatedUid", "==", uid)),
@@ -1661,7 +1660,7 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) {
         throw "User not authenticated";
       }
-      const docs = await getDocs<SnapBuy.StoreUserAccess>(
+      const docs = await getDocs<Souqify.StoreUserAccess>(
         ["projects", appProjectId, "store-access"],
         {
           where: and(
@@ -1681,7 +1680,7 @@ export const createApi = (cloud: ClientCloud) => {
     async leaveStoreAccess(storeId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const docs = await getDocs<SnapBuy.StoreUserAccess>(
+      const docs = await getDocs<Souqify.StoreUserAccess>(
         ["projects", appProjectId, "store-access"],
         {
           where: and(
@@ -1702,7 +1701,7 @@ export const createApi = (cloud: ClientCloud) => {
       type: "email" | "username" = "email"
     ) {
       const field = type === "email" ? "userEmail" : "username";
-      const accessRecords = await getDocs<SnapBuy.StoreUserAccess>(
+      const accessRecords = await getDocs<Souqify.StoreUserAccess>(
         ["projects", appProjectId, "store-access"],
         {
           where: and(
@@ -1738,7 +1737,7 @@ export const createApi = (cloud: ClientCloud) => {
     // Invoice Management Functions
     async createInvoice(
       invoice: Pick<
-        SnapBuy.Invoice,
+        Souqify.Invoice,
         | "storeId"
         | "orderId"
         | "customerId"
@@ -1765,7 +1764,7 @@ export const createApi = (cloud: ClientCloud) => {
       const tax = invoice.tax || 0;
       const discount = invoice.discount || 0;
       const total = subtotal + tax - discount;
-      const invoiceData: SnapBuy.Invoice = {
+      const invoiceData: Souqify.Invoice = {
         ...invoice,
         id,
         uid,
@@ -1778,7 +1777,7 @@ export const createApi = (cloud: ClientCloud) => {
       return invoiceData;
     },
     async getInvoices(storeId: string) {
-      const invoices = await getDocs<SnapBuy.Invoice>(
+      const invoices = await getDocs<Souqify.Invoice>(
         ["projects", appProjectId, "invoices"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1793,13 +1792,13 @@ export const createApi = (cloud: ClientCloud) => {
       return result;
     },
     async getInvoice(invoiceId: string) {
-      const invoice = getTempFromStore<SnapBuy.Invoice>(
+      const invoice = getTempFromStore<Souqify.Invoice>(
         "invoices." + invoiceId
       );
       if (invoice) {
         return invoice;
       }
-      const doc = await getDoc<SnapBuy.Invoice>([
+      const doc = await getDoc<Souqify.Invoice>([
         "projects",
         appProjectId,
         "invoices",
@@ -1812,19 +1811,19 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async updateInvoice(
       invoiceId: string,
-      invoice: Partial<Omit<SnapBuy.Invoice, "id" | "createdAt" | "uid">>
+      invoice: Partial<Omit<Souqify.Invoice, "id" | "createdAt" | "uid">>
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const now = Date.now();
-      const existingInvoice = await getDoc<SnapBuy.Invoice>([
+      const existingInvoice = await getDoc<Souqify.Invoice>([
         "projects",
         appProjectId,
         "invoices",
         invoiceId,
       ]);
       if (!existingInvoice) throw "Invoice not found";
-      const updatedInvoice: SnapBuy.Invoice = {
+      const updatedInvoice: Souqify.Invoice = {
         ...existingInvoice,
         ...invoice,
         updatedAt: now,
@@ -1846,7 +1845,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       callback?.("checking products");
-      const products = await getDocs<SnapBuy.Product>(
+      const products = await getDocs<Souqify.Product>(
         ["projects", appProjectId, "products"],
         {
           where: and(where("uid", "==", uid)),
@@ -1860,7 +1859,7 @@ export const createApi = (cloud: ClientCloud) => {
         return findedProduct.data;
       }
       callback?.("checking collections");
-      const collections = await getDocs<SnapBuy.Collection>(
+      const collections = await getDocs<Souqify.Collection>(
         ["projects", appProjectId, "collections"],
         {
           where: and(where("uid", "==", uid)),
@@ -1873,7 +1872,7 @@ export const createApi = (cloud: ClientCloud) => {
         return findedCollection.data;
       }
       callback?.("checking brands");
-      const brands = await getDocs<SnapBuy.Brand>(
+      const brands = await getDocs<Souqify.Brand>(
         ["projects", appProjectId, "brands"],
         {
           where: and(where("uid", "==", uid)),
@@ -1886,7 +1885,7 @@ export const createApi = (cloud: ClientCloud) => {
         return findedBrands.data;
       }
       callback?.("checking stores");
-      const stores = await getDocs<SnapBuy.Store>(
+      const stores = await getDocs<Souqify.Store>(
         ["projects", appProjectId, "stores"],
         {
           where: and(where("uid", "==", uid)),
@@ -1917,8 +1916,37 @@ export const createApi = (cloud: ClientCloud) => {
         >("get-usages-pricing");
         return fn?.({});
       },
+      async getPayments(storeId: string) {
+        const fn = await getUserFunction<Biqpod.Account.Payout[]>(
+          "get-payments"
+        );
+        const result = await fn?.({ storeId });
+        console.log(result);
+        return result;
+      },
+      async getCurrentPayment(storeId: string) {
+        const fn = await getUserFunction<Biqpod.Account.Payout>(
+          "current-payment"
+        );
+        return fn?.({ storeId });
+      },
+    },
+    async payTemplate(templateId: string) {
+      const fn = await getUserFunction<{ url: string }, { templateId: string }>(
+        "pay-invoice-template"
+      );
+      const response = await fn?.({ templateId });
+      const anchor = document.createElement("a");
+      anchor.href = response?.url || "#";
+      anchor.click();
+    },
+    async getPayedTemplates() {
+      const fn = await getUserFunction<string[]>("purchased-templates");
+      return fn?.({});
     },
   };
   return snapbuyApi;
 };
-export const snapbuyApi = createApi(cloud);
+export const souqifyApi = createApi(cloud);
+// Legacy export for backward compatibility
+export const snapbuyApi = souqifyApi;

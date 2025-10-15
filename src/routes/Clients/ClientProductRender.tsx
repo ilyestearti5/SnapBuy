@@ -31,7 +31,7 @@ import { initPixels } from "../../Links/pixles";
 import { snapbuyApi } from "../../apis";
 import { removeCart, useCartCount } from "../../apis/snapbuy";
 export interface ProductRenderProps {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
   index: number;
 }
 export function highlightMatch(text: string, search: string | undefined) {

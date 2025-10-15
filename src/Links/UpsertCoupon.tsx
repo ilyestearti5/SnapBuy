@@ -34,7 +34,7 @@ import { Coupons } from "./Coupons";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 export interface UpsertCouponProps {
-  coupon?: SnapBuy.Coupon;
+  coupon?: Souqify.Coupon;
   back?: boolean;
 }
 export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
@@ -46,7 +46,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
   const applicableProducts = useCopyState<string[]>(
     coupon?.applicableProducts || []
   );
-  const products = useTemp<SnapBuy.Product[]>("fetched-products");
+  const products = useTemp<Souqify.Product[]>("fetched-products");
   const productSearch = getFieldValue("coupon-product-search");
   // Filter products based on search
   const filteredProducts = useMemo(() => {
@@ -170,7 +170,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
         return;
       }
       const infinity = 1e10;
-      const couponData: SnapBuy.Coupon = {
+      const couponData: Souqify.Coupon = {
         id: coupon?.id,
         code: code.trim().toUpperCase(),
         name: name.trim(),

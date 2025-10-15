@@ -545,7 +545,7 @@ export const AgentAi = () => {
               loop
             />
             <div>
-              <h1 className="font-semibold text-lg">SnapBuy AI Assistant</h1>
+              <h1 className="font-semibold text-lg">Souqify AI Assistant</h1>
               <div className="flex items-center gap-2 opacity-70 text-sm">
                 <span>Powered by</span>
                 <img src={selectedModel.logo} className="rounded w-4 h-4" />
@@ -726,7 +726,7 @@ export const AgentAi = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.8 }}
             >
-              Welcome to SnapBuy AI Assistant
+              Welcome to Souqify AI Assistant
             </motion.h2>
             <motion.p
               className="opacity-70 max-w-md text-[--biqpod-text-color]"

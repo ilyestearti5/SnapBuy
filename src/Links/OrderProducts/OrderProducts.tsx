@@ -1,7 +1,7 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Card, CircleTip, Line } from "@biqpod/app/ui/components";
 interface OrderProductsProps {
-  order: SnapBuy.Order;
+  order: Souqify.Order;
 }
 export const OrderProducts = ({ order }: OrderProductsProps) => {
   return (

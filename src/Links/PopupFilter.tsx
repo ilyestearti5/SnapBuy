@@ -105,7 +105,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
   const productTypeState = useCopyState<string | Nothing>("");
   const metadataKeyState = useCopyState<string>("");
   const metadataValueState = useCopyState<string>("");
-  const [brands, setBrands] = useState<SnapBuy.Brand[]>([]);
+  const [brands, setBrands] = useState<Souqify.Brand[]>([]);
   const brandSearchValue = getFieldValue("brand-search");
   const fuzzySearch = (text: string, search: string): boolean => {
     if (!search) return true;

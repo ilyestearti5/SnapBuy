@@ -28,8 +28,7 @@ import productsPhoto from "../assets/products.png";
 import shoppingPhoto from "../assets/shopping.png";
 import overviewPhoto from "../assets/overview.png";
 import settingsPhoto from "../assets/settings.png";
-
-export const platformsPhotos: Partial<Record<SnapBuy.Platform, string>> = {
+export const platformsPhotos: Partial<Record<Souqify.Platform, string>> = {
   discord,
   facebook,
   instagram,
@@ -47,7 +46,7 @@ export const platformsPhotos: Partial<Record<SnapBuy.Platform, string>> = {
   edge,
 };
 
-export const getImageByPlatform = (string?: SnapBuy.Platform) => {
+export const getImageByPlatform = (string?: Souqify.Platform) => {
   return (string && platformsPhotos[string]) || unknown;
 };
 
@@ -69,7 +68,7 @@ export const icons: Record<string, IconProps["icon"]> = {
   delivery: allIcons.solid.faCar,
 };
 
-export const roleIcons: Record<SnapBuy.DeliveryCompanyRole, IconProps["icon"]> =
+export const roleIcons: Record<Souqify.DeliveryCompanyRole, IconProps["icon"]> =
   {
     customer: allIcons.solid.faUser,
     admin: allIcons.solid.faUserTie,
@@ -81,7 +80,7 @@ export const roleIcons: Record<SnapBuy.DeliveryCompanyRole, IconProps["icon"]> =
     merchant: allIcons.solid.faStore,
   };
 
-export const roleColors: Record<SnapBuy.DeliveryCompanyRole, string> = {
+export const roleColors: Record<Souqify.DeliveryCompanyRole, string> = {
   customer: "#4CAF50",
   admin: "#2196F3",
   finance: "#FF9800",
@@ -122,6 +121,12 @@ export const extraTabs = [
     photo: feedbackPhoto,
   },
   {
+    name: "documentation",
+    link: "/documentation",
+    photo:
+      "https://cdn3d.iconscout.com/3d/premium/thumb/document-correct-3d-icon-png-download-5360809.png",
+  },
+  {
     name: "developer",
     link: "/developer",
     photo:
@@ -145,7 +150,7 @@ export const appTabs = [
 
 export const rolsInList: {
   content: string;
-  value: SnapBuy.DeliveryCompanyRole;
+  value: Souqify.DeliveryCompanyRole;
 }[] = [
   { content: "🏭 Warehouse Operator", value: "warehouse_operator" },
   { content: "🚚 Delivery Agent", value: "delivery_agent" },
@@ -166,6 +171,12 @@ export const userTabs = [
     name: "sales",
     link: `/store/{storeId}/sales`,
     photo: shoppingPhoto,
+  },
+  {
+    name: "templates",
+    link: `/store/{storeId}/templates`,
+    photo:
+      "https://cdn3d.iconscout.com/3d/premium/thumb/template-3d-icon-png-download-8316799.png",
   },
   {
     name: "configuration",

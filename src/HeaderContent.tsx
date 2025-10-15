@@ -39,7 +39,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { cloud } from "./server";
 import { Route, Switch, useHistory, useLocation } from "react-router";
-import { snapbuyApi } from "./apis";
+import { souqifyApi } from "./apis";
 import { useEffect, useMemo } from "react";
 import { mapAsync, mergeArray, tw } from "@biqpod/app/ui/utils";
 import { OpenMenuProps } from "@biqpod/app/ui/types";
@@ -63,7 +63,7 @@ export const HeaderContent = () => {
   const storeId = useStoreId();
   useAction(
     "upsert-pack",
-    async (packInfo: SnapBuy.Pack) => {
+    async (packInfo: Souqify.Pack) => {
       if (!user) {
         showToast("You must be logged in to add a pack");
         return;
@@ -83,12 +83,12 @@ export const HeaderContent = () => {
       closePopup();
       loadingText.set("Adding Pack...");
       if (packInfo.id) {
-        await snapbuyApi.updatePack(packInfo.id, {
+        await souqifyApi.updatePack(packInfo.id, {
           ...packInfo,
           storeId,
         });
       } else {
-        await snapbuyApi.addPack({
+        await souqifyApi.addPack({
           ...packInfo,
           storeId,
         });
@@ -115,7 +115,7 @@ export const HeaderContent = () => {
       closePopup();
       loadingText.set("Adding News products...");
       loadingPercent.set(0);
-      await snapbuyApi.upsertProducts(storeId, newList, (product, index) => {
+      await souqifyApi.upsertProducts(storeId, newList, (product, index) => {
         loadingText.set(
           `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
             newList.length
@@ -125,7 +125,7 @@ export const HeaderContent = () => {
       });
       loadingText.set("Adding Exists products...");
       loadingPercent.set(0);
-      await snapbuyApi.upsertProducts(storeId, existsList, (product, index) => {
+      await souqifyApi.upsertProducts(storeId, existsList, (product, index) => {
         loadingText.set(
           `Updating ${product.name?.slice(0, 10)} ${index + 1}/${
             existsList.length
@@ -141,7 +141,7 @@ export const HeaderContent = () => {
   );
   const hist = useHistory();
   const subed = useAsyncMemo(() => {
-    return snapbuyApi.isSubscribed();
+    return souqifyApi.isSubscribed();
   }, [user]);
   useEffect(() => {
     setTemp("subed", subed);
@@ -156,7 +156,7 @@ export const HeaderContent = () => {
       await mapAsync(prodsIds, async (prodId, index) => {
         loadingText.set(`Deleting product ${prodId}...`);
         loadingPercent.set(Math.round(((index + 1) / prodsIds.length) * 100));
-        await snapbuyApi.deleteProduct(prodId);
+        await souqifyApi.deleteProduct(prodId);
       });
       loadingText.set("");
       loadingPercent.set(0);
@@ -165,7 +165,7 @@ export const HeaderContent = () => {
   );
 
   const orders = useAsyncMemo(async () => {
-    if (storeId) return snapbuyApi.ordersWillDeletingAfter7Day(storeId);
+    if (storeId) return souqifyApi.ordersWillDeletingAfter7Day(storeId);
   }, [user?.uid, storeId]);
 
   const loc = useLocation();
@@ -199,7 +199,7 @@ export const HeaderContent = () => {
                 deps={[id]}
                 render={async () => {
                   if (!id) return <EmptyComponent />;
-                  const packInfo = await snapbuyApi.getPack(id);
+                  const packInfo = await souqifyApi.getPack(id);
                   return (
                     <span className="max-md:text-xl md:text-2xl capitalize">
                       {packInfo?.name || "Pack"}
@@ -216,7 +216,7 @@ export const HeaderContent = () => {
                 deps={[id]}
                 render={async () => {
                   if (!id) return <EmptyComponent />;
-                  const productInfo = await snapbuyApi.getProduct(id);
+                  const productInfo = await souqifyApi.getProduct(id);
                   return (
                     <span className="max-md:text-xl md:text-2xl capitalize">
                       {productInfo?.name || "Product"}
@@ -233,7 +233,7 @@ export const HeaderContent = () => {
                 render={async () => {
                   const collectionId = getId();
                   if (!collectionId) return <EmptyComponent />;
-                  const storeInfo = await snapbuyApi.getCollection(
+                  const storeInfo = await souqifyApi.getCollection(
                     collectionId
                   );
                   return (
@@ -252,7 +252,7 @@ export const HeaderContent = () => {
                 render={async () => {
                   const storeId = getId();
                   if (!storeId) return <EmptyComponent />;
-                  const storeInfo = await snapbuyApi.getStore(storeId);
+                  const storeInfo = await souqifyApi.getStore(storeId);
                   return (
                     <span className="max-md:text-xl md:text-2xl capitalize">
                       {storeInfo?.name || "Store"}
@@ -266,7 +266,7 @@ export const HeaderContent = () => {
                 render={async () => {
                   const storeId = location.pathname.split("/").at(-2);
                   if (!storeId) return <EmptyComponent />;
-                  const storeInfo = await snapbuyApi.getStore(storeId);
+                  const storeInfo = await souqifyApi.getStore(storeId);
                   return (
                     <span className="max-md:text-xl md:text-2xl capitalize">
                       {storeInfo?.name || "Store"}

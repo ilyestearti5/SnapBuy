@@ -109,14 +109,14 @@ const CardInfo = () => {
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   const [currentLocationObtained, setCurrentLocationObtained] = useState(false);
   // --- Renamed to avoid redeclaration ---
-  const userZones = useTemp<SnapBuy.Zone[]>("user-zones");
-  const [zoneLinks, setZoneLinks] = useState<SnapBuy.LinkZone[]>([]);
+  const userZones = useTemp<Souqify.Zone[]>("user-zones");
+  const [zoneLinks, setZoneLinks] = useState<Souqify.LinkZone[]>([]);
   // Fetch all links between zones for the user
   useEffect(() => {
     let unsubscribes: Function[] = [];
     if (userZones.get && userZones.get.length > 0) {
       const fetchLinks = async () => {
-        let allLinks: SnapBuy.LinkZone[] = [];
+        let allLinks: Souqify.LinkZone[] = [];
         for (const zone of userZones.get!) {
           if (!zone.id) continue;
           const links = await snapbuyApi.getZonesLinkTo(zone.id);
@@ -455,10 +455,10 @@ async function getPlaceName([lat, lon]: [number, number]): Promise<string> {
   }
 }
 export const DeliveriesPricing = () => {
-  const zones = useTemp<SnapBuy.Zone[]>("user-zones");
+  const zones = useTemp<Souqify.Zone[]>("user-zones");
   const user = useUser();
   const expandedZones = useCopyState<Record<string, boolean>>({});
-  const linksByZone = useCopyState<Record<string, SnapBuy.LinkZone[]>>({});
+  const linksByZone = useCopyState<Record<string, Souqify.LinkZone[]>>({});
   const handleExpand = async (zoneId: string) => {
     expandedZones.set((prev) => ({ ...prev, [zoneId]: !prev[zoneId] }));
     if (!linksByZone.get[zoneId]) {
@@ -468,7 +468,7 @@ export const DeliveriesPricing = () => {
   };
   useEffect(() => {
     if (user?.uid)
-      return onCollectionSnapshot<SnapBuy.Zone>(
+      return onCollectionSnapshot<Souqify.Zone>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "zones"],
         (zonesData) => {
           zones.set(zonesData.map((zone) => zone.data));
@@ -533,7 +533,7 @@ export const DeliveriesPricing = () => {
                 ],
               });
               const data: {
-                zone: SnapBuy.Zone;
+                zone: Souqify.Zone;
                 linked: string[];
               }[] = await fetch(fileContent).then((s) => s.json());
               const redefinedIds = data.map(({ zone }) => ({

@@ -1,11 +1,11 @@
 import { useEffect, useState, useCallback } from "react";
 interface CachedProductsData {
-  products: SnapBuy.Product[];
-  lastDoc: SnapBuy.Product | null;
+  products: Souqify.Product[];
+  lastDoc: Souqify.Product | null;
   storeId: string;
   timestamp: number;
 }
-const DB_NAME = "SnapBuyCache";
+const DB_NAME = "SouqifyCache";
 const STORE_NAME = "products";
 const DB_VERSION = 1;
 // Initialize IndexedDB
@@ -53,8 +53,8 @@ const getCachedData = async (
 // Save cached data for a store
 const saveCachedData = async (
   storeId: string,
-  products: SnapBuy.Product[],
-  lastDoc: SnapBuy.Product | null
+  products: Souqify.Product[],
+  lastDoc: Souqify.Product | null
 ): Promise<void> => {
   try {
     const db = await initDB();
@@ -83,8 +83,8 @@ const clearCachedData = async (storeId: string): Promise<void> => {
   }
 };
 export const useIndexedDBProducts = (storeId: string | null | undefined) => {
-  const [products, setProducts] = useState<SnapBuy.Product[]>([]);
-  const [lastDoc, setLastDoc] = useState<SnapBuy.Product | null>(null);
+  const [products, setProducts] = useState<Souqify.Product[]>([]);
+  const [lastDoc, setLastDoc] = useState<Souqify.Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Load cached data on mount or storeId change
   useEffect(() => {
@@ -117,7 +117,7 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
   }, [storeId]);
   // Update products and save to cache
   const updateProducts = useCallback(
-    (newProducts: SnapBuy.Product[], newLastDoc: SnapBuy.Product | null) => {
+    (newProducts: Souqify.Product[], newLastDoc: Souqify.Product | null) => {
       setProducts(newProducts);
       setLastDoc(newLastDoc);
       if (storeId) {
@@ -129,8 +129,8 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
   // Add more products (for pagination)
   const addProducts = useCallback(
     (
-      additionalProducts: SnapBuy.Product[],
-      newLastDoc: SnapBuy.Product | null
+      additionalProducts: Souqify.Product[],
+      newLastDoc: Souqify.Product | null
     ) => {
       setProducts((prev) => {
         const updated = [...prev, ...additionalProducts];

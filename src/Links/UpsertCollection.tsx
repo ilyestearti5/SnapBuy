@@ -36,9 +36,9 @@ import { Nothing } from "@biqpod/app/ui/types";
 import { Collections } from "./Collections";
 import { compressImage } from "../utils/utilities";
 interface ProductRenderProps {
-  product: SnapBuy.Product;
-  selectedProducts: SnapBuy.Product[];
-  onChangeSelectedProducts?: (products: SnapBuy.Product[]) => void;
+  product: Souqify.Product;
+  selectedProducts: Souqify.Product[];
+  onChangeSelectedProducts?: (products: Souqify.Product[]) => void;
 }
 export const ProductRender = ({
   product,
@@ -96,7 +96,7 @@ export const ProductRender = ({
   );
 };
 interface UpsertCollectionProps {
-  collection?: SnapBuy.Collection;
+  collection?: Souqify.Collection;
   back?: boolean;
 }
 export const UpsertCollection = ({
@@ -210,7 +210,7 @@ export const UpsertCollection = ({
     if (!storeId) return [];
     return await snapbuyApi.getProductsOf(storeId);
   }, [storeId]);
-  const selectedProducts = useCopyState<SnapBuy.Product[]>([]);
+  const selectedProducts = useCopyState<Souqify.Product[]>([]);
   const loadingProducts = useCopyState(false);
   useAsyncEffect(async () => {
     loadingProducts.set(true);
@@ -332,7 +332,7 @@ export const UpsertCollection = ({
         await updateFile(ref, blob);
         photo = await getDownloadURL(ref);
       }
-      const options: SnapBuy.Collection = {
+      const options: Souqify.Collection = {
         id,
         ...collection,
         name,
@@ -344,7 +344,10 @@ export const UpsertCollection = ({
       }
       await snapbuyApi.upsertCollection(options);
       closePopup();
-      showToast(`Collection ${collection ? "updated" : "created"} successfully!`, "success");
+      showToast(
+        `Collection ${collection ? "updated" : "created"} successfully!`,
+        "success"
+      );
       execAction("fetch-collections");
     },
     [collection, photoState.get, selectedProducts.get]
@@ -477,10 +480,11 @@ export const UpsertCollection = ({
                 </div>
               ) : (
                 <div
-                  className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${isPasting || isDragging
-                    ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
-                    : ""
-                    }`}
+                  className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${
+                    isPasting || isDragging
+                      ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
+                      : ""
+                  }`}
                 >
                   {isPasting ? (
                     <Icon
@@ -581,8 +585,8 @@ export const UpsertCollection = ({
               loading
                 ? allIcons.solid.faSpinner
                 : collection
-                  ? allIcons.solid.faPen
-                  : allIcons.solid.faPlus
+                ? allIcons.solid.faPen
+                : allIcons.solid.faPlus
             }
             onClick={() => {
               execAction("upsert-collection");

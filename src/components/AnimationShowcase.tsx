@@ -1,6 +1,6 @@
 /**
  * Animation Showcase Component
- * Demonstrates all available animations in the SnapBuy project
+ * Demonstrates all available animations in the Souqify project
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,7 @@ export const AnimationShowcase = () => {
           <div className="text-center">
             <h1 className="mb-2 font-bold text-4xl">
               <Typewriter
-                text="SnapBuy Animation Showcase"
+                text="Souqify Animation Showcase"
                 speed={100}
                 delay={0.5}
               />

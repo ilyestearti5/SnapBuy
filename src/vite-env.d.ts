@@ -5,7 +5,7 @@ declare interface Tab {
   icon: IconProps["icon"];
 }
 type SettingType = import("@biqpod/app/ui/types").SettingValueType;
-declare namespace SnapBuy {
+declare namespace Souqify {
   interface Collection {
     id?: string;
     name: string;
@@ -220,7 +220,6 @@ declare namespace SnapBuy {
     firstname?: string;
     lastname?: string;
     phone: string;
-
     // needed
     storeId?: string;
     uid?: string;
@@ -232,8 +231,10 @@ declare namespace SnapBuy {
     description?: string;
     url?: string;
     photo?: string;
+    price?: number;
     status?: "rejected" | "accepted";
     createdAt?: number;
+    use?: "single" | "multiple";
   }
   interface Brand {
     id?: string;
@@ -338,12 +339,12 @@ declare namespace SnapBuy {
   }
 }
 declare interface AddClientActionProps {
-  exists?: SnapBuy.Client[];
-  news?: SnapBuy.Client[];
+  exists?: Souqify.Client[];
+  news?: Souqify.Client[];
 }
 declare interface AddProductActionProps {
-  exists?: SnapBuy.Product[] | null;
-  news?: SnapBuy.Product[] | null;
+  exists?: Souqify.Product[] | null;
+  news?: Souqify.Product[] | null;
 }
 declare module "html2pdf.js" {
   // You can add more specific type definitions here as you explore the library's API.
@@ -352,17 +353,17 @@ declare module "html2pdf.js" {
 }
 
 declare type keys =
-  | keyof SnapBuy.Product
+  | keyof Souqify.Product
   | "single.price"
   | "multiple.prices"
   | "multiple.counts";
 
-declare interface ProductsResult extends SnapBuy.Product {
+declare interface ProductsResult extends Souqify.Product {
   price: number;
   count: number;
 }
 
-declare interface PackResult extends SnapBuy.Pack {
+declare interface PackResult extends Souqify.Pack {
   price: number;
   count: number;
 }

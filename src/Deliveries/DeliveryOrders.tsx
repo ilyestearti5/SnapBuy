@@ -47,12 +47,12 @@ interface DeliveryOrdersProps {}
 const PAGE_SIZE = 20;
 export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
   const user = useUser();
-  const orders = useCopyState<SnapBuy.Order[] | null>(null);
+  const orders = useCopyState<Souqify.Order[] | null>(null);
   const filterStatus = useTemp<string | Nothing>(
     "filter-delivery-management-status"
   );
   const filterDelivery = getTemp<string>("filter-delivery-management-delivery");
-  const lastDoc = useCopyState<SnapBuy.Order | null>(null);
+  const lastDoc = useCopyState<Souqify.Order | null>(null);
   const hasMore = useCopyState(false);
   const action = useAction(
     "fetch-delivery-orders",
@@ -62,14 +62,14 @@ export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
       }
       // const currentTime = new Date();
       // var subTime: Date | null = null;
-      const selection: CloudSelection<SnapBuy.Order> = {
+      const selection: CloudSelection<Souqify.Order> = {
         orders: mergeArray(orderBy("createdAt", "desc")),
         limit: PAGE_SIZE,
         where: and(where("delivery.uid", "==", user.uid)),
         startAt:
           next && lastDoc.get?.createdAt ? [lastDoc.get?.createdAt] : undefined,
       };
-      const newOrders = await getDocs<SnapBuy.Order>(
+      const newOrders = await getDocs<Souqify.Order>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
         selection
       );

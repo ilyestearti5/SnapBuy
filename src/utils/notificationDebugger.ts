@@ -1,4 +1,4 @@
-// Notification Debugger for SnapBuy
+// Notification Debugger for Souqify
 // This utility helps diagnose notification issues on desktop
 
 export interface NotificationDiagnostic {
@@ -218,7 +218,7 @@ export class NotificationDebugger {
       }
 
       // Try to show a simple notification
-      const notification = new Notification("🔔 SnapBuy Test", {
+      const notification = new Notification("🔔 Souqify Test", {
         body: "If you can see this, notifications are working!",
         icon: "/assets/snapbuy.png",
         tag: "debug-test",
@@ -237,7 +237,7 @@ export class NotificationDebugger {
   }
 
   public generateReport(): string {
-    let report = "📊 SnapBuy Notification Diagnostic Report\n";
+    let report = "📊 Souqify Notification Diagnostic Report\n";
     report += "=" + "=".repeat(50) + "\n\n";
 
     this.diagnostics.forEach((diagnostic, index) => {

@@ -14,6 +14,7 @@ import { motion } from "framer-motion";
 import { Plans } from "../App/Plans";
 import { useUsedBy } from "./Stores";
 import pageNotFound from "../../assets/page-not-found.png";
+import { Templates } from "./Templates";
 
 export const googleDriveHref =
   "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Google_Drive_icon_%282020%29.svg/2295px-Google_Drive_icon_%282020%29.svg.png";
@@ -100,6 +101,9 @@ export const Store = () => {
             </Route>
             <Route path={createRoute("dashboard")}>
               <StoreOverview />
+            </Route>
+            <Route path={createRoute("templates")}>
+              <Templates />
             </Route>
             <Route path={createRoute("configuration")}>
               <StoreConfiguration />

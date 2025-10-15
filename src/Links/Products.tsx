@@ -63,7 +63,7 @@ import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
 import { AnimatedCard, FadeIn } from "../animations/components";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Nothing } from "@biqpod/app/ui/types";
-const productKeys: (keyof SnapBuy.Product)[] = [
+const productKeys: (keyof Souqify.Product)[] = [
   "available",
   "createdAt",
   "description",
@@ -75,7 +75,7 @@ const productKeys: (keyof SnapBuy.Product)[] = [
   "type",
 ];
 interface KeyLineProps {
-  prodKey: keyof SnapBuy.Product;
+  prodKey: keyof Souqify.Product;
   value: boolean;
   onChange: (value: boolean) => void;
 }
@@ -159,7 +159,7 @@ const JsonImportFrom = () => {
       if (data.products && Array.isArray(data.products)) {
         await snapbuyApi.upsertProducts(
           storeId!,
-          data.products.map((p: Partial<SnapBuy.Product>) => ({
+          data.products.map((p: Partial<Souqify.Product>) => ({
             ...p,
             storeId,
           }))
@@ -236,7 +236,7 @@ export const KeyLine = ({ prodKey, onChange, value }: KeyLineProps) => {
   );
 };
 export const ExportExcelPopupProducts = () => {
-  var keys = useCopyState<(keyof SnapBuy.Product)[]>([]);
+  var keys = useCopyState<(keyof Souqify.Product)[]>([]);
   const action = useAction(
     "export-products",
     async () => {
@@ -296,8 +296,8 @@ export const ExportExcelPopupProducts = () => {
   );
 };
 const exportExcel = async (
-  products: SnapBuy.Product[],
-  keys: (keyof SnapBuy.Product)[]
+  products: Souqify.Product[],
+  keys: (keyof Souqify.Product)[]
 ) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Products");
@@ -352,7 +352,7 @@ const AddMetadataPopup = ({
       Partial<Record<string, Nothing | string | number | string[] | boolean>>
     >("magic-fields");
   // Create a temporary metadata field for form management
-  const tempMetadata = useTemp<SnapBuy.MetadataField[]>(
+  const tempMetadata = useTemp<Souqify.MetadataField[]>(
     "temp-bulk-metadata-fields"
   );
   const addMetadataField = () => {
@@ -361,7 +361,7 @@ const AddMetadataPopup = ({
       showToast("Field key is required", "error");
       return;
     }
-    const selectedFieldType = metadataType.get as SnapBuy.MetadataField["type"];
+    const selectedFieldType = metadataType.get as Souqify.MetadataField["type"];
     if (!selectedFieldType) {
       showToast("Field type is required", "error");
       return;
@@ -373,7 +373,7 @@ const AddMetadataPopup = ({
       return;
     }
     const defaultValue = getDefaultValueForType(selectedFieldType);
-    const newField: SnapBuy.MetadataField = {
+    const newField: Souqify.MetadataField = {
       key: fieldKeyValue.trim(),
       type: selectedFieldType,
       value: defaultValue,
@@ -389,7 +389,7 @@ const AddMetadataPopup = ({
     const updatedFields = existingFields.filter((_, i) => i !== index);
     tempMetadata.set(updatedFields);
   };
-  const getDefaultValueForType = (type: SnapBuy.MetadataField["type"]) => {
+  const getDefaultValueForType = (type: Souqify.MetadataField["type"]) => {
     switch (type) {
       case "number":
         return 0;
@@ -442,7 +442,7 @@ const AddMetadataPopup = ({
                 updatedMetaData.push(field);
               }
             });
-            const updatedProduct: Partial<SnapBuy.Product> = {
+            const updatedProduct: Partial<Souqify.Product> = {
               id: productId,
               metaData: updatedMetaData,
             };
@@ -696,7 +696,7 @@ const RemoveMetadataPopup = ({
             let updatedMetaData = product.metaData.filter(
               (field) => !metadataKeysList.includes(field.key)
             );
-            const updatedProduct: Partial<SnapBuy.Product> = {
+            const updatedProduct: Partial<Souqify.Product> = {
               id: productId,
               metaData: updatedMetaData,
             };
@@ -810,11 +810,11 @@ export const ExportJsonPopup = () => {
     setLoadingPreview(true);
     try {
       const exportData: {
-        products?: SnapBuy.Product[];
-        brands?: SnapBuy.Brand[];
-        packs?: SnapBuy.Pack[];
-        collections?: SnapBuy.Collection[];
-        coupons?: SnapBuy.Coupon[];
+        products?: Souqify.Product[];
+        brands?: Souqify.Brand[];
+        packs?: Souqify.Pack[];
+        collections?: Souqify.Collection[];
+        coupons?: Souqify.Coupon[];
       } = {};
       // Fetch all products
       try {
@@ -1260,7 +1260,7 @@ const ToolsCard = memo(
   }
 );
 const PAGE_SIZE = 30;
-const sortBy: keyof SnapBuy.Product = "id";
+const sortBy: keyof Souqify.Product = "id";
 export const Products = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
@@ -1280,7 +1280,7 @@ export const Products = () => {
         return;
       }
       await delay(200);
-      const newProducts = await getDocs<SnapBuy.Product>(
+      const newProducts = await getDocs<Souqify.Product>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
         {
           where: and(
@@ -1367,7 +1367,7 @@ export const Products = () => {
           selectedProductIds.map(async (productId) => {
             const product = await snapbuyApi.getProduct(productId);
             if (product) {
-              const updatedProduct: Partial<SnapBuy.Product> = {
+              const updatedProduct: Partial<Souqify.Product> = {
                 id: productId,
                 available: enable,
               };
@@ -1403,7 +1403,7 @@ export const Products = () => {
   const search = getFieldValue("producer-search-product");
   const [_, filterProducts] = useMemoDelay(
     () => {
-      let filteredProducts = products?.filter((prod: SnapBuy.Product) => {
+      let filteredProducts = products?.filter((prod: Souqify.Product) => {
         // Apply filter options with AND logic
         if (options.get) {
           // Filter by availability
@@ -1569,7 +1569,7 @@ export const Products = () => {
     }: {
       index: number;
       style: React.CSSProperties;
-      data: (SnapBuy.Product | number)[];
+      data: (Souqify.Product | number)[];
     }) => {
       const itsNumber = data.some((item) => typeof item === "number");
       if (itsNumber) {

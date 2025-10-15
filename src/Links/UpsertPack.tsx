@@ -31,9 +31,9 @@ import { useEffect, useMemo } from "react";
 import { snapbuyApi } from "../apis";
 import { Packs } from "./Packs";
 interface PackLineProductProps {
-  product?: SnapBuy.Product | null;
-  onChange?: (prod: SnapBuy.Product, count: number) => void;
-  onDelete?: (prod: SnapBuy.Product) => void;
+  product?: Souqify.Product | null;
+  onChange?: (prod: Souqify.Product, count: number) => void;
+  onDelete?: (prod: Souqify.Product) => void;
   count?: number;
 }
 const PackLineProduct = ({
@@ -117,13 +117,13 @@ const PackLineProduct = ({
   );
 };
 interface UpsertPackProps {
-  pack?: SnapBuy.Pack;
+  pack?: Souqify.Pack;
   back?: boolean;
 }
 export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
   const priceState = useCopyState<number | null | undefined>(0);
-  const addedProducts = useCopyState<Required<SnapBuy.Pack>["products"]>([]);
-  const products = getTemp<SnapBuy.Product[]>("fetched-products"); // Replace with your actual product data
+  const addedProducts = useCopyState<Required<Souqify.Pack>["products"]>([]);
+  const products = getTemp<Souqify.Product[]>("fetched-products"); // Replace with your actual product data
   const searchField = getFieldValue("pack-search");
   const filterdProducts = useMemo(() => {
     return filterFuzzySearch(products || [], searchField?.trim() || "", "name");
@@ -407,7 +407,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                 return;
               }
             }
-            const options: SnapBuy.Pack = {
+            const options: Souqify.Pack = {
               name: packName,
               price: priceState.get || 0,
               products: addedProducts.get,

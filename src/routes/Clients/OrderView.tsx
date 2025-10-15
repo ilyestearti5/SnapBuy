@@ -14,7 +14,7 @@ import { tw, range } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
 import { snapbuyApi } from "../../apis";
 export interface OrderView {
-  order: SnapBuy.Order;
+  order: Souqify.Order;
 }
 export const OrderView = ({ order }: OrderView) => {
   const time = new Date(order.createdAt!);

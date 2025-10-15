@@ -18,11 +18,11 @@ import {
   setFieldValue,
 } from "@biqpod/app/ui/hooks";
 import { useStoreId } from "../utils";
-import { SnapBuyCollection } from "./Orders/OrderIndex";
+import { SouqifyCollection } from "./Orders/OrderIndex";
 interface UpsertCollectionProps {
   collectionId?: string;
-  type?: SnapBuyCollection["type"];
-  onChange?: (collection: SnapBuyCollection) => void;
+  type?: SouqifyCollection["type"];
+  onChange?: (collection: SouqifyCollection) => void;
 }
 export const UpsertCollection = ({
   collectionId,
@@ -49,7 +49,7 @@ export const UpsertCollection = ({
       }
       setLoading(true);
       try {
-        const options: SnapBuyCollection = {
+        const options: SouqifyCollection = {
           id: collectionId,
           name: collectionName,
           storeId,

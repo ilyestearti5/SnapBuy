@@ -42,11 +42,11 @@ import { rolsInList } from "../utils";
 import { FilterAccounts, useAccountFilterState } from "./FilterAccounts";
 const PAGE_SIZE = 10;
 export const Accounts = () => {
-  const accounts = useCopyState<SnapBuy.Account[] | null>(null);
+  const accounts = useCopyState<Souqify.Account[] | null>(null);
   const firstname = getFieldValue("account-firstname");
   const lastname = getFieldValue("account-lastname");
   const phone = getFieldValue("account-phone");
-  const role = getTemp<SnapBuy.DeliveryCompanyRole | Nothing>("roleState");
+  const role = getTemp<Souqify.DeliveryCompanyRole | Nothing>("roleState");
   useAction(
     "upsert-account",
     async (id?: string) => {
@@ -58,7 +58,7 @@ export const Accounts = () => {
         showToast("Please fill all fields", "error");
         return;
       }
-      const account: SnapBuy.Account = {
+      const account: Souqify.Account = {
         id,
         firstname,
         lastname,
@@ -80,7 +80,7 @@ export const Accounts = () => {
     [firstname, lastname, phone]
   );
   const user = useUser();
-  const lastDoc = useCopyState<SnapBuy.Account | null>(null);
+  const lastDoc = useCopyState<Souqify.Account | null>(null);
   const hasMore = useCopyState(false);
   const filterState = useAccountFilterState();
   useAction(
@@ -115,7 +115,7 @@ export const Accounts = () => {
           subTime = new Date(currentTime.getTime() - 730 * 24 * 60 * 60 * 1000);
           break;
       }
-      const selection: CloudSelection<SnapBuy.Account> = {
+      const selection: CloudSelection<Souqify.Account> = {
         where: and(
           where("uid", "==", user?.uid),
           filterState?.phone && where("phone", "==", filterState.phone),
@@ -127,7 +127,7 @@ export const Accounts = () => {
         startAt:
           next && lastDoc.get?.createdAt ? [lastDoc.get?.createdAt] : undefined,
       };
-      const newAccounts = await cloud.app.nosql.getDocs<SnapBuy.Account>(
+      const newAccounts = await cloud.app.nosql.getDocs<Souqify.Account>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "accounts"],
         selection
       );

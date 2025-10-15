@@ -45,25 +45,25 @@ export const useStoreNotifications = () => {
     notifySettings: store?.notify || {},
 
     // Helper methods to trigger notifications
-    notifyNewOrder: (order: SnapBuy.Order) =>
+    notifyNewOrder: (order: Souqify.Order) =>
       notificationHandler?.notifyNewOrder(order),
     notifyOrderStatusChanged: (
-      order: SnapBuy.Order,
-      oldStatus: SnapBuy.OrderStatus
+      order: Souqify.Order,
+      oldStatus: Souqify.OrderStatus
     ) => notificationHandler?.notifyOrderStatusChanged(order, oldStatus),
-    notifyOrderCompleted: (order: SnapBuy.Order) =>
+    notifyOrderCompleted: (order: Souqify.Order) =>
       notificationHandler?.notifyOrderCompleted(order),
-    notifyOrderCancelled: (order: SnapBuy.Order) =>
+    notifyOrderCancelled: (order: Souqify.Order) =>
       notificationHandler?.notifyOrderCancelled(order),
-    notifyOrderProcessing: (order: SnapBuy.Order) =>
+    notifyOrderProcessing: (order: Souqify.Order) =>
       notificationHandler?.notifyOrderProcessing(order),
-    notifyOrderDelivery: (order: SnapBuy.Order) =>
+    notifyOrderDelivery: (order: Souqify.Order) =>
       notificationHandler?.notifyOrderDelivery(order),
-    notifyLowStock: (product: SnapBuy.Product) =>
+    notifyLowStock: (product: Souqify.Product) =>
       notificationHandler?.notifyLowStock(product),
-    notifyNewProduct: (product: SnapBuy.Product) =>
+    notifyNewProduct: (product: Souqify.Product) =>
       notificationHandler?.notifyNewProduct(product),
-    notifyNewClient: (client: SnapBuy.Client) =>
+    notifyNewClient: (client: Souqify.Client) =>
       notificationHandler?.notifyNewClient(client),
   };
 };
@@ -72,14 +72,14 @@ export const useStoreNotifications = () => {
 // const MyComponent = () => {
 //   const { notifyNewOrder, notifyOrderStatusChanged, notifySettings } = useStoreNotifications();
 //
-//   const handleNewOrder = (order: SnapBuy.Order) => {
+//   const handleNewOrder = (order: Souqify.Order) => {
 //     // Your existing order logic...
 //
 //     // Trigger notification if enabled
 //     notifyNewOrder(order);
 //   };
 //
-//   const handleStatusChange = (order: SnapBuy.Order, oldStatus: SnapBuy.OrderStatus) => {
+//   const handleStatusChange = (order: Souqify.Order, oldStatus: Souqify.OrderStatus) => {
 //     // Your existing status change logic...
 //
 //     // Trigger notification if enabled

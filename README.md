@@ -1,4 +1,4 @@
-# SnapBuy - E-commerce Management Platform
+# Souqify - E-commerce Management Platform
 
 A comprehensive e-commerce platform built with React, TypeScript, and Firebase that provides powerful tools for online store management, order processing, delivery management, and customer engagement.
 
@@ -125,8 +125,8 @@ src/
 1. **Clone the repository**
 
 ```bash
-git clone https://github.com/ilyestearti5/SnapBuy.git
-cd SnapBuy
+git clone https://github.com/ilyestearti5/Souqify.git
+cd Souqify
 ```
 
 2. **Install dependencies**

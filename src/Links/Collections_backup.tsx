@@ -196,7 +196,7 @@ const SlidingCouponFilter = ({
     </EmptyComponent>
   );
 };
-const CouponRender = memo(({ coupon }: { coupon: SnapBuy.Coupon }) => {
+const CouponRender = memo(({ coupon }: { coupon: Souqify.Coupon }) => {
   const isExpired = new Date(coupon.endDate) < new Date();
   const isActive = coupon.isActive && !isExpired;
   const getTypeIcon = () => {
@@ -349,8 +349,8 @@ const CouponRender = memo(({ coupon }: { coupon: SnapBuy.Coupon }) => {
 });
 export const Coupons = () => {
   const user = useUser();
-  const coupons = useTemp<SnapBuy.Coupon[]>("fetched-coupons");
-  const lastDoc = useCopyState<SnapBuy.Coupon | null>(null);
+  const coupons = useTemp<Souqify.Coupon[]>("fetched-coupons");
+  const lastDoc = useCopyState<Souqify.Coupon | null>(null);
   const hasMore = useCopyState(true);
   const storeId = useStoreId();
   const showFilter = useCopyState(false); // Add filter state
@@ -358,7 +358,7 @@ export const Coupons = () => {
     "fetch-coupons",
     async (next = false) => {
       if (!storeId) return;
-      const newCoupons = await getDocs<SnapBuy.Coupon>(
+      const newCoupons = await getDocs<Souqify.Coupon>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "coupons"],
         {
           where: and(where("storeId", "==", storeId)),

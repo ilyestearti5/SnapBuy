@@ -87,10 +87,10 @@ function highlightMatch(
   return result;
 }
 interface SetStorePlatformsProps {
-  store: SnapBuy.Store;
+  store: Souqify.Store;
 }
 export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
-  const platforms = useCopyState<SnapBuy.Store["platforms"]>(
+  const platforms = useCopyState<Souqify.Store["platforms"]>(
     store.platforms || {}
   );
   const isEditing = useCopyState<string | null>(null);

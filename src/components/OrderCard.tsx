@@ -5,7 +5,7 @@ import { tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 
 export interface OrderCardProps {
-  order: SnapBuy.Order;
+  order: Souqify.Order;
   onViewDetails?: (orderId: string) => void;
   onTrackOrder?: (orderId: string) => void;
   onReorder?: (orderId: string) => void;
@@ -34,7 +34,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   // Get status color and icon
-  const getStatusInfo = (status: SnapBuy.OrderStatus) => {
+  const getStatusInfo = (status: Souqify.OrderStatus) => {
     switch (status) {
       case "pending":
         return {

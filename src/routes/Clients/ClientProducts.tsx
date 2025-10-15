@@ -84,8 +84,8 @@ export const ClientProducts = () => {
     return snapbuyApi.getStore(storeId);
   }, [storeId]);
   const pixles = initPixels(store);
-  const products = useCopyState<SnapBuy.Product[]>([]); // Replace with your actual product data
-  const lastDoc = useCopyState<SnapBuy.Product | null>(null);
+  const products = useCopyState<Souqify.Product[]>([]); // Replace with your actual product data
+  const lastDoc = useCopyState<Souqify.Product | null>(null);
   const action = useAction(
     "fetch-store-products",
     async (next = false) => {
@@ -223,7 +223,7 @@ export const ClientProducts = () => {
                 }: {
                   index: number;
                   style: React.CSSProperties;
-                  data: (SnapBuy.Product | number)[];
+                  data: (Souqify.Product | number)[];
                 }) => {
                   if (typeof data === "number") {
                     return <div style={style} />;

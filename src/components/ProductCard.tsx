@@ -5,7 +5,7 @@ import { tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 import { MediaRenderer } from "./MediaRenderer";
 export interface ProductCardProps {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
   onAddToCart?: (productId: string, quantity?: number) => void;
   onViewDetails?: (productId: string) => void;
   compact?: boolean;

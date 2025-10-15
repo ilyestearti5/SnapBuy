@@ -96,4 +96,4 @@ Note: Delivery prices are now stored in a separate `deliveryPrices` collection i
 | Prop          | Type                  | Required | Description                         |
 | ------------- | --------------------- | -------- | ----------------------------------- |
 | storeId       | string                | Yes      | Store ID                            |
-| deliveryPrice | SnapBuy.DeliveryPrice | No       | Existing delivery price for editing |
+| deliveryPrice | Souqify.DeliveryPrice | No       | Existing delivery price for editing |

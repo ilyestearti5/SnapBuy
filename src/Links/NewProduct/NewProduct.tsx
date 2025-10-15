@@ -29,7 +29,7 @@ import {
 } from "../../apis/getFns";
 import { ProductMetadata } from "./Views/ProductMetadata";
 export interface ProductFormSectionProps {
-  product?: Partial<SnapBuy.Product>;
+  product?: Partial<Souqify.Product>;
 }
 const pages = [
   { name: "Images", component: ProductImages },
@@ -44,7 +44,7 @@ const pages = [
   { name: "Final Data", component: ProductDataBeforeCreate },
 ];
 export interface PostNewProductProps {
-  product?: Partial<SnapBuy.Product>;
+  product?: Partial<Souqify.Product>;
 }
 export const PostNewProduct = ({ product }: PostNewProductProps) => {
   const postMarketAction = getAction("post-market");

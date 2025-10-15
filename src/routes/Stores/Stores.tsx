@@ -308,8 +308,8 @@ export function useUsedBy(
 
 export const Stores = () => {
   const storeId = useStoreId();
-  const storesState = useCopyState<SnapBuy.Store[]>([]);
-  const invitedStoresState = useCopyState<SnapBuy.Store[]>([]);
+  const storesState = useCopyState<Souqify.Store[]>([]);
+  const invitedStoresState = useCopyState<Souqify.Store[]>([]);
   // Helper function to show delivery prices view
   const action = useAction(
     "print-stores",
@@ -333,7 +333,7 @@ export const Stores = () => {
         showToast("Please enter store phone", "error");
         return;
       }
-      const store: SnapBuy.Store = {
+      const store: Souqify.Store = {
         name: storeName,
         phone: storePhone,
         id: id || Date.now().toString(),
@@ -445,7 +445,7 @@ export const Stores = () => {
                                     src={store.photo}
                                     alt={
                                       <div className="flex justify-center items-center font-bold">
-                                        <i className="rotate-12">SnapBuy</i>
+                                        <i className="rotate-12">Souqify</i>
                                       </div>
                                     }
                                   />
@@ -573,7 +573,7 @@ export const Stores = () => {
                                                 await Promise.all(
                                                   products.map(
                                                     async (
-                                                      product: SnapBuy.Product
+                                                      product: Souqify.Product
                                                     ) => {
                                                       const updatedProduct = {
                                                         ...product,
@@ -719,7 +719,7 @@ export const Stores = () => {
                                   </div>
                                   <div className="flex justify-center">
                                     {pixels.map(([pixel, value]) => {
-                                      const pixelId = pixel as SnapBuy.PixelId;
+                                      const pixelId = pixel as Souqify.PixelId;
                                       const photo = pixelsPhoto[pixel];
                                       return (
                                         <motion.div
@@ -927,7 +927,7 @@ export const Stores = () => {
                                     src={store.photo}
                                     alt={
                                       <div className="flex justify-center items-center font-bold">
-                                        <i className="rotate-12">SnapBuy</i>
+                                        <i className="rotate-12">Souqify</i>
                                       </div>
                                     }
                                   />

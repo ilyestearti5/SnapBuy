@@ -343,13 +343,13 @@ export const NotificationSettings: React.FC = () => {
     }
   };
   const [notifications, setNotifications] = useState<
-    Required<SnapBuy.Store>["notify"]
+    Required<Souqify.Store>["notify"]
   >({});
   const [originalNotifications, setOriginalNotifications] = useState<
-    Required<SnapBuy.Store>["notify"]
+    Required<Souqify.Store>["notify"]
   >({});
   const updateNotificationSetting = async (
-    setting: keyof NonNullable<SnapBuy.Store["notify"]>,
+    setting: keyof NonNullable<Souqify.Store["notify"]>,
     enabled: boolean
   ) => {
     const newNotifications = {
@@ -366,7 +366,7 @@ export const NotificationSettings: React.FC = () => {
     try {
       await notificationService.sendNotification({
         title: "🛒 Test Notification",
-        body: "This is a test notification from SnapBuy!",
+        body: "This is a test notification from Souqify!",
         icon: "/assets/snapbuy.png",
         tag: "test-notification",
       });
@@ -567,7 +567,7 @@ export const NotificationSettings: React.FC = () => {
   // Only show changes after the component is initialized with data
   const hasUnsavedChanges = useMemo(() => {
     if (!isInited.get) return false; // Don't show changes until data is loaded
-    const list: (keyof NonNullable<SnapBuy.Store["notify"]>)[] = [
+    const list: (keyof NonNullable<Souqify.Store["notify"]>)[] = [
       "newOrder",
       "orderStatusChanged",
       "orderCompleted",

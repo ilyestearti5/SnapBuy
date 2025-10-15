@@ -26,7 +26,7 @@ import { Nothing } from "@biqpod/app/ui/types";
 import { useEffect, useState } from "react";
 import { compressImage } from "../utils/utilities";
 export interface UpsertBrandProps {
-  brand?: SnapBuy.Brand;
+  brand?: Souqify.Brand;
 }
 export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
   const storeId = useStoreId();
@@ -162,7 +162,7 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
         showToast("Store ID not found", "error");
         return;
       }
-      const brandData: Omit<SnapBuy.Brand, "id" | "createdAt" | "updatedAt"> = {
+      const brandData: Omit<Souqify.Brand, "id" | "createdAt" | "updatedAt"> = {
         name: name.trim(),
         description: description?.trim(),
         photo: photo.get || undefined,

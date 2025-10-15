@@ -30,7 +30,7 @@ type UserWithId = Biqpod.Account.User & { id: string };
 
 interface UpsertAccessUsertoStoreProps {
   storeId: string;
-  existingAccess?: SnapBuy.StoreUserAccess;
+  existingAccess?: Souqify.StoreUserAccess;
   onSuccess?: () => void;
 }
 

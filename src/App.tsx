@@ -35,6 +35,7 @@ import { isWeb } from "@biqpod/app/ui/app";
 import { FeedbackRoute } from "./routes/App/FeedbackRoute";
 import { PageNotFound } from "./routes/App/PageNotFound";
 import { OffersPage } from "./routes/App/OffersPage";
+import { DocumentationRoute } from "./routes/App/DocumentationRoute";
 import { DeveloperRoute } from "./routes/Dev";
 import { CollectionsRoute } from "./routes/Collections/CollectionsRoute";
 import { Deliveries } from "./Deliveries";
@@ -113,16 +114,16 @@ export const App = () => {
     () =>
       isWeb
         ? appTabs.map((tab, index) => (
-          <AnimatedListItem key={tab.url} index={index}>
-            <ServiceCard
-              link={tab.url}
-              name={tab.name}
-              photo={tab.photo}
-              index={index}
-              isExternal={true}
-            />
-          </AnimatedListItem>
-        ))
+            <AnimatedListItem key={tab.url} index={index}>
+              <ServiceCard
+                link={tab.url}
+                name={tab.name}
+                photo={tab.photo}
+                index={index}
+                isExternal={true}
+              />
+            </AnimatedListItem>
+          ))
         : [],
     []
   );
@@ -141,6 +142,120 @@ export const App = () => {
         <LeftSide />
         <Container>
           <Switch>
+            <Route path="/payout?">
+              <PayoutRoute
+                successComponent={({ payout }) => (
+                  <AnimatedPage className="flex justify-center items-center h-full">
+                    <AnimatedCard className="max-w-md overflow-hidden">
+                      {payout?.status === "paid" ? (
+                        <EmptyComponent>
+                          <div className="flex justify-center p-6">
+                            <div className="flex justify-center items-center bg-green-100 rounded-full w-24 h-24">
+                              <img
+                                src={payChecked}
+                                className="w-16 h-16 object-contain"
+                                draggable={false}
+                              />
+                            </div>
+                          </div>
+                          <Line />
+                          <div className="p-4 text-center">
+                            <h2 className="mb-2 font-bold text-green-600 text-2xl">
+                              <Translate content="Congratulations!" />
+                            </h2>
+                            <p className="mb-4 text-gray-600">
+                              <Translate content="Your payment has been processed successfully" />
+                            </p>
+                            <div className="bg-gray-50 mb-4 p-4 rounded-lg">
+                              <div className="space-y-2">
+                                <div className="flex justify-between">
+                                  <span className="text-gray-500">
+                                    <Translate content="Amount:" />
+                                  </span>
+                                  <span className="font-semibold">
+                                    {payout?.amount?.toFixed(2)} DA
+                                  </span>
+                                </div>
+                                {payout?.payoutId && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-500">
+                                      <Translate content="Payment ID:" />
+                                    </span>
+                                    <span className="font-mono text-sm">
+                                      {payout.payoutId}
+                                    </span>
+                                  </div>
+                                )}
+                                {payout?.createdAt && (
+                                  <div className="flex justify-between">
+                                    <span className="text-gray-500">
+                                      <Translate content="Date:" />
+                                    </span>
+                                    <span className="text-sm">
+                                      {new Date(
+                                        payout.createdAt
+                                      ).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                          <Line />
+                          <div className="p-4">
+                            <Link className="w-full" to="/profile">
+                              <Button className="bg-green-600 hover:bg-green-700 w-full text-white">
+                                <Translate content="Continue to Dashboard" />
+                              </Button>
+                            </Link>
+                          </div>
+                        </EmptyComponent>
+                      ) : (
+                        <EmptyComponent>
+                          <div className="flex justify-center p-6">
+                            <div className="flex justify-center items-center bg-yellow-100 rounded-full w-24 h-24">
+                              <img
+                                src={unpaidPhoto}
+                                className="opacity-75 w-16 h-16 object-contain"
+                                draggable={false}
+                              />
+                            </div>
+                          </div>
+                          <Line />
+                          <div className="p-4 text-center">
+                            <h2 className="mb-2 font-semibold text-yellow-600 text-xl">
+                              <Translate content="Payment Processing" />
+                            </h2>
+                            <p className="mb-4 text-gray-600">
+                              <Translate content="Your payment is being processed. Please wait..." />
+                            </p>
+                            {payout?.status && (
+                              <div className="bg-yellow-50 mb-4 p-3 rounded-lg">
+                                <p className="text-yellow-700 text-sm">
+                                  <Translate content="Status:" />{" "}
+                                  <span className="font-medium capitalize">
+                                    {payout.status}
+                                  </span>
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                          <Line />
+                          <div className="p-4">
+                            <Button
+                              className="bg-gray-600 hover:bg-gray-700 w-full text-white"
+                              onClick={() => window.location.reload()}
+                            >
+                              <Translate content="Check Status" />
+                            </Button>
+                          </div>
+                        </EmptyComponent>
+                      )}
+                    </AnimatedCard>
+                  </AnimatedPage>
+                )}
+              />
+            </Route>
             <Route path="/agent">
               <Profile>
                 <AgentAi />
@@ -281,6 +396,11 @@ export const App = () => {
             <Route path="/feedbacks" exact>
               <AnimatedPage>
                 <FeedbackRoute />
+              </AnimatedPage>
+            </Route>
+            <Route path="/documentation" exact>
+              <AnimatedPage>
+                <DocumentationRoute />
               </AnimatedPage>
             </Route>
             <Route path="/developer" exact>

@@ -72,12 +72,12 @@ const icons = {
   shoppingCart: allIcons.solid.faShoppingCart,
 };
 // Optimized utility functions for repeated logic
-const getProductPrice = (product: SnapBuy.Product): number => {
+const getProductPrice = (product: Souqify.Product): number => {
   return product.type === "single"
     ? product.single?.client || 0
     : Math.min(...(product.multiple?.prices?.map((p) => p.price) || [0]));
 };
-const getProductPriceDisplay = (product: SnapBuy.Product): string => {
+const getProductPriceDisplay = (product: Souqify.Product): string => {
   const price = getProductPrice(product);
   return product.type === "single" ? `${price} DA` : `From ${price} DA`;
 };
@@ -134,7 +134,7 @@ const COMMON_STYLES = {
   },
 };
 interface CollectionProductsProps {
-  collection: SnapBuy.Collection;
+  collection: Souqify.Collection;
   storeId: string;
 }
 const CollectionProducts = ({
@@ -244,7 +244,7 @@ const ProductCard = ({
   product,
   storeId,
 }: {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
   storeId: string;
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -391,7 +391,7 @@ const SearchProductCard = ({
   product,
   storeId,
 }: {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
   storeId: string;
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -502,7 +502,7 @@ const SearchProductCard = ({
             className="text-gray-500 text-xs uppercase tracking-wide"
             style={COMMON_STYLES.interFont}
           >
-            SnapBuy
+            Souqify
           </span>
         </div>
         {/* Product Name */}
@@ -1430,8 +1430,8 @@ export const Test = () => {
   const [sortBy, setSortBy] = useState("recommended");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [selectedCollection, setSelectedCollection] =
-    useState<SnapBuy.Collection | null>(null);
-  const [selectedOffer, setSelectedOffer] = useState<SnapBuy.Pack | null>(null);
+    useState<Souqify.Collection | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<Souqify.Pack | null>(null);
   // Search placeholder cycling with typing animation
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
@@ -1914,7 +1914,7 @@ export const Test = () => {
                   className="font-bold text-gray-900 text-2xl uppercase tracking-wide"
                   style={{ fontFamily: "Oswald, sans-serif" }}
                 >
-                  {store?.name || "SnapBuy"}
+                  {store?.name || "Souqify"}
                 </h1>
               </div>
               <nav
@@ -2443,7 +2443,7 @@ export const Test = () => {
                     className="mb-4 font-bold text-white text-2xl uppercase tracking-wide"
                     style={{ fontFamily: "Oswald, sans-serif" }}
                   >
-                    {store?.name || "SnapBuy"}
+                    {store?.name || "Souqify"}
                   </h2>
                   <p
                     className="mb-6 text-gray-300 leading-relaxed"
@@ -2827,7 +2827,7 @@ export const Test = () => {
                   className="text-gray-600 text-sm"
                   style={{ fontFamily: "Inter, sans-serif" }}
                 >
-                  &copy; 2024 {store?.name || "SnapBuy"}.{" "}
+                  &copy; 2024 {store?.name || "Souqify"}.{" "}
                   <Translate content="All rights reserved." />
                 </p>
                 <p

@@ -23,10 +23,10 @@ import { snapbuyApi } from "../../apis";
 import { useEffect } from "react";
 import { tw } from "@biqpod/app/ui/utils";
 interface SetPixelsProps {
-  store: SnapBuy.Store;
+  store: Souqify.Store;
 }
 interface Pixel {
-  id: keyof Required<Required<SnapBuy.Store>["pixels"]>;
+  id: keyof Required<Required<Souqify.Store>["pixels"]>;
   photo: string;
   color: string;
 }
@@ -79,7 +79,7 @@ export const SetPixels = ({ store }: SetPixelsProps) => {
   const setStorePixelsAction = useAction(
     "set-store-pixels",
     async () => {
-      const pixels: SnapBuy.Store["pixels"] = {};
+      const pixels: Souqify.Store["pixels"] = {};
       values.forEach(({ item, value }) => {
         if (value) {
           pixels[item.id] = value;

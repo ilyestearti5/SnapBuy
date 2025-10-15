@@ -222,11 +222,11 @@ const overlayVariants = {
 };
 
 interface SetTemplateProps {
-  store: SnapBuy.Store;
+  store: Souqify.Store;
 }
 export const SetTemplate = ({ store }: SetTemplateProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const templates = useCopyState<SnapBuy.Template[]>([]);
+  const templates = useCopyState<Souqify.Template[]>([]);
   const currentPage = useCopyState<string | Nothing>(null);
   const hasMore = useCopyState(true);
   const isLoadingMore = useCopyState(false);
@@ -441,7 +441,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                     </h3>
                     <AnimatePresence>
                       {templates.get.map(
-                        (template: SnapBuy.Template, index) => (
+                        (template: Souqify.Template, index) => (
                           <motion.div
                             key={template.id}
                             variants={templateItemVariants}

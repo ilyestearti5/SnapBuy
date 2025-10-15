@@ -149,7 +149,7 @@ const FilterBrandsPopup = ({
 export const Brands = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const brands = useCopyState<SnapBuy.Brand[]>([]);
+  const brands = useCopyState<Souqify.Brand[]>([]);
   const searchQuery = getFieldValue("search-brand");
   const filters = useCopyState({
     noPhoto: false,
@@ -167,9 +167,13 @@ export const Brands = () => {
     [storeId]
   );
   const { isLoading, isSuccess } = useActionStatus(action);
-  useEffectDelay(() => {
-    execAction("fetch-brands");
-  }, [], 300);
+  useEffectDelay(
+    () => {
+      execAction("fetch-brands");
+    },
+    [],
+    300
+  );
   const filteredBrands = useMemo(() => {
     let filtered = filterFuzzySearch(brands.get, searchQuery || "", [
       "name",

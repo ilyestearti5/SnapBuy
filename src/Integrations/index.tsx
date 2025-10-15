@@ -407,10 +407,10 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
           animate={{ opacity: 0.7, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Translate content="Configure your SnapBuy API integration settings" />
+          <Translate content="Configure your Souqify API integration settings" />
         </motion.p>
       </motion.div>
-      {/* SnapBuy API Integration Section */}
+      {/* Souqify API Integration Section */}
       <motion.div variants={cardVariants} whileHover="hover">
         <Card className="p-6">
           <motion.h2
@@ -419,7 +419,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Translate content="SnapBuy API Integration" />
+            <Translate content="Souqify API Integration" />
           </motion.h2>
           {/* API Token Section */}
           <motion.div

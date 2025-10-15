@@ -20,7 +20,7 @@ import {
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { delay, tw } from "@biqpod/app/ui/utils";
-import { snapbuyApi } from "../../apis";
+import { souqifyApi } from "../../apis";
 import { UpsertTemplate } from "./UpsertTemplate";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -43,28 +43,39 @@ const cardVariants = {
     opacity: 0,
     y: 20,
     scale: 0.95,
+    rotateY: -5,
   },
   visible: {
     opacity: 1,
     y: 0,
     scale: 1,
+    rotateY: 0,
     transition: {
-      duration: 0.5,
+      duration: 0.6,
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15,
     },
   },
   hover: {
-    y: -4,
-    scale: 1.02,
+    y: -8,
+    scale: 1.03,
+    rotateY: 2,
+    boxShadow: "0 20px 40px rgba(0,0,0,0.12)",
     transition: {
-      duration: 0.2,
+      duration: 0.3,
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
     },
   },
   exit: {
     opacity: 0,
     y: -20,
     scale: 0.95,
+    rotateY: 5,
     transition: {
-      duration: 0.3,
+      duration: 0.4,
     },
   },
 };
@@ -143,22 +154,80 @@ const loadingVariants = {
   }),
 };
 
+const templateCardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+    scale: 0.95,
+    rotateY: -5,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    rotateY: 0,
+    transition: {
+      duration: 0.6,
+      type: "spring" as const,
+      stiffness: 100,
+      damping: 15,
+    },
+  },
+  hover: {
+    y: -8,
+    scale: 1.03,
+    rotateY: 2,
+    transition: {
+      duration: 0.3,
+      type: "spring" as const,
+      stiffness: 400,
+      damping: 25,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -20,
+    scale: 0.95,
+    rotateY: 5,
+    transition: {
+      duration: 0.4,
+    },
+  },
+};
+
+const templateListVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.4,
+      staggerChildren: 0.1,
+    },
+  },
+  exit: {
+    opacity: 0,
+    transition: {
+      duration: 0.3,
+    },
+  },
+};
+
 export const DeveloperRoute = () => {
   const deleteAction = useAction(
     "delete-template",
     async (templateId: string) => {
-      await snapbuyApi.deleteTemplate(templateId);
+      await souqifyApi.deleteTemplate(templateId);
       showToast("Template deleted successfully", "success");
       execAction("refresh-templates");
     },
     []
   );
-  const templates = useCopyState<SnapBuy.Template[]>([]);
+  const templates = useCopyState<Souqify.Template[]>([]);
   const refreshAction = useAction(
     "refresh-templates",
     async () => {
       await delay(100); // Small delay to allow for state updates
-      const result = await snapbuyApi.getMyTemplates();
+      const result = await souqifyApi.getMyTemplates();
       templates.set(result);
     },
     []
@@ -330,95 +399,147 @@ export const DeveloperRoute = () => {
             </motion.div>
           )}
         </AnimatePresence>
-        {!loading && templates && templates.get.length > 0 && (
-          <div className="flex flex-col gap-2">
-            {templates.get.map((template) => (
-              <Card key={template.id} className="overflow-hidden">
-                <div className="flex justify-between items-start p-4">
-                  {template.photo && (
-                    <div className="flex-shrink-0 mr-4">
-                      <Image
-                        src={template.photo}
-                        alt={template.name || "Template"}
-                        className="rounded-lg w-[120px] h-[80px] object-cover"
-                      />
-                    </div>
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-bold text-lg capitalize">
-                        {template.name || "Untitled Template"}
-                      </h3>
-                      {template.status === "accepted" && (
-                        <Icon
-                          icon={allIcons.solid.faCheckCircle}
-                          iconClassName="text-[--biqpod-success] text-sm"
-                        />
-                      )}
-                      {!template.status && (
-                        <Icon
-                          icon={allIcons.solid.faClock}
-                          iconClassName="text-[--biqpod-warning] text-sm"
-                        />
-                      )}
-                    </div>
-                    <p className="text-[--biqpod-gray-opacity-2] mb-2">
-                      {template.description || "No description provided"}
-                    </p>
-                    {template.url && (
-                      <div className="flex items-center gap-2 text-sm">
-                        <Icon icon={allIcons.solid.faLink} />
-                        <a
-                          href={template.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-[--biqpod-primary] hover:underline truncate"
+        <AnimatePresence>
+          {!loading && templates && templates.get.length > 0 && (
+            <motion.div
+              className="flex flex-col gap-2"
+              variants={templateListVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              {templates.get.map((template) => (
+                <motion.div
+                  key={template.id}
+                  variants={templateCardVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  whileHover="hover"
+                  layout
+                >
+                  <Card className="overflow-hidden">
+                    <div className="flex justify-between items-start p-4">
+                      {template.photo && (
+                        <motion.div
+                          className="flex-shrink-0 mr-4"
+                          initial={{ opacity: 0, scale: 0.8, rotateY: -20 }}
+                          animate={{ opacity: 1, scale: 1, rotateY: 0 }}
+                          transition={{
+                            delay: 0.2,
+                            duration: 0.5,
+                            type: "spring",
+                          }}
                         >
-                          {template.url}
-                        </a>
-                      </div>
-                    )}
-                    {template.createdAt && (
-                      <p className="text-[--biqpod-gray-opacity-2] mt-2 text-xs">
-                        <Translate content="created" />:{" "}
-                        {new Date(template.createdAt).toLocaleDateString()}
-                      </p>
-                    )}
-                  </div>
-                </div>
-                <Line />
-                <div className="flex justify-evenly items-center gap-2 p-2">
-                  <Button
-                    icon={allIcons.solid.faPen}
-                    onClick={() => {
-                      showPopup(<UpsertTemplate template={template} />);
-                    }}
-                    className="bg-[--biqpod-primary] px-3 py-2 rounded-full w-fit text-white"
-                  >
-                    <Translate content="edit" />
-                  </Button>
-                  <Button
-                    icon={allIcons.solid.faTrash}
-                    onClick={async () => {
-                      const response = await confirm({
-                        title: "Delete Template",
-                        message: `Are you sure you want to delete "${
-                          template.name || "this template"
-                        }"?`,
-                      });
-                      if (response) {
-                        execAction("delete-template", template.id!);
-                      }
-                    }}
-                    className="bg-[--biqpod-danger] px-3 py-2 rounded-full w-fit text-white"
-                  >
-                    <Translate content="delete" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
+                          <Image
+                            src={template.photo}
+                            alt={template.name || "Template"}
+                            className="rounded-lg w-[120px] h-[80px] object-cover"
+                          />
+                        </motion.div>
+                      )}
+                      <motion.div
+                        className="flex-1"
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3, duration: 0.5 }}
+                      >
+                        <motion.div
+                          className="flex items-center gap-2 mb-2"
+                          initial={{ opacity: 0, y: -10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.4, duration: 0.4 }}
+                        >
+                          <h3 className="font-bold text-lg capitalize">
+                            {template.name || "Untitled Template"}
+                          </h3>
+                          {template.status === "accepted" && (
+                            <Icon
+                              icon={allIcons.solid.faCheckCircle}
+                              iconClassName="text-[--biqpod-success] text-sm"
+                            />
+                          )}
+                          {!template.status && (
+                            <Icon
+                              icon={allIcons.solid.faClock}
+                              iconClassName="text-[--biqpod-warning] text-sm"
+                            />
+                          )}
+                        </motion.div>
+                        <p className="text-[--biqpod-gray-opacity-2] mb-2">
+                          {template.description || "No description provided"}
+                        </p>
+                        {template.url && (
+                          <div className="flex items-center gap-2 text-sm">
+                            <Icon icon={allIcons.solid.faLink} />
+                            <a
+                              href={template.url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[--biqpod-primary] hover:underline truncate"
+                            >
+                              {template.url}
+                            </a>
+                          </div>
+                        )}
+                        {template.createdAt && (
+                          <p className="text-[--biqpod-gray-opacity-2] mt-2 text-xs">
+                            <Translate content="created" />:{" "}
+                            {new Date(template.createdAt).toLocaleDateString()}
+                          </p>
+                        )}
+                      </motion.div>
+                    </div>
+                    <Line />
+                    <motion.div
+                      className="flex justify-evenly items-center gap-2 p-2"
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.5, duration: 0.4 }}
+                    >
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Button
+                          icon={allIcons.solid.faPen}
+                          onClick={() => {
+                            showPopup(<UpsertTemplate template={template} />);
+                          }}
+                          className="bg-[--biqpod-primary] px-3 py-2 rounded-full w-fit text-white"
+                        >
+                          <Translate content="edit" />
+                        </Button>
+                      </motion.div>
+                      <motion.div
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <Button
+                          icon={allIcons.solid.faTrash}
+                          onClick={async () => {
+                            const response = await confirm({
+                              title: "Delete Template",
+                              message: `Are you sure you want to delete "${
+                                template.name || "this template"
+                              }"?`,
+                            });
+                            if (response) {
+                              execAction("delete-template", template.id!);
+                            }
+                          }}
+                          className="bg-[--biqpod-danger] px-3 py-2 rounded-full w-fit text-white"
+                        >
+                          <Translate content="delete" />
+                        </Button>
+                      </motion.div>
+                    </motion.div>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.div>
     </Scroll>
   );

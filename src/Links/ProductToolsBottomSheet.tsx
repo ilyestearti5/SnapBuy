@@ -31,7 +31,7 @@ import { colorsInListWithNames } from "../utils";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { sharSocialMedia } from "../utils";
 interface CopyLinkPickColorProps {
-  product: SnapBuy.Product;
+  product: Souqify.Product;
 }
 type Orientation = "portrait" | "landscape";
 interface PreviewWindowProps {
@@ -361,7 +361,7 @@ export const ProductToolsBottomSheet = ({
   usedBy,
 }: {
   index: number;
-  product: SnapBuy.Product;
+  product: Souqify.Product;
   usedBy: "owned" | "random" | "read/edit" | "read" | null;
 }) => {
   const uri = useMemo(() => {

@@ -27,7 +27,7 @@ import { useEffect, useMemo } from "react";
 import { SetStorePlatforms } from "./SetStorePlatforms";
 import { platformsPhoto } from "../../utils/platforms";
 interface UpsertStoreProps {
-  store?: SnapBuy.Store;
+  store?: Souqify.Store;
 }
 export const UpsertStore = ({ store }: UpsertStoreProps) => {
   const photoState = useTemp<string | Nothing>("store-photo");
