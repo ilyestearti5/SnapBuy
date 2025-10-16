@@ -20,32 +20,52 @@
     "description": "Payment processing and subscription management page"
   },
   {
+    "path": "/link",
+    "description": "Account linking page"
+  },
+  {
+    "path": "/agent",
+    "description": "AI Agent interface page"
+  },
+  {
+    "path": "/payout",
+    "description": "Payout processing and status page"
+  },
+  {
     "path": "/store",
     "description": "Store listing and management main page"
   },
   {
     "path": "/store/{storeId}",
-    "description": "Individual store management dashboard"
+    "description": "Individual store management dashboard (redirects to dashboard)"
   },
   {
-    "path": "/store/{storeId}/overview",
-    "description": "Store overview with analytics and quick stats"
+    "path": "/store/{storeId}/dashboard",
+    "description": "Store dashboard with overview and analytics"
   },
   {
-    "path": "/store/{storeId}/orders",
-    "description": "Store orders management and tracking"
+    "path": "/store/{storeId}/sales",
+    "description": "Store sales management, orders and customers"
   },
   {
-    "path": "/store/{storeId}/products",
-    "description": "Store products catalog management"
+    "path": "/store/{storeId}/catalog",
+    "description": "Store catalog management, products and brands"
   },
   {
-    "path": "/store/{storeId}/forms",
-    "description": "Store custom forms and collections management"
+    "path": "/store/{storeId}/templates",
+    "description": "Store templates and customization options"
   },
   {
-    "path": "/store/{storeId}/stores",
-    "description": "Store settings and configuration"
+    "path": "/store/{storeId}/configuration",
+    "description": "Store configuration settings with multiple tabs"
+  },
+  {
+    "path": "/store/{storeId}/integrations",
+    "description": "Store integrations and third-party connections"
+  },
+  {
+    "path": "/store/{storeId}/plans",
+    "description": "Store subscription plans and billing"
   },
   {
     "path": "/product/{prodId}",
@@ -110,6 +130,14 @@
   {
     "path": "/offers",
     "description": "Special offers and promotions page"
+  },
+  {
+    "path": "/documentation",
+    "description": "Application documentation and help guides"
+  },
+  {
+    "path": "/developer",
+    "description": "Developer tools and API documentation"
   },
   {
     "path": "/test",
