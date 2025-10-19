@@ -132,7 +132,9 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
       <div className="flex justify-end gap-2 p-4">
         <Button
           className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
-          onClick={closePopup}
+          onClick={() => {
+            closePopup();
+          }}
         >
           <Translate content="cancel" />
         </Button>

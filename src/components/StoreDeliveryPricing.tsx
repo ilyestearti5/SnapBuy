@@ -659,7 +659,9 @@ export const UpsertStoreDeliveryOption: React.FC<
       <Line />
       <div className="flex gap-3 p-4">
         <Button
-          onClick={closePopup}
+          onClick={() => {
+            closePopup();
+          }}
           className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
           disabled={isLoading.get}
         >
@@ -787,7 +789,9 @@ export const UpsertDeliveryPrice: React.FC<UpsertDeliveryPriceProps> = ({
       <Line />
       <div className="flex gap-3 p-4">
         <Button
-          onClick={closePopup}
+          onClick={() => {
+            closePopup();
+          }}
           className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
           disabled={isLoading.get}
         >

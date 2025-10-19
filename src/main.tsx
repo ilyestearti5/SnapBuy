@@ -1,12 +1,7 @@
 import "./index.css";
 import "@biqpod/app/ui/style.css";
 import { startApplication } from "@biqpod/app/ui/app";
-import {
-  ColorIds,
-  setLangs,
-  setLightColor,
-  settingHooks,
-} from "@biqpod/app/ui/hooks";
+import { setLangs, setLightColor, settingHooks } from "@biqpod/app/ui/hooks";
 import { App } from "./App";
 import { BrowserRouter } from "react-router-dom";
 import { settings } from "./server";
@@ -21,9 +16,9 @@ startApplication(
     onPrepare() {
       settingHooks.upsert(settings);
       setLangs(translations);
-      setLightColor("primary.background" as ColorIds, "#fff");
-      setLightColor("secondary.background" as ColorIds, "#fff");
-      setLightColor("borders" as ColorIds, "#dedede");
+      setLightColor("primary.background", "#fff");
+      setLightColor("secondary.background", "#fff");
+      setLightColor("borders", "#dedede");
       return {
         settings,
         commands: [
@@ -49,5 +44,6 @@ startApplication(
         ],
       };
     },
+    projectId: import.meta.env.VITE_PROJECT_ID,
   }
 );

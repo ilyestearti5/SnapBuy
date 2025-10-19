@@ -1,5 +1,7 @@
 import { initMyCloud } from "@biqpod/app/ui/apis";
 import { Biqpod } from "@biqpod/app/ui/types";
+export const ENDPOINT = "https://developed-nickie-biqpod-7b27f741.koyeb.app";
+export const LOCAL_ENDPOINT = "http://localhost:3000";
 export const cloud = initMyCloud({
   apiKey: "AIzaSyB0XSUnBSOaIWp-37u2N4ib5bY8-09Zeq0",
   authDomain: "water-fetch.firebaseapp.com",
@@ -10,9 +12,9 @@ export const cloud = initMyCloud({
   appId: "1:911813185967:web:4447a361eeaddd00315f5a",
   measurementId: "G-8GB7LZPHVX",
   functions: {
-    devUri: (fnId) => `http://localhost:3000/invoke/${fnId}`,
+    devUri: (fnId) => ENDPOINT + `/invoke/${fnId}`,
     prodUri: (fnId) => {
-      return `https://developed-nickie-biqpod-7b27f741.koyeb.app/invoke/${fnId}`;
+      return ENDPOINT + `/invoke/${fnId}`;
     },
   },
 });

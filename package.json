@@ -20,7 +20,7 @@
     "lint": "eslint"
   },
   "dependencies": {
-    "@biqpod/app": "^0.2.0",
+    "@biqpod/app": "^0.2.8",
     "@biqpod/packing": "^1.0.0",
     "@capacitor-community/camera-preview": "^7.0.1",
     "@capacitor/android": "^7.2.0",
@@ -34,8 +34,6 @@
     "@capacitor/ios": "^7.2.0",
     "@capacitor/status-bar": "^7.0.1",
     "@capgo/capacitor-navigation-bar": "^7.1.8",
-    "@react-three/drei": "^10.7.6",
-    "@react-three/fiber": "^9.3.0",
     "@tanstack/react-virtual": "^3.13.8",
     "@types/react-color": "^3.0.13",
     "@types/react-router": "^5.1.20",

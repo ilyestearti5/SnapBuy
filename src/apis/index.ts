@@ -23,7 +23,8 @@ import {
   unpackPromise,
 } from "@biqpod/app/ui/utils";
 import { cloud, functions } from "../server";
-const appProjectId = "74510af6-4dc2-47b3-b5d5-b07b559aede7";
+export const appProjectId: string = import.meta.env.VITE_BIQPOD_APP_PROJECT_ID!;
+const mainRef = ["projects", appProjectId];
 export interface OverviewProps {
   orders: number;
   customers: number;
@@ -102,7 +103,6 @@ export type DataTypes =
   | "photos"
   | "coupons"
   | "vars";
-export const createApi = (cloud: ClientCloud) => {
   const buildFunction = (name: string) => {
     return {
       getUserFunction: async <T, R = any>(fnId: string) => {
@@ -115,15 +115,15 @@ export const createApi = (cloud: ClientCloud) => {
           [name, fnId].join("-")
         );
       },
-    };
-  };
+    };  };
+const { getUserFunction, getFunction } = buildFunction("snapbuy");
+export const createApi = (cloud: ClientCloud) => {
   const getCurrentAuth = () => {
     return cloud.app.auth.getCurrentAuth();
   };
   const uploadFile = (path: Biqpod.Cloud.Path, content: Blob | string) => {
     return cloud.app.storage.updateFile(path, content);
   };
-  const { getUserFunction, getFunction } = buildFunction("snapbuy");
   const uploadFiles = async (
     images: string[],
     collection: (index: number) => Path
@@ -131,7 +131,7 @@ export const createApi = (cloud: ClientCloud) => {
     const photos = await mapAsync(images, async (photo, index) => {
       if (photo.startsWith("data:")) {
         const blob = await fetch(photo).then((s) => s.blob());
-        const ref = ["projects", appProjectId, collection(index)];
+        const ref = [mainRef, collection(index)];
         await uploadFile(ref, blob);
         const result = await getDownloadURL(ref);
         return result!;
@@ -166,14 +166,14 @@ export const createApi = (cloud: ClientCloud) => {
       return result?.token;
     },
     async getZone(zoneId: string) {
-      return getDoc<Souqify.Zone>(["projects", appProjectId, "zones", zoneId]);
+      return getDoc<Souqify.Zone>([mainRef, "zones", zoneId]);
     },
     async setPixelId(
       storeId: string,
       id: Souqify.PixelId,
       value: string | null
     ) {
-      await setDoc(["projects", appProjectId, "stores", storeId], {
+      await setDoc([mainRef, "stores", storeId], {
         pixels: {
           [id]: value,
         },
@@ -205,26 +205,20 @@ export const createApi = (cloud: ClientCloud) => {
     async submitStore(storeId: string, stars: number) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await setDoc(
-        ["projects", appProjectId, "stores", storeId, "stars", uid],
-        {
-          value: stars,
-        }
-      );
+      await setDoc([mainRef, "stores", storeId, "stars", uid], {
+        value: stars,
+      });
     },
     async getStoresStars(storeId: string, stars: number) {
-      const result = await getDocs(
-        ["projects", appProjectId, "stores", storeId],
-        {
-          where: and(where("stars", "==", stars)),
-        }
-      );
+      const result = await getDocs([mainRef, "stores", storeId], {
+        where: and(where("stars", "==", stars)),
+      });
       return result?.length;
     },
     async upsertCollection(props: Souqify.Collection) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await setDoc(["projects", appProjectId, "collections", props.id!], {
+      await setDoc([mainRef, "collections", props.id!], {
         ...props,
         uid,
       });
@@ -232,11 +226,11 @@ export const createApi = (cloud: ClientCloud) => {
     async deleteCollection(collectionId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "collections", collectionId]);
+      await deleteDoc([mainRef, "collections", collectionId]);
     },
     async getCollections(storeId: string) {
       const collections = await getDocs<Souqify.Collection>(
-        ["projects", appProjectId, "collections"],
+        [mainRef, "collections"],
         {
           where: and(where("storeId", "==", storeId)),
         }
@@ -249,19 +243,16 @@ export const createApi = (cloud: ClientCloud) => {
       );
     },
     async getSinglePack(storeId: string) {
-      const packs = await getDocs<Souqify.Pack>(
-        ["projects", appProjectId, "packs"],
-        {
-          where: and(where("storeId", "==", storeId)),
-          limit: 1,
-        }
-      );
+      const packs = await getDocs<Souqify.Pack>([mainRef, "packs"], {
+        where: and(where("storeId", "==", storeId)),
+        limit: 1,
+      });
       return packs?.at(0);
     },
     async setStorePixels(storeId: string, pixels: Souqify.Store["pixels"]) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await setDoc(["projects", appProjectId, "stores", storeId], {
+      await setDoc([mainRef, "stores", storeId], {
         pixels,
       });
     },
@@ -269,15 +260,12 @@ export const createApi = (cloud: ClientCloud) => {
       const time = new Date();
       time.setMonth(time.getMonth() - 3);
       time.setDate(time.getDate() + 7);
-      const orders = await getDocs<Souqify.Order>(
-        ["projects", appProjectId, "orders"],
-        {
-          where: and(
-            where("storeId", "==", storeId),
-            where("createdAt", "<=", time.getTime())
-          ),
-        }
-      );
+      const orders = await getDocs<Souqify.Order>([mainRef, "orders"], {
+        where: and(
+          where("storeId", "==", storeId),
+          where("createdAt", "<=", time.getTime())
+        ),
+      });
       return orders?.map(({ data }) => {
         const dataTime = new Date(data.createdAt || 0);
         const resetDays = time.getDay() - dataTime.getDay();
@@ -306,29 +294,23 @@ export const createApi = (cloud: ClientCloud) => {
     async addZone(zone: Souqify.Zone) {
       const uid = await getCurrentAuth();
       const zoneId = crypto.randomUUID();
-      await createDoc(["projects", appProjectId, "zones", zoneId], {
+      await createDoc([mainRef, "zones", zoneId], {
         id: zoneId,
         ...zone,
         uid,
       });
     },
     async getZonesLinkTo(zoneId: string) {
-      const docs = await getDocs<Souqify.LinkZone>(
-        ["projects", appProjectId, "zone-links"],
-        {
-          where: or(
-            where("first", "==", zoneId),
-            where("second", "==", zoneId)
-          ),
-        }
-      );
+      const docs = await getDocs<Souqify.LinkZone>([mainRef, "zone-links"], {
+        where: or(where("first", "==", zoneId), where("second", "==", zoneId)),
+      });
       return docs?.map((doc) => doc.data) || [];
     },
     async linkZone(firstZone: string, secondZone: string, price: number) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const zoneId = `${firstZone}+${secondZone}`;
-      await setDoc(["projects", appProjectId, "zone-links", zoneId], {
+      await setDoc([mainRef, "zone-links", zoneId], {
         id: zoneId,
         first: firstZone,
         second: secondZone,
@@ -339,12 +321,12 @@ export const createApi = (cloud: ClientCloud) => {
     async deleteLinkZone(linkId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "zone-links", linkId]);
+      await deleteDoc([mainRef, "zone-links", linkId]);
     },
     async deleteZone(zoneId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "zones", zoneId]);
+      await deleteDoc([mainRef, "zones", zoneId]);
       const zones = await this.getZonesLinkTo(zoneId);
       await mapAsync(zones, async (zone) => {
         await this.deleteLinkZone(zone.id!);
@@ -371,12 +353,9 @@ export const createApi = (cloud: ClientCloud) => {
     async getAllProducts() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const products = await getDocs<Souqify.Product>(
-        ["projects", appProjectId, "products"],
-        {
-          where: and(where("uid", "==", uid)),
-        }
-      );
+      const products = await getDocs<Souqify.Product>([mainRef, "products"], {
+        where: and(where("uid", "==", uid)),
+      });
       return (
         products?.map((product) => ({ ...product.data, id: product.id })) || []
       );
@@ -386,7 +365,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       var image: string | null = null;
-      const ref = ["projects", appProjectId, "stores", store.id];
+      const ref = [mainRef, "stores", store.id];
       const data = await getDoc(ref);
       if (data) {
         throw "THIS STORE IS USED";
@@ -413,7 +392,7 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async deleteAccount(accountId: string) {
-      await deleteDoc(["projects", appProjectId, "accounts", accountId]);
+      await deleteDoc([mainRef, "accounts", accountId]);
     },
     async updateStore(storeId: string, store: Partial<Souqify.Store>) {
       const uid = await getCurrentAuth();
@@ -425,7 +404,7 @@ export const createApi = (cloud: ClientCloud) => {
         store.photo = file;
       } else {
       }
-      await setDoc(["projects", appProjectId, "stores", storeId], {
+      await setDoc([mainRef, "stores", storeId], {
         id: storeId,
         ...store,
         photo: store.photo || null,
@@ -435,7 +414,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = account;
-      await setDoc(["projects", appProjectId, "accounts", id], {
+      await setDoc([mainRef, "accounts", id], {
         ...rest,
         id,
         uid,
@@ -444,12 +423,9 @@ export const createApi = (cloud: ClientCloud) => {
     async getStores() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const stores = await getDocs<Souqify.Store>(
-        ["projects", appProjectId, "stores"],
-        {
-          where: and(where("uid", "==", uid)),
-        }
-      );
+      const stores = await getDocs<Souqify.Store>([mainRef, "stores"], {
+        where: and(where("uid", "==", uid)),
+      });
       return stores?.map((store) => ({ ...store.data })) || [];
     },
     async getStore(storeId: string) {
@@ -491,10 +467,7 @@ export const createApi = (cloud: ClientCloud) => {
       var pht: string | Nothing;
       if (photo) {
         const blob = await fetch(photo).then((s) => s.blob());
-        await updateFile(
-          ["projects", appProjectId, "templates", id, "photo"],
-          blob
-        );
+        await updateFile([mainRef, "templates", id, "photo"], blob);
         pht = await getDownloadURL([
           "projects",
           appProjectId,
@@ -512,13 +485,13 @@ export const createApi = (cloud: ClientCloud) => {
       if (pht) {
         options.photo = pht;
       }
-      await setDoc(["projects", appProjectId, "templates", id], options);
+      await setDoc([mainRef, "templates", id], options);
     },
     async getMyTemplates() {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const templates = await getDocs<Souqify.Template>(
-        ["projects", appProjectId, "templates"],
+        [mainRef, "templates"],
         {
           where: and(where("creatorId", "==", uid)),
           orders: [orderBy("createdAt", "desc")],
@@ -532,7 +505,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async getAllTemplates(startAt: string | null = null, limit: number = 10) {
       const templates = await getDocs<Souqify.Template>(
-        ["projects", appProjectId, "templates"],
+        [mainRef, "templates"],
         {
           // where: and(where("status", "==", "accepted")),
           orders: [orderBy("createdAt", "desc")],
@@ -548,15 +521,12 @@ export const createApi = (cloud: ClientCloud) => {
     async deleteTemplate(templateId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "templates", templateId]);
+      await deleteDoc([mainRef, "templates", templateId]);
     },
     async getStoresOf(uid: string) {
-      const stores = await getDocs<Souqify.Store>(
-        ["projects", appProjectId, "stores"],
-        {
-          where: and(where("uid", "==", uid)),
-        }
-      );
+      const stores = await getDocs<Souqify.Store>([mainRef, "stores"], {
+        where: and(where("uid", "==", uid)),
+      });
       return stores?.map((store) => ({ ...store.data, id: store.id })) || [];
     },
     async follow(followed: string) {
@@ -593,15 +563,12 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) {
         throw "User not authenticated";
       }
-      const follows = await getDocs<Souqify.Follow>(
-        ["projects", appProjectId, "follows"],
-        {
-          where: and(where("follower", "==", uid), where("follow", "==", true)),
-          limit,
-          startAt: from?.followed && mergeArray(from?.followed),
-          orders: [orderBy("followed", "desc")],
-        }
-      );
+      const follows = await getDocs<Souqify.Follow>([mainRef, "follows"], {
+        where: and(where("follower", "==", uid), where("follow", "==", true)),
+        limit,
+        startAt: from?.followed && mergeArray(from?.followed),
+        orders: [orderBy("followed", "desc")],
+      });
       return mapAsync(follows || [], async (follow) => {
         const followed = follow.data.followed;
         const user = await getDoc<Biqpod.Account.User>(["users", followed]);
@@ -615,12 +582,9 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getProductsOf(storeId: string) {
-      const products = await getDocs<Souqify.Product>(
-        ["projects", appProjectId, "products"],
-        {
-          where: and(where("storeId", "==", storeId)),
-        }
-      );
+      const products = await getDocs<Souqify.Product>([mainRef, "products"], {
+        where: and(where("storeId", "==", storeId)),
+      });
       const result = products?.map(({ data }) => data);
       result?.forEach((prod) => {
         setTemp("products." + prod.id, prod);
@@ -692,7 +656,7 @@ export const createApi = (cloud: ClientCloud) => {
         if (photos) {
           options.photos = photos;
         }
-        await setDoc(["projects", appProjectId, "products", prodId!], options);
+        await setDoc([mainRef, "products", prodId!], options);
         setTemp("products." + prodId, options);
       });
     },
@@ -769,7 +733,7 @@ export const createApi = (cloud: ClientCloud) => {
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(["projects", appProjectId, "brands", id], {
+      await setDoc([mainRef, "brands", id], {
         ...brand,
         photo: photo || null,
       });
@@ -777,12 +741,9 @@ export const createApi = (cloud: ClientCloud) => {
       return brandData;
     },
     async getAllBrands(storeId: string) {
-      const brands = await getDocs<Souqify.Brand>(
-        ["projects", appProjectId, "brands"],
-        {
-          where: and(where("storeId", "==", storeId)),
-        }
-      );
+      const brands = await getDocs<Souqify.Brand>([mainRef, "brands"], {
+        where: and(where("storeId", "==", storeId)),
+      });
       const result =
         brands?.map((brand) => ({ ...brand.data, id: brand.id })) || [];
       result.forEach((brand) => {
@@ -834,17 +795,14 @@ export const createApi = (cloud: ClientCloud) => {
         photo: photo || existingBrand.photo,
         updatedAt: now,
       };
-      await setDoc(
-        ["projects", appProjectId, "brands", brandId],
-        updatedBrandData
-      );
+      await setDoc([mainRef, "brands", brandId], updatedBrandData);
       setTemp("brands." + brandId, updatedBrandData);
       return updatedBrandData;
     },
     async deleteBrand(brandId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "brands", brandId]);
+      await deleteDoc([mainRef, "brands", brandId]);
       setTemp("brands." + brandId, null);
     },
     async createOrder(order: CreateOrderOptions) {
@@ -1012,7 +970,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = pack;
-      await setDoc(["projects", appProjectId, "packs", id], {
+      await setDoc([mainRef, "packs", id], {
         ...rest,
         id,
         uid,
@@ -1022,19 +980,16 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const { id = packId, ...rest } = pack;
-      await setDoc(["projects", appProjectId, "packs", id], {
+      await setDoc([mainRef, "packs", id], {
         ...rest,
         id,
         uid,
       });
     },
     async getPacks(storeId: string) {
-      const packs = await getDocs<Souqify.Pack>(
-        ["projects", appProjectId, "packs"],
-        {
-          where: and(where("storeId", "==", storeId)),
-        }
-      );
+      const packs = await getDocs<Souqify.Pack>([mainRef, "packs"], {
+        where: and(where("storeId", "==", storeId)),
+      });
       return packs?.map((pack) => ({ ...pack.data, id: pack.id })) || [];
     },
     async getPack(packId: string) {
@@ -1065,15 +1020,12 @@ export const createApi = (cloud: ClientCloud) => {
       if (status && status !== "all") {
         conditions.push(where("status", "==", status));
       }
-      const orders = await getDocs<Souqify.Order>(
-        ["projects", appProjectId, "orders"],
-        {
-          where: and(...conditions),
-          orders: [orderBy("createdAt", "asc")],
-          limit,
-          startAt: startAt ? [startAt] : undefined,
-        }
-      );
+      const orders = await getDocs<Souqify.Order>([mainRef, "orders"], {
+        where: and(...conditions),
+        orders: [orderBy("createdAt", "asc")],
+        limit,
+        startAt: startAt ? [startAt] : undefined,
+      });
       return orders?.map((order) => ({ ...order.data, id: order.id })) || [];
     },
     async setDeliveryToOrder(options: {
@@ -1098,7 +1050,7 @@ export const createApi = (cloud: ClientCloud) => {
         orderId,
       ]);
       if (!existingOrder) throw "Order not found";
-      await setDoc(["projects", appProjectId, "orders", orderId], {
+      await setDoc([mainRef, "orders", orderId], {
         ...existingOrder,
         delivery: {
           uid,
@@ -1110,15 +1062,12 @@ export const createApi = (cloud: ClientCloud) => {
     async getDeliveryAgents() {
       const uid = getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const agents = await getDocs<Souqify.Account>(
-        ["projects", appProjectId, "accounts"],
-        {
-          where: and(
-            where("uid", "==", uid),
-            where("role", "==", "delivery_agent")
-          ),
-        }
-      );
+      const agents = await getDocs<Souqify.Account>([mainRef, "accounts"], {
+        where: and(
+          where("uid", "==", uid),
+          where("role", "==", "delivery_agent")
+        ),
+      });
       return agents?.map((agent) => ({ ...agent.data, id: agent.id })) || [];
     },
     async getDeliveryStats(storeId: string) {
@@ -1146,7 +1095,7 @@ export const createApi = (cloud: ClientCloud) => {
         uid,
       };
       await setDoc(
-        ["projects", appProjectId, "deliveryPrices", deliveryPriceData.id!],
+        [mainRef, "deliveryPrices", deliveryPriceData.id!],
         deliveryPriceData
       );
     },
@@ -1162,7 +1111,7 @@ export const createApi = (cloud: ClientCloud) => {
         uid,
       };
       await setDoc(
-        ["projects", appProjectId, "deliveryPrices", deliveryPrice.id!],
+        [mainRef, "deliveryPrices", deliveryPrice.id!],
         deliveryPriceData
       );
     },
@@ -1178,7 +1127,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async getStoreDeliveryPrices(storeId: string) {
       const deliveryPrices = await getDocs<Souqify.DeliveryOptions>(
-        ["projects", appProjectId, "deliveryPrices"],
+        [mainRef, "deliveryPrices"],
         {
           where: and(where("storeId", "==", storeId)),
           orders: [orderBy("createdAt", "desc")],
@@ -1196,7 +1145,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const id = crypto.randomUUID();
-      await setDoc(["projects", appProjectId, "deliveryOptions", id], {
+      await setDoc([mainRef, "deliveryOptions", id], {
         ...deliveryOption,
         id,
         uid,
@@ -1210,13 +1159,10 @@ export const createApi = (cloud: ClientCloud) => {
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await setDoc(
-        ["projects", appProjectId, "deliveryOptions", deliveryOptionId],
-        {
-          ...deliveryOption,
-          uid,
-        }
-      );
+      await setDoc([mainRef, "deliveryOptions", deliveryOptionId], {
+        ...deliveryOption,
+        uid,
+      });
     },
     async deleteStoreDeliveryOption(deliveryOptionId: string) {
       const uid = await getCurrentAuth();
@@ -1242,7 +1188,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async getStoreDeliveryOptions(storeId: string) {
       const deliveryOptions = await getDocs<Souqify.DeliveryOptions>(
-        ["projects", appProjectId, "deliveryOptions"],
+        [mainRef, "deliveryOptions"],
         {
           where: and(where("storeId", "==", storeId)),
           orders: [orderBy("createdAt", "desc")],
@@ -1262,7 +1208,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const id = crypto.randomUUID();
-      await setDoc(["projects", appProjectId, "deliveryPrices", id], {
+      await setDoc([mainRef, "deliveryPrices", id], {
         ...deliveryPrice,
         id,
         uid,
@@ -1275,13 +1221,10 @@ export const createApi = (cloud: ClientCloud) => {
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await setDoc(
-        ["projects", appProjectId, "deliveryPrices", deliveryPriceId],
-        {
-          ...deliveryPrice,
-          uid,
-        }
-      );
+      await setDoc([mainRef, "deliveryPrices", deliveryPriceId], {
+        ...deliveryPrice,
+        uid,
+      });
     },
     async deleteDeliveryPrice(deliveryPriceId: string) {
       const uid = await getCurrentAuth();
@@ -1295,7 +1238,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async getDeliveryPricesForOption(deliveryOptionId: string) {
       const deliveryPrices = await getDocs<Souqify.DeliveryPrice>(
-        ["projects", appProjectId, "deliveryPrices"],
+        [mainRef, "deliveryPrices"],
         {
           where: and(where("deliveryOptionId", "==", deliveryOptionId)),
           orders: [orderBy("createdAt", "desc")],
@@ -1310,7 +1253,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async getAllDeliveryPricesForStore(storeId: string) {
       const deliveryPrices = await getDocs<Souqify.DeliveryPrice>(
-        ["projects", appProjectId, "deliveryPrices"],
+        [mainRef, "deliveryPrices"],
         {
           where: and(where("storeId", "==", storeId)),
           orders: [orderBy("createdAt", "desc")],
@@ -1330,7 +1273,7 @@ export const createApi = (cloud: ClientCloud) => {
     async deleteOrder(orderId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "orders", orderId]);
+      await deleteDoc([mainRef, "orders", orderId]);
       setTemp("order-products." + orderId, null);
     },
     async editOrder(orderId: string, edit: Souqify.Order["edit"]) {
@@ -1343,7 +1286,7 @@ export const createApi = (cloud: ClientCloud) => {
         orderId,
       ]);
       if (!existingOrder) throw "Order not found";
-      await setDoc(["projects", appProjectId, "orders", orderId], {
+      await setDoc([mainRef, "orders", orderId], {
         ...existingOrder,
         edit,
       });
@@ -1362,7 +1305,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const customerId = crypto.randomUUID();
-      await createDoc(["projects", appProjectId, "customers", customerId], {
+      await createDoc([mainRef, "customers", customerId], {
         ...customer,
         id: customerId,
         createdAt: Date.now(),
@@ -1384,7 +1327,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const customers = await getDocs<Souqify.Customer>(
-        ["projects", appProjectId, "customers"],
+        [mainRef, "customers"],
         {
           where: and(where("storeId", "==", storeId)),
           orders: [orderBy("createdAt", "desc")],
@@ -1403,14 +1346,14 @@ export const createApi = (cloud: ClientCloud) => {
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await updateDoc(["projects", appProjectId, "customers", customerId], {
+      await updateDoc([mainRef, "customers", customerId], {
         status,
       });
     },
     async deleteCustomer(customerId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "customers", customerId]);
+      await deleteDoc([mainRef, "customers", customerId]);
     },
     // Coupon Management Functions
     async upsertCoupon(coupon: Souqify.Coupon) {
@@ -1418,7 +1361,7 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = coupon;
       const now = Date.now();
-      await setDoc(["projects", appProjectId, "coupons", id], {
+      await setDoc([mainRef, "coupons", id], {
         ...rest,
         id,
         uid,
@@ -1429,13 +1372,10 @@ export const createApi = (cloud: ClientCloud) => {
       return id;
     },
     async getCoupons(storeId: string) {
-      const coupons = await getDocs<Souqify.Coupon>(
-        ["projects", appProjectId, "coupons"],
-        {
-          where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
-        }
-      );
+      const coupons = await getDocs<Souqify.Coupon>([mainRef, "coupons"], {
+        where: and(where("storeId", "==", storeId)),
+        orders: [orderBy("createdAt", "desc")],
+      });
       return (
         coupons?.map((coupon) => ({ ...coupon.data, id: coupon.id })) || []
       );
@@ -1459,7 +1399,7 @@ export const createApi = (cloud: ClientCloud) => {
     async deleteCoupon(couponId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "coupons", couponId]);
+      await deleteDoc([mainRef, "coupons", couponId]);
       setTemp("coupons." + couponId, null);
     },
     async syncPhotosInDocument(
@@ -1475,16 +1415,13 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async validateCoupon(code: string, storeId: string, orderAmount: number) {
-      const coupons = await getDocs<Souqify.Coupon>(
-        ["projects", appProjectId, "coupons"],
-        {
-          where: and(
-            where("code", "==", code),
-            where("storeId", "==", storeId),
-            where("isActive", "==", true)
-          ),
-        }
-      );
+      const coupons = await getDocs<Souqify.Coupon>([mainRef, "coupons"], {
+        where: and(
+          where("code", "==", code),
+          where("storeId", "==", storeId),
+          where("isActive", "==", true)
+        ),
+      });
       const coupon = coupons?.at(0)?.data;
       if (!coupon) return { valid: false, error: "Coupon not found" };
       const now = new Date();
@@ -1510,7 +1447,7 @@ export const createApi = (cloud: ClientCloud) => {
       if (!uid) throw "User not authenticated";
       const { id = crypto.randomUUID(), ...rest } = variable;
       const now = Date.now();
-      await setDoc(["projects", appProjectId, "vars", id], {
+      await setDoc([mainRef, "vars", id], {
         ...rest,
         id,
         uid,
@@ -1519,13 +1456,10 @@ export const createApi = (cloud: ClientCloud) => {
       return id;
     },
     async getVars(storeId: string) {
-      const vars = await getDocs<Souqify.Var>(
-        ["projects", appProjectId, "vars"],
-        {
-          where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
-        }
-      );
+      const vars = await getDocs<Souqify.Var>([mainRef, "vars"], {
+        where: and(where("storeId", "==", storeId)),
+        orders: [orderBy("createdAt", "desc")],
+      });
       return (
         vars?.map((variable) => ({ ...variable.data, id: variable.id })) || []
       );
@@ -1549,7 +1483,7 @@ export const createApi = (cloud: ClientCloud) => {
     async deleteVar(varId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "vars", varId]);
+      await deleteDoc([mainRef, "vars", varId]);
       setTemp("vars." + varId, null);
     },
     // Store User Access Management Functions
@@ -1576,10 +1510,7 @@ export const createApi = (cloud: ClientCloud) => {
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(
-        ["projects", appProjectId, "store-access", accessId],
-        accessData
-      );
+      await setDoc([mainRef, "store-access", accessId], accessData);
       setTemp("store-access." + accessId, accessData);
       return accessData;
     },
@@ -1604,10 +1535,7 @@ export const createApi = (cloud: ClientCloud) => {
         ...updates,
         updatedAt: Date.now(),
       };
-      await setDoc(
-        ["projects", appProjectId, "store-access", accessId],
-        updatedAccess
-      );
+      await setDoc([mainRef, "store-access", accessId], updatedAccess);
       setTemp("store-access." + accessId, updatedAccess);
       return updatedAccess;
     },
@@ -1615,7 +1543,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const accessRecords = await getDocs<Souqify.StoreUserAccess>(
-        ["projects", appProjectId, "store-access"],
+        [mainRef, "store-access"],
         {
           where: and(where("storeId", "==", storeId), where("uid", "==", uid)),
           orders: [orderBy("createdAt", "desc")],
@@ -1635,7 +1563,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const accessRecords = await getDocs<Souqify.StoreUserAccess>(
-        ["projects", appProjectId, "store-access"],
+        [mainRef, "store-access"],
         {
           where: and(where("relatedUid", "==", uid)),
           orders: [orderBy("createdAt", "desc")],
@@ -1661,7 +1589,7 @@ export const createApi = (cloud: ClientCloud) => {
         throw "User not authenticated";
       }
       const docs = await getDocs<Souqify.StoreUserAccess>(
-        ["projects", appProjectId, "store-access"],
+        [mainRef, "store-access"],
         {
           where: and(
             where("relatedUid", "==", relatedUid),
@@ -1674,14 +1602,14 @@ export const createApi = (cloud: ClientCloud) => {
       if (!doc) {
         throw "No access record found";
       }
-      await deleteDoc(["projects", appProjectId, "store-access", doc?.id!]);
+      await deleteDoc([mainRef, "store-access", doc?.id!]);
       setTemp("store-access." + doc?.id, null);
     },
     async leaveStoreAccess(storeId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       const docs = await getDocs<Souqify.StoreUserAccess>(
-        ["projects", appProjectId, "store-access"],
+        [mainRef, "store-access"],
         {
           where: and(
             where("relatedUid", "==", uid),
@@ -1692,7 +1620,7 @@ export const createApi = (cloud: ClientCloud) => {
       );
       const doc = docs?.at(0);
       if (!doc) throw "No access record found";
-      await deleteDoc(["projects", appProjectId, "store-access", doc.id]);
+      await deleteDoc([mainRef, "store-access", doc.id]);
       setTemp("store-access." + doc.id, null);
     },
     async getUserAccessToStore(
@@ -1702,7 +1630,7 @@ export const createApi = (cloud: ClientCloud) => {
     ) {
       const field = type === "email" ? "userEmail" : "username";
       const accessRecords = await getDocs<Souqify.StoreUserAccess>(
-        ["projects", appProjectId, "store-access"],
+        [mainRef, "store-access"],
         {
           where: and(
             where("storeId", "==", storeId),
@@ -1772,18 +1700,15 @@ export const createApi = (cloud: ClientCloud) => {
         createdAt: now,
         updatedAt: now,
       };
-      await setDoc(["projects", appProjectId, "invoices", id], invoiceData);
+      await setDoc([mainRef, "invoices", id], invoiceData);
       setTemp("invoices." + id, invoiceData);
       return invoiceData;
     },
     async getInvoices(storeId: string) {
-      const invoices = await getDocs<Souqify.Invoice>(
-        ["projects", appProjectId, "invoices"],
-        {
-          where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
-        }
-      );
+      const invoices = await getDocs<Souqify.Invoice>([mainRef, "invoices"], {
+        where: and(where("storeId", "==", storeId)),
+        orders: [orderBy("createdAt", "desc")],
+      });
       const result =
         invoices?.map((invoice) => ({ ...invoice.data, id: invoice.id })) || [];
       result.forEach((invoice) => {
@@ -1828,29 +1753,23 @@ export const createApi = (cloud: ClientCloud) => {
         ...invoice,
         updatedAt: now,
       };
-      await setDoc(
-        ["projects", appProjectId, "invoices", invoiceId],
-        updatedInvoice
-      );
+      await setDoc([mainRef, "invoices", invoiceId], updatedInvoice);
       setTemp("invoices." + invoiceId, updatedInvoice);
       return updatedInvoice;
     },
     async deleteInvoice(invoiceId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      await deleteDoc(["projects", appProjectId, "invoices", invoiceId]);
+      await deleteDoc([mainRef, "invoices", invoiceId]);
       setTemp("invoices." + invoiceId, null);
     },
     async hasExtraLinks(callback?: (text: string) => void) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       callback?.("checking products");
-      const products = await getDocs<Souqify.Product>(
-        ["projects", appProjectId, "products"],
-        {
-          where: and(where("uid", "==", uid)),
-        }
-      );
+      const products = await getDocs<Souqify.Product>([mainRef, "products"], {
+        where: and(where("uid", "==", uid)),
+      });
       const firestoreLink = "firebasestorage.googleapis.com";
       const findedProduct = products?.find((p) =>
         p.data.photos?.some((photo) => photo.includes(firestoreLink))
@@ -1860,7 +1779,7 @@ export const createApi = (cloud: ClientCloud) => {
       }
       callback?.("checking collections");
       const collections = await getDocs<Souqify.Collection>(
-        ["projects", appProjectId, "collections"],
+        [mainRef, "collections"],
         {
           where: and(where("uid", "==", uid)),
         }
@@ -1872,12 +1791,9 @@ export const createApi = (cloud: ClientCloud) => {
         return findedCollection.data;
       }
       callback?.("checking brands");
-      const brands = await getDocs<Souqify.Brand>(
-        ["projects", appProjectId, "brands"],
-        {
-          where: and(where("uid", "==", uid)),
-        }
-      );
+      const brands = await getDocs<Souqify.Brand>([mainRef, "brands"], {
+        where: and(where("uid", "==", uid)),
+      });
       const findedBrands = brands?.find((b) =>
         b.data.photo?.includes(firestoreLink)
       );
@@ -1885,12 +1801,9 @@ export const createApi = (cloud: ClientCloud) => {
         return findedBrands.data;
       }
       callback?.("checking stores");
-      const stores = await getDocs<Souqify.Store>(
-        ["projects", appProjectId, "stores"],
-        {
-          where: and(where("uid", "==", uid)),
-        }
-      );
+      const stores = await getDocs<Souqify.Store>([mainRef, "stores"], {
+        where: and(where("uid", "==", uid)),
+      });
       const findedStore = stores?.find((s) =>
         s.data.photo?.includes(firestoreLink)
       );

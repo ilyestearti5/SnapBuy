@@ -468,7 +468,9 @@ export const UpsertAccessUsertoStore = ({
               className="flex-1"
             >
               <Button
-                onClick={closePopup}
+                onClick={() => {
+                  closePopup();
+                }}
                 className="bg-[--biqpod-gray-opacity] w-full text-[--biqpod-text-color]"
               >
                 <Translate content="Cancel" />

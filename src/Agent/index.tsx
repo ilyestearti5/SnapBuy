@@ -9,17 +9,17 @@ import {
   UserAvatar,
 } from "@biqpod/app/ui/components";
 import {
-  setFieldValue,
   getFieldValue,
+  setFieldValue,
   showToast,
   useUser,
-  openPath,
 } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import chatBotSrc from "../../assets/Bot Face.mp4";
 import { aiService, AIMessage } from "../apis/aiService";
+import { openPath } from "@biqpod/app/ui/shared";
 import AnimatedMarkdownRenderer from "../components/AnimatedMarkdownRenderer";
 interface FileAttachment {
   name: string;
@@ -1063,7 +1063,6 @@ export const AgentAi = () => {
 
                   setMessages((prev) => [...prev, newMessage]);
                   setFieldValue("chat-input", "");
-
                   // Store files for AI processing before clearing
                   const attachmentsForAI =
                     selectedFiles.length > 0 ? [...selectedFiles] : undefined;
