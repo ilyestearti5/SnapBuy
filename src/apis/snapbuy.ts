@@ -10,12 +10,12 @@ export const addToCart = (storeId: string, prodId: string, count: number) => {
   setTemp(`cart.${storeId}.${prodId}.count`, count);
 };
 export const removeCart = (storeId: string, prodId: string) => {
-  var fullCart = getTempFromStore<Souqify.Order["products"]>("cart." + storeId);
+  var fullCart = getTempFromStore<Snapbuy.Order["products"]>("cart." + storeId);
   var { [prodId]: _, ...rest } = fullCart || {};
   setTemp("cart." + storeId, rest);
 };
 export const useCart = (storeId: string | Nothing) => {
-  const carts = getTemp<Souqify.Order["products"]>("cart." + storeId);
+  const carts = getTemp<Snapbuy.Order["products"]>("cart." + storeId);
   return carts;
 };
 export interface FullCartResult {

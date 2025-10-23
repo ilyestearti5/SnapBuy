@@ -31,9 +31,9 @@ import { useEffect, useMemo } from "react";
 import { snapbuyApi } from "../apis";
 import { Packs } from "./Packs";
 interface PackLineProductProps {
-  product?: Souqify.Product | null;
-  onChange?: (prod: Souqify.Product, count: number) => void;
-  onDelete?: (prod: Souqify.Product) => void;
+  product?: Snapbuy.Product | null;
+  onChange?: (prod: Snapbuy.Product, count: number) => void;
+  onDelete?: (prod: Snapbuy.Product) => void;
   count?: number;
 }
 const PackLineProduct = ({
@@ -117,13 +117,13 @@ const PackLineProduct = ({
   );
 };
 interface UpsertPackProps {
-  pack?: Souqify.Pack;
+  pack?: Snapbuy.Pack;
   back?: boolean;
 }
 export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
   const priceState = useCopyState<number | null | undefined>(0);
-  const addedProducts = useCopyState<Required<Souqify.Pack>["products"]>([]);
-  const products = getTemp<Souqify.Product[]>("fetched-products"); // Replace with your actual product data
+  const addedProducts = useCopyState<Required<Snapbuy.Pack>["products"]>([]);
+  const products = getTemp<Snapbuy.Product[]>("fetched-products"); // Replace with your actual product data
   const searchField = getFieldValue("pack-search");
   const filterdProducts = useMemo(() => {
     return filterFuzzySearch(products || [], searchField?.trim() || "", "name");
@@ -253,7 +253,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                   <AsyncComponent
                     deps={[prodRecord.prodId, addedProducts.get]}
                     render={async () => {
-                      const product = await snapbuyApi.getProduct(
+                      const product = await snapbuyApi.product.get(
                         prodRecord.prodId
                       );
                       return (
@@ -407,7 +407,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                 return;
               }
             }
-            const options: Souqify.Pack = {
+            const options: Snapbuy.Pack = {
               name: packName,
               price: priceState.get || 0,
               products: addedProducts.get,

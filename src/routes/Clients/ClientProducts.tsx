@@ -81,11 +81,11 @@ export const ClientProducts = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
   const store = useAsyncMemo(async () => {
     if (!storeId) return null;
-    return snapbuyApi.getStore(storeId);
+    return snapbuyApi.store.get(storeId);
   }, [storeId]);
   const pixles = initPixels(store);
-  const products = useCopyState<Souqify.Product[]>([]); // Replace with your actual product data
-  const lastDoc = useCopyState<Souqify.Product | null>(null);
+  const products = useCopyState<Snapbuy.Product[]>([]); // Replace with your actual product data
+  const lastDoc = useCopyState<Snapbuy.Product | null>(null);
   const action = useAction(
     "fetch-store-products",
     async (next = false) => {
@@ -95,7 +95,7 @@ export const ClientProducts = () => {
       if (next) {
         return;
       }
-      const allProducts = await snapbuyApi.getProductsOf(storeId);
+      const allProducts = await snapbuyApi.product.getProductsOf(storeId);
       if (allProducts) {
         products.set(allProducts.filter((prod) => prod.available));
       }
@@ -143,7 +143,7 @@ export const ClientProducts = () => {
   const { showPhoto } = useSearchParams();
   const colorMerge = useColorMerge();
   const packs = useAsyncMemo(async () => {
-    return snapbuyApi.getPacks(storeId);
+    return snapbuyApi.packs.getAll(storeId);
   }, [storeId]);
   const selectedTab = getTab("client-products");
   useEffect(() => {
@@ -223,7 +223,7 @@ export const ClientProducts = () => {
                 }: {
                   index: number;
                   style: React.CSSProperties;
-                  data: (Souqify.Product | number)[];
+                  data: (Snapbuy.Product | number)[];
                 }) => {
                   if (typeof data === "number") {
                     return <div style={style} />;

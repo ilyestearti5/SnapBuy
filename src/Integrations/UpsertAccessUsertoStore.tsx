@@ -30,7 +30,7 @@ type UserWithId = Biqpod.Account.User & { id: string };
 
 interface UpsertAccessUsertoStoreProps {
   storeId: string;
-  existingAccess?: Souqify.StoreUserAccess;
+  existingAccess?: Snapbuy.StoreUserAccess;
   onSuccess?: () => void;
 }
 
@@ -144,18 +144,20 @@ export const UpsertAccessUsertoStore = ({
       try {
         if (existingAccess) {
           // Update existing access
-          await snapbuyApi.updateUserAccessToStore(existingAccess.id, {
-            permissions: permissions.get as "read" | "edit",
+          await snapbuyApi.access.updateUser(existingAccess.id, {
+            permissions: permissions.get === "edit" ? "edit" : "read",
           });
           showToast("User access updated successfully", "success");
         } else {
           // Add new access
           const accessData = {
-            permissions: permissions.get as "read" | "edit",
             userId: selectedUser.get!.uid!,
+            permissions: (permissions.get === "edit" ? "edit" : "read") as
+              | "read"
+              | "edit",
           };
 
-          await snapbuyApi.addUserAccessToStore(storeId, accessData);
+          await snapbuyApi.access.addUser(storeId, accessData);
           showToast("User access invitation sent successfully", "success");
         }
 

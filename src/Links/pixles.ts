@@ -3,7 +3,7 @@ import ttq from "tiktok-pixel";
 import { getPrice } from "../utils";
 import { useMemo } from "react";
 import { Nothing } from "@biqpod/app/ui/types";
-export function initPixels(store: Souqify.Store | Nothing) {
+export function initPixels(store: Snapbuy.Store | Nothing) {
   return useMemo(() => {
     if (!store) {
       return undefined;
@@ -29,7 +29,7 @@ export function initPixels(store: Souqify.Store | Nothing) {
           search_string: value,
         });
       },
-      favorite(product: Souqify.Product) {
+      favorite(product: Snapbuy.Product) {
         fcbPixel.track("AddToWishlist", {
           content_ids: [product.id],
           content_name: product.name,
@@ -53,7 +53,7 @@ export function initPixels(store: Souqify.Store | Nothing) {
           content_name: tab,
         });
       },
-      view(product: Souqify.Product | Nothing) {
+      view(product: Snapbuy.Product | Nothing) {
         if (!product) {
           return;
         }
@@ -74,7 +74,7 @@ export function initPixels(store: Souqify.Store | Nothing) {
           currency: "DZD",
         });
       },
-      addToCart(product: Souqify.Product, count: number) {
+      addToCart(product: Snapbuy.Product, count: number) {
         const price = getPrice(product, count).total;
         fcbPixel.track("AddToCart", {
           content_ids: [product.id],
@@ -103,7 +103,7 @@ export function initPixels(store: Souqify.Store | Nothing) {
           form_id: tab,
         });
       },
-      purchase(order: Souqify.Order) {
+      purchase(order: Snapbuy.Order) {
         const prods = Object.entries(order.products || {}).map(
           ([id, product]) => ({
             id,

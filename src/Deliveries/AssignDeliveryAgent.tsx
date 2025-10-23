@@ -17,8 +17,8 @@ import {
 import { useEffect } from "react";
 import { snapbuyApi } from "../apis";
 
-export const AssignDeliveryAgent = ({ order }: { order: Souqify.Order }) => {
-  const agents = useCopyState<Souqify.Account[] | null>(null);
+export const AssignDeliveryAgent = ({ order }: { order: Snapbuy.Order }) => {
+  const agents = useCopyState<Snapbuy.Account[] | null>(null);
   const selectedAgent = useCopyState<string | null>(null);
   useEffect(() => {
     snapbuyApi.getDeliveryAgents().then(agents.set);

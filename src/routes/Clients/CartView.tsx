@@ -27,7 +27,7 @@ const CartItem: React.FC<CartItemProps> = ({
 }) => {
   const product = useAsyncMemo(async () => {
     try {
-      return await snapbuyApi.getProduct(prodId);
+      return await snapbuyApi.product.get(prodId);
     } catch (error) {
       console.error("Failed to fetch product:", error);
       return null;
@@ -164,7 +164,7 @@ export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
       totalItems += item.count;
 
       try {
-        const product = await snapbuyApi.getProduct(item.prodId);
+        const product = await snapbuyApi.product.get(item.prodId);
         if (product) {
           const price = getPrice(product, item.count);
           totalPrice += price.total;

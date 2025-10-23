@@ -30,15 +30,15 @@ import {
 import { snapbuyApi } from "../apis";
 import { delay, filterFuzzySearch, mapAsync, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo, useState } from "react";
-import { allIcons, getDownloadURL, updateFile } from "@biqpod/app/ui/apis";
+import { allIcons } from "@biqpod/app/ui/apis";
 import { getPrice } from "../utils";
 import { Nothing } from "@biqpod/app/ui/types";
 import { Collections } from "./Collections";
 import { compressImage } from "../utils/utilities";
 interface ProductRenderProps {
-  product: Souqify.Product;
-  selectedProducts: Souqify.Product[];
-  onChangeSelectedProducts?: (products: Souqify.Product[]) => void;
+  product: Snapbuy.Product;
+  selectedProducts: Snapbuy.Product[];
+  onChangeSelectedProducts?: (products: Snapbuy.Product[]) => void;
 }
 export const ProductRender = ({
   product,
@@ -96,7 +96,7 @@ export const ProductRender = ({
   );
 };
 interface UpsertCollectionProps {
-  collection?: Souqify.Collection;
+  collection?: Snapbuy.Collection;
   back?: boolean;
 }
 export const UpsertCollection = ({
@@ -208,9 +208,9 @@ export const UpsertCollection = ({
   }, []);
   const products = useAsyncMemo(async () => {
     if (!storeId) return [];
-    return await snapbuyApi.getProductsOf(storeId);
+    return await snapbuyApi.product.getProductsOf(storeId);
   }, [storeId]);
-  const selectedProducts = useCopyState<Souqify.Product[]>([]);
+  const selectedProducts = useCopyState<Snapbuy.Product[]>([]);
   const loadingProducts = useCopyState(false);
   useAsyncEffect(async () => {
     loadingProducts.set(true);
@@ -218,7 +218,7 @@ export const UpsertCollection = ({
     const products = await mapAsync(
       collection?.products || [],
       async (prodId) => {
-        const prod = await snapbuyApi.getProduct(prodId);
+        const prod = await snapbuyApi.product.get(prodId);
         return prod!;
       }
     );
@@ -318,31 +318,17 @@ export const UpsertCollection = ({
         throw new Error("Collection name is required");
       }
       const id = collection?.id || crypto.randomUUID();
-      var photo: string | null = null;
-      if (photoState.get) {
-        const blob = await fetch(photoState.get).then((r) => r.blob());
-        const ref = [
-          "projects",
-          import.meta.env.VITE_PROJECT_ID,
-          "stores",
-          storeId,
-          "collections",
-          id,
-        ];
-        await updateFile(ref, blob);
-        photo = await getDownloadURL(ref);
-      }
-      const options: Souqify.Collection = {
+      const options: Snapbuy.Collection = {
         id,
         ...collection,
         name,
         storeId,
         products: selectedProducts.get?.map((p) => p.id!) || [],
       };
-      if (photo) {
-        options.photo = photo;
+      if (photoState.get) {
+        options.photo = photoState.get;
       }
-      await snapbuyApi.upsertCollection(options);
+      await snapbuyApi.collections.upsert(options);
       closePopup();
       showToast(
         `Collection ${collection ? "updated" : "created"} successfully!`,
@@ -427,7 +413,7 @@ export const UpsertCollection = ({
                   detail: "This action cannot be undone.",
                 });
                 if (response) {
-                  snapbuyApi.deleteCollection(collection.id!);
+                  snapbuyApi.collections.delete(collection.id!);
                 }
               }}
               className="bg-[--biqpod-error] rounded-full"

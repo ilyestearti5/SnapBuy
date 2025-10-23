@@ -1,7 +1,15 @@
 {
   "hosting": {
     "public": "./dist",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "/src",
+      "/electron",
+      "/test",
+      "/assets"
+    ],
     "site": "snapbuy",
     "rewrites": [
       {

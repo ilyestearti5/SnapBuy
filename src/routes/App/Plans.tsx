@@ -30,7 +30,7 @@ export const Plans = () => {
   const storeId = useStoreId();
   const storeInfo = useAsyncMemo(async () => {
     if (!storeId) return null;
-    return await snapbuyApi.getStore(storeId);
+    return await snapbuyApi.store.get(storeId);
   }, [storeId]);
   const usageData = useAsyncMemo(async () => {
     if (storeId) {
@@ -48,7 +48,7 @@ export const Plans = () => {
     }
     return null;
   }, [storeId]);
-  const currentPayment = useAsyncMemo(async () => {
+  const currentPayments = useAsyncMemo(async () => {
     if (storeId) {
       return await snapbuyApi.usage.getCurrentPayment(storeId);
     }
@@ -65,12 +65,29 @@ export const Plans = () => {
   const couponUsage = useCopyState<number | Nothing>(0);
   const variablesUsage = useCopyState<number | Nothing>(0);
   useEffect(() => {
-    const meta = currentPayment?.meta || {};
+    // Calculate combined meta values from all active payments
+    const combinedMeta: Record<string, number> = {};
+
+    if (Array.isArray(currentPayments)) {
+      currentPayments.forEach((payment) => {
+        if (payment.meta) {
+          Object.entries(payment.meta).forEach(([key, value]) => {
+            if (typeof value === "number") {
+              combinedMeta[key] = (combinedMeta[key] || 0) + value;
+            } else if (typeof value === "string" && !isNaN(Number(value))) {
+              combinedMeta[key] = (combinedMeta[key] || 0) + Number(value);
+            }
+          });
+        }
+      });
+    }
+
     const get = (type: DataTypes) => {
-      return meta[type] !== undefined
-        ? Number(meta[type])
+      return combinedMeta[type] !== undefined
+        ? Number(combinedMeta[type])
         : usageData?.[type] || 0;
     };
+
     photosUsage.set(get("photos"));
     orderUsage.set(get("orders"));
     customersUsage.set(get("customers"));
@@ -80,7 +97,7 @@ export const Plans = () => {
     packsUsage.set(get("packs"));
     couponUsage.set(get("coupons"));
     variablesUsage.set(get("vars"));
-  }, [currentPayment, usageData]);
+  }, [currentPayments, usageData]);
   // Create a separate mapping object for state management using DataTypes
   const usageStates: Partial<Record<DataTypes, State<number | Nothing>>> = {
     photos: photosUsage,
@@ -134,7 +151,7 @@ export const Plans = () => {
     if (isYes) {
       try {
         setIsPaymentLoading(true);
-        await snapbuyApi.payUsages(storeId, usages);
+        await snapbuyApi.usage.pay(storeId, usages);
       } catch (error) {
       } finally {
         setIsPaymentLoading(false);
@@ -182,7 +199,7 @@ export const Plans = () => {
                   <Translate content="payment plan" />
                 </h1>
                 {storeInfo && (
-                  <p className="mt-1 text-gray-600 text-sm">
+                  <p className="opacity-80 mt-1 text-[--biqpod-text-color] text-sm">
                     <Translate content="for store" />: {storeInfo.name}
                   </p>
                 )}
@@ -192,104 +209,154 @@ export const Plans = () => {
           </div>
 
           {/* Subscription End Date Progress */}
-          {currentPayment?.meta?.endAt && (
-            <>
-              <Line />
-              <div className="p-4">
-                <div className="bg-[--biqpod-secondary-background] p-4 border border-[--biqpod-borders] border-solid rounded-lg">
-                  <div className="flex justify-between items-center mb-3">
-                    <div className="flex items-center gap-2">
-                      <Icon
-                        icon={allIcons.solid.faCalendarAlt}
-                        iconClassName="text-blue-500"
-                      />
-                      <span className="font-medium">
-                        <Translate content="Subscription Status" />
+          {currentPayments &&
+            Array.isArray(currentPayments) &&
+            currentPayments.length > 0 && (
+              <>
+                <Line />
+                <div className="p-4">
+                  <div className="bg-[--biqpod-secondary-background] p-4 border border-[--biqpod-borders] border-solid rounded-lg">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="flex items-center gap-2">
+                        <Icon
+                          icon={allIcons.solid.faCalendarAlt}
+                          iconClassName="text-[--biqpod-primary]"
+                        />
+                        <span className="font-medium">
+                          <Translate content="Active Subscriptions" />
+                        </span>
+                      </div>
+                      <span className="opacity-70 text-[--biqpod-text-color] text-sm">
+                        {currentPayments.length} active
                       </span>
                     </div>
-                    <span className="text-sm text-gray-500">
-                      <Translate content="Ends:" />{" "}
-                      {new Date(Number(currentPayment.meta.endAt)).toLocaleDateString()}
-                    </span>
+
+                    {/* Show each subscription */}
+                    <div className="space-y-3">
+                      {currentPayments.map((payment, index) => {
+                        if (!payment.meta?.endAt) return null;
+
+                        const now = Date.now();
+                        const endTime = Number(payment.meta.endAt);
+                        const startTime = payment.createdAt
+                          ? new Date(payment.createdAt).getTime()
+                          : now;
+                        const totalDuration = endTime - startTime;
+                        const elapsed = now - startTime;
+                        const remaining = Math.max(0, endTime - now);
+                        const progressPercentage =
+                          totalDuration > 0
+                            ? Math.min((elapsed / totalDuration) * 100, 100)
+                            : 0;
+                        const daysRemaining = Math.ceil(
+                          remaining / (1000 * 60 * 60 * 24)
+                        );
+                        const isExpired = now >= endTime;
+
+                        // Determine colors based on status
+                        const bgColor = isExpired
+                          ? "bg-red-100"
+                          : progressPercentage >= 80
+                          ? "bg-[--biqpod-secondary-background]"
+                          : "bg-green-100";
+                        const barColor = isExpired
+                          ? "bg-red-500"
+                          : progressPercentage >= 80
+                          ? "bg-[--biqpod-primary]"
+                          : "bg-green-500";
+                        const textColor = isExpired
+                          ? "text-red-600"
+                          : progressPercentage >= 80
+                          ? "text-[--biqpod-primary]"
+                          : "text-green-600";
+
+                        // Determine remaining time text
+                        let remainingText = "";
+                        if (isExpired) {
+                          remainingText = "Expired";
+                        } else if (daysRemaining === 1) {
+                          remainingText = "1 day remaining";
+                        } else if (daysRemaining > 0) {
+                          remainingText = `${daysRemaining} days remaining`;
+                        } else {
+                          remainingText = "Less than 1 day remaining";
+                        }
+
+                        return (
+                          <div
+                            key={index}
+                            className="p-3 border border-[--biqpod-borders] rounded"
+                          >
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-medium text-sm capitalize">
+                                <Translate content="subscription" /> #
+                                {index + 1}
+                              </span>
+                              <span className="opacity-70 text-[--biqpod-text-color] text-xs">
+                                <Translate content="Ends:" />{" "}
+                                {new Date(endTime).toLocaleDateString()}
+                              </span>
+                            </div>
+                            <div className="w-full">
+                              <div
+                                className={`w-full h-2 rounded-full ${bgColor}`}
+                              >
+                                <div
+                                  className={`h-2 rounded-full transition-all duration-300 ${barColor}`}
+                                  style={{
+                                    width: `${Math.min(
+                                      progressPercentage,
+                                      100
+                                    )}%`,
+                                  }}
+                                />
+                              </div>
+                              <div className="flex justify-between items-center mt-1">
+                                <span className="opacity-70 text-[--biqpod-text-color] text-xs">
+                                  {remainingText === "Expired" ||
+                                  remainingText === "1 day remaining" ||
+                                  remainingText ===
+                                    "Less than 1 day remaining" ? (
+                                    <Translate content={remainingText} />
+                                  ) : (
+                                    remainingText
+                                  )}
+                                </span>
+                                <span
+                                  className={`text-xs font-medium ${textColor}`}
+                                >
+                                  {progressPercentage.toFixed(1)}%
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                  
-                  {/* Calculate subscription progress values */}
-                  {(() => {
-                    const now = Date.now();
-                    const endTime = Number(currentPayment.meta.endAt);
-                    const startTime = currentPayment.createdAt ? new Date(currentPayment.createdAt).getTime() : now;
-                    const totalDuration = endTime - startTime;
-                    const elapsed = now - startTime;
-                    const remaining = Math.max(0, endTime - now);
-                    const progressPercentage = totalDuration > 0 ? Math.min((elapsed / totalDuration) * 100, 100) : 0;
-                    const daysRemaining = Math.ceil(remaining / (1000 * 60 * 60 * 24));
-                    const isExpired = now >= endTime;
-
-                    // Determine colors based on status
-                    const bgColor = isExpired ? 'bg-red-100' : progressPercentage >= 80 ? 'bg-orange-100' : 'bg-green-100';
-                    const barColor = isExpired ? 'bg-red-500' : progressPercentage >= 80 ? 'bg-orange-500' : 'bg-green-500';
-                    const textColor = isExpired ? 'text-red-600' : progressPercentage >= 80 ? 'text-orange-600' : 'text-green-600';
-
-                    // Determine remaining time text
-                    let remainingText = '';
-                    if (isExpired) {
-                      remainingText = 'Expired';
-                    } else if (daysRemaining === 1) {
-                      remainingText = '1 day remaining';
-                    } else if (daysRemaining > 0) {
-                      remainingText = `${daysRemaining} days remaining`;
-                    } else {
-                      remainingText = 'Less than 1 day remaining';
-                    }
-
-                    return (
-                      <div>
-                        <div className="w-full">
-                          <div className={`w-full h-3 rounded-full ${bgColor}`}>
-                            <div
-                              className={`h-3 rounded-full transition-all duration-300 ${barColor}`}
-                              style={{ width: `${Math.min(progressPercentage, 100)}%` }}
-                            />
-                          </div>
-                          <div className="flex justify-between items-center mt-2">
-                            <span className="text-gray-500 text-xs">
-                              {remainingText === 'Expired' || remainingText === '1 day remaining' || remainingText === 'Less than 1 day remaining' ? (
-                                <Translate content={remainingText} />
-                              ) : (
-                                remainingText
-                              )}
-                            </span>
-                            <span className={`text-xs font-medium ${textColor}`}>
-                              {progressPercentage.toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })()}
-
                 </div>
-              </div>
-            </>
-          )}
+              </>
+            )}
 
           <Line />
           <div className="p-4">
             <div className="space-y-4">
               {!pricesData ? (
-                <div className="text-gray-500 text-center">
+                <div className="opacity-70 text-[--biqpod-text-color] text-center">
                   Loading prices data...
                 </div>
-              ) : !currentPayment ? (
+              ) : !currentPayments ||
+                !Array.isArray(currentPayments) ||
+                currentPayments.length === 0 ? (
                 <div className="py-8 text-center">
                   <Icon
                     icon={allIcons.solid.faChartBar}
-                    iconClassName="mx-auto mb-3 text-4xl text-gray-300"
+                    iconClassName="mx-auto mb-3 text-4xl text-[--biqpod-text-color] opacity-40"
                   />
-                  <p className="text-gray-500">
+                  <p className="opacity-70 text-[--biqpod-text-color]">
                     <Translate content="No active payment plan found" />
                   </p>
-                  <p className="mt-1 text-gray-400 text-sm">
+                  <p className="opacity-60 mt-1 text-[--biqpod-text-color] text-sm">
                     <Translate content="Purchase a plan to see your usage statistics" />
                   </p>
                 </div>
@@ -297,12 +364,21 @@ export const Plans = () => {
                 pricesData.map((price, index) => {
                   const current = usageData?.[price.type] || 0;
                   const cost = current * (price.extraPrice || 0);
-                  // Get usage limits from current payment meta data
+                  // Get usage limits from all active payments meta data combined
                   const getUsageLimit = (type: string): number | null => {
-                    if (currentPayment?.meta && currentPayment.meta[type]) {
-                      return Number(currentPayment.meta[type]);
+                    let totalLimit = 0;
+                    let hasAnyLimit = false;
+
+                    if (Array.isArray(currentPayments)) {
+                      currentPayments.forEach((payment) => {
+                        if (payment?.meta && payment.meta[type]) {
+                          totalLimit += Number(payment.meta[type]);
+                          hasAnyLimit = true;
+                        }
+                      });
                     }
-                    return null;
+
+                    return hasAnyLimit ? totalLimit : null;
                   };
                   const limit = getUsageLimit(price.type);
                   const percentage = limit
@@ -311,13 +387,14 @@ export const Plans = () => {
                   // Determine progress bar color based on usage percentage
                   const getProgressColor = (percent: number) => {
                     if (percent >= 80) return "bg-red-500"; // High usage - red
-                    if (percent >= 50) return "bg-orange-500"; // Medium usage - orange
-                    return "bg-blue-500"; // Low usage - blue
+                    if (percent >= 50) return "bg-[--biqpod-primary]"; // Medium usage - biqpod primary
+                    return "bg-blue-500"; // Low usage - blue (keeping blue as it's not red/green)
                   };
                   const getProgressBgColor = (percent: number) => {
                     if (percent >= 80) return "bg-red-100"; // High usage - light red bg
-                    if (percent >= 50) return "bg-orange-100"; // Medium usage - light orange bg
-                    return "bg-blue-100"; // Low usage - light blue bg
+                    if (percent >= 50)
+                      return "bg-[--biqpod-secondary-background]"; // Medium usage - biqpod secondary bg
+                    return "bg-blue-100"; // Low usage - light blue bg (keeping blue as it's not red/green)
                   };
                   return (
                     <div key={price.type} className="space-y-2">
@@ -335,7 +412,7 @@ export const Plans = () => {
                         )}
                         {usageData !== null && (
                           <div className="text-right">
-                            <span className="text-gray-500 text-sm">
+                            <span className="opacity-70 text-[--biqpod-text-color] text-sm">
                               {current} used x {price.extraPrice} DA
                             </span>
                             <div className="font-medium text-sm">
@@ -360,7 +437,7 @@ export const Plans = () => {
                             />
                           </div>
                           <div className="flex justify-between items-center mt-1">
-                            <span className="text-gray-500 text-xs">
+                            <span className="opacity-70 text-[--biqpod-text-color] text-xs">
                               {current} / {limit}
                             </span>
                             <span
@@ -368,7 +445,7 @@ export const Plans = () => {
                                 percentage >= 80
                                   ? "text-red-600"
                                   : percentage >= 50
-                                  ? "text-orange-600"
+                                  ? "text-[--biqpod-primary]"
                                   : "text-blue-600"
                               }`}
                             >
@@ -406,10 +483,25 @@ export const Plans = () => {
                     <h2 className="font-bold text-xl">
                       <Translate content="Payment Breakdown" />
                     </h2>
+                    <CircleTip
+                      onClick={() => {
+                        // Set all usage states to current usage values
+                        photosUsage.set(usageData?.photos || 0);
+                        orderUsage.set(usageData?.orders || 0);
+                        customersUsage.set(usageData?.customers || 0);
+                        productsUsage.set(usageData?.products || 0);
+                        brandsUsage.set(usageData?.brands || 0);
+                        collectionsUsage.set(usageData?.collections || 0);
+                        packsUsage.set(usageData?.packs || 0);
+                        couponUsage.set(usageData?.coupons || 0);
+                        variablesUsage.set(usageData?.vars || 0);
+                      }}
+                      icon={allIcons.solid.faSync}
+                    />
                   </div>
                   <div className="space-y-4">
                     {!pricesData ? (
-                      <div className="text-gray-500 text-center">
+                      <div className="opacity-70 text-[--biqpod-text-color] text-center">
                         Loading prices data...
                       </div>
                     ) : (
@@ -437,7 +529,7 @@ export const Plans = () => {
                                 >
                                   <Icon
                                     icon={allIcons.solid.faCircleInfo}
-                                    iconClassName="text-gray-400 text-sm hover:text-gray-600 transition-colors"
+                                    iconClassName="text-[--biqpod-text-color] text-sm opacity-60 hover:opacity-80 transition-colors"
                                   />
                                   {tooltipVisible === price.type && (
                                     <div
@@ -461,7 +553,7 @@ export const Plans = () => {
                                   )}
                                 </div>
                               </div>
-                              <span className="text-gray-500 text-sm">
+                              <span className="opacity-70 text-[--biqpod-text-color] text-sm">
                                 {cost.toFixed(2)} DA
                               </span>
                             </div>
@@ -495,7 +587,6 @@ export const Plans = () => {
                                     />
                                   </div>
                                 </div>
-
                               </div>
                             )}
                           </div>
@@ -536,7 +627,7 @@ export const Plans = () => {
               <CircleTip
                 onClick={() => setShowPaymentHistory(!showPaymentHistory)}
                 icon={allIcons.solid.faHistory}
-                iconClassName="text-gray-600"
+                iconClassName="text-[--biqpod-text-color] opacity-70"
               />
             </div>
           </div>
@@ -555,7 +646,7 @@ export const Plans = () => {
                     {!paymentHistory ? (
                       <div className="text-center">
                         <CircleLoading />
-                        <p className="mt-2 text-gray-500 text-sm">
+                        <p className="opacity-70 mt-2 text-[--biqpod-text-color] text-sm">
                           <Translate content="Loading payment history..." />
                         </p>
                       </div>
@@ -563,12 +654,12 @@ export const Plans = () => {
                       <div className="py-8 text-center">
                         <Icon
                           icon={allIcons.solid.faReceipt}
-                          iconClassName="mx-auto mb-3 text-4xl text-gray-300"
+                          iconClassName="mx-auto mb-3 text-4xl text-[--biqpod-text-color] opacity-40"
                         />
-                        <p className="text-gray-500">
+                        <p className="opacity-70 text-[--biqpod-text-color]">
                           <Translate content="No payment history found" />
                         </p>
-                        <p className="mt-1 text-gray-400 text-sm">
+                        <p className="opacity-60 mt-1 text-[--biqpod-text-color] text-sm">
                           <Translate content="Your payment transactions will appear here" />
                         </p>
                       </div>
@@ -599,7 +690,7 @@ export const Plans = () => {
                                       payment.status?.includes("paid") ||
                                       payment.status?.includes("complete")
                                         ? "text-green-500 text-sm"
-                                        : "text-yellow-500 text-sm"
+                                        : "text-[--biqpod-primary] text-sm"
                                     }
                                   />
                                   <div className="flex-1">
@@ -615,7 +706,7 @@ export const Plans = () => {
                                       />
                                     </span>
                                     {(payment.payedAt || payment.createdAt) && (
-                                      <p className="mt-1 text-gray-500 text-xs">
+                                      <p className="opacity-70 mt-1 text-[--biqpod-text-color] text-xs">
                                         {new Date(
                                           payment.payedAt || payment.createdAt!
                                         ).toLocaleDateString()}
@@ -641,8 +732,8 @@ export const Plans = () => {
                                               payment.status.includes(
                                                 "processing"
                                               )
-                                            ? "text-yellow-500"
-                                            : "text-gray-500"
+                                            ? "text-[--biqpod-primary]"
+                                            : "text-[--biqpod-text-color] opacity-70"
                                         }`}
                                       >
                                         {payment.status}
@@ -655,7 +746,7 @@ export const Plans = () => {
                                     }
                                     icon={allIcons.solid.faChevronDown}
                                     iconClassName={tw(
-                                      "text-gray-400 text-sm transition-transform duration-200",
+                                      "text-[--biqpod-text-color] text-sm opacity-60 transition-transform duration-200",
                                       isExpanded && "rotate-180"
                                     )}
                                   />
@@ -674,7 +765,7 @@ export const Plans = () => {
                                     <div className="mt-3 pt-3 border-[--biqpod-borders] border-t">
                                       {/* Payment ID */}
                                       {payment.payoutId && (
-                                        <p className="mb-2 text-gray-400 text-xs">
+                                        <p className="opacity-60 mb-2 text-[--biqpod-text-color] text-xs">
                                           <Translate content="Payment ID:" />{" "}
                                           {payment.payoutId}
                                         </p>
@@ -682,7 +773,7 @@ export const Plans = () => {
                                       {/* Full Date and Time */}
                                       {(payment.payedAt ||
                                         payment.createdAt) && (
-                                        <p className="mb-2 text-gray-500 text-xs">
+                                        <p className="opacity-70 mb-2 text-[--biqpod-text-color] text-xs">
                                           <Translate content="Date:" />{" "}
                                           {new Date(
                                             payment.payedAt ||
@@ -706,7 +797,7 @@ export const Plans = () => {
                                       )}
                                       {/* Transaction Note */}
                                       {payment.transaction?.note && (
-                                        <p className="mb-2 text-gray-600 text-xs">
+                                        <p className="opacity-80 mb-2 text-[--biqpod-text-color] text-xs">
                                           <Translate content="Note:" />{" "}
                                           {payment.transaction.note}
                                         </p>
@@ -714,11 +805,11 @@ export const Plans = () => {
                                       {/* Subscription Info */}
                                       {payment.subscription && (
                                         <div className="mb-2">
-                                          <p className="text-gray-600 text-xs">
+                                          <p className="opacity-80 text-[--biqpod-text-color] text-xs">
                                             <Translate content="Subscription:" />{" "}
                                             {payment.subscription.label}
                                           </p>
-                                          <p className="text-gray-500 text-xs">
+                                          <p className="opacity-70 text-[--biqpod-text-color] text-xs">
                                             <Translate content="Duration:" />{" "}
                                             {payment.subscription.duration /
                                               60 /
@@ -732,16 +823,22 @@ export const Plans = () => {
                                       {/* Subscription End Date */}
                                       {payment.meta?.endAt && (
                                         <div className="mb-2">
-                                          <p className="text-gray-600 text-xs">
+                                          <p className="opacity-80 text-[--biqpod-text-color] text-xs">
                                             <Translate content="Subscription End Date:" />{" "}
-                                            {new Date(Number(payment.meta.endAt)).toLocaleDateString()}{" "}
-                                            {new Date(Number(payment.meta.endAt)).toLocaleTimeString()}
+                                            {new Date(
+                                              Number(payment.meta.endAt)
+                                            ).toLocaleDateString()}{" "}
+                                            {new Date(
+                                              Number(payment.meta.endAt)
+                                            ).toLocaleTimeString()}
                                           </p>
                                           {(() => {
                                             const now = Date.now();
-                                            const endTime = Number(payment.meta.endAt);
+                                            const endTime = Number(
+                                              payment.meta.endAt
+                                            );
                                             const wasExpired = now >= endTime;
-                                            
+
                                             return (
                                               <div className="mt-1">
                                                 <span
@@ -751,7 +848,13 @@ export const Plans = () => {
                                                       : "bg-green-500/25 text-green-500"
                                                   }`}
                                                 >
-                                                  <Translate content={wasExpired ? "Expired" : "Active"} />
+                                                  <Translate
+                                                    content={
+                                                      wasExpired
+                                                        ? "Expired"
+                                                        : "Active"
+                                                    }
+                                                  />
                                                 </span>
                                               </div>
                                             );
@@ -761,7 +864,7 @@ export const Plans = () => {
                                       {/* Product Info */}
                                       {payment.product && (
                                         <div className="mb-2">
-                                          <p className="text-gray-600 text-xs">
+                                          <p className="opacity-80 text-[--biqpod-text-color] text-xs">
                                             <Translate content="Product:" />{" "}
                                             {payment.product.name}
                                           </p>
@@ -772,7 +875,7 @@ export const Plans = () => {
                                         Object.keys(payment.meta).length >
                                           0 && (
                                           <div className="mb-2">
-                                            <p className="mb-1 text-gray-600 text-xs">
+                                            <p className="opacity-80 mb-1 text-[--biqpod-text-color] text-xs">
                                               <Translate content="Usage breakdown:" />
                                             </p>
                                             <div className="flex flex-wrap gap-2">
@@ -809,7 +912,7 @@ export const Plans = () => {
                                             className={`px-2 py-1 rounded text-xs ${
                                               payment.mode === "live"
                                                 ? "bg-green-500/25 text-green-500"
-                                                : "bg-yellow-500/25 text-yellow-500"
+                                                : "bg-[--biqpod-primary]/25 text-[--biqpod-primary]"
                                             }`}
                                           >
                                             <Translate content="Mode:" />{" "}

@@ -28,7 +28,7 @@ import { filterFuzzySearch, range, tw } from "@biqpod/app/ui/utils";
 import { useFetchMoreAction } from "../utils";
 import { useEffect, useMemo } from "react";
 export interface UpsertDeliveryProps {
-  order: Souqify.Order;
+  order: Snapbuy.Order;
 }
 export interface DeliveryUser {
   uid?: string;

@@ -87,10 +87,10 @@ function highlightMatch(
   return result;
 }
 interface SetStorePlatformsProps {
-  store: Souqify.Store;
+  store: Snapbuy.Store;
 }
 export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
-  const platforms = useCopyState<Souqify.Store["platforms"]>(
+  const platforms = useCopyState<Snapbuy.Store["platforms"]>(
     store.platforms || {}
   );
   const isEditing = useCopyState<string | null>(null);
@@ -149,11 +149,11 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
     platforms.set(updatedPlatforms);
     isEditing.set(null);
     try {
-      await snapbuyApi.updateStore(store.id, { platforms: updatedPlatforms });
+      await snapbuyApi.store.update(store.id, { platforms: updatedPlatforms });
       justAdded.set(platformId);
       setTimeout(() => justAdded.set(null), 1000); // Clear success state after 1 second
       showToast("Platform updated successfully", "success");
-      execAction("print-stores");
+      execAction("fetch-my-stores");
     } catch (error) {
       showToast("Failed to update platform", "error");
       console.error(error);
@@ -167,9 +167,9 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
     delete (updatedPlatforms as any)[platformId];
     platforms.set(updatedPlatforms);
     try {
-      await snapbuyApi.updateStore(store.id, { platforms: updatedPlatforms });
+      await snapbuyApi.store.update(store.id, { platforms: updatedPlatforms });
       showToast("Platform removed successfully", "success");
-      execAction("print-stores");
+      execAction("fetch-my-stores");
     } catch (error) {
       showToast("Failed to remove platform", "error");
       console.error(error);

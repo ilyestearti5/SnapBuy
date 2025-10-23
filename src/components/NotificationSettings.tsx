@@ -318,7 +318,7 @@ export const NotificationSettings: React.FC = () => {
   // Get store data
   const store = useAsyncMemo(async () => {
     if (!storeId) return null;
-    return await snapbuyApi.getStore(storeId);
+    return await snapbuyApi.store.get(storeId);
   }, [storeId]);
   // Check notification permission status
   useEffect(() => {
@@ -343,13 +343,13 @@ export const NotificationSettings: React.FC = () => {
     }
   };
   const [notifications, setNotifications] = useState<
-    Required<Souqify.Store>["notify"]
+    Required<Snapbuy.Store>["notify"]
   >({});
   const [originalNotifications, setOriginalNotifications] = useState<
-    Required<Souqify.Store>["notify"]
+    Required<Snapbuy.Store>["notify"]
   >({});
   const updateNotificationSetting = async (
-    setting: keyof NonNullable<Souqify.Store["notify"]>,
+    setting: keyof NonNullable<Snapbuy.Store["notify"]>,
     enabled: boolean
   ) => {
     const newNotifications = {
@@ -366,7 +366,7 @@ export const NotificationSettings: React.FC = () => {
     try {
       await notificationService.sendNotification({
         title: "🛒 Test Notification",
-        body: "This is a test notification from Souqify!",
+        body: "This is a test notification from Snapbuy!",
         icon: "/assets/snapbuy.png",
         tag: "test-notification",
       });
@@ -389,7 +389,7 @@ export const NotificationSettings: React.FC = () => {
       setIsLoading(true);
       try {
         // Update store in database
-        await snapbuyApi.updateStore(storeId, {
+        await snapbuyApi.store.update(storeId, {
           notify: notifications,
         });
         // Update original notifications to match current ones
@@ -567,7 +567,7 @@ export const NotificationSettings: React.FC = () => {
   // Only show changes after the component is initialized with data
   const hasUnsavedChanges = useMemo(() => {
     if (!isInited.get) return false; // Don't show changes until data is loaded
-    const list: (keyof NonNullable<Souqify.Store["notify"]>)[] = [
+    const list: (keyof NonNullable<Snapbuy.Store["notify"]>)[] = [
       "newOrder",
       "orderStatusChanged",
       "orderCompleted",

@@ -20,7 +20,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef } from "react";
-import { snapbuyApi, souqifyApi } from "../../apis";
+import { snapbuyApi } from "../../apis";
 import { useStoreId } from "../../utils";
 // Animation variants
 const containerVariants = {
@@ -65,7 +65,7 @@ const templateCardVariants = {
 export const Templates = () => {
   const storeId = useStoreId();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const templates = useCopyState<Souqify.Template[]>([]);
+  const templates = useCopyState<Snapbuy.Template[]>([]);
   const searchQuery = getFieldValue("template-search");
   const hasMore = useCopyState(true);
   const isLoadingMore = useCopyState(false);
@@ -89,7 +89,7 @@ export const Templates = () => {
           isInitialLoad.set(true);
         }
         // Get templates from API
-        const newTemplates = await souqifyApi.getAllTemplates(
+        const newTemplates = await snapbuyApi.templates.getAll(
           startAtDoc,
           limit
         );
@@ -139,7 +139,7 @@ export const Templates = () => {
     "load-paid-templates",
     async () => {
       try {
-        const paidTemplateIds = await snapbuyApi.getPayedTemplates();
+        const paidTemplateIds = await snapbuyApi.templates.getPayed();
         paidTemplates.set(paidTemplateIds || []);
       } catch (error) {
         console.error("Error loading paid templates:", error);
@@ -186,7 +186,7 @@ export const Templates = () => {
         }
         paymentLoading.set(templateId);
         // Get template details for confirmation
-        const template = await souqifyApi.getTemplate(templateId);
+        const template = await snapbuyApi.templates.get(templateId);
         if (!template) {
           showToast("Template not found", "error");
           return;
@@ -203,12 +203,12 @@ export const Templates = () => {
           type: "question",
         });
         if (!response) return;
-        await snapbuyApi.payTemplate(templateId);
+        await snapbuyApi.templates.pay(templateId);
         showToast("Template purchased and applied successfully!", "success");
         // Add the template to paid templates list
         paidTemplates.set([...paidTemplates.get, templateId]);
         // Refresh the store data
-        execAction("print-stores");
+        execAction("fetch-my-stores");
       } catch (error) {
         console.error("Error purchasing template:", error);
         showToast("Failed to purchase template", "error");

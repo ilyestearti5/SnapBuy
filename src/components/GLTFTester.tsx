@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Button, Card, Input, Line } from "@biqpod/app/ui/components";
 import { GLTFRenderer } from "./GLTFRenderer";
 import { MediaRenderer } from "./MediaRenderer";
-import { isGLTFFile, isImageFile } from "../utils/utilities";
+import { isGLTFFile } from "../utils/utilities";
 
 export const GLTFTester: React.FC = () => {
   const [testUrl, setTestUrl] = useState("");
@@ -58,12 +58,6 @@ export const GLTFTester: React.FC = () => {
               Is GLTF:{" "}
               <code className="bg-gray-100 p-1 rounded">
                 {isGLTFFile(testUrl).toString()}
-              </code>
-            </div>
-            <div>
-              Is Image:{" "}
-              <code className="bg-gray-100 p-1 rounded">
-                {isImageFile(testUrl).toString()}
               </code>
             </div>
           </div>

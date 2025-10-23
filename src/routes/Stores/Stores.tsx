@@ -294,7 +294,7 @@ export function useUsedBy(
   const currentUser = user === undefined ? useUser() : user;
   const usedBy = useAsyncMemo(async () => {
     if (!storeId || !currentUser) return null;
-    const store = await snapbuyApi.getStore(storeId);
+    const store = await snapbuyApi.store.get(storeId);
     if (!store) return null;
     if (store.uid === currentUser.uid) return "owned";
     const accesses = await snapbuyApi.hasAccessToStore(storeId);
@@ -308,13 +308,13 @@ export function useUsedBy(
 
 export const Stores = () => {
   const storeId = useStoreId();
-  const storesState = useCopyState<Souqify.Store[]>([]);
-  const invitedStoresState = useCopyState<Souqify.Store[]>([]);
+  const storesState = useCopyState<Snapbuy.Store[]>([]);
+  const invitedStoresState = useCopyState<Snapbuy.Store[]>([]);
   // Helper function to show delivery prices view
   const action = useAction(
-    "print-stores",
+    "fetch-my-stores",
     async () => {
-      const stores = await snapbuyApi.getStores();
+      const stores = await snapbuyApi.store.getAll();
       storesState.set(stores);
     },
     []
@@ -333,7 +333,7 @@ export const Stores = () => {
         showToast("Please enter store phone", "error");
         return;
       }
-      const store: Souqify.Store = {
+      const store: Snapbuy.Store = {
         name: storeName,
         phone: storePhone,
         id: id || Date.now().toString(),
@@ -344,17 +344,17 @@ export const Stores = () => {
       }
       await delay(1000);
       if (id) {
-        await snapbuyApi.updateStore(id, store);
+        await snapbuyApi.store.update(id, store);
         showToast("Store updated successfully", "success");
       } else {
-        await snapbuyApi.addStore(store);
+        await snapbuyApi.store.add(store);
         showToast("Store added successfully", "success");
       }
       closePopup();
       setFieldValue("store-name", "");
       setFieldValue("store-phone", "");
       setTemp("store-photo", null);
-      execAction("print-stores");
+      execAction("fetch-my-stores");
     },
     [storeName, storePhone, storePhoto]
   );
@@ -364,14 +364,14 @@ export const Stores = () => {
     "load-invited-stores",
     async () => {
       if (!user) return;
-      const invitedStores = await snapbuyApi.getInvitedStoresForUser();
+      const invitedStores = await snapbuyApi.access.getInvitedStores();
       invitedStoresState.set(invitedStores);
     },
     [user]
   );
   useEffect(() => {
     if (user) {
-      execAction("print-stores");
+      execAction("fetch-my-stores");
       execAction("load-invited-stores");
     }
   }, [user]);
@@ -379,10 +379,10 @@ export const Stores = () => {
     "delete-store",
     async (storeId: string) => {
       setTemp("deletion-store", storeId);
-      await snapbuyApi.deleteStore(storeId);
+      await snapbuyApi.store.delete(storeId);
       showToast("Store deleted successfully", "success");
       setTemp("deletion-store", null);
-      execAction("print-stores");
+      execAction("fetch-my-stores");
     },
     []
   );
@@ -445,7 +445,7 @@ export const Stores = () => {
                                     src={store.photo}
                                     alt={
                                       <div className="flex justify-center items-center font-bold">
-                                        <i className="rotate-12">Souqify</i>
+                                        <i className="rotate-12">Snapbuy</i>
                                       </div>
                                     }
                                   />
@@ -552,7 +552,7 @@ export const Stores = () => {
                                             );
                                             try {
                                               const products =
-                                                await snapbuyApi.getProductsOf(
+                                                await snapbuyApi.product.getProductsOf(
                                                   store.id
                                                 );
                                               if (
@@ -573,7 +573,7 @@ export const Stores = () => {
                                                 await Promise.all(
                                                   products.map(
                                                     async (
-                                                      product: Souqify.Product
+                                                      product: Snapbuy.Product
                                                     ) => {
                                                       const updatedProduct = {
                                                         ...product,
@@ -719,7 +719,7 @@ export const Stores = () => {
                                   </div>
                                   <div className="flex justify-center">
                                     {pixels.map(([pixel, value]) => {
-                                      const pixelId = pixel as Souqify.PixelId;
+                                      const pixelId = pixel as Snapbuy.PixelId;
                                       const photo = pixelsPhoto[pixel];
                                       return (
                                         <motion.div
@@ -781,7 +781,7 @@ export const Stores = () => {
                                                             null
                                                           );
                                                           execAction(
-                                                            "print-stores"
+                                                            "fetch-my-stores"
                                                           );
                                                         }
                                                       }}
@@ -927,7 +927,7 @@ export const Stores = () => {
                                     src={store.photo}
                                     alt={
                                       <div className="flex justify-center items-center font-bold">
-                                        <i className="rotate-12">Souqify</i>
+                                        <i className="rotate-12">Snapbuy</i>
                                       </div>
                                     }
                                   />
@@ -1010,7 +1010,7 @@ export const Stores = () => {
                                             });
                                             if (response) {
                                               // Find and remove the access record
-                                              await snapbuyApi.leaveStoreAccess(
+                                              await snapbuyApi.access.leave(
                                                 store.id
                                               );
                                               execAction("load-invited-stores");

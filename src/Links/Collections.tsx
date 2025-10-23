@@ -95,12 +95,12 @@ export function highlightMatch(
 export const Collections = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const collections = useCopyState<Souqify.Collection[]>([]);
+  const collections = useCopyState<Snapbuy.Collection[]>([]);
   useAction(
     "fetch-collections",
     async () => {
       if (!storeId) return;
-      const data = await snapbuyApi.getCollections(storeId);
+      const data = await snapbuyApi.collections.getAll(storeId);
       collections.set(data);
     },
     [storeId]
@@ -235,7 +235,7 @@ export const Collections = () => {
                                             message: `Are you sure you want to delete the collection "${collection.name}"? This action cannot be undone.`,
                                           });
                                           if (!response) return;
-                                          await snapbuyApi.deleteCollection(
+                                          await snapbuyApi.collections.delete(
                                             collection.id!
                                           );
                                           showToast(

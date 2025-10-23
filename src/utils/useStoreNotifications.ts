@@ -11,7 +11,7 @@ export const useStoreNotifications = () => {
   // Get store data including notification settings
   const store = useAsyncMemo(async () => {
     if (!storeId) return null;
-    return await snapbuyApi.getStore(storeId);
+    return await snapbuyApi.store.get(storeId);
   }, [storeId]);
 
   // Create notification handler instance
@@ -45,25 +45,25 @@ export const useStoreNotifications = () => {
     notifySettings: store?.notify || {},
 
     // Helper methods to trigger notifications
-    notifyNewOrder: (order: Souqify.Order) =>
+    notifyNewOrder: (order: Snapbuy.Order) =>
       notificationHandler?.notifyNewOrder(order),
     notifyOrderStatusChanged: (
-      order: Souqify.Order,
-      oldStatus: Souqify.OrderStatus
+      order: Snapbuy.Order,
+      oldStatus: Snapbuy.OrderStatus
     ) => notificationHandler?.notifyOrderStatusChanged(order, oldStatus),
-    notifyOrderCompleted: (order: Souqify.Order) =>
+    notifyOrderCompleted: (order: Snapbuy.Order) =>
       notificationHandler?.notifyOrderCompleted(order),
-    notifyOrderCancelled: (order: Souqify.Order) =>
+    notifyOrderCancelled: (order: Snapbuy.Order) =>
       notificationHandler?.notifyOrderCancelled(order),
-    notifyOrderProcessing: (order: Souqify.Order) =>
+    notifyOrderProcessing: (order: Snapbuy.Order) =>
       notificationHandler?.notifyOrderProcessing(order),
-    notifyOrderDelivery: (order: Souqify.Order) =>
+    notifyOrderDelivery: (order: Snapbuy.Order) =>
       notificationHandler?.notifyOrderDelivery(order),
-    notifyLowStock: (product: Souqify.Product) =>
+    notifyLowStock: (product: Snapbuy.Product) =>
       notificationHandler?.notifyLowStock(product),
-    notifyNewProduct: (product: Souqify.Product) =>
+    notifyNewProduct: (product: Snapbuy.Product) =>
       notificationHandler?.notifyNewProduct(product),
-    notifyNewClient: (client: Souqify.Client) =>
+    notifyNewClient: (client: Snapbuy.Client) =>
       notificationHandler?.notifyNewClient(client),
   };
 };
@@ -72,14 +72,14 @@ export const useStoreNotifications = () => {
 // const MyComponent = () => {
 //   const { notifyNewOrder, notifyOrderStatusChanged, notifySettings } = useStoreNotifications();
 //
-//   const handleNewOrder = (order: Souqify.Order) => {
+//   const handleNewOrder = (order: Snapbuy.Order) => {
 //     // Your existing order logic...
 //
 //     // Trigger notification if enabled
 //     notifyNewOrder(order);
 //   };
 //
-//   const handleStatusChange = (order: Souqify.Order, oldStatus: Souqify.OrderStatus) => {
+//   const handleStatusChange = (order: Snapbuy.Order, oldStatus: Snapbuy.OrderStatus) => {
 //     // Your existing status change logic...
 //
 //     // Trigger notification if enabled

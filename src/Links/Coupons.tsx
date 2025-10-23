@@ -234,7 +234,7 @@ const CouponRender = memo(
     searchTerm,
     usedBy,
   }: {
-    coupon: Souqify.Coupon;
+    coupon: Snapbuy.Coupon;
     searchTerm?: string;
     usedBy: string | null;
   }) => {
@@ -407,8 +407,8 @@ const CouponRender = memo(
 );
 export const Coupons = () => {
   const user = useUser();
-  const coupons = useTemp<Souqify.Coupon[]>("fetched-coupons");
-  const lastDoc = useCopyState<Souqify.Coupon | null>(null);
+  const coupons = useTemp<Snapbuy.Coupon[]>("fetched-coupons");
+  const lastDoc = useCopyState<Snapbuy.Coupon | null>(null);
   const hasMore = useCopyState(true);
   const storeId = useStoreId();
   const usedBy = useUsedBy();
@@ -417,7 +417,7 @@ export const Coupons = () => {
     "fetch-coupons",
     async (next = false) => {
       if (!storeId) return;
-      const newCoupons = await getDocs<Souqify.Coupon>(
+      const newCoupons = await getDocs<Snapbuy.Coupon>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "coupons"],
         {
           where: and(where("storeId", "==", storeId)),

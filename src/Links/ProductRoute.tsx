@@ -46,7 +46,7 @@ import { initPixels } from "./pixles";
 export const ProductRoute = () => {
   const prodId = useParams<{ prodId: string }>().prodId;
   const product = useAsyncMemo(async () => {
-    return await snapbuyApi.getProduct(prodId);
+    return await snapbuyApi.product.get(prodId);
   }, [prodId]);
   const { getColor } = useSearchParams();
   useEffect(() => {
@@ -64,7 +64,7 @@ export const ProductRoute = () => {
   const longitude = useCopyState<Nothing | number>(null);
   const store = useAsyncMemo(async () => {
     if (!product?.storeId) return undefined;
-    return snapbuyApi.getStore(product?.storeId!);
+    return snapbuyApi.store.get(product?.storeId!);
   }, [product]);
   const price = useMemo(() => {
     return getPrice(product, 1).total;
@@ -200,13 +200,13 @@ export const ProductRoute = () => {
         }
         return;
       }
-      const products: Souqify.Order["products"] = {
+      const products: Snapbuy.Order["products"] = {
         [product?.id!]: {
           count: count.get || 1,
         },
       };
       localStorage.setItem("phone", phone);
-      const place: Souqify.Order["place"] = {
+      const place: Snapbuy.Order["place"] = {
         address,
         wilaya,
       };
@@ -441,7 +441,7 @@ export const ProductRoute = () => {
                       }
                     }}
                     placeholder="Q"
-                    className="focus:border-[--biqpod-primary] border-transparent rounded-full outline-none text-3xl text-center"
+                    className="border-transparent focus:border-[--biqpod-primary] rounded-full outline-none text-3xl text-center"
                     style={{ background: "transparent" }}
                   />
                 </div>

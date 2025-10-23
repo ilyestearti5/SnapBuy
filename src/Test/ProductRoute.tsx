@@ -376,7 +376,7 @@ export const ProductRoute = () => {
   const [address, setAddress] = useState("");
   const [wilaya, setWilaya] = useState("");
   const product = useAsyncMemo(async () => {
-    return await snapbuyApi.getProduct(prodId);
+    return await snapbuyApi.product.get(prodId);
   }, [prodId]);
   const { getColor } = useSearchParams();
   useEffect(() => {
@@ -392,7 +392,7 @@ export const ProductRoute = () => {
   }, [getColor]);
   const store = useAsyncMemo(async () => {
     if (!product?.storeId) return undefined;
-    return snapbuyApi.getStore(product?.storeId!);
+    return snapbuyApi.store.get(product?.storeId!);
   }, [product]);
   const price = useMemo(() => {
     return getPrice(product, 1).total;
@@ -499,13 +499,13 @@ export const ProductRoute = () => {
         showToast("Enter Valid Phone Number", "info");
         return;
       }
-      const products: Souqify.Order["products"] = {
+      const products: Snapbuy.Order["products"] = {
         [product?.id!]: {
           count: count.get || 1,
         },
       };
       localStorage.setItem("phone", phone);
-      const place: Souqify.Order["place"] = {
+      const place: Snapbuy.Order["place"] = {
         address,
         wilaya,
       };

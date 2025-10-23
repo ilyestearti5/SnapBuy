@@ -115,12 +115,12 @@ function highlightMatch(
 export const Packs = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const packs = useCopyState<Souqify.Pack[]>([]);
+  const packs = useCopyState<Snapbuy.Pack[]>([]);
   const fetchingAction = useAction(
     "fetch-packs",
     async () => {
       if (!storeId) return null;
-      const list = await snapbuyApi.getPacks(storeId);
+      const list = await snapbuyApi.packs.getAll(storeId);
       packs.set(list);
     },
     [storeId]
@@ -136,7 +136,7 @@ export const Packs = () => {
         message: "Are you sure you want to delete this pack?",
       });
       if (!response) return;
-      await snapbuyApi.deletePack(packId);
+      await snapbuyApi.packs.delete(packId);
       execAction("fetch-packs");
     },
     [storeId, user]

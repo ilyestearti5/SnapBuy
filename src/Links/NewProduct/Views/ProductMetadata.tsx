@@ -22,7 +22,7 @@ import {
 import { ColorField } from "./ColorField";
 import { motion, AnimatePresence } from "framer-motion";
 import { Nothing } from "@biqpod/app/ui/types";
-type MetadataField = Souqify.MetadataField;
+type MetadataField = Snapbuy.MetadataField;
 interface RenderFieldProps {
   field: MetadataField;
 }

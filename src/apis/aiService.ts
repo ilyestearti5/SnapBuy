@@ -147,7 +147,7 @@ class AIService {
       {
         role: "system",
         content:
-          "You are a helpful AI assistant for Souqify, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
+          "You are a helpful AI assistant for Snapbuy, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
       },
       ...conversationHistory,
       {
@@ -169,7 +169,7 @@ class AIService {
       {
         role: "system",
         content:
-          "You are a helpful AI assistant for Souqify, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
+          "You are a helpful AI assistant for Snapbuy, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
       },
       ...conversationHistory,
       {

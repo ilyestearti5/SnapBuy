@@ -30,7 +30,7 @@ import { OrderEditPopup } from "../components/OrderEditPopup";
 export interface OpenOrderMenuOptions {
   x: number;
   y: number;
-  order: Souqify.Order;
+  order: Snapbuy.Order;
 }
 export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
   openMenu({

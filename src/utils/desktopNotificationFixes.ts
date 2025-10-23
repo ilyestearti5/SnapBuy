@@ -1,4 +1,4 @@
-// Desktop notification fixes for Souqify
+// Desktop notification fixes for Snapbuy
 // This module addresses common issues with desktop notifications
 
 export class DesktopNotificationFixer {
@@ -99,7 +99,7 @@ export class DesktopNotificationFixer {
       };
 
       // Don't override completely, just add delay logic for our app
-      (window as any).SouqifyNotification = createNotification;
+      (window as any).SnapbuyNotification = createNotification;
     }
   }
 
@@ -212,7 +212,7 @@ export class DesktopNotificationFixer {
 
       console.log("🧪 Testing notification after applying fixes...");
 
-      const notification = new Notification("🔧 Fix Test - Souqify", {
+      const notification = new Notification("🔧 Fix Test - Snapbuy", {
         body: "Desktop notification fixes have been applied successfully!",
         icon: "/assets/snapbuy.png",
         tag: "fix-test",

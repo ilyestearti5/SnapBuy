@@ -20,13 +20,13 @@ export const StoreRoute = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
   const store = useAsyncMemo(async () => {
     if (!storeId) return null;
-    return await snapbuyApi.getStore(storeId);
+    return await snapbuyApi.store.get(storeId);
   }, [storeId]);
   const collections = useAsyncMemo(async () => {
-    return snapbuyApi.getCollections(storeId);
+    return snapbuyApi.collections.getAll(storeId);
   }, [storeId]);
   const products = useAsyncMemo(async () => {
-    return await snapbuyApi.getProductsOf(storeId);
+    return await snapbuyApi.product.getProductsOf(storeId);
   }, [storeId]);
   const photos = useAsyncMemo(async () => {
     if (!products) return undefined;
@@ -62,7 +62,7 @@ export const StoreRoute = () => {
     const prods = await mapAsync(
       packOffer?.data?.products || [],
       ({ prodId }) => {
-        return snapbuyApi.getProduct(prodId);
+        return snapbuyApi.product.get(prodId);
       }
     );
     return prods.reduce((acc, prod) => acc + (getPrice(prod).total || 0), 0);

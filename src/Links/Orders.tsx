@@ -283,7 +283,7 @@ const DesktopOrderLoadingSkeleton = ({ index }: { index: number }) => {
   );
 };
 interface StatusUiProps {
-  status: Souqify.OrderStatus;
+  status: Snapbuy.OrderStatus;
 }
 export const StatusUi = ({ status }: StatusUiProps) => {
   return (
@@ -330,9 +330,9 @@ export const Orders = () => {
       isFocused.set(false);
     };
   }, []);
-  const orders = useTemp<Souqify.Order[]>("orders-list"); // Replace with your actual orders data
+  const orders = useTemp<Snapbuy.Order[]>("orders-list"); // Replace with your actual orders data
   const user = useUser();
-  const lastDoc = useCopyState<Souqify.Order | null>(null);
+  const lastDoc = useCopyState<Snapbuy.Order | null>(null);
   const hasMore = useCopyState(true);
   const loc = useLocation();
   useAsyncEffect(async () => {
@@ -456,7 +456,7 @@ export const Orders = () => {
           break;
         }
       }
-      const selection: CloudSelection<Souqify.Order> = {
+      const selection: CloudSelection<Snapbuy.Order> = {
         where: and(
           where("uid", "==", user?.uid),
           filterState?.phone && where("client.phone", "==", filterState.phone),
@@ -474,7 +474,7 @@ export const Orders = () => {
         startAt:
           next && lastDoc.get?.createdAt ? [lastDoc.get?.createdAt] : undefined,
       };
-      const newOrders = await cloud.app.nosql.getDocs<Souqify.Order>(
+      const newOrders = await cloud.app.nosql.getDocs<Snapbuy.Order>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
         selection
       );
@@ -545,10 +545,10 @@ export const Orders = () => {
         })
     );
   }, [searchOrder, orders.get]);
-  const hasNews = useCopyState<Souqify.Order[]>([]);
+  const hasNews = useCopyState<Snapbuy.Order[]>([]);
   useEffect(() => {
     if (user?.uid) {
-      return onCollectionSnapshot<Souqify.Order>(
+      return onCollectionSnapshot<Snapbuy.Order>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
         (news) => {
           hasNews.set(news.map((order) => ({ ...order.data, id: order.id })));

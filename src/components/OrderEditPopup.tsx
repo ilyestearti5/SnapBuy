@@ -17,7 +17,7 @@ import { motion } from "framer-motion";
 import { TabsView } from "./TabsView";
 
 interface OrderEditPopupProps {
-  order: Souqify.Order;
+  order: Snapbuy.Order;
   onSave?: () => void;
 }
 
@@ -26,8 +26,8 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
   onSave,
 }) => {
   const storeId = useStoreId();
-  const [products, setProducts] = useState<Souqify.Product[]>([]);
-  const [packs, setPacks] = useState<Souqify.Pack[]>([]);
+  const [products, setProducts] = useState<Snapbuy.Product[]>([]);
+  const [packs, setPacks] = useState<Snapbuy.Pack[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editedProducts, setEditedProducts] = useState<
@@ -111,8 +111,8 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
       if (!storeId) return;
       try {
         const [productsData, packsData] = await Promise.all([
-          snapbuyApi.getProductsOf(storeId),
-          snapbuyApi.getPacks(storeId),
+          snapbuyApi.product.getProductsOf(storeId),
+          snapbuyApi.packs.getAll(storeId),
         ]);
         setProducts(productsData || []);
         setPacks(packsData || []);

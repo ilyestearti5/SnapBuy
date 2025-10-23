@@ -1,8 +1,8 @@
 /**
- * AI Configuration for Souqify
+ * AI Configuration for Snapbuy
  *
  * This file contains configuration options for different AI backends
- * and providers that can be used with the Souqify AI assistant.
+ * and providers that can be used with the Snapbuy AI assistant.
  */
 
 export interface AIProvider {
@@ -134,7 +134,7 @@ export const DEFAULT_AI_CONFIG = {
  * Shopping-specific prompts and settings
  */
 export const SHOPPING_PROMPTS = {
-  systemPrompt: `You are a helpful AI shopping assistant for Souqify, an e-commerce platform. Your role is to:
+  systemPrompt: `You are a helpful AI shopping assistant for Snapbuy, an e-commerce platform. Your role is to:
 
 1. Help users find products they're looking for
 2. Provide product recommendations based on their preferences  

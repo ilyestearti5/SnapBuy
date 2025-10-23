@@ -1,6 +1,6 @@
 /**
  * Animation Showcase Component
- * Demonstrates all available animations in the Souqify project
+ * Demonstrates all available animations in the Snapbuy project
  */
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -41,7 +41,7 @@ export const AnimationShowcase = () => {
           <div className="text-center">
             <h1 className="mb-2 font-bold text-4xl">
               <Typewriter
-                text="Souqify Animation Showcase"
+                text="Snapbuy Animation Showcase"
                 speed={100}
                 delay={0.5}
               />
@@ -107,10 +107,7 @@ export const AnimationShowcase = () => {
                     <p className="text-gray-600">{card.content}</p>
                     <div className="flex justify-end mt-4">
                       <HoverScale scale={1.2}>
-                        <CircleTip
-                          icon={allIcons.solid.faArrowRight}
-                          onClick={() => console.log(`Clicked ${card.title}`)}
-                        />
+                        <CircleTip icon={allIcons.solid.faArrowRight} />
                       </HoverScale>
                     </div>
                   </AnimatedCard>

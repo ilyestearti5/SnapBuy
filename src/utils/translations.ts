@@ -1092,12 +1092,6 @@ export const translations = [
     word: "write%20item...",
   },
   {
-    en: "Additional Post Configuration",
-    fr: "Configuration de publication supplémentaire",
-    ar: "تكوين إضافي للمنشور",
-    word: "additionally%20post%20configuration",
-  },
-  {
     en: "No",
     fr: "Non",
     ar: "لا",
@@ -1120,12 +1114,6 @@ export const translations = [
     fr: "Pas de tailles",
     ar: "لا توجد أحجام",
     word: "no%20sizes",
-  },
-  {
-    en: "Post Details",
-    fr: "Détails de la publication",
-    ar: "تفاصيل المنشور",
-    word: "post%20details",
   },
   {
     en: "No Category",
@@ -1405,16 +1393,16 @@ export const translations = [
     word: "documentation",
   },
   {
-    en: "Souqify Documentation",
-    fr: "Documentation Souqify",
-    ar: "توثيق Souqify",
-    word: "Souqify%20Documentation",
+    en: "Snapbuy Documentation",
+    fr: "Documentation Snapbuy",
+    ar: "توثيق Snapbuy",
+    word: "Snapbuy%20Documentation",
   },
   {
-    en: "Discover all features, tips, and best practices to maximize your e-commerce success with Souqify",
-    fr: "Découvrez toutes les fonctionnalités, astuces et meilleures pratiques pour maximiser votre succès e-commerce avec Souqify",
-    ar: "اكتشف جميع الميزات والنصائح وأفضل الممارسات لتحقيق أقصى نجاح في التجارة الإلكترونية مع Souqify",
-    word: "Discover%20all%20features%2C%20tips%2C%20and%20best%20practices%20to%20maximize%20your%20e-commerce%20success%20with%20Souqify",
+    en: "Discover all features, tips, and best practices to maximize your e-commerce success with Snapbuy",
+    fr: "Découvrez toutes les fonctionnalités, astuces et meilleures pratiques pour maximiser votre succès e-commerce avec Snapbuy",
+    ar: "اكتشف جميع الميزات والنصائح وأفضل الممارسات لتحقيق أقصى نجاح في التجارة الإلكترونية مع Snapbuy",
+    word: "Discover%20all%20features%2C%20tips%2C%20and%20best%20practices%20to%20maximize%20your%20e-commerce%20success%20with%20Snapbuy",
   },
   {
     en: "features",

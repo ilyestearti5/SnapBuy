@@ -19,9 +19,9 @@ import { colors, icons } from "../../utils";
 import { deleteDoc, setDoc } from "../../server";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
 export interface ChangeStatusProps {
-  order: Souqify.Order;
+  order: Snapbuy.Order;
 }
-export const allStatus: Souqify.OrderStatus[] = [
+export const allStatus: Snapbuy.OrderStatus[] = [
   "pending",
   "cancelled",
   "processing",
@@ -30,7 +30,7 @@ export const allStatus: Souqify.OrderStatus[] = [
   "done",
 ];
 export const ChangeStatus = ({ order }: ChangeStatusProps) => {
-  const selectOne = getTemp<Souqify.OrderStatus>("selected-status");
+  const selectOne = getTemp<Snapbuy.OrderStatus>("selected-status");
   return (
     <Card className="max-md:w-11/12 md:w-2/3">
       <div className="flex justify-between items-center p-2">
@@ -105,7 +105,7 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
                 status: selectOne,
               }
             );
-            const allOredrs = getTempFromStore<Souqify.Order[]>("orders-list");
+            const allOredrs = getTempFromStore<Snapbuy.Order[]>("orders-list");
             const findedIndex = allOredrs?.findIndex(
               (item) => item.id === order.id
             );

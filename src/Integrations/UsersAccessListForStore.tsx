@@ -114,7 +114,7 @@ const loadingVariants = {
 export const UsersAccessListForStore = ({
   storeId,
 }: UsersAccessListForStoreProps) => {
-  const usersAccess = useCopyState<Souqify.StoreUserAccess[]>([]);
+  const usersAccess = useCopyState<Snapbuy.StoreUserAccess[]>([]);
   const error = useCopyState<string | null>(null);
   const selectedUsers = useCopyState<string[]>([]);
 
@@ -129,7 +129,7 @@ export const UsersAccessListForStore = ({
     async () => {
       try {
         error.set(null);
-        const users = await snapbuyApi.getUsersAccessForStore(storeId);
+        const users = await snapbuyApi.access.getUsersAccess(storeId);
         usersAccess.set(users);
       } catch (err) {
         console.error("Failed to load users access:", err);
@@ -143,7 +143,7 @@ export const UsersAccessListForStore = ({
     "remove-user-access",
     async ({ storeId, relatedUid }) => {
       try {
-        await snapbuyApi.removeUserAccessFromStore(storeId, relatedUid);
+        await snapbuyApi.access.remove(storeId, relatedUid);
         showToast("User access removed successfully", "success");
         execAction("load-users-access");
       } catch (err) {
@@ -188,7 +188,7 @@ export const UsersAccessListForStore = ({
     execAction("load-users-access");
   }, [storeId]);
 
-  const getStatusColor = (status: Souqify.StoreUserAccess["status"]) => {
+  const getStatusColor = (status: Snapbuy.StoreUserAccess["status"]) => {
     switch (status) {
       case "accepted":
         return "bg-green-600/25 text-green-600 border-green-300";
@@ -219,7 +219,7 @@ export const UsersAccessListForStore = ({
     });
   };
 
-  const handleEditUser = (user: Souqify.StoreUserAccess) => {
+  const handleEditUser = (user: Snapbuy.StoreUserAccess) => {
     showPopup(
       <UpsertAccessUsertoStore
         storeId={storeId}
@@ -230,7 +230,7 @@ export const UsersAccessListForStore = ({
     );
   };
 
-  const handleRemoveUser = async (user: Souqify.StoreUserAccess) => {
+  const handleRemoveUser = async (user: Snapbuy.StoreUserAccess) => {
     let userName = "this user";
     if (user.relatedUid) {
       try {

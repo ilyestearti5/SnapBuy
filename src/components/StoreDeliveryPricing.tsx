@@ -32,8 +32,8 @@ import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { delay } from "@biqpod/app/ui/utils";
 import places from "../../public/places.json";
-interface DeliveryOptionWithPrices extends Souqify.DeliveryOptions {
-  prices: Souqify.DeliveryPrice[];
+interface DeliveryOptionWithPrices extends Snapbuy.DeliveryOptions {
+  prices: Snapbuy.DeliveryPrice[];
 }
 interface StoreDeliveryPricingListProps {
   storeId?: string;
@@ -187,7 +187,7 @@ export const StoreDeliveryPricingList: React.FC<
     }
     selectedPrices.set(newSet);
   };
-  const toggleSelectAllPrices = (optionPrices: Souqify.DeliveryPrice[]) => {
+  const toggleSelectAllPrices = (optionPrices: Snapbuy.DeliveryPrice[]) => {
     const current = selectedPrices.get;
     const optionPriceIds = optionPrices.map((p) => p.id!);
     const allSelected = optionPriceIds.every((id) => current.has(id));
@@ -206,7 +206,7 @@ export const StoreDeliveryPricingList: React.FC<
     showPopup(<UpsertStoreDeliveryOption storeId={storeId} />);
   };
   const handleEditDeliveryOption = (
-    deliveryOption: Souqify.DeliveryOptions
+    deliveryOption: Snapbuy.DeliveryOptions
   ) => {
     if (!storeId) return;
     showPopup(
@@ -225,7 +225,7 @@ export const StoreDeliveryPricingList: React.FC<
       />
     );
   };
-  const handleEditDeliveryPrice = (deliveryPrice: Souqify.DeliveryPrice) => {
+  const handleEditDeliveryPrice = (deliveryPrice: Snapbuy.DeliveryPrice) => {
     if (!storeId) return;
     showPopup(
       <UpsertDeliveryPrice
@@ -537,7 +537,7 @@ export const StoreDeliveryPricingList: React.FC<
 };
 interface UpsertStoreDeliveryOptionProps {
   storeId: string;
-  deliveryOption?: Souqify.DeliveryOptions;
+  deliveryOption?: Snapbuy.DeliveryOptions;
 }
 export const UpsertStoreDeliveryOption: React.FC<
   UpsertStoreDeliveryOptionProps
@@ -687,7 +687,7 @@ export const UpsertStoreDeliveryOption: React.FC<
 interface UpsertDeliveryPriceProps {
   storeId: string;
   deliveryOptionId: string;
-  deliveryPrice?: Souqify.DeliveryPrice;
+  deliveryPrice?: Snapbuy.DeliveryPrice;
 }
 export const UpsertDeliveryPrice: React.FC<UpsertDeliveryPriceProps> = ({
   storeId,

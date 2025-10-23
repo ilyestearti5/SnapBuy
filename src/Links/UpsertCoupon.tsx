@@ -34,7 +34,7 @@ import { Coupons } from "./Coupons";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 export interface UpsertCouponProps {
-  coupon?: Souqify.Coupon;
+  coupon?: Snapbuy.Coupon;
   back?: boolean;
 }
 export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
@@ -46,7 +46,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
   const applicableProducts = useCopyState<string[]>(
     coupon?.applicableProducts || []
   );
-  const products = useTemp<Souqify.Product[]>("fetched-products");
+  const products = useTemp<Snapbuy.Product[]>("fetched-products");
   const productSearch = getFieldValue("coupon-product-search");
   // Filter products based on search
   const filteredProducts = useMemo(() => {
@@ -170,7 +170,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
         return;
       }
       const infinity = 1e10;
-      const couponData: Souqify.Coupon = {
+      const couponData: Snapbuy.Coupon = {
         id: coupon?.id,
         code: code.trim().toUpperCase(),
         name: name.trim(),
@@ -189,7 +189,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
         applicableProducts:
           applicableProducts.get.length > 0 ? applicableProducts.get : null,
       };
-      await snapbuyApi.upsertCoupon(couponData);
+      await snapbuyApi.coupon.upsert(couponData);
       showToast(
         coupon ? "Coupon updated successfully" : "Coupon created successfully",
         "success"
@@ -617,7 +617,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
                 detail: "This action cannot be undone.",
               });
               if (response) {
-                await snapbuyApi.deleteCoupon(coupon.id!);
+                await snapbuyApi.coupon.delete(coupon.id!);
                 showToast("Coupon deleted successfully", "success");
                 execAction("fetch-coupons");
                 closePopup();

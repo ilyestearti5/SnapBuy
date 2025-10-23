@@ -12,12 +12,12 @@ export interface OrderClientInfo {
 }
 // Utility function to get client or customer information from an order
 export const getOrderClientInfo = async (
-  order: Souqify.Order
+  order: Snapbuy.Order
 ): Promise<OrderClientInfo | null> => {
   try {
     // If order has client information, use it directly
     if (order.customer) {
-      const customer = await snapbuyApi.getCustomer(order.customer);
+      const customer = await snapbuyApi.customer.get(order.customer);
       if (customer) {
         return {
           firstname: customer.firstname,

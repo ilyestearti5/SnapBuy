@@ -894,10 +894,10 @@ export const translations = [
     word: "how%20notifications%20work",
   },
   {
-    en: "Notifications work even when Souqify is closed",
-    fr: "Les notifications fonctionnent même lorsque Souqify est fermé",
-    ar: "الإشعارات تعمل حتى عند إغلاق Souqify",
-    word: "notifications%20work%20even%20when%20souqify%20is%20closed",
+    en: "Notifications work even when Snapbuy is closed",
+    fr: "Les notifications fonctionnent même lorsque Snapbuy est fermé",
+    ar: "الإشعارات تعمل حتى عند إغلاق Snapbuy",
+    word: "notifications%20work%20even%20when%20snapbuy%20is%20closed",
   },
   {
     en: "You'll receive alerts on your computer desktop",
@@ -1626,10 +1626,10 @@ export const translations = [
     word: "popular%20tasks",
   },
   {
-    en: "Step-by-step guides to help you get started and master Souqify's powerful features",
-    fr: "Guides étape par étape pour vous aider à commencer et maîtriser les puissantes fonctionnalités de Souqify",
-    ar: "دليل خطوة بخطوة لمساعدتك على البدء وإتقان الميزات القوية لـ Souqify",
-    word: "step-by-step%20guides%20to%20help%20you%20get%20started%20and%20master%20souqify's%20powerful%20features",
+    en: "Step-by-step guides to help you get started and master Snapbuy's powerful features",
+    fr: "Guides étape par étape pour vous aider à commencer et maîtriser les puissantes fonctionnalités de Snapbuy",
+    ar: "دليل خطوة بخطوة لمساعدتك على البدء وإتقان الميزات القوية لـ Snapbuy",
+    word: "step-by-step%20guides%20to%20help%20you%20get%20started%20and%20master%20snapbuy's%20powerful%20features",
   },
   {
     en: "view guide",

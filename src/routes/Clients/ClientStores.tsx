@@ -190,7 +190,7 @@ export const UserLine = ({ user }: UserLineProps) => {
   const isFollow = useCopyState<null | boolean>(null);
   useAsyncEffect(async () => {
     await delay(300);
-    const result = uid ? await snapbuyApi.isFollowing(uid) : false;
+    const result = uid ? await snapbuyApi.following.isFollowing(uid) : false;
     isFollow.set(!!result);
   }, []);
   return (
@@ -233,10 +233,10 @@ export const UserLine = ({ user }: UserLineProps) => {
                 var state = isFollow.get;
                 if (state) {
                   isFollow.set(null);
-                  await snapbuyApi.unfollow(uid);
+                  await snapbuyApi.following.unfollow(uid);
                 } else {
                   isFollow.set(null);
-                  await snapbuyApi.follow(uid);
+                  await snapbuyApi.following.follow(uid);
                 }
                 await delay(300);
                 isFollow.set(!state);
@@ -282,7 +282,7 @@ export const UserLine = ({ user }: UserLineProps) => {
   );
 };
 interface StoreRecordProps {
-  store: Souqify.Store;
+  store: Snapbuy.Store;
 }
 export const StoreRecord = ({ store }: StoreRecordProps) => {
   const { name, photo } = store;
@@ -358,7 +358,7 @@ export const Carts = () => {
                       <div className="flex items-center gap-2">
                         <AsyncComponent
                           render={async () => {
-                            const store = await snapbuyApi.getStore(storeId);
+                            const store = await snapbuyApi.store.get(storeId);
                             return (
                               <EmptyComponent>
                                 <Image
@@ -433,8 +433,8 @@ export const Carts = () => {
   );
 };
 export const ExploreStores = () => {
-  const stores = useCopyState<Souqify.Store[]>([]);
-  const lastDoc = useCopyState<Souqify.Store | null>(null);
+  const stores = useCopyState<Snapbuy.Store[]>([]);
+  const lastDoc = useCopyState<Snapbuy.Store | null>(null);
   const hasMore = useCopyState(true);
   const action = useAction(
     "fetch-explore-stores",

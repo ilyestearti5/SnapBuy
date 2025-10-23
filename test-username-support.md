@@ -8,7 +8,7 @@ The user access management system has been successfully updated to support both 
 
 1. **Type Definitions (`src/vite-env.d.ts`)**
 
-   - Modified `Souqify.StoreUserAccess` interface
+   - Modified `Snapbuy.StoreUserAccess` interface
    - Made `userEmail` optional and added optional `username` field
    - Both fields are optional to support either identification method
 

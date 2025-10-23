@@ -16,7 +16,7 @@ import {
 } from "../utils/orderClientInfo";
 
 interface ViewClientProps {
-  order: Souqify.Order;
+  order: Snapbuy.Order;
 }
 export const ViewClient = ({ order }: ViewClientProps) => {
   const clientInfo = useAsyncMemo(async () => {

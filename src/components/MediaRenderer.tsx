@@ -1,9 +1,8 @@
 import React from "react";
-import { Icon, Image } from "@biqpod/app/ui/components";
+import { Icon } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { isImageFile, isGLTFFile, MediaFile } from "../utils/utilities";
+import { isGLTFFile, MediaFile } from "../utils/utilities";
 import GLTFRenderer from "./GLTFRenderer";
-import { tw } from "@biqpod/app/ui/utils";
 
 interface MediaRendererProps {
   src?: string;
@@ -58,8 +57,6 @@ export const MediaRenderer: React.FC<MediaRendererProps> = ({
 
   // Use explicit type from MediaFile if available, otherwise detect from URL
   const isGLTF = fileType === "gltf" || (!fileType && isGLTFFile(actualSrc));
-  const isImage = fileType === "image" || (!fileType && isImageFile(actualSrc));
-
   // Render based on type
   if (isGLTF) {
     return (
@@ -71,19 +68,6 @@ export const MediaRenderer: React.FC<MediaRendererProps> = ({
       />
     );
   }
-
-  if (isImage) {
-    return (
-      <Image
-        src={actualSrc}
-        className={tw("rounded-none", className)}
-        alt={alt || mediaFile?.name}
-        onClick={onClick}
-        style={style}
-      />
-    );
-  }
-
   // Fallback for unknown file types
   return (
     <div

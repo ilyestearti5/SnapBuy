@@ -31,7 +31,7 @@ import { colorsInListWithNames } from "../utils";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { sharSocialMedia } from "../utils";
 interface CopyLinkPickColorProps {
-  product: Souqify.Product;
+  product: Snapbuy.Product;
 }
 type Orientation = "portrait" | "landscape";
 interface PreviewWindowProps {
@@ -361,7 +361,7 @@ export const ProductToolsBottomSheet = ({
   usedBy,
 }: {
   index: number;
-  product: Souqify.Product;
+  product: Snapbuy.Product;
   usedBy: "owned" | "random" | "read/edit" | "read" | null;
 }) => {
   const uri = useMemo(() => {
@@ -428,7 +428,7 @@ export const ProductToolsBottomSheet = ({
                 {
                   label: product.available ? "Disable" : "Enable",
                   click: async () => {
-                    await snapbuyApi.upsertProducts(product.storeId!, [
+                    await snapbuyApi.product.upsert(product.storeId!, [
                       {
                         ...product,
                         available: !product.available,
@@ -450,7 +450,7 @@ export const ProductToolsBottomSheet = ({
                 {
                   label: "Delete Product",
                   click: async () => {
-                    await snapbuyApi.deleteProduct(product.id!);
+                    await snapbuyApi.product.delete(product.id!);
                     execAction("fetch-products");
                     showToast("Product Deleted");
                   },

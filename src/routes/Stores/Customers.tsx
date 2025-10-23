@@ -174,7 +174,7 @@ const loadingSpinVariants = {
 export const Customers = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const customersState = useCopyState<(Souqify.Customer & { id: string })[]>(
+  const customersState = useCopyState<(Snapbuy.Customer & { id: string })[]>(
     []
   );
   const action = useAction(
@@ -182,7 +182,7 @@ export const Customers = () => {
     async () => {
       if (!storeId) return;
       await delay(1000);
-      const customers = await snapbuyApi.getStoreCustomers(storeId);
+      const customers = await snapbuyApi.customer.getAll(storeId);
       customersState.set(customers);
     },
     [storeId]
@@ -200,7 +200,7 @@ export const Customers = () => {
       status: "pending" | "rejected" | "accepted";
     }) => {
       setTemp("updating-customer", data.customerId);
-      await snapbuyApi.updateCustomerStatus(data.customerId, data.status);
+      await snapbuyApi.customer.updateStatus(data.customerId, data.status);
       showToast(`Customer ${data.status} successfully`, "success");
       setTemp("updating-customer", null);
       execAction("load-customers");
@@ -211,7 +211,7 @@ export const Customers = () => {
     "delete-customer",
     async (customerId: string) => {
       setTemp("deleting-customer", customerId);
-      await snapbuyApi.deleteCustomer(customerId);
+      await snapbuyApi.customer.delete(customerId);
       showToast("Customer deleted successfully", "success");
       setTemp("deleting-customer", null);
       execAction("load-customers");
@@ -247,7 +247,7 @@ export const Customers = () => {
         // Delete all rejected customers
         await Promise.all(
           rejectedCustomers.map((customer) =>
-            snapbuyApi.deleteCustomer(customer.id)
+            snapbuyApi.customer.delete(customer.id)
           )
         );
         showToast(
@@ -263,7 +263,7 @@ export const Customers = () => {
     },
     [filteredCustomers.rejected]
   );
-  const renderCustomer = (customer: Souqify.Customer & { id: string }) => {
+  const renderCustomer = (customer: Snapbuy.Customer & { id: string }) => {
     const isUpdating = updatingCustomer === customer.id;
     const isDeleting = deletingCustomer === customer.id;
     const isProcessing = isUpdating || isDeleting;

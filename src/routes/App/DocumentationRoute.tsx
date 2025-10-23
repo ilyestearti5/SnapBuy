@@ -14,7 +14,6 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { tw } from "@biqpod/app/ui/utils";
 import { AnimatedPage } from "../../animations/components";
 import { getFieldValue, setFieldValue } from "@biqpod/app/ui/hooks";
-
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -27,7 +26,6 @@ const containerVariants = {
     },
   },
 };
-
 const cardVariants = {
   hidden: {
     opacity: 0,
@@ -50,7 +48,6 @@ const cardVariants = {
     },
   },
 };
-
 const sectionVariants = {
   hidden: { opacity: 0, x: -20 },
   visible: {
@@ -59,7 +56,6 @@ const sectionVariants = {
     transition: { duration: 0.4 },
   },
 };
-
 interface Feature {
   id: string;
   name: string;
@@ -71,7 +67,6 @@ interface Feature {
   isNew?: boolean;
   isPro?: boolean;
 }
-
 interface Task {
   id: string;
   title: string;
@@ -88,7 +83,6 @@ interface Task {
   prerequisites?: string[];
   relatedFeatures?: string[];
 }
-
 interface Category {
   id: string;
   name: string;
@@ -96,7 +90,6 @@ interface Category {
   icon: any;
   color: string;
 }
-
 const categories: Category[] = [
   {
     id: "core",
@@ -141,7 +134,6 @@ const categories: Category[] = [
     color: "text-[--biqpod-primary]",
   },
 ];
-
 const features: Feature[] = [
   // Core Features
   {
@@ -207,7 +199,6 @@ const features: Feature[] = [
       "Use descriptive coupon codes that customers can remember",
     ],
   },
-
   // AI & Smart Features
   {
     id: "ai-agent",
@@ -259,7 +250,6 @@ const features: Feature[] = [
       "Share templates across different stores",
     ],
   },
-
   // Delivery & Logistics
   {
     id: "delivery",
@@ -309,7 +299,6 @@ const features: Feature[] = [
       "Track pricing effectiveness through analytics",
     ],
   },
-
   // Store Management
   {
     id: "analytics",
@@ -372,7 +361,6 @@ const features: Feature[] = [
       "Update variables without code changes",
     ],
   },
-
   // Customer Experience
   {
     id: "client-portal",
@@ -438,7 +426,6 @@ const features: Feature[] = [
       "Professional support page with contact options",
     ],
   },
-
   // Integrations
   {
     id: "forms",
@@ -502,14 +489,13 @@ const features: Feature[] = [
     ],
   },
 ];
-
 const tasks: Task[] = [
   // Getting Started Tasks
   {
     id: "create-store",
     title: "Create Your First Store",
     description:
-      "Set up your online store using the Souqify store management system",
+      "Set up your online store using the Snapbuy store management system",
     icon: allIcons.solid.faStore,
     category: "getting-started",
     difficulty: "beginner",
@@ -555,7 +541,7 @@ const tasks: Task[] = [
     id: "add-first-product",
     title: "Add Your First Product",
     description:
-      "Create your first product using the Souqify product management system",
+      "Create your first product using the Snapbuy product management system",
     icon: allIcons.solid.faBox,
     category: "getting-started",
     difficulty: "beginner",
@@ -880,7 +866,6 @@ const tasks: Task[] = [
     relatedFeatures: ["analytics", "notifications"],
   },
 ];
-
 const TaskCard = memo(
   ({ task, onSelect }: { task: Task; onSelect: (task: Task) => void }) => {
     const getDifficultyColor = (difficulty: string) => {
@@ -895,7 +880,6 @@ const TaskCard = memo(
           return "text-[--biqpod-primary] bg-[--biqpod-gray-opacity]";
       }
     };
-
     return (
       <motion.div
         variants={cardVariants}
@@ -929,7 +913,6 @@ const TaskCard = memo(
                 </p>
               </div>
             </div>
-
             {/* Task info */}
             <div className="flex justify-between items-center mt-auto">
               <div className="flex items-center gap-2 text-[--biqpod-text-secondary] text-xs">
@@ -949,7 +932,6 @@ const TaskCard = memo(
     );
   }
 );
-
 const TaskDetails = memo(
   ({ task, onClose }: { task: Task; onClose: () => void }) => {
     const getDifficultyColor = (difficulty: string) => {
@@ -964,7 +946,6 @@ const TaskDetails = memo(
           return "text-[--biqpod-primary] bg-[--biqpod-gray-opacity]";
       }
     };
-
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -1032,7 +1013,6 @@ const TaskDetails = memo(
                 </div>
               </div>
             </div>
-
             {/* Content */}
             <Scroll className="max-h-[60vh]">
               <div className="p-6">
@@ -1059,7 +1039,6 @@ const TaskDetails = memo(
                     </div>
                   </div>
                 )}
-
                 {/* Steps */}
                 <h3 className="flex items-center gap-2 mb-4 font-semibold text-lg">
                   <div className="text-[--biqpod-primary]">
@@ -1067,7 +1046,6 @@ const TaskDetails = memo(
                   </div>
                   <Translate content="step-by-step guide" />
                 </h3>
-
                 <div className="space-y-4">
                   {task.steps.map((step, index) => (
                     <motion.div
@@ -1105,7 +1083,6 @@ const TaskDetails = memo(
                     </motion.div>
                   ))}
                 </div>
-
                 {/* Related Features */}
                 {task.relatedFeatures && task.relatedFeatures.length > 0 && (
                   <div className="bg-[--biqpod-gray-opacity] mt-6 p-4 border border-[--biqpod-borders] rounded-lg">
@@ -1141,7 +1118,6 @@ const TaskDetails = memo(
     );
   }
 );
-
 const FeatureCard = memo(
   ({
     feature,
@@ -1151,7 +1127,6 @@ const FeatureCard = memo(
     onSelect: (feature: Feature) => void;
   }) => {
     const category = categories.find((cat) => cat.id === feature.category);
-
     return (
       <motion.div
         variants={cardVariants}
@@ -1188,21 +1163,19 @@ const FeatureCard = memo(
                 </p>
               </div>
             </div>
-
             {/* Tips count */}
             <div className="flex justify-between items-center mt-auto">
               <span className="text-[--biqpod-text-secondary] text-xs">
                 {feature.tips.length} <Translate content="tips available" />
               </span>
               <Button
-                className="px-3 py-1 text-xs"
+                className="px-3 py-1 w-fit text-xs"
                 onClick={() => onSelect(feature)}
               >
                 <Translate content="view tips" />
               </Button>
             </div>
           </div>
-
           {/* Category indicator */}
           <div
             className={tw(
@@ -1215,7 +1188,6 @@ const FeatureCard = memo(
     );
   }
 );
-
 const CategoryFilter = memo(
   ({
     categories,
@@ -1261,11 +1233,9 @@ const CategoryFilter = memo(
     );
   }
 );
-
 const FeatureDetails = memo(
   ({ feature, onClose }: { feature: Feature; onClose: () => void }) => {
     const category = categories.find((cat) => cat.id === feature.category);
-
     return (
       <motion.div
         initial={{ opacity: 0, scale: 0.9 }}
@@ -1327,7 +1297,6 @@ const FeatureDetails = memo(
                 />
               </div>
             </div>
-
             {/* Content */}
             <Scroll className="max-h-[60vh]">
               <div className="p-6">
@@ -1337,7 +1306,6 @@ const FeatureDetails = memo(
                   </div>
                   <Translate content="tips & best practices" />
                 </h3>
-
                 <div className="space-y-3">
                   {feature.tips.map((tip, index) => (
                     <motion.div
@@ -1356,7 +1324,6 @@ const FeatureDetails = memo(
                     </motion.div>
                   ))}
                 </div>
-
                 {feature.route && (
                   <div className="bg-[--biqpod-gray-opacity] mt-6 p-4 border border-[--biqpod-borders] rounded-lg">
                     <div className="flex justify-between items-center">
@@ -1369,7 +1336,7 @@ const FeatureDetails = memo(
                         </p>
                       </div>
                       <Button
-                        className="bg-[--biqpod-primary] hover:bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+                        className="w-fit"
                         onClick={() => {
                           window.location.href = feature.route!;
                         }}
@@ -1390,23 +1357,19 @@ const FeatureDetails = memo(
     );
   }
 );
-
 export const DocumentationRoute = () => {
   const searchQuery = getFieldValue("search-in-doc");
   const [activeCategories, setActiveCategories] = useState<string[]>([]);
   const [selectedFeature, setSelectedFeature] = useState<Feature | null>(null);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-
   const filteredFeatures = useMemo(() => {
     let filtered = features;
-
     // Filter by categories
     if (activeCategories.length > 0) {
       filtered = filtered.filter((feature) =>
         activeCategories.includes(feature.category)
       );
     }
-
     // Filter by search query
     if (searchQuery?.trim()) {
       const query = searchQuery.toLowerCase();
@@ -1417,10 +1380,8 @@ export const DocumentationRoute = () => {
           feature.tips.some((tip) => tip.toLowerCase().includes(query))
       );
     }
-
     return filtered;
   }, [activeCategories, searchQuery]);
-
   const featuresByCategory = useMemo(() => {
     return categories.map((category) => ({
       ...category,
@@ -1429,7 +1390,6 @@ export const DocumentationRoute = () => {
         .length,
     }));
   }, []);
-
   return (
     <AnimatedPage>
       <motion.div
@@ -1447,14 +1407,13 @@ export const DocumentationRoute = () => {
                   <Icon icon={allIcons.solid.faBook} />
                 </div>
                 <h1 className="font-bold text-4xl">
-                  <Translate content="Souqify Documentation" />
+                  <Translate content="Snapbuy Documentation" />
                 </h1>
               </div>
               <p className="mx-auto max-w-3xl text-[--biqpod-text-secondary] text-lg">
-                <Translate content="Discover all features, tips, and best practices to maximize your e-commerce success with Souqify" />
+                <Translate content="Discover all features, tips, and best practices to maximize your e-commerce success with Snapbuy" />
               </p>
             </motion.div>
-
             {/* Stats */}
             <motion.div
               variants={sectionVariants}
@@ -1493,7 +1452,6 @@ export const DocumentationRoute = () => {
                 </div>
               </Card>
             </motion.div>
-
             {/* Popular Tasks */}
             <motion.div variants={sectionVariants} className="mb-8">
               <div className="flex justify-center items-center gap-3 mb-6">
@@ -1505,9 +1463,8 @@ export const DocumentationRoute = () => {
                 </h2>
               </div>
               <p className="mx-auto mb-6 max-w-3xl text-[--biqpod-text-secondary] text-center">
-                <Translate content="Step-by-step guides to help you get started and master Souqify's powerful features" />
+                <Translate content="Step-by-step guides to help you get started and master Snapbuy's powerful features" />
               </p>
-
               <div className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {tasks.map((task) => (
                   <TaskCard
@@ -1518,7 +1475,6 @@ export const DocumentationRoute = () => {
                 ))}
               </div>
             </motion.div>
-
             {/* Search */}
             <motion.div variants={sectionVariants} className="mb-6">
               <div className="mx-auto max-w-md">
@@ -1529,7 +1485,6 @@ export const DocumentationRoute = () => {
                 />
               </div>
             </motion.div>
-
             {/* Category Filter */}
             <motion.div variants={sectionVariants}>
               <CategoryFilter
@@ -1550,7 +1505,6 @@ export const DocumentationRoute = () => {
                 }}
               />
             </motion.div>
-
             {/* Category Overview (when no filter) */}
             {activeCategories.length === 0 && !searchQuery && (
               <motion.div variants={sectionVariants} className="mb-8">
@@ -1598,7 +1552,6 @@ export const DocumentationRoute = () => {
                 </div>
               </motion.div>
             )}
-
             {/* Features Grid */}
             {(activeCategories.length > 0 || searchQuery) && (
               <motion.div variants={sectionVariants}>
@@ -1639,7 +1592,6 @@ export const DocumentationRoute = () => {
             )}
           </div>
         </Scroll>
-
         {/* Feature Details Modal */}
         <AnimatePresence>
           {selectedFeature && (
@@ -1649,7 +1601,6 @@ export const DocumentationRoute = () => {
             />
           )}
         </AnimatePresence>
-
         {/* Task Details Modal */}
         <AnimatePresence>
           {selectedTask && (

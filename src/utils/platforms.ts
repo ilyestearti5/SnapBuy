@@ -14,7 +14,7 @@ import edgeIcon from "../assets/platforms/edge.png";
 import safariIcon from "../assets/platforms/safari.png";
 
 export interface PlatformInfo {
-  id: keyof Required<Required<Souqify.Store>["platforms"]>;
+  id: keyof Required<Required<Snapbuy.Store>["platforms"]>;
   name: string;
   icon: string;
   placeholder: string;
@@ -124,13 +124,13 @@ export const platformsInfo: PlatformInfo[] = [
 ];
 
 export const getPlatformInfo = (
-  platformId: keyof Required<Required<Souqify.Store>["platforms"]>
+  platformId: keyof Required<Required<Snapbuy.Store>["platforms"]>
 ): PlatformInfo | undefined => {
   return platformsInfo.find((platform) => platform.id === platformId);
 };
 
 export const platformsPhoto: Record<
-  keyof Required<Required<Souqify.Store>["platforms"]>,
+  keyof Required<Required<Snapbuy.Store>["platforms"]>,
   string
 > = {
   facebook: facebookIcon,

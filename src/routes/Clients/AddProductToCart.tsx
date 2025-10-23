@@ -25,7 +25,7 @@ import { snapbuyApi } from "../../apis";
 import { initPixels } from "../../Links/pixles";
 import { addToCart, useCartCount } from "../../apis/snapbuy";
 export interface ProductPopupProps {
-  product: Souqify.Product;
+  product: Snapbuy.Product;
 }
 export const useSearchParams = () => {
   const loc = useLocation();
@@ -58,7 +58,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
     return parseInt(currentCount || "") || 0;
   }, [currentCount]);
   const store = useAsyncMemo(async () => {
-    return await snapbuyApi.getStore(storeId);
+    return await snapbuyApi.store.get(storeId);
   }, [storeId]);
   const pixles = initPixels(store);
   return (

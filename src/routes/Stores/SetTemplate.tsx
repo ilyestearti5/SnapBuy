@@ -222,11 +222,11 @@ const overlayVariants = {
 };
 
 interface SetTemplateProps {
-  store: Souqify.Store;
+  store: Snapbuy.Store;
 }
 export const SetTemplate = ({ store }: SetTemplateProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const templates = useCopyState<Souqify.Template[]>([]);
+  const templates = useCopyState<Snapbuy.Template[]>([]);
   const currentPage = useCopyState<string | Nothing>(null);
   const hasMore = useCopyState(true);
   const isLoadingMore = useCopyState(false);
@@ -244,7 +244,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
         }
         isLoadingMore.set(true);
         // Fetch templates with pagination (20 per page)
-        const newTemplates = await snapbuyApi.getAllTemplates(page, 20);
+        const newTemplates = await snapbuyApi.templates.getAll(page, 20);
         if (reset || !page) {
           templates.set(newTemplates);
         } else {
@@ -292,7 +292,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
     async (templateId: string | null) => {
       try {
         // Update store with new template
-        await snapbuyApi.updateStore(store.id, {
+        await snapbuyApi.store.update(store.id, {
           template: templateId || null,
         });
         showToast(
@@ -303,7 +303,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
         );
         closePopup();
         // Refresh stores list
-        execAction("print-stores");
+        execAction("fetch-my-stores");
       } catch (error) {
         console.error("Error setting template:", error);
         showToast("Failed to set template", "error");
@@ -342,7 +342,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                           />
                           <AsyncComponent
                             render={async () => {
-                              const template = await snapbuyApi.getTemplate(
+                              const template = await snapbuyApi.templates.get(
                                 store.template!
                               );
                               return <span>{template?.name}</span>;
@@ -441,7 +441,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                     </h3>
                     <AnimatePresence>
                       {templates.get.map(
-                        (template: Souqify.Template, index) => (
+                        (template: Snapbuy.Template, index) => (
                           <motion.div
                             key={template.id}
                             variants={templateItemVariants}

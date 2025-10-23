@@ -28,7 +28,7 @@ import productsPhoto from "../assets/products.png";
 import shoppingPhoto from "../assets/shopping.png";
 import overviewPhoto from "../assets/overview.png";
 import settingsPhoto from "../assets/settings.png";
-export const platformsPhotos: Partial<Record<Souqify.Platform, string>> = {
+export const platformsPhotos: Partial<Record<Snapbuy.Platform, string>> = {
   discord,
   facebook,
   instagram,
@@ -46,7 +46,7 @@ export const platformsPhotos: Partial<Record<Souqify.Platform, string>> = {
   edge,
 };
 
-export const getImageByPlatform = (string?: Souqify.Platform) => {
+export const getImageByPlatform = (string?: Snapbuy.Platform) => {
   return (string && platformsPhotos[string]) || unknown;
 };
 
@@ -68,7 +68,7 @@ export const icons: Record<string, IconProps["icon"]> = {
   delivery: allIcons.solid.faCar,
 };
 
-export const roleIcons: Record<Souqify.DeliveryCompanyRole, IconProps["icon"]> =
+export const roleIcons: Record<Snapbuy.DeliveryCompanyRole, IconProps["icon"]> =
   {
     customer: allIcons.solid.faUser,
     admin: allIcons.solid.faUserTie,
@@ -80,7 +80,7 @@ export const roleIcons: Record<Souqify.DeliveryCompanyRole, IconProps["icon"]> =
     merchant: allIcons.solid.faStore,
   };
 
-export const roleColors: Record<Souqify.DeliveryCompanyRole, string> = {
+export const roleColors: Record<Snapbuy.DeliveryCompanyRole, string> = {
   customer: "#4CAF50",
   admin: "#2196F3",
   finance: "#FF9800",
@@ -132,13 +132,16 @@ export const extraTabs = [
     photo:
       "https://cdn1.iconfinder.com/data/icons/3d-web-design/512/11._Developer.png",
   },
-  {
+];
+
+if (import.meta.env.DEV) {
+  extraTabs.push({
     name: "agent",
     link: "/agent",
     photo:
       "https://cdn3d.iconscout.com/3d/premium/thumb/robot-reading-a-book-3d-icon-png-download-11431719.png",
-  },
-];
+  });
+}
 
 export const appTabs = [
   {
@@ -150,7 +153,7 @@ export const appTabs = [
 
 export const rolsInList: {
   content: string;
-  value: Souqify.DeliveryCompanyRole;
+  value: Snapbuy.DeliveryCompanyRole;
 }[] = [
   { content: "🏭 Warehouse Operator", value: "warehouse_operator" },
   { content: "🚚 Delivery Agent", value: "delivery_agent" },

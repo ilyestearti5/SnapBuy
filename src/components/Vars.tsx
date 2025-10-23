@@ -24,7 +24,7 @@ import {
   showToast,
   useAction,
   useAsyncMemo,
-  useCopyState,
+  useMagicField,
   useTemp,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
@@ -34,7 +34,7 @@ import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { Nothing, SettingConfig } from "@biqpod/app/ui/types";
 import { useEffect } from "react";
 interface UpsertVarProps {
-  variable?: Souqify.Var;
+  variable?: Snapbuy.Var;
 }
 const UpsertVar = ({ variable }: UpsertVarProps) => {
   const storeId = useStoreId();
@@ -42,7 +42,11 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
   useEffect(() => {
     setFieldValue("var-name", variable?.name || "");
   }, []);
-  const value = useCopyState<string>(variable?.value || "");
+  const value = useMagicField<number | string | boolean | string[]>(
+    "var-value"
+  );
+  const selectedType = useTemp<string | Nothing>("selected-var-type");
+  const type = selectedType.get as Snapbuy.Var["type"] | Nothing;
   const upsertAction = useAction(
     "upsert-var",
     async () => {
@@ -54,18 +58,23 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
         showToast("Variable name is required", "error");
         return;
       }
-      if (!value.get.trim()) {
+      if (value.get === null || value.get === undefined) {
         showToast("Variable value is required", "error");
         return;
       }
-      const varData: Souqify.Var = {
+      if (!type) {
+        showToast("Variable type is required", "error");
+        return;
+      }
+      const varData: Snapbuy.Var = {
         id: variable?.id || crypto.randomUUID(),
         name: name.trim(),
-        value: value.get.trim(),
+        value: value.get,
         storeId,
         createdAt: variable?.createdAt || Date.now(),
+        type,
       };
-      await snapbuyApi.upsertVar(varData);
+      await snapbuyApi.var.upsert(varData);
       showToast(
         variable
           ? "Variable updated successfully"
@@ -90,8 +99,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
     string: { autoChange: true, hint: "Enter text..." },
     number: { autoChange: true, placeholder: "Enter number..." },
   };
-  const selectedType = useTemp<string | Nothing>("selected-var-type");
-  const type = selectedType.get as keyof SettingType | null;
+
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <CardHeaderForPopup title={variable ? "Edit Variable" : "Add Variable"} />
@@ -119,7 +127,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
           <EmptyComponent>
             <div className="p-2">
               <MagicField
-                fieldId="var-type"
+                fieldId={"var-value"}
                 config={defaultConfig[type] || {}}
                 type={type}
               />
@@ -162,7 +170,7 @@ export const Vars = () => {
   const storeId = useStoreId();
   const vars = useAsyncMemo(async () => {
     if (!storeId) return [];
-    return snapbuyApi.getVars(storeId);
+    return snapbuyApi.var.getAll(storeId);
   }, [storeId]);
   const searchValue = getFieldValue("search-vars");
   const filteredVars = filterFuzzySearch(vars || [], searchValue || "", "name");
@@ -171,7 +179,7 @@ export const Vars = () => {
     async () => {
       if (!storeId) return;
       // Re-fetch vars data
-      return snapbuyApi.getVars(storeId);
+      return snapbuyApi.var.getAll(storeId);
     },
     [storeId]
   );
@@ -182,7 +190,7 @@ export const Vars = () => {
       detail: "This action cannot be undone.",
     });
     if (response) {
-      await snapbuyApi.deleteVar(varId);
+      await snapbuyApi.var.delete(varId);
       showToast("Variable deleted successfully", "success");
       execAction("fetch-vars");
     }
@@ -230,43 +238,117 @@ export const Vars = () => {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ delay: index * 0.05 }}
                 >
-                  <Card className="hover:shadow-md p-4 border transition-shadow">
-                    <div className="flex justify-between items-start gap-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Icon
-                            icon={allIcons.solid.faTag}
-                            iconClassName="text-sm"
-                          />
-                          <h3 className="font-semibold text-lg">
-                            {variable.name}
-                          </h3>
-                        </div>
-                        <div className="flex items-start gap-2">
-                          <Icon
-                            icon={allIcons.solid.faFileText}
-                            iconClassName="text-sm mt-1"
-                          />
-                          <p className="flex-1 break-words">{variable.value}</p>
-                        </div>
-                        <div className="flex items-center gap-2 mt-2">
-                          <Icon
-                            icon={allIcons.solid.faClock}
-                            iconClassName="text-xs"
-                          />
-                          <span className="text-xs">
-                            {new Date(variable.createdAt).toLocaleDateString()}
+                  <Card className="hover:shadow-lg p-4 border hover:border-[--biqpod-primary]/30 transition-all duration-200">
+                    <div className="flex justify-between items-center gap-4">
+                      {/* Left Section - Name and Type */}
+                      <div className="flex flex-1 items-center gap-3 min-w-0">
+                        <div className="flex flex-shrink-0 items-center gap-2">
+                          <span className="flex items-center gap-1 bg-[--biqpod-gray-opacity] px-2 py-1 rounded-full text-xs">
+                            {variable.type === "string" && (
+                              <Icon
+                                icon={allIcons.solid.faQuoteLeft}
+                                iconClassName="text-xs"
+                              />
+                            )}
+                            {variable.type === "number" && (
+                              <Icon
+                                icon={allIcons.solid.faHashtag}
+                                iconClassName="text-xs"
+                              />
+                            )}
+                            {variable.type === "boolean" && (
+                              <Icon
+                                icon={allIcons.solid.faCheck}
+                                iconClassName="text-xs"
+                              />
+                            )}
+                            {variable.type === "array" && (
+                              <Icon
+                                icon={allIcons.solid.faList}
+                                iconClassName="text-xs"
+                              />
+                            )}
+                            {variable.type === "date" && (
+                              <Icon
+                                icon={allIcons.solid.faCalendar}
+                                iconClassName="text-xs"
+                              />
+                            )}
+                            <span className="capitalize">{variable.type}</span>
                           </span>
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-semibold text-base truncate">
+                            {variable.name}
+                          </h3>
+                          <div className="flex items-center gap-1 mt-1">
+                            <Icon
+                              icon={allIcons.solid.faClock}
+                              iconClassName="text-xs text-[--biqpod-secondary-content]"
+                            />
+                            <span className="text-[--biqpod-secondary-content] text-xs">
+                              {new Date(
+                                variable.createdAt
+                              ).toLocaleDateString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        <CircleTip
-                          icon={allIcons.solid.faPen}
-                          onClick={() =>
-                            showPopup(<UpsertVar variable={variable} />)
-                          }
-                          className="bg-blue-100 hover:bg-blue-200"
-                        />
+
+                      {/* Center Section - Value */}
+                      <div className="flex-1 min-w-0 max-w-md">
+                        <div className="text-[--biqpod-text-color] text-sm break-words">
+                          {variable.type === "boolean" && (
+                            <span
+                              className={`px-3 py-1 rounded-full text-xs font-medium ${
+                                variable.value
+                                  ? "bg-green-500/20 text-green-600"
+                                  : "bg-red-500/20 text-red-600"
+                              }`}
+                            >
+                              {variable.value ? "True" : "False"}
+                            </span>
+                          )}
+                          {variable.type === "array" &&
+                            Array.isArray(variable.value) && (
+                              <div className="flex flex-wrap gap-1">
+                                {variable.value
+                                  .slice(0, 3)
+                                  .map((item, index) => (
+                                    <span
+                                      key={index}
+                                      className="bg-[--biqpod-secondary-background] px-2 py-1 rounded text-[--biqpod-secondary-content] text-xs"
+                                    >
+                                      {String(item)}
+                                    </span>
+                                  ))}
+                                {variable.value.length > 3 && (
+                                  <span className="text-[--biqpod-secondary-content] text-xs">
+                                    +{variable.value.length - 3} more
+                                  </span>
+                                )}
+                              </div>
+                            )}
+                          {variable.type === "date" && (
+                            <span className="font-medium">
+                              {new Date(
+                                variable.value as number
+                              ).toLocaleDateString()}
+                            </span>
+                          )}
+                          {variable.type === "number" && (
+                            <span className="font-mono font-medium">
+                              {variable.value}
+                            </span>
+                          )}
+                          {variable.type === "string" && (
+                            <p className="truncate">{variable.value}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Right Section - Actions */}
+                      <div className="flex-shrink-0">
                         <CircleTip
                           icon={allIcons.solid.faEllipsisVertical}
                           onClick={(e) => {

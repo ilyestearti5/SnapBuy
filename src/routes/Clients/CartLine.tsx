@@ -19,7 +19,7 @@ export interface CartLineProps {
 // card line for load products easily
 export const CartLine = ({ data }: CartLineProps) => {
   const product = useAsyncMemo(async () => {
-    var prod = await snapbuyApi.getProduct(data.prodId);
+    var prod = await snapbuyApi.product.get(data.prodId);
     return prod;
   }, []);
   const photo = product?.photos?.at(0);

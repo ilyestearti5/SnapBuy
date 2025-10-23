@@ -31,7 +31,7 @@ import { initPixels } from "../../Links/pixles";
 import { snapbuyApi } from "../../apis";
 import { removeCart, useCartCount } from "../../apis/snapbuy";
 export interface ProductRenderProps {
-  product: Souqify.Product;
+  product: Snapbuy.Product;
   index: number;
 }
 export function highlightMatch(text: string, search: string | undefined) {
@@ -69,7 +69,7 @@ export const ClientProductRender = React.memo(
     const search = getFieldValue("search-prod");
     const store = useAsyncMemo(async () => {
       if (!product.storeId) return null;
-      return snapbuyApi.getStore(product.storeId);
+      return snapbuyApi.store.get(product.storeId);
     }, []);
     const p = initPixels(store);
     return (

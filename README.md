@@ -1,6 +1,6 @@
-# Souqify - E-commerce Management Platform
+# Snapbuy - E-commerce Management Platform
 
-A comprehensive e-commerce management platform built with React, TypeScript, and Firebase. Souqify provides powerful tools for online store management, order processing, delivery management, and customer engagement with a modern, responsive interface.
+A comprehensive e-commerce management platform built with React, TypeScript, and Firebase. Snapbuy provides powerful tools for online store management, order processing, delivery management, and customer engagement with a modern, responsive interface.
 
 ## 🚀 Features
 
@@ -97,7 +97,7 @@ A comprehensive e-commerce management platform built with React, TypeScript, and
 ## 🏗 Project Structure
 
 ```
-souqify/
+snapbuy/
 ├── public/             # Static public assets
 │   ├── routes.json     # Application routes configuration
 │   └── places.json     # Location data
@@ -136,7 +136,7 @@ Before you begin, ensure you have the following installed on your system:
 
 ### 📦 Quick Start - Run from Scratch
 
-Follow these step-by-step instructions to get Souqify running on your local machine:
+Follow these step-by-step instructions to get Snapbuy running on your local machine:
 
 #### 1. **Clone the Repository**
 
@@ -347,7 +347,7 @@ npm run build
 
 ## 📋 Key Features Implementation
 
-## 🎯 How to Use Souqify
+## 🎯 How to Use Snapbuy
 
 ### For Store Owners
 
@@ -417,7 +417,7 @@ The application uses a modular configuration system:
 
 ## 🔗 Available Routes
 
-Souqify includes the following main routes and features:
+Snapbuy includes the following main routes and features:
 
 ### Store Management Routes
 
@@ -483,7 +483,7 @@ Developed by the Biq Pod team for modern e-commerce management.
 
 ## 🏆 What's Next?
 
-After getting Souqify running, you can:
+After getting Snapbuy running, you can:
 
 1. **Customize the theme** using Tailwind CSS configurations
 2. **Add new features** by extending the component system

@@ -1,5 +1,5 @@
 /**
- * Centralized Framer Motion animation configurations for Souqify
+ * Centralized Framer Motion animation configurations for Snapbuy
  * This file contains reusable animation variants and utilities
  */
 

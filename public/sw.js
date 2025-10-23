@@ -1,4 +1,4 @@
-// Service Worker for Souqify notifications
+// Service Worker for Snapbuy notifications
 // This enables notifications to work even when the app is closed
 
 const CACHE_NAME = "snapbuy-notifications-v1";
@@ -140,12 +140,12 @@ self.addEventListener("push", (event) => {
 
 // Install event
 self.addEventListener("install", (event) => {
-  console.log("Souqify Service Worker installed");
+  console.log("Snapbuy Service Worker installed");
   self.skipWaiting();
 });
 
 // Activate event
 self.addEventListener("activate", (event) => {
-  console.log("Souqify Service Worker activated");
+  console.log("Snapbuy Service Worker activated");
   event.waitUntil(clients.claim());
 });

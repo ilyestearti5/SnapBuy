@@ -18,7 +18,7 @@ export const getNotificationHandler = async (
 
   try {
     // Get store data to access notification settings
-    const store = await snapbuyApi.getStore(storeId);
+    const store = await snapbuyApi.store.get(storeId);
     if (!store) return null;
 
     // Create new handler
@@ -44,7 +44,7 @@ export const clearNotificationCache = (storeId?: string) => {
 // Convenience function for new order notifications
 export const notifyNewOrder = async (
   storeId: string,
-  order: Souqify.Order
+  order: Snapbuy.Order
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {
@@ -55,8 +55,8 @@ export const notifyNewOrder = async (
 // Convenience function for order status change notifications
 export const notifyOrderStatusChange = async (
   storeId: string,
-  order: Souqify.Order,
-  oldStatus: Souqify.OrderStatus
+  order: Snapbuy.Order,
+  oldStatus: Snapbuy.OrderStatus
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {
@@ -67,7 +67,7 @@ export const notifyOrderStatusChange = async (
 // Convenience function for order completion notifications
 export const notifyOrderCompleted = async (
   storeId: string,
-  order: Souqify.Order
+  order: Snapbuy.Order
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {
@@ -78,7 +78,7 @@ export const notifyOrderCompleted = async (
 // Convenience function for order cancellation notifications
 export const notifyOrderCancelled = async (
   storeId: string,
-  order: Souqify.Order
+  order: Snapbuy.Order
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {
@@ -89,7 +89,7 @@ export const notifyOrderCancelled = async (
 // Convenience function for order deletion notifications
 export const notifyOrderDeleted = async (
   storeId: string,
-  order: Souqify.Order
+  order: Snapbuy.Order
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {
@@ -100,7 +100,7 @@ export const notifyOrderDeleted = async (
 // Convenience function for low stock notifications
 export const notifyLowStock = async (
   storeId: string,
-  product: Souqify.Product
+  product: Snapbuy.Product
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {
@@ -111,7 +111,7 @@ export const notifyLowStock = async (
 // Convenience function for new product notifications
 export const notifyNewProduct = async (
   storeId: string,
-  product: Souqify.Product
+  product: Snapbuy.Product
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {
@@ -122,7 +122,7 @@ export const notifyNewProduct = async (
 // Convenience function for new client notifications
 export const notifyNewClient = async (
   storeId: string,
-  client: Souqify.Client
+  client: Snapbuy.Client
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {

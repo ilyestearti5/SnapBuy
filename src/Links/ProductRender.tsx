@@ -26,8 +26,9 @@ import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { useUsedBy } from "../routes/Stores/Stores";
+import { useEffect } from "react";
 export interface ProductRenderProps {
-  product: Souqify.Product;
+  product: Snapbuy.Product;
   index: number;
 }
 export const ProductRender = ({ product, index }: ProductRenderProps) => {
@@ -62,6 +63,9 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   }, [product.brandId]);
   const selected = getTemp<string[]>("selected-products") || [];
   const isSelected = product.id && selected.includes(product.id);
+  useEffect(() => {
+    console.log(JSON.stringify(product));
+  }, []);
   // Helper: check if any product is selected
   return (
     <motion.div

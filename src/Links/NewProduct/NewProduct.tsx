@@ -29,7 +29,7 @@ import {
 } from "../../apis/getFns";
 import { ProductMetadata } from "./Views/ProductMetadata";
 export interface ProductFormSectionProps {
-  product?: Partial<Souqify.Product>;
+  product?: Partial<Snapbuy.Product>;
 }
 const pages = [
   { name: "Images", component: ProductImages },
@@ -44,7 +44,7 @@ const pages = [
   { name: "Final Data", component: ProductDataBeforeCreate },
 ];
 export interface PostNewProductProps {
-  product?: Partial<Souqify.Product>;
+  product?: Partial<Snapbuy.Product>;
 }
 export const PostNewProduct = ({ product }: PostNewProductProps) => {
   const postMarketAction = getAction("post-market");
@@ -110,8 +110,6 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
                 };
                 if (product?.id) {
                   options.id = product.id;
-                } else {
-                  options.id = encodeURIComponent(crypto.randomUUID());
                 }
                 options.uid = product?.uid || "";
                 options.storeId = product?.storeId || "";

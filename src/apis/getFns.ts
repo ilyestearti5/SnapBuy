@@ -32,7 +32,7 @@ export const {
   get: getFormPrices,
   use: useFormPrices,
   set: setFormPrices,
-} = getFns<Required<Souqify.Product>["multiple"]["prices"] | undefined>(
+} = getFns<Required<Snapbuy.Product>["multiple"]["prices"] | undefined>(
   "product-prices"
 );
 export const {
@@ -77,7 +77,7 @@ export const {
   get: getFormPhotos,
   set: setFormPhotos,
   use: useFormPhotos,
-} = getFns<Souqify.Product["photos"]>("product-images");
+} = getFns<Snapbuy.Product["photos"]>("product-images");
 export const {
   get: getFormClientPrice,
   set: setFormClientPrice,
@@ -102,7 +102,7 @@ export const {
   get: getFormMetadata,
   set: setFormMetadata,
   use: useFormMetadata,
-} = getFns<Souqify.MetadataField[]>("product-metadata");
+} = getFns<Snapbuy.MetadataField[]>("product-metadata");
 export const useFormProduct = () => {
   const photos = getFormPhotos();
   const clientPrice = getFormClientPrice();
@@ -119,7 +119,7 @@ export const useFormProduct = () => {
   const metadata = getFormMetadata();
   const product = useMemo(() => {
     // Convert metadata array to object format
-    const result: Partial<Souqify.Product> = {
+    const result: Partial<Snapbuy.Product> = {
       photos: photos || [],
       type: type || "single",
       name: name || "",
@@ -135,7 +135,7 @@ export const useFormProduct = () => {
         prices: prices || [],
       };
     } else {
-      const options: Required<Souqify.Product>["single"] = {};
+      const options: Required<Snapbuy.Product>["single"] = {};
       if (clientPrice) {
         options.client = clientPrice;
       }
@@ -165,7 +165,7 @@ export const useFormProduct = () => {
   ]);
   return product;
 };
-export const setFormProduct = (value?: Partial<Souqify.Product>) => {
+export const setFormProduct = (value?: Partial<Snapbuy.Product>) => {
   // Always set all form fields, using the provided value or appropriate defaults
   setFormAvailable(value?.available ?? true);
   setFormKeys(value?.keys ?? []);

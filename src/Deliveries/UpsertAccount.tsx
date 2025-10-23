@@ -13,7 +13,7 @@ import { execAction, isLoading, useTemp } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
 import { rolsInList } from "../utils";
 interface UpsertAccountProps {
-  account?: Souqify.Account;
+  account?: Snapbuy.Account;
 }
 export const UpsertAccount = ({ account }: UpsertAccountProps) => {
   const roleState = useTemp<string | Nothing>("roleState");

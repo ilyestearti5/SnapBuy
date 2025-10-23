@@ -22,10 +22,10 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect } from "react";
-import { souqifyApi } from "../../apis";
+import { snapbuyApi } from "../../apis";
 import { Nothing } from "@biqpod/app/ui/types";
 export interface UpsertTemplateProps {
-  template?: Souqify.Template;
+  template?: Snapbuy.Template;
 }
 export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   const photoState = useCopyState<string | Nothing>(null);
@@ -158,7 +158,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         }
       }
 
-      const templateData: Souqify.Template = {
+      const templateData: Snapbuy.Template = {
         id: template?.id,
         name: templateName.trim(),
         description: templateDescription?.trim() || "",
@@ -167,7 +167,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         price: parseFloat(templatePrice || "0") || 0,
         use: selectedType.get === "single" ? "single" : "multiple",
       };
-      await souqifyApi.createTemplate(templateData);
+      await snapbuyApi.templates.create(templateData);
       showToast(
         template
           ? "Template updated successfully"

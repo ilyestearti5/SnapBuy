@@ -149,7 +149,7 @@ const FilterBrandsPopup = ({
 export const Brands = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const brands = useCopyState<Souqify.Brand[]>([]);
+  const brands = useCopyState<Snapbuy.Brand[]>([]);
   const searchQuery = getFieldValue("search-brand");
   const filters = useCopyState({
     noPhoto: false,

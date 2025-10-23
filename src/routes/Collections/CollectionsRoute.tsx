@@ -20,7 +20,7 @@ export const CollectionsRoute = () => {
   const collectionId = useParams<{ collectionId: string }>().collectionId;
   const collection = useAsyncMemo(async () => {
     if (!collectionId) return null;
-    return await snapbuyApi.getCollection(collectionId);
+    return await snapbuyApi.collections.get(collectionId);
   }, [collectionId]);
   const cart = useFullCart(collection?.storeId);
   const height = getPosition("click-see-cart")?.height || 0;
@@ -50,7 +50,7 @@ export const CollectionsRoute = () => {
                   key={prodId}
                   deps={[prodId, index]}
                   render={async () => {
-                    const product = await snapbuyApi.getProduct(prodId);
+                    const product = await snapbuyApi.product.get(prodId);
                     if (!product) return <EmptyComponent />;
                     return (
                       <ClientProductRender product={product} index={index} />

@@ -115,7 +115,7 @@ const AddProductPopup = ({
   existingProducts = {},
 }: {
   onAdd: (products: Record<string, { count: number; price: number }>) => void;
-  productsList: Souqify.Product[];
+  productsList: Snapbuy.Product[];
   existingProducts?: Record<string, { count: number; price: number }>;
 }) => {
   const searchProduct = getFieldValue("search-product");
@@ -371,12 +371,12 @@ const CreateInvoicePopup = () => {
   const tax = useCopyState(0);
   const discount = useCopyState(0);
   const notes = useCopyState("");
-  const productsList = useCopyState<Souqify.Product[]>([]);
+  const productsList = useCopyState<Snapbuy.Product[]>([]);
 
   useAsyncEffect(async () => {
     if (!storeId) return;
     try {
-      const fetchedProducts = await snapbuyApi.getProductsOf(storeId);
+      const fetchedProducts = await snapbuyApi.product.getProductsOf(storeId);
       // For testing, add some dummy products if none are fetched
       const productsToUse =
         fetchedProducts && fetchedProducts.length > 0
@@ -453,7 +453,7 @@ const CreateInvoicePopup = () => {
       notes: notes.get,
     };
 
-    await snapbuyApi.createInvoice(invoiceData);
+    await snapbuyApi.invoice.create(invoiceData);
     showToast("invoice created successfully", "success");
     closePopup();
     // Refresh invoices list
@@ -593,7 +593,7 @@ const CreateInvoicePopup = () => {
 const InvoiceStatusBadge = ({
   status,
 }: {
-  status: Souqify.Invoice["status"];
+  status: Snapbuy.Invoice["status"];
 }) => {
   const statusColors = {
     draft: "bg-gray-100 text-gray-800",
@@ -614,7 +614,7 @@ const InvoiceStatusBadge = ({
 
 export const Invoices = () => {
   const searchInvoice = getFieldValue("search-invoice");
-  const invoices = useTemp<Souqify.Invoice[]>("invoices-list");
+  const invoices = useTemp<Snapbuy.Invoice[]>("invoices-list");
   const storeId = useStoreId();
   const usedBy = useUsedBy();
 

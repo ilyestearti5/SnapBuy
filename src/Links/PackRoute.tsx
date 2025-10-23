@@ -22,12 +22,12 @@ import { useMemo } from "react";
 export const PackRoute = () => {
   const packId = useParams<{ packId: string }>().packId;
   const pack = useAsyncMemo(async () => {
-    return await snapbuyApi.getPack(packId);
+    return await snapbuyApi.packs.get(packId);
   }, [packId]);
 
   const totalPrice = useAsyncMemo(async () => {
     const prods = await mapAsync(pack?.products || [], ({ prodId }) => {
-      return snapbuyApi.getProduct(prodId);
+      return snapbuyApi.product.get(prodId);
     });
     return prods.reduce((acc, prod) => acc + (getPrice(prod).total || 0), 0);
   }, [pack?.products]);
@@ -67,7 +67,7 @@ export const PackRoute = () => {
                     key={prod.prodId}
                     deps={[prod]}
                     render={async () => {
-                      const product = await snapbuyApi.getProduct(prod.prodId);
+                      const product = await snapbuyApi.product.get(prod.prodId);
                       const photos = product?.photos || [];
                       const price = getPrice(product);
                       return (

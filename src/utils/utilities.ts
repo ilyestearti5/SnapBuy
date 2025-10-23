@@ -160,11 +160,11 @@ export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
   value: Biqpod.System.Setting.Config[T];
   onChange: (value: Biqpod.System.Setting.Config[T]) => void;
 }
-export const getPrice = (product?: Souqify.Product | Nothing, count = 1) => {
+export const getPrice = (product?: Snapbuy.Product | Nothing, count = 1) => {
   var total = 0;
   var choised:
     | null
-    | Required<Required<Souqify.Product>["multiple"]>["prices"][number] = null;
+    | Required<Required<Snapbuy.Product>["multiple"]>["prices"][number] = null;
   var price: null | number = null;
   if (!product) {
     return {
@@ -302,31 +302,6 @@ export const isGLTFFile = (url: string): boolean => {
   console.log("isGLTFFile: Not a GLTF file");
   return false;
 };
-
-/**
- * Check if a file URL or data URL represents an image
- * @param url string - URL or data URL of the file
- * @returns boolean - true if it's an image file
- */
-export const isImageFile = (url: string): boolean => {
-  if (!url) return false;
-
-  // Check data URL MIME type
-  if (url.startsWith("data:image/")) return true;
-
-  // Check file extension in URL
-  const imageExtensions = [
-    ".jpg",
-    ".jpeg",
-    ".png",
-    ".gif",
-    ".bmp",
-    ".webp",
-    ".svg",
-  ];
-  return imageExtensions.some((ext) => url.toLowerCase().includes(ext));
-};
-
 /**
  * Create an object URL from a file for memory-efficient handling
  * @param file File - The file to create an object URL for
@@ -379,7 +354,6 @@ export const getFileType = (
       return "gltf";
     return "unknown";
   } else {
-    if (isImageFile(fileOrUrl)) return "image";
     if (isGLTFFile(fileOrUrl)) return "gltf";
     return "unknown";
   }

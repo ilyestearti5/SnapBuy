@@ -72,12 +72,12 @@ const icons = {
   shoppingCart: allIcons.solid.faShoppingCart,
 };
 // Optimized utility functions for repeated logic
-const getProductPrice = (product: Souqify.Product): number => {
+const getProductPrice = (product: Snapbuy.Product): number => {
   return product.type === "single"
     ? product.single?.client || 0
     : Math.min(...(product.multiple?.prices?.map((p) => p.price) || [0]));
 };
-const getProductPriceDisplay = (product: Souqify.Product): string => {
+const getProductPriceDisplay = (product: Snapbuy.Product): string => {
   const price = getProductPrice(product);
   return product.type === "single" ? `${price} DA` : `From ${price} DA`;
 };
@@ -134,7 +134,7 @@ const COMMON_STYLES = {
   },
 };
 interface CollectionProductsProps {
-  collection: Souqify.Collection;
+  collection: Snapbuy.Collection;
   storeId: string;
 }
 const CollectionProducts = ({
@@ -143,7 +143,7 @@ const CollectionProducts = ({
 }: CollectionProductsProps) => {
   const collectionProducts = useAsyncMemo(async () => {
     if (!collection.id) return null;
-    return snapbuyApi.getProductsOfCollection(collection.id);
+    return snapbuyApi.collections.getProducts(collection.id);
   }, [collection.id]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -244,7 +244,7 @@ const ProductCard = ({
   product,
   storeId,
 }: {
-  product: Souqify.Product;
+  product: Snapbuy.Product;
   storeId: string;
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -391,7 +391,7 @@ const SearchProductCard = ({
   product,
   storeId,
 }: {
-  product: Souqify.Product;
+  product: Snapbuy.Product;
   storeId: string;
 }) => {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
@@ -502,7 +502,7 @@ const SearchProductCard = ({
             className="text-gray-500 text-xs uppercase tracking-wide"
             style={COMMON_STYLES.interFont}
           >
-            Souqify
+            Snapbuy
           </span>
         </div>
         {/* Product Name */}
@@ -562,7 +562,7 @@ const CustomCartView = ({ storeId }: { storeId: string }) => {
   // Get products for cart items
   const cartProducts = useAsyncMemo(async () => {
     if (!cartItems.length || !storeId) return [];
-    const allProducts = await snapbuyApi.getProductsOf(storeId);
+    const allProducts = await snapbuyApi.product.getProductsOf(storeId);
     if (!allProducts) return [];
     return cartItems
       .map((cartItem) => {
@@ -1430,8 +1430,8 @@ export const Test = () => {
   const [sortBy, setSortBy] = useState("recommended");
   const [showSortDropdown, setShowSortDropdown] = useState(false);
   const [selectedCollection, setSelectedCollection] =
-    useState<Souqify.Collection | null>(null);
-  const [selectedOffer, setSelectedOffer] = useState<Souqify.Pack | null>(null);
+    useState<Snapbuy.Collection | null>(null);
+  const [selectedOffer, setSelectedOffer] = useState<Snapbuy.Pack | null>(null);
   // Search placeholder cycling with typing animation
   const [currentPlaceholderIndex, setCurrentPlaceholderIndex] = useState(0);
   const [typedText, setTypedText] = useState("");
@@ -1629,17 +1629,17 @@ export const Test = () => {
     return () => clearInterval(interval);
   }, [bannerImages.length]);
   const store = useAsyncMemo(async () => {
-    return snapbuyApi.getStore(storeId);
+    return snapbuyApi.store.get(storeId);
   }, [storeId]);
   // Fetch collections for this store
   const collections = useAsyncMemo(async () => {
     if (!storeId) return [];
-    return snapbuyApi.getCollections(storeId);
+    return snapbuyApi.collections.getAll(storeId);
   }, [storeId]);
   // Fetch products for this store
   const products = useAsyncMemo(async () => {
     if (!storeId) return [];
-    return snapbuyApi.getProductsOf(storeId);
+    return snapbuyApi.product.getProductsOf(storeId);
   }, [storeId]);
   // Fetch brands for this store
   const brands = useAsyncMemo(async () => {
@@ -1649,7 +1649,7 @@ export const Test = () => {
   // Fetch offers/packs for this store
   const offers = useAsyncMemo(async () => {
     if (!storeId) return [];
-    return snapbuyApi.getPacks(storeId);
+    return snapbuyApi.packs.getAll(storeId);
   }, [storeId]);
   // Get featured products (first 8 products)
   const featuredProducts = useMemo(() => {
@@ -1914,7 +1914,7 @@ export const Test = () => {
                   className="font-bold text-gray-900 text-2xl uppercase tracking-wide"
                   style={{ fontFamily: "Oswald, sans-serif" }}
                 >
-                  {store?.name || "Souqify"}
+                  {store?.name || "Snapbuy"}
                 </h1>
               </div>
               <nav
@@ -2026,16 +2026,16 @@ export const Test = () => {
                   className="flex justify-center mb-6"
                 >
                   <div className="flex space-x-8">
-                    <button className="pb-2 hover:border-gray-300 border-transparent border-b-2 font-medium text-gray-600 hover:text-gray-900">
+                    <button className="pb-2 border-transparent hover:border-gray-300 border-b-2 font-medium text-gray-600 hover:text-gray-900">
                       <Translate content="All" />
                     </button>
                     <button className="pb-2 border-gray-900 border-b-2 font-medium text-gray-900">
                       <Translate content="Women" />
                     </button>
-                    <button className="pb-2 hover:border-gray-300 border-transparent border-b-2 font-medium text-gray-600 hover:text-gray-900">
+                    <button className="pb-2 border-transparent hover:border-gray-300 border-b-2 font-medium text-gray-600 hover:text-gray-900">
                       <Translate content="Men" />
                     </button>
-                    <button className="pb-2 hover:border-gray-300 border-transparent border-b-2 font-medium text-gray-600 hover:text-gray-900">
+                    <button className="pb-2 border-transparent hover:border-gray-300 border-b-2 font-medium text-gray-600 hover:text-gray-900">
                       <Translate content="Kids" />
                     </button>
                   </div>
@@ -2443,7 +2443,7 @@ export const Test = () => {
                     className="mb-4 font-bold text-white text-2xl uppercase tracking-wide"
                     style={{ fontFamily: "Oswald, sans-serif" }}
                   >
-                    {store?.name || "Souqify"}
+                    {store?.name || "Snapbuy"}
                   </h2>
                   <p
                     className="mb-6 text-gray-300 leading-relaxed"
@@ -2827,7 +2827,7 @@ export const Test = () => {
                   className="text-gray-600 text-sm"
                   style={{ fontFamily: "Inter, sans-serif" }}
                 >
-                  &copy; 2024 {store?.name || "Souqify"}.{" "}
+                  &copy; 2024 {store?.name || "Snapbuy"}.{" "}
                   <Translate content="All rights reserved." />
                 </p>
                 <p

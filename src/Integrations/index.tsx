@@ -44,19 +44,16 @@ const cardVariants = {
   hidden: {
     opacity: 0,
     y: 30,
-    scale: 0.95,
   },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
       duration: 0.6,
     },
   },
   hover: {
     y: -5,
-    scale: 1.01,
     transition: {
       duration: 0.3,
     },
@@ -80,24 +77,20 @@ const headerVariants = {
 const buttonVariants = {
   hidden: {
     opacity: 0,
-    scale: 0.8,
   },
   visible: {
     opacity: 1,
-    scale: 1,
     transition: {
       duration: 0.4,
     },
   },
   hover: {
-    scale: 1.05,
     y: -2,
     transition: {
       duration: 0.2,
     },
   },
   tap: {
-    scale: 0.95,
     transition: {
       duration: 0.1,
     },
@@ -144,12 +137,10 @@ const codeBlockVariants = {
   hidden: {
     opacity: 0,
     y: 20,
-    scale: 0.98,
   },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
       duration: 0.5,
     },
@@ -159,12 +150,10 @@ const codeBlockVariants = {
 const errorVariants = {
   hidden: {
     opacity: 0,
-    scale: 0.9,
     y: -10,
   },
   visible: {
     opacity: 1,
-    scale: 1,
     y: 0,
     transition: {
       duration: 0.4,
@@ -172,7 +161,6 @@ const errorVariants = {
   },
   exit: {
     opacity: 0,
-    scale: 0.9,
     y: -10,
     transition: {
       duration: 0.3,
@@ -383,7 +371,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
   };
   return usedBy === "owned" ? (
     <motion.div
-      className="space-y-6 p-0"
+      className="space-y-6 p-4"
       variants={containerVariants}
       initial="hidden"
       animate="visible"
@@ -391,11 +379,10 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
       <motion.div className="mb-8" variants={headerVariants}>
         <motion.h1
           className="mb-2 font-bold text-[--biqpod-text-color] text-2xl"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{
-            type: "spring",
-            stiffness: 200,
+            duration: 0.5,
             delay: 0.1,
           }}
         >
@@ -407,10 +394,10 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
           animate={{ opacity: 0.7, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Translate content="Configure your Souqify API integration settings" />
+          <Translate content="Configure your Snapbuy API integration settings" />
         </motion.p>
       </motion.div>
-      {/* Souqify API Integration Section */}
+      {/* Snapbuy API Integration Section */}
       <motion.div variants={cardVariants} whileHover="hover">
         <Card className="p-6">
           <motion.h2
@@ -419,7 +406,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.4 }}
           >
-            <Translate content="Souqify API Integration" />
+            <Translate content="Snapbuy API Integration" />
           </motion.h2>
           {/* API Token Section */}
           <motion.div
@@ -460,8 +447,8 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
             {!storeId ? (
               <motion.div
                 className="bg-[--biqpod-gray-opacity] p-4 rounded-lg"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ delay: 0.7 }}
               >
                 <motion.p
@@ -486,11 +473,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                     className="flex items-center gap-3"
                     variants={tokenVariants}
                   >
-                    <motion.div
-                      className="flex-1 bg-[--biqpod-gray-opacity] p-3 rounded-lg font-mono text-sm"
-                      whileHover={{ scale: 1.01 }}
-                      transition={{ duration: 0.2 }}
-                    >
+                    <motion.div className="flex-1 bg-[--biqpod-gray-opacity] p-3 rounded-lg font-mono text-sm">
                       {apiToken.get}
                     </motion.div>
                   </motion.div>
@@ -532,8 +515,8 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                     {apiToken.get.startsWith("sb_demo_") && (
                       <motion.span
                         className="bg-yellow-100 px-3 py-2 rounded-lg text-yellow-800 text-xs"
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         transition={{ delay: 0.2 }}
                       >
                         <Translate content="Demo Token" />
@@ -630,8 +613,8 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                     <Translate content="Choose Programming Language:" />
                   </motion.label>
                   <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
                   >
                     <EnumField
@@ -665,10 +648,9 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                   </motion.p>
                   <motion.div
                     className="rounded-lg overflow-hidden"
-                    initial={{ opacity: 0, scale: 0.98 }}
-                    animate={{ opacity: 1, scale: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     transition={{ delay: 0.7, duration: 0.4 }}
-                    whileHover={{ scale: 1.01 }}
                   >
                     <SyntaxHighlighter
                       language={getSyntaxLanguage(
@@ -776,8 +758,8 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
   ) : (
     <motion.div
       className="flex justify-center items-center h-full min-h-[400px]"
-      initial={{ opacity: 0, scale: 0.8 }}
-      animate={{ opacity: 1, scale: 1 }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
       <motion.div
@@ -787,11 +769,10 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
         transition={{ delay: 0.2 }}
       >
         <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           transition={{
-            type: "spring",
-            stiffness: 200,
+            duration: 0.5,
             delay: 0.3,
           }}
         >

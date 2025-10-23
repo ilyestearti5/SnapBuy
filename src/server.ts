@@ -12,7 +12,7 @@ export const cloud = initMyCloud({
   appId: "1:911813185967:web:4447a361eeaddd00315f5a",
   measurementId: "G-8GB7LZPHVX",
   functions: {
-    devUri: (fnId) => ENDPOINT + `/invoke/${fnId}`,
+    devUri: (fnId) => LOCAL_ENDPOINT + `/invoke/${fnId}`,
     prodUri: (fnId) => {
       return ENDPOINT + `/invoke/${fnId}`;
     },

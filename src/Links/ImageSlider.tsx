@@ -4,7 +4,7 @@ import { useCopyState } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import React, { useState, useEffect, useRef } from "react";
 import { MediaRenderer } from "../components/MediaRenderer";
-import { isImageFile } from "../utils/utilities";
+import { isGLTFFile } from "../utils";
 interface SliderProps {
   photos?: string[];
   autoSlide?: boolean;
@@ -219,48 +219,50 @@ export const ImageSlider: React.FC<SliderProps> = ({
           className="flex items-center w-full h-full"
           style={slideStyle}
         >
-          {photos.map((photo, index) => (
-            <div
-              key={index}
-              className="relative flex flex-shrink-0 justify-center items-center w-full h-full overflow-hidden cursor-pointer"
-            >
-              {isImageFile(photo) ? (
-                <>
-                  <img
-                    draggable="false"
-                    src={photo}
-                    loading="eager"
-                    className="opacity-40 blur-lg w-full h-full object-cover"
-                  />
-                  <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
+          {photos.map((photo, index) => {
+            return (
+              <div
+                key={index}
+                className="relative flex flex-shrink-0 justify-center items-center w-full h-full overflow-hidden cursor-pointer"
+              >
+                {!isGLTFFile(photo) ? (
+                  <EmptyComponent>
                     <img
                       draggable="false"
                       src={photo}
-                      className={tw(
-                        "absolute top-1/2 object-contain left-1/2 h-full",
-                        zoom && "transition-transform duration-200 ease-out"
-                      )}
-                      style={
-                        zoom && index === current.get && isZooming
-                          ? {
-                              transform: `translate(-50%, -50%) scale(${zoomLevel})`,
-                              transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
-                            }
-                          : {
-                              transform: `translate(-50%, -50%) scale(1)`,
-                              transformOrigin: `50% 50%`,
-                            }
-                      }
+                      loading="eager"
+                      className="opacity-40 blur-lg w-full h-full object-cover"
                     />
+                    <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
+                      <img
+                        draggable="false"
+                        src={photo}
+                        className={tw(
+                          "absolute top-1/2 object-contain left-1/2 h-full",
+                          zoom && "transition-transform duration-200 ease-out"
+                        )}
+                        style={
+                          zoom && index === current.get && isZooming
+                            ? {
+                                transform: `translate(-50%, -50%) scale(${zoomLevel})`,
+                                transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                              }
+                            : {
+                                transform: `translate(-50%, -50%) scale(1)`,
+                                transformOrigin: `50% 50%`,
+                              }
+                        }
+                      />
+                    </div>
+                  </EmptyComponent>
+                ) : (
+                  <div className="w-full h-full">
+                    <MediaRenderer src={photo} className="w-full h-full" />
                   </div>
-                </>
-              ) : (
-                <div className="w-full h-full">
-                  <MediaRenderer src={photo} className="w-full h-full" />
-                </div>
-              )}
-            </div>
-          ))}
+                )}
+              </div>
+            );
+          })}
         </div>
         {photos.length > 1 && !zoom && (
           <EmptyComponent>

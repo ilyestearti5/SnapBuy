@@ -63,7 +63,7 @@ import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
 import { AnimatedCard, FadeIn } from "../animations/components";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Nothing } from "@biqpod/app/ui/types";
-const productKeys: (keyof Souqify.Product)[] = [
+const productKeys: (keyof Snapbuy.Product)[] = [
   "available",
   "createdAt",
   "description",
@@ -75,7 +75,7 @@ const productKeys: (keyof Souqify.Product)[] = [
   "type",
 ];
 interface KeyLineProps {
-  prodKey: keyof Souqify.Product;
+  prodKey: keyof Snapbuy.Product;
   value: boolean;
   onChange: (value: boolean) => void;
 }
@@ -157,12 +157,9 @@ const JsonImportFrom = () => {
       const text = await (file as unknown as File).text();
       const data = JSON.parse(text);
       if (data.products && Array.isArray(data.products)) {
-        await snapbuyApi.upsertProducts(
+        await snapbuyApi.product.upsert(
           storeId!,
-          data.products.map((p: Partial<Souqify.Product>) => ({
-            ...p,
-            storeId,
-          }))
+          data.products.map((p: Partial<Snapbuy.Product>) => p)
         );
       }
       if (data.brands && Array.isArray(data.brands)) {
@@ -172,17 +169,17 @@ const JsonImportFrom = () => {
       }
       if (data.packs && Array.isArray(data.packs)) {
         for (const pack of data.packs) {
-          await snapbuyApi.addPack({ ...pack, storeId });
+          await snapbuyApi.packs.add({ ...pack, storeId });
         }
       }
       if (data.collections && Array.isArray(data.collections)) {
         for (const collection of data.collections) {
-          await snapbuyApi.upsertCollection({ ...collection, storeId });
+          await snapbuyApi.collections.upsert({ ...collection, storeId });
         }
       }
       if (data.coupons && Array.isArray(data.coupons)) {
         for (const coupon of data.coupons) {
-          await snapbuyApi.upsertCoupon({ ...coupon, storeId });
+          await snapbuyApi.coupon.upsert({ ...coupon, storeId });
         }
       }
       showToast("Import completed successfully");
@@ -236,11 +233,11 @@ export const KeyLine = ({ prodKey, onChange, value }: KeyLineProps) => {
   );
 };
 export const ExportExcelPopupProducts = () => {
-  var keys = useCopyState<(keyof Souqify.Product)[]>([]);
+  var keys = useCopyState<(keyof Snapbuy.Product)[]>([]);
   const action = useAction(
     "export-products",
     async () => {
-      var products = await snapbuyApi.getAllProducts();
+      var products = await snapbuyApi.product.getAll();
       await exportExcel(products, keys.get);
     },
     [keys.get]
@@ -296,8 +293,8 @@ export const ExportExcelPopupProducts = () => {
   );
 };
 const exportExcel = async (
-  products: Souqify.Product[],
-  keys: (keyof Souqify.Product)[]
+  products: Snapbuy.Product[],
+  keys: (keyof Snapbuy.Product)[]
 ) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Products");
@@ -352,7 +349,7 @@ const AddMetadataPopup = ({
       Partial<Record<string, Nothing | string | number | string[] | boolean>>
     >("magic-fields");
   // Create a temporary metadata field for form management
-  const tempMetadata = useTemp<Souqify.MetadataField[]>(
+  const tempMetadata = useTemp<Snapbuy.MetadataField[]>(
     "temp-bulk-metadata-fields"
   );
   const addMetadataField = () => {
@@ -361,7 +358,7 @@ const AddMetadataPopup = ({
       showToast("Field key is required", "error");
       return;
     }
-    const selectedFieldType = metadataType.get as Souqify.MetadataField["type"];
+    const selectedFieldType = metadataType.get as Snapbuy.MetadataField["type"];
     if (!selectedFieldType) {
       showToast("Field type is required", "error");
       return;
@@ -373,7 +370,7 @@ const AddMetadataPopup = ({
       return;
     }
     const defaultValue = getDefaultValueForType(selectedFieldType);
-    const newField: Souqify.MetadataField = {
+    const newField: Snapbuy.MetadataField = {
       key: fieldKeyValue.trim(),
       type: selectedFieldType,
       value: defaultValue,
@@ -389,7 +386,7 @@ const AddMetadataPopup = ({
     const updatedFields = existingFields.filter((_, i) => i !== index);
     tempMetadata.set(updatedFields);
   };
-  const getDefaultValueForType = (type: Souqify.MetadataField["type"]) => {
+  const getDefaultValueForType = (type: Snapbuy.MetadataField["type"]) => {
     switch (type) {
       case "number":
         return 0;
@@ -426,7 +423,7 @@ const AddMetadataPopup = ({
       // Update each selected product with all metadata fields
       const updatePromises = selectedProducts.map(async (productId) => {
         try {
-          const product = await snapbuyApi.getProduct(productId);
+          const product = await snapbuyApi.product.get(productId);
           if (product) {
             let updatedMetaData = [...(product.metaData || [])];
             // Add or update each metadata field
@@ -442,11 +439,11 @@ const AddMetadataPopup = ({
                 updatedMetaData.push(field);
               }
             });
-            const updatedProduct: Partial<Souqify.Product> = {
+            const updatedProduct: Partial<Snapbuy.Product> = {
               id: productId,
               metaData: updatedMetaData,
             };
-            await snapbuyApi.upsertProducts(storeId!, [updatedProduct]);
+            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
           }
         } catch (error) {
           console.error(`Failed to update product ${productId}:`, error);
@@ -691,16 +688,16 @@ const RemoveMetadataPopup = ({
       // Update each selected product by removing the specified metadata fields
       const updatePromises = selectedProducts.map(async (productId) => {
         try {
-          const product = await snapbuyApi.getProduct(productId);
+          const product = await snapbuyApi.product.get(productId);
           if (product && product.metaData) {
             let updatedMetaData = product.metaData.filter(
               (field) => !metadataKeysList.includes(field.key)
             );
-            const updatedProduct: Partial<Souqify.Product> = {
+            const updatedProduct: Partial<Snapbuy.Product> = {
               id: productId,
               metaData: updatedMetaData,
             };
-            await snapbuyApi.upsertProducts(storeId!, [updatedProduct]);
+            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
           }
         } catch (error) {
           console.error(`Failed to update product ${productId}:`, error);
@@ -810,15 +807,15 @@ export const ExportJsonPopup = () => {
     setLoadingPreview(true);
     try {
       const exportData: {
-        products?: Souqify.Product[];
-        brands?: Souqify.Brand[];
-        packs?: Souqify.Pack[];
-        collections?: Souqify.Collection[];
-        coupons?: Souqify.Coupon[];
+        products?: Snapbuy.Product[];
+        brands?: Snapbuy.Brand[];
+        packs?: Snapbuy.Pack[];
+        collections?: Snapbuy.Collection[];
+        coupons?: Snapbuy.Coupon[];
       } = {};
       // Fetch all products
       try {
-        const products = await snapbuyApi.getProductsOf(storeId);
+        const products = await snapbuyApi.product.getProductsOf(storeId);
         exportData.products = products || [];
       } catch (error) {
         exportData.products = [];
@@ -832,21 +829,21 @@ export const ExportJsonPopup = () => {
       }
       // Fetch all packs
       try {
-        const packs = await snapbuyApi.getPacks(storeId);
+        const packs = await snapbuyApi.packs.getAll(storeId);
         exportData.packs = packs || [];
       } catch (error) {
         exportData.packs = [];
       }
       // Fetch all collections
       try {
-        const collections = await snapbuyApi.getCollections(storeId);
+        const collections = await snapbuyApi.collections.getAll(storeId);
         exportData.collections = collections || [];
       } catch (error) {
         exportData.collections = [];
       }
       // Fetch all coupons
       try {
-        const coupons = await snapbuyApi.getCoupons(storeId);
+        const coupons = await snapbuyApi.coupon.getAll(storeId);
         exportData.coupons = coupons || [];
       } catch (error) {
         exportData.coupons = [];
@@ -1135,9 +1132,11 @@ const ToolsCard = memo(
       <motion.div
         drag
         dragMomentum={false}
+        layout
         className="right-4 bottom-4 z-[5000000000000000000000000000000] absolute"
         initial={{ scale: 0, rotate: -180 }}
         animate={{ scale: 1, rotate: 0 }}
+        exit={{ scale: 0, rotate: 180 }}
         transition={{
           type: "spring",
           stiffness: 300,
@@ -1145,22 +1144,82 @@ const ToolsCard = memo(
           delay: 0.5,
         }}
       >
-        <Card className="flex flex-col items-center p-3 rounded-3xl">
+        <Card
+          motionProps={{
+            initial: { opacity: 0, y: 20, scale: 0.9, height: "auto" },
+            animate: {
+              opacity: 1,
+              y: 0,
+              scale: 1,
+              height: showTools ? "auto" : 60,
+              transition: {
+                height: { type: "spring", stiffness: 300, damping: 30 },
+                opacity: { type: "spring", stiffness: 400, damping: 25 },
+                y: { type: "spring", stiffness: 400, damping: 25 },
+                scale: { type: "spring", stiffness: 400, damping: 25 },
+              },
+            },
+            exit: { opacity: 0, y: 20, scale: 0.9, height: 60 },
+            transition: {
+              type: "spring",
+              stiffness: 400,
+              damping: 25,
+              delay: 0.3,
+            },
+            whileHover: {
+              scale: 1.02,
+              transition: { type: "spring", stiffness: 400, damping: 25 },
+            },
+            whileTap: { scale: 0.98 },
+            layout: true,
+          }}
+          enableAnimations
+          className="flex flex-col items-center bg-[--biqpod-gray-opacity] shadow-2xl backdrop-blur-sm p-3 border-0 rounded-3xl overflow-hidden"
+        >
           <AnimatePresence>
             {showTools && (
-              <EmptyComponent>
+              <motion.div
+                initial="hidden"
+                animate="visible"
+                exit="hidden"
+                variants={{
+                  hidden: { opacity: 0, scale: 0.8 },
+                  visible: {
+                    opacity: 1,
+                    scale: 1,
+                    transition: {
+                      staggerChildren: 0.1,
+                      delayChildren: 0.1,
+                    },
+                  },
+                }}
+                className="flex flex-col gap-2"
+              >
                 {usedBy !== "read" && (
-                  <EmptyComponent>
+                  <motion.div
+                    variants={{
+                      hidden: { scale: 0, opacity: 0, y: 20 },
+                      visible: { scale: 1, opacity: 1, y: 0 },
+                    }}
+                    transition={{
+                      type: "spring",
+                      stiffness: 400,
+                      damping: 25,
+                    }}
+                  >
                     {!isSelectionMode && (
                       <motion.div
-                        initial={{ scale: 0, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0, opacity: 0 }}
-                        transition={{ delay: 0.5 }}
+                        whileHover={{ scale: 1.1, rotate: 5 }}
+                        whileTap={{ scale: 0.95 }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 400,
+                          damping: 17,
+                        }}
                       >
                         <CircleTip
                           icon={allIcons.solid.faListCheck}
-                          className="text-orange-600"
+                          className="text-orange-600 hover:text-orange-700 transition-colors duration-200"
                           onClick={() => {
                             onStartSelection();
                           }}
@@ -1168,99 +1227,128 @@ const ToolsCard = memo(
                       </motion.div>
                     )}
                     <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ delay: 0.4 }}
+                      whileHover={{ scale: 1.1, rotate: -5 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 17,
+                      }}
+                      variants={{
+                        hidden: { scale: 0, opacity: 0, y: 20 },
+                        visible: { scale: 1, opacity: 1, y: 0 },
+                      }}
                     >
                       <CircleTip
                         icon={allIcons.solid.faFileCode}
-                        className="text-blue-600"
+                        className="text-blue-600 hover:text-blue-700 transition-colors duration-200"
                         onClick={async () => {
                           showPopup(<JsonImportFrom />);
                         }}
                       />
                     </motion.div>
                     <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ delay: 0.3 }}
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 17,
+                      }}
+                      variants={{
+                        hidden: { scale: 0, opacity: 0, y: 20 },
+                        visible: { scale: 1, opacity: 1, y: 0 },
+                      }}
                     >
                       <CircleTip
                         icon={allIcons.solid.faFileCode}
-                        className="text-purple-600"
+                        className="text-purple-600 hover:text-purple-700 transition-colors duration-200"
                         onClick={() => {
                           showPopup(<ExportJsonPopup />);
                         }}
                       />
                     </motion.div>
                     <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ delay: 0.2 }}
+                      whileHover={{ scale: 1.1, rotate: -5 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 17,
+                      }}
+                      variants={{
+                        hidden: { scale: 0, opacity: 0, y: 20 },
+                        visible: { scale: 1, opacity: 1, y: 0 },
+                      }}
                     >
                       <CircleTip
                         icon={allIcons.regular.faFileExcel}
-                        className="text-green-600"
+                        className="text-green-600 hover:text-green-700 transition-colors duration-200"
                         onClick={async () => {
                           showPopup(<ExcelImportFrom />);
                         }}
                       />
                     </motion.div>
                     <motion.div
-                      initial={{ scale: 0, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0, opacity: 0 }}
-                      transition={{ delay: 0.1 }}
+                      whileHover={{ scale: 1.1, rotate: 5 }}
+                      whileTap={{ scale: 0.95 }}
+                      transition={{
+                        type: "spring",
+                        stiffness: 400,
+                        damping: 17,
+                      }}
+                      variants={{
+                        hidden: { scale: 0, opacity: 0, y: 20 },
+                        visible: { scale: 1, opacity: 1, y: 0 },
+                      }}
                     >
                       <CircleTip
-                        className="text-green-600"
+                        className="text-green-600 hover:text-green-700 transition-colors duration-200"
                         onClick={() => {
                           showPopup(<ExportExcelPopupProducts />);
                         }}
                         icon={allIcons.solid.faFileExcel}
                       />
                     </motion.div>
-                  </EmptyComponent>
+                  </motion.div>
                 )}
                 {usedBy !== "read" && (
                   <motion.div
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    exit={{ scale: 0, opacity: 0 }}
-                    transition={{ delay: 0 }}
+                    whileHover={{ scale: 1.15, rotate: 10 }}
+                    whileTap={{ scale: 0.9 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                    variants={{
+                      hidden: { scale: 0, opacity: 0, y: 20 },
+                      visible: { scale: 1, opacity: 1, y: 0 },
+                    }}
                   >
                     <CircleTip
                       icon={allIcons.solid.faPlus}
-                      className="text-violet-500"
+                      className="text-violet-500 hover:text-violet-600 transition-colors duration-200"
                       onClick={async () => {
                         showPopup(<PostNewProduct />);
                       }}
                     />
                   </motion.div>
                 )}
-              </EmptyComponent>
+              </motion.div>
             )}
           </AnimatePresence>
-          <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-            <CircleTip
-              onClick={onToggleTools}
-              icon={allIcons.solid.faPlus}
-              iconClassName={tw(
-                "transition-transform duration-300",
-                showTools ? "rotate-45 text-sky-700" : "rotate-0"
-              )}
-            />
-          </motion.div>
+          <CircleTip
+            onClick={onToggleTools}
+            icon={allIcons.solid.faPlus}
+            iconClassName={tw(
+              "transition-transform duration-300 ease-in-out",
+              showTools ? "rotate-45" : "rotate-0"
+            )}
+          />
         </Card>
       </motion.div>
     );
   }
 );
 const PAGE_SIZE = 30;
-const sortBy: keyof Souqify.Product = "id";
+const sortBy: keyof Snapbuy.Product = "id";
 export const Products = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
@@ -1280,7 +1368,7 @@ export const Products = () => {
         return;
       }
       await delay(200);
-      const newProducts = await getDocs<Souqify.Product>(
+      const newProducts = await getDocs<Snapbuy.Product>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
         {
           where: and(
@@ -1329,7 +1417,7 @@ export const Products = () => {
         // Delete each selected product
         await Promise.all(
           selectedProductIds.map(async (productId) => {
-            await snapbuyApi.deleteProduct(productId);
+            await snapbuyApi.product.delete(productId);
           })
         );
         // Clear selection and exit selection mode
@@ -1365,13 +1453,13 @@ export const Products = () => {
         // Update availability for each selected product
         await Promise.all(
           selectedProductIds.map(async (productId) => {
-            const product = await snapbuyApi.getProduct(productId);
+            const product = await snapbuyApi.product.get(productId);
             if (product) {
-              const updatedProduct: Partial<Souqify.Product> = {
+              const updatedProduct: Partial<Snapbuy.Product> = {
                 id: productId,
                 available: enable,
               };
-              await snapbuyApi.upsertProducts(storeId!, [updatedProduct]);
+              await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
             }
           })
         );
@@ -1403,7 +1491,7 @@ export const Products = () => {
   const search = getFieldValue("producer-search-product");
   const [_, filterProducts] = useMemoDelay(
     () => {
-      let filteredProducts = products?.filter((prod: Souqify.Product) => {
+      let filteredProducts = products?.filter((prod: Snapbuy.Product) => {
         // Apply filter options with AND logic
         if (options.get) {
           // Filter by availability
@@ -1569,7 +1657,7 @@ export const Products = () => {
     }: {
       index: number;
       style: React.CSSProperties;
-      data: (Souqify.Product | number)[];
+      data: (Snapbuy.Product | number)[];
     }) => {
       const itsNumber = data.some((item) => typeof item === "number");
       if (itsNumber) {

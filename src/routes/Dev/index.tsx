@@ -20,7 +20,7 @@ import {
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { delay, tw } from "@biqpod/app/ui/utils";
-import { souqifyApi } from "../../apis";
+import { snapbuyApi } from "../../apis";
 import { UpsertTemplate } from "./UpsertTemplate";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -216,18 +216,18 @@ export const DeveloperRoute = () => {
   const deleteAction = useAction(
     "delete-template",
     async (templateId: string) => {
-      await souqifyApi.deleteTemplate(templateId);
+      await snapbuyApi.templates.delete(templateId);
       showToast("Template deleted successfully", "success");
       execAction("refresh-templates");
     },
     []
   );
-  const templates = useCopyState<Souqify.Template[]>([]);
+  const templates = useCopyState<Snapbuy.Template[]>([]);
   const refreshAction = useAction(
     "refresh-templates",
     async () => {
       await delay(100); // Small delay to allow for state updates
-      const result = await souqifyApi.getMyTemplates();
+      const result = await snapbuyApi.templates.getMyList();
       templates.set(result);
     },
     []
