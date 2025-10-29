@@ -21,13 +21,13 @@ import {
   getAction,
   showPopup,
 } from "@biqpod/app/ui/hooks";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
 import { SetStorePlatforms } from "./SetStorePlatforms";
 import { platformsPhoto } from "../../utils/platforms";
 interface UpsertStoreProps {
-  store?: Snapbuy.Store;
+  store?: Biqpod.Snapbuy.Store;
 }
 export const UpsertStore = ({ store }: UpsertStoreProps) => {
   const photoState = useTemp<string | Nothing>("store-photo");

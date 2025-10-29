@@ -1,9 +1,8 @@
 import { TabsView } from "../../../components/TabsView";
 import { Stores } from "../Stores";
 import { NotificationSettings } from "../../../components/NotificationSettings";
-import { StoreDeliveryPricingList, Vars } from "../../../components";
+import { Vars } from "../../../components";
 import { allIcons } from "@biqpod/app/ui/apis";
-
 export const StoreConfiguration = () => {
   const tabs = [
     {
@@ -11,12 +10,6 @@ export const StoreConfiguration = () => {
       label: "Store Settings",
       icon: allIcons.solid.faStore,
       content: <Stores />,
-    },
-    {
-      id: "delivery-pricing" as const,
-      label: "Delivery Pricing",
-      icon: allIcons.solid.faTruck,
-      content: <StoreDeliveryPricingList />,
     },
     {
       id: "vars" as const,
@@ -31,7 +24,6 @@ export const StoreConfiguration = () => {
       content: <NotificationSettings />,
     },
   ];
-
   return (
     <TabsView
       positionId="store-configuration"

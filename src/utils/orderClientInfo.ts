@@ -1,3 +1,4 @@
+import { Biqpod } from "@biqpod/app/ui/types";
 import { snapbuyApi } from "../apis";
 // Type for unified client/customer information display
 export interface OrderClientInfo {
@@ -12,7 +13,7 @@ export interface OrderClientInfo {
 }
 // Utility function to get client or customer information from an order
 export const getOrderClientInfo = async (
-  order: Snapbuy.Order
+  order: Biqpod.Snapbuy.Order
 ): Promise<OrderClientInfo | null> => {
   try {
     // If order has client information, use it directly

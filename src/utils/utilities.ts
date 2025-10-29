@@ -160,11 +160,15 @@ export interface ConfigForm<T extends keyof Biqpod.System.Setting.Config> {
   value: Biqpod.System.Setting.Config[T];
   onChange: (value: Biqpod.System.Setting.Config[T]) => void;
 }
-export const getPrice = (product?: Snapbuy.Product | Nothing, count = 1) => {
+export const getPrice = (
+  product?: Biqpod.Snapbuy.Product | Nothing,
+  count = 1
+) => {
   var total = 0;
   var choised:
     | null
-    | Required<Required<Snapbuy.Product>["multiple"]>["prices"][number] = null;
+    | Required<Required<Biqpod.Snapbuy.Product>["multiple"]>["prices"][number] =
+    null;
   var price: null | number = null;
   if (!product) {
     return {
@@ -263,27 +267,20 @@ export const generateRandomCustomerMetadata = (): Record<string, any> => {
 export const isGLTFFile = (url: string): boolean => {
   if (!url) return false;
 
-  console.log("isGLTFFile checking:", url);
-
   // For object URLs (blob:), we can't determine type from URL alone
   // This will be handled by the file metadata stored alongside the URL
   if (url.startsWith("blob:")) {
-    console.log(
-      "isGLTFFile: Object URL detected, type should be determined by metadata"
-    );
     return false; // Let the metadata handle this
   }
 
   // Check file extension in URL (more precise matching)
   const lowerUrl = url.toLowerCase();
   if (lowerUrl.endsWith(".gltf") || lowerUrl.endsWith(".glb")) {
-    console.log("isGLTFFile: Found GLTF/GLB extension");
     return true;
   }
 
   // Also check for extensions anywhere in the URL (for filenames with query params)
   if (lowerUrl.includes(".gltf") || lowerUrl.includes(".glb")) {
-    console.log("isGLTFFile: Found GLTF/GLB in URL");
     return true;
   }
 
@@ -295,11 +292,8 @@ export const isGLTFFile = (url: string): boolean => {
       url.includes("application/octet-stream") ||
       url.includes("model/gltf-binary") ||
       url.includes("model/gltf+json");
-    console.log("isGLTFFile: Data URL check result:", isGltfData);
     return isGltfData;
   }
-
-  console.log("isGLTFFile: Not a GLTF file");
   return false;
 };
 /**

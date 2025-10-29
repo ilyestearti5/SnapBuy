@@ -28,6 +28,7 @@ import notFoundPhoto from "../../assets/nothing.png";
 import { useStoreId } from "../../utils";
 import { useUsedBy } from "../Stores/Stores";
 import { motion, AnimatePresence } from "framer-motion";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 // Animation variants
 const containerVariants = {
@@ -174,9 +175,9 @@ const loadingSpinVariants = {
 export const Customers = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const customersState = useCopyState<(Snapbuy.Customer & { id: string })[]>(
-    []
-  );
+  const customersState = useCopyState<
+    (Biqpod.Snapbuy.Customer & { id: string })[]
+  >([]);
   const action = useAction(
     "load-customers",
     async () => {
@@ -263,11 +264,13 @@ export const Customers = () => {
     },
     [filteredCustomers.rejected]
   );
-  const renderCustomer = (customer: Snapbuy.Customer & { id: string }) => {
+  const renderCustomer = (customer: Biqpod.Snapbuy.Customer) => {
     const isUpdating = updatingCustomer === customer.id;
     const isDeleting = deletingCustomer === customer.id;
     const isProcessing = isUpdating || isDeleting;
-    const showAllMetadata = expandedMetadata.has(customer.id);
+    const showAllMetadata = customer.id
+      ? expandedMetadata.has(customer.id)
+      : false;
     const metadataEntries = customer.metaData
       ? Object.entries(customer.metaData)
       : [];
@@ -495,7 +498,7 @@ export const Customers = () => {
                   {hasMoreThan4Items && (
                     <motion.a
                       className="text-xs underline cursor-pointer"
-                      onClick={() => toggleMetadata(customer.id)}
+                      onClick={() => customer.id && toggleMetadata(customer.id)}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >

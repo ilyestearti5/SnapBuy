@@ -10,7 +10,7 @@ import {
   TitleView,
   Translate,
 } from "@biqpod/app/ui/components";
-import { useTemp } from "@biqpod/app/ui/hooks";
+import { showToast, useTemp } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import {
   getFormLimited,
@@ -188,26 +188,39 @@ export const PostInforPrice = () => {
                 </div>
               </div>
             </div>
-            <div className="p-2">
-              <TitleView title="Add">
-                <CircleTip
-                  icon={allIcons.solid.faPlus}
-                  onClick={() => {
-                    pricesList.set((pricesList) => {
-                      return [
-                        ...(pricesList || []),
-                        {
-                          price: tempPrice.get || 0,
-                          quantity: tempQuantity.get || 0,
-                        },
-                      ];
-                    });
-                    tempPrice.set(undefined);
-                    tempQuantity.set(undefined);
-                  }}
-                />
-              </TitleView>
-            </div>
+            {![tempQuantity.get, tempPrice.get].includes(null) && (
+              <div className="p-2">
+                <TitleView title="Add">
+                  <CircleTip
+                    icon={allIcons.solid.faPlus}
+                    onClick={() => {
+                      if (
+                        pricesList.get?.find(
+                          (price) => price.quantity === tempQuantity.get
+                        )
+                      ) {
+                        showToast(
+                          `quantity ${tempQuantity.get} is used!`,
+                          "error"
+                        );
+                        return;
+                      }
+                      pricesList.set((pricesList) => {
+                        return [
+                          ...(pricesList || []),
+                          {
+                            price: tempPrice.get || 0,
+                            quantity: tempQuantity.get || 0,
+                          },
+                        ];
+                      });
+                      tempPrice.set(null);
+                      tempQuantity.set(null);
+                    }}
+                  />
+                </TitleView>
+              </div>
+            )}
           </div>
         </EmptyComponent>
       )}

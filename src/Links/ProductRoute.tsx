@@ -37,7 +37,7 @@ import { ImageSlider } from "./ImageSlider";
 import { FormSection } from "./FormSection";
 import { useEffect, useMemo } from "react";
 import { colorsInListWithNames } from "../utils";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { isWeb } from "@biqpod/app/ui/app";
 import { getAddressFromCoords } from "../getAddressFromCoords";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
@@ -137,7 +137,8 @@ export const ProductRoute = () => {
     const phoneNumber = user?.phone || localStorage.getItem("phone") || "";
     setFieldValue("client-phone", phoneNumber);
   }, [user]);
-  const deliveryState = useCopyState<boolean | null>(false);
+  const deliveryState =
+    useCopyState<Biqpod.System.Setting.Value["boolean"]>(false);
   const firstname = getFieldValue("client-firstname");
   const lastname = getFieldValue("client-lastname");
   const phone = getFieldValue("client-phone");
@@ -200,13 +201,13 @@ export const ProductRoute = () => {
         }
         return;
       }
-      const products: Snapbuy.Order["products"] = {
+      const products: Biqpod.Snapbuy.Order["products"] = {
         [product?.id!]: {
           count: count.get || 1,
         },
       };
       localStorage.setItem("phone", phone);
-      const place: Snapbuy.Order["place"] = {
+      const place: Biqpod.Snapbuy.Order["place"] = {
         address,
         wilaya,
       };
@@ -233,11 +234,11 @@ export const ProductRoute = () => {
         metaData,
         note,
       };
-      const orderInfo = await snapbuyApi.createOrder(options);
+      const orderInfo = await snapbuyApi.order.create(options);
       if (!orderInfo?.id) {
         throw "Order Info Incorrect";
       }
-      const order = await snapbuyApi.getOrder(orderInfo.id);
+      const order = await snapbuyApi.order.get(orderInfo.id);
       if (order) {
         pixels?.purchase(order);
       }

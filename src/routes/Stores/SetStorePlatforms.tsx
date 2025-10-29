@@ -21,6 +21,7 @@ import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { snapbuyApi } from "../../apis";
 import { platformsInfo, getPlatformInfo } from "../../utils/platforms";
+import { Biqpod } from "@biqpod/app/ui/types";
 // Highlight component for search terms
 function highlightMatch(
   text: string,
@@ -87,10 +88,10 @@ function highlightMatch(
   return result;
 }
 interface SetStorePlatformsProps {
-  store: Snapbuy.Store;
+  store: Biqpod.Snapbuy.Store;
 }
 export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
-  const platforms = useCopyState<Snapbuy.Store["platforms"]>(
+  const platforms = useCopyState<Biqpod.Snapbuy.Store["platforms"]>(
     store.platforms || {}
   );
   const isEditing = useCopyState<string | null>(null);

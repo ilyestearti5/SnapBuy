@@ -15,15 +15,25 @@ import {
   setDoc,
   ClientCloud,
   updateDoc,
+  CloudSelection,
 } from "@biqpod/app/ui/apis";
 import { delay, mapAsync, mergeArray } from "@biqpod/app/ui/utils";
 import { cloud, functions } from "../server";
+import { FilterOrdersProps } from "../Links/FilterOrders";
 export const appProjectId: string = import.meta.env.VITE_PROJECT_ID!;
 const mainRef = ["projects", appProjectId];
 export interface OverviewProps {
   orders: number;
   customers: number;
   totalSales: number;
+}
+interface ProductsResult extends Biqpod.Snapbuy.Product {
+  price: number;
+  count: number;
+}
+interface PackResult extends Biqpod.Snapbuy.Pack {
+  price: number;
+  count: number;
 }
 export interface PlanRecord {
   duration: {
@@ -39,11 +49,11 @@ export interface Plan {
   company: PlanRecord;
 }
 export interface CreateOrderOptions {
-  products: Snapbuy.Order["products"];
-  client: Snapbuy.Client;
+  products: Biqpod.Snapbuy.Order["products"];
+  client: Biqpod.Snapbuy.Client;
   delivery: boolean;
   metaData?: Record<string, SettingValueType>;
-  place: Snapbuy.Order["place"];
+  place: Biqpod.Snapbuy.Order["place"];
   note?: string;
 }
 export interface Action {
@@ -54,32 +64,13 @@ export interface Action {
 export interface GetExploreStoresOptions {
   limit?: number;
   startAt?: string;
-  orderBy?: keyof Snapbuy.Store;
+  orderBy?: keyof Biqpod.Snapbuy.Store;
   orderDir?: "asc" | "desc";
   useRecommendations?: boolean;
 }
-export type Duration = keyof PlanRecord["duration"];
 export interface ActionInterpret {
   action: string;
   params?: Record<string, string | number | undefined>;
-}
-export interface Invoice {
-  id: string;
-  storeId: string;
-  orderId?: string;
-  customerId?: string;
-  customerName?: string;
-  customerEmail?: string;
-  products: Record<string, { count: number; price: number }>;
-  tax?: number;
-  discount?: number;
-  total: number;
-  status: "draft" | "sent" | "paid" | "overdue" | "cancelled";
-  dueDate?: number;
-  createdAt: number;
-  updatedAt: number;
-  notes?: string;
-  uid: string;
 }
 export const isAccountLinkedWithDrive = async () => {
   const isAccountLinkedCallback = await cloud.app.functions.getUserFunction<{
@@ -148,7 +139,7 @@ export const createApi = (cloud: ClientCloud) => {
     async hasAccessToStore(storeId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const fn = await getUserFunction<Snapbuy.StoreUserAccess>(
+      const fn = await getUserFunction<Biqpod.Snapbuy.StoreUserAccess>(
         "has-access-to-store"
       );
       const result = await fn?.({ storeId, uid });
@@ -162,18 +153,7 @@ export const createApi = (cloud: ClientCloud) => {
       return result?.token;
     },
     async getZone(zoneId: string) {
-      return getDoc<Snapbuy.Zone>([mainRef, "zones", zoneId]);
-    },
-    async setPixelId(
-      storeId: string,
-      id: Snapbuy.PixelId,
-      value: string | null
-    ) {
-      await setDoc([mainRef, "stores", storeId], {
-        pixels: {
-          [id]: value,
-        },
-      });
+      return getDoc<Biqpod.Snapbuy.Zone>([mainRef, "zones", zoneId]);
     },
     async submitStore(storeId: string, stars: number) {
       const uid = await getCurrentAuth();
@@ -194,13 +174,12 @@ export const createApi = (cloud: ClientCloud) => {
         if (!uid) throw "User not authenticated";
         await deleteDoc([mainRef, "collections", collectionId]);
       },
-      async upsert(props: Snapbuy.Collection) {
-        const createCollection = await getUserFunction<Snapbuy.Collection>(
-          "create-collection"
-        );
+      async upsert(props: Biqpod.Snapbuy.Collection) {
+        const createCollection =
+          await getUserFunction<Biqpod.Snapbuy.Collection>("create-collection");
         createCollection?.(props);
       },
-      async getProducts(collection: string | Snapbuy.Collection) {
+      async getProducts(collection: string | Biqpod.Snapbuy.Collection) {
         const collectionDoc =
           typeof collection === "string"
             ? await this.get(collection)
@@ -215,7 +194,7 @@ export const createApi = (cloud: ClientCloud) => {
         return products;
       },
       async get(collectionId: string) {
-        const doc = await getDoc<Snapbuy.Collection>([
+        const doc = await getDoc<Biqpod.Snapbuy.Collection>([
           "projects",
           appProjectId,
           "collections",
@@ -224,7 +203,7 @@ export const createApi = (cloud: ClientCloud) => {
         return doc;
       },
       async getAll(storeId: string) {
-        const collections = await getDocs<Snapbuy.Collection>(
+        const collections = await getDocs<Biqpod.Snapbuy.Collection>(
           [mainRef, "collections"],
           {
             where: and(where("storeId", "==", storeId)),
@@ -239,24 +218,17 @@ export const createApi = (cloud: ClientCloud) => {
       },
     },
     async getSinglePack(storeId: string) {
-      const packs = await getDocs<Snapbuy.Pack>([mainRef, "packs"], {
+      const packs = await getDocs<Biqpod.Snapbuy.Pack>([mainRef, "packs"], {
         where: and(where("storeId", "==", storeId)),
         limit: 1,
       });
       return packs?.at(0);
     },
-    async setStorePixels(storeId: string, pixels: Snapbuy.Store["pixels"]) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      await setDoc([mainRef, "stores", storeId], {
-        pixels,
-      });
-    },
     async ordersWillDeletingAfter7Day(storeId: string) {
       const time = new Date();
       time.setMonth(time.getMonth() - 3);
       time.setDate(time.getDate() + 7);
-      const orders = await getDocs<Snapbuy.Order>([mainRef, "orders"], {
+      const orders = await getDocs<Biqpod.Snapbuy.Order>([mainRef, "orders"], {
         where: and(
           where("storeId", "==", storeId),
           where("createdAt", "<=", time.getTime())
@@ -273,7 +245,9 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async todayDeliverys() {
-      const fn = await getUserFunction<Snapbuy.Order[]>("today-deliverys");
+      const fn = await getUserFunction<Biqpod.Snapbuy.Order[]>(
+        "today-deliverys"
+      );
       const result = await fn?.({});
       return result;
     },
@@ -287,7 +261,7 @@ export const createApi = (cloud: ClientCloud) => {
       const result = await fn?.({});
       return result || [];
     },
-    async addZone(zone: Snapbuy.Zone) {
+    async addZone(zone: Biqpod.Snapbuy.Zone) {
       const uid = await getCurrentAuth();
       const zoneId = crypto.randomUUID();
       await createDoc([mainRef, "zones", zoneId], {
@@ -297,9 +271,15 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     async getZonesLinkTo(zoneId: string) {
-      const docs = await getDocs<Snapbuy.LinkZone>([mainRef, "zone-links"], {
-        where: or(where("first", "==", zoneId), where("second", "==", zoneId)),
-      });
+      const docs = await getDocs<Biqpod.Snapbuy.LinkZone>(
+        [mainRef, "zone-links"],
+        {
+          where: or(
+            where("first", "==", zoneId),
+            where("second", "==", zoneId)
+          ),
+        }
+      );
       return docs?.map((doc) => doc.data) || [];
     },
     async linkZone(firstZone: string, secondZone: string, price: number) {
@@ -329,12 +309,19 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     product: {
+      async generateDescription(product: Partial<Biqpod.Snapbuy.Product>) {
+        const generateDescription = await getFunction<
+          string,
+          Partial<Biqpod.Snapbuy.Product>
+        >("generate-product-description");
+        return await generateDescription?.(product);
+      },
       async get(productId: string) {
-        const product = getTempFromStore<Snapbuy.Product>(
+        const product = getTempFromStore<Biqpod.Snapbuy.Product>(
           "products." + productId
         );
         if (!product) {
-          const doc = await getDoc<Snapbuy.Product>([
+          const doc = await getDoc<Biqpod.Snapbuy.Product>([
             "projects",
             appProjectId,
             "products",
@@ -350,18 +337,24 @@ export const createApi = (cloud: ClientCloud) => {
       async getAll() {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const products = await getDocs<Snapbuy.Product>([mainRef, "products"], {
-          where: and(where("uid", "==", uid)),
-        });
+        const products = await getDocs<Biqpod.Snapbuy.Product>(
+          [mainRef, "products"],
+          {
+            where: and(where("uid", "==", uid)),
+          }
+        );
         return (
           products?.map((product) => ({ ...product.data, id: product.id })) ||
           []
         );
       },
       async getProductsOf(storeId: string) {
-        const products = await getDocs<Snapbuy.Product>([mainRef, "products"], {
-          where: and(where("storeId", "==", storeId)),
-        });
+        const products = await getDocs<Biqpod.Snapbuy.Product>(
+          [mainRef, "products"],
+          {
+            where: and(where("storeId", "==", storeId)),
+          }
+        );
         const result = products?.map(({ data }) => data);
         result?.forEach((prod) => {
           setTemp("products." + prod.id, prod);
@@ -370,15 +363,15 @@ export const createApi = (cloud: ClientCloud) => {
       },
       async upsert(
         storeId: string,
-        products: Partial<Snapbuy.Product>[],
+        products: Partial<Biqpod.Snapbuy.Product>[],
         onBeforeStart?: (
-          product: Partial<Snapbuy.Product>,
+          product: Partial<Biqpod.Snapbuy.Product>,
           index: number
         ) => void | Promise<void>
       ) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const createProduct = await getUserFunction<Snapbuy.Product>(
+        const createProduct = await getUserFunction<Biqpod.Snapbuy.Product>(
           "create-product"
         );
         await mapAsync(products, async (product, index) => {
@@ -413,7 +406,7 @@ export const createApi = (cloud: ClientCloud) => {
       },
     },
     store: {
-      async add(store: Snapbuy.Store) {
+      async add(store: Biqpod.Snapbuy.Store) {
         const {
           address = null,
           name = null,
@@ -452,17 +445,22 @@ export const createApi = (cloud: ClientCloud) => {
       async getAll() {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const stores = await getDocs<Snapbuy.Store>([mainRef, "stores"], {
-          where: and(where("uid", "==", uid)),
-        });
+        const stores = await getDocs<Biqpod.Snapbuy.Store>(
+          [mainRef, "stores"],
+          {
+            where: and(where("uid", "==", uid)),
+          }
+        );
         return stores?.map((store) => ({ ...store.data })) || [];
       },
       async get(storeId: string) {
-        const store = getTempFromStore<Snapbuy.Store>("stores." + storeId);
+        const store = getTempFromStore<Biqpod.Snapbuy.Store>(
+          "stores." + storeId
+        );
         if (store) {
           return store;
         }
-        const doc = await getDoc<Snapbuy.Store>([
+        const doc = await getDoc<Biqpod.Snapbuy.Store>([
           "projects",
           appProjectId,
           "stores",
@@ -473,7 +471,7 @@ export const createApi = (cloud: ClientCloud) => {
         }
         return doc;
       },
-      async update(storeId: string, store: Partial<Snapbuy.Store>) {
+      async update(storeId: string, store: Partial<Biqpod.Snapbuy.Store>) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
         if (store.photo) {
@@ -490,19 +488,42 @@ export const createApi = (cloud: ClientCloud) => {
         });
       },
       async getStoresOf(uid: string) {
-        const stores = await getDocs<Snapbuy.Store>([mainRef, "stores"], {
-          where: and(where("uid", "==", uid)),
-        });
+        const stores = await getDocs<Biqpod.Snapbuy.Store>(
+          [mainRef, "stores"],
+          {
+            where: and(where("uid", "==", uid)),
+          }
+        );
         return stores?.map((store) => ({ ...store.data, id: store.id })) || [];
+      },
+      async setPixelId(
+        storeId: string,
+        id: Biqpod.Snapbuy.PixelId,
+        value: string | null
+      ) {
+        await setDoc([mainRef, "stores", storeId], {
+          pixels: {
+            [id]: value,
+          },
+        });
+      },
+      async setPixels(storeId: string, pixels: Biqpod.Snapbuy.Store["pixels"]) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        await setDoc([mainRef, "stores", storeId], {
+          pixels,
+        });
       },
     },
     templates: {
       async get(id: string) {
-        const store = getTempFromStore<Snapbuy.Template>("templates." + id);
+        const store = getTempFromStore<Biqpod.Snapbuy.Template>(
+          "templates." + id
+        );
         if (store) {
           return store;
         }
-        const doc = await getDoc<Snapbuy.Template>([
+        const doc = await getDoc<Biqpod.Snapbuy.Template>([
           "projects",
           appProjectId,
           "templates",
@@ -513,7 +534,7 @@ export const createApi = (cloud: ClientCloud) => {
         }
         return doc;
       },
-      async create(template: Snapbuy.Template) {
+      async create(template: Biqpod.Snapbuy.Template) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
         const { id = crypto.randomUUID(), photo, ...rest } = template;
@@ -529,7 +550,7 @@ export const createApi = (cloud: ClientCloud) => {
             "photo",
           ]);
         }
-        const options: Snapbuy.Template = {
+        const options: Biqpod.Snapbuy.Template = {
           ...rest,
           id,
           creatorId: uid,
@@ -543,7 +564,7 @@ export const createApi = (cloud: ClientCloud) => {
       async getMyList() {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const templates = await getDocs<Snapbuy.Template>(
+        const templates = await getDocs<Biqpod.Snapbuy.Template>(
           [mainRef, "templates"],
           {
             where: and(where("creatorId", "==", uid)),
@@ -559,7 +580,7 @@ export const createApi = (cloud: ClientCloud) => {
         return allTemplates;
       },
       async getAll(startAt: string | null = null, limit: number = 10) {
-        const templates = await getDocs<Snapbuy.Template>(
+        const templates = await getDocs<Biqpod.Snapbuy.Template>(
           [mainRef, "templates"],
           {
             // where: and(where("status", "==", "accepted")),
@@ -599,7 +620,7 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(accountId: string) {
         await deleteDoc([mainRef, "accounts", accountId]);
       },
-      async upsert(account: Snapbuy.Account) {
+      async upsert(account: Biqpod.Snapbuy.Account) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
         const { id = crypto.randomUUID(), ...rest } = account;
@@ -633,17 +654,23 @@ export const createApi = (cloud: ClientCloud) => {
           followed,
         });
       },
-      async get(limit?: number, from?: Snapbuy.Follow | null) {
+      async get(limit?: number, from?: Biqpod.Snapbuy.Follow | null) {
         var uid = await getCurrentAuth();
         if (!uid) {
           throw "User not authenticated";
         }
-        const follows = await getDocs<Snapbuy.Follow>([mainRef, "follows"], {
-          where: and(where("follower", "==", uid), where("follow", "==", true)),
-          limit,
-          startAt: from?.followed && mergeArray(from?.followed),
-          orders: [orderBy("followed", "desc")],
-        });
+        const follows = await getDocs<Biqpod.Snapbuy.Follow>(
+          [mainRef, "follows"],
+          {
+            where: and(
+              where("follower", "==", uid),
+              where("follow", "==", true)
+            ),
+            limit,
+            startAt: from?.followed && mergeArray(from?.followed),
+            orders: [orderBy("followed", "desc")],
+          }
+        );
         return mapAsync(follows || [], async (follow) => {
           const followed = follow.data.followed;
           const user = await getDoc<Biqpod.Account.User>(["users", followed]);
@@ -657,12 +684,65 @@ export const createApi = (cloud: ClientCloud) => {
         });
       },
     },
-    async getOrder(orderId: string) {
-      const fn = await getUserFunction<Snapbuy.Order>("get-order");
-      const order = await fn?.({
-        orderId,
-      });
-      return order;
+    brands: {
+      async create(
+        brand: Omit<Biqpod.Snapbuy.Brand, "id" | "createdAt" | "updatedAt">
+      ) {
+        const createBrand = await getUserFunction<Biqpod.Snapbuy.Brand>(
+          "create-brand"
+        );
+        return await createBrand?.(brand);
+      },
+      async getAll(storeId: string) {
+        const brands = await getDocs<Biqpod.Snapbuy.Brand>(
+          [mainRef, "brands"],
+          {
+            where: and(where("storeId", "==", storeId)),
+          }
+        );
+        const result =
+          brands?.map((brand) => ({ ...brand.data, id: brand.id })) || [];
+        result.forEach((brand) => {
+          setTemp("brands." + brand.id, brand);
+        });
+        return result;
+      },
+      async get(brandId: string) {
+        const brand = getTempFromStore<Biqpod.Snapbuy.Brand>(
+          "brands." + brandId
+        );
+        if (!brand) {
+          const doc = await getDoc<Biqpod.Snapbuy.Brand>([
+            "projects",
+            appProjectId,
+            "brands",
+            brandId,
+          ]);
+          if (doc) {
+            setTemp("brands." + brandId, doc);
+          }
+          return doc;
+        }
+        return brand;
+      },
+      async update(
+        brandId: string,
+        brand: Partial<Omit<Biqpod.Snapbuy.Brand, "id" | "createdAt" | "uid">>
+      ) {
+        const createBrand = await getUserFunction<Biqpod.Snapbuy.Brand>(
+          "create-brand"
+        );
+        return await createBrand?.({
+          id: brandId,
+          ...brand,
+        });
+      },
+      async delete(brandId: string) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        await deleteDoc([mainRef, "brands", brandId]);
+        setTemp("brands." + brandId, null);
+      },
     },
     async syncProductsData() {
       const syncProductsData = await getUserFunction("sync-data-products");
@@ -693,79 +773,8 @@ export const createApi = (cloud: ClientCloud) => {
       return photos;
     },
     // Brand Management Functions
-    async createBrand(
-      brand: Omit<Snapbuy.Brand, "id" | "createdAt" | "updatedAt">
-    ) {
-      const createBrand = await getUserFunction<Snapbuy.Brand>("create-brand");
-      return await createBrand?.(brand);
-    },
-    async getAllBrands(storeId: string) {
-      const brands = await getDocs<Snapbuy.Brand>([mainRef, "brands"], {
-        where: and(where("storeId", "==", storeId)),
-      });
-      const result =
-        brands?.map((brand) => ({ ...brand.data, id: brand.id })) || [];
-      result.forEach((brand) => {
-        setTemp("brands." + brand.id, brand);
-      });
-      return result;
-    },
-    async getBrand(brandId: string) {
-      const brand = getTempFromStore<Snapbuy.Brand>("brands." + brandId);
-      if (!brand) {
-        const doc = await getDoc<Snapbuy.Brand>([
-          "projects",
-          appProjectId,
-          "brands",
-          brandId,
-        ]);
-        if (doc) {
-          setTemp("brands." + brandId, doc);
-        }
-        return doc;
-      }
-      return brand;
-    },
-    async updateBrand(
-      brandId: string,
-      brand: Partial<Omit<Snapbuy.Brand, "id" | "createdAt" | "uid">>
-    ) {
-      const createBrand = await getUserFunction<Snapbuy.Brand>("create-brand");
-      return await createBrand?.({
-        id: brandId,
-        ...brand,
-      });
-    },
-    async deleteBrand(brandId: string) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      await deleteDoc([mainRef, "brands", brandId]);
-      setTemp("brands." + brandId, null);
-    },
-    async createOrder(order: CreateOrderOptions) {
-      const createOrder = await getFunction<{ id: string }, CreateOrderOptions>(
-        "create-order"
-      );
-      return await createOrder?.(order);
-    },
-    async getOrderProducts(orderId: string) {
-      const order = getTempFromStore<ProductsResult[]>(
-        "order-products." + orderId
-      );
-      if (order) {
-        return order;
-      }
-      const fn = await getUserFunction<ProductsResult[]>("get-order-products");
-      const products = await fn?.({
-        orderId,
-      });
-      setTemp("order-products." + orderId, products || []);
-      return products;
-    },
     async getOrderPacks(orderId: string) {
-      const order = getTempFromStore<ProductsResult[]>(
-        "order-packs." + orderId
-      );
+      const order = getTempFromStore<PackResult[]>("order-packs." + orderId);
       if (order) {
         return order;
       }
@@ -792,29 +801,6 @@ export const createApi = (cloud: ClientCloud) => {
       return await fn?.({
         storeId,
       });
-    },
-    async getPlans() {
-      const plans = getTempFromStore<Plan>("plans");
-      if (plans) {
-        return plans;
-      }
-      const getPlans = await getFunction<Plan>("get-plans");
-      const result = await getPlans?.({});
-      result && setTemp("plans", result);
-      return result;
-    },
-    async subscribe(plan: keyof Plan, duration: Duration) {
-      const snapbuySub = await getUserFunction<{ url: string }>("subscribe");
-      const result = await snapbuySub?.({
-        plan,
-        duration,
-      });
-      if (result?.url) {
-        const a = document.createElement("a");
-        a.href = result.url;
-        a.target = "_blank";
-        a.click();
-      }
     },
     async isSubscribed() {
       const uid = await getCurrentAuth();
@@ -863,13 +849,13 @@ export const createApi = (cloud: ClientCloud) => {
       return actions || [];
     },
     async getAccount(accountId: string) {
-      const account = getTempFromStore<Snapbuy.Account>(
+      const account = getTempFromStore<Biqpod.Snapbuy.Account>(
         "accounts." + accountId
       );
       if (account) {
         return account;
       }
-      const doc = await getDoc<Snapbuy.Account>([
+      const doc = await getDoc<Biqpod.Snapbuy.Account>([
         "projects",
         appProjectId,
         "accounts",
@@ -880,9 +866,10 @@ export const createApi = (cloud: ClientCloud) => {
       }
       return doc;
     },
+    client: {},
     async getExploreStores(options: GetExploreStoresOptions) {
       const action = await getUserFunction<
-        Snapbuy.Store[],
+        Biqpod.Snapbuy.Store[],
         GetExploreStoresOptions
       >("get-explore-stores");
       const result = await action?.(options);
@@ -895,13 +882,6 @@ export const createApi = (cloud: ClientCloud) => {
       return await interpret?.({
         command,
       });
-    },
-    async generateProductDescription(product: Partial<Snapbuy.Product>) {
-      const generateDescription = await getFunction<
-        string,
-        Partial<Snapbuy.Product>
-      >("generate-product-description");
-      return await generateDescription?.(product);
     },
 
     // account config auth
@@ -916,7 +896,7 @@ export const createApi = (cloud: ClientCloud) => {
       if (status && status !== "all") {
         conditions.push(where("status", "==", status));
       }
-      const orders = await getDocs<Snapbuy.Order>([mainRef, "orders"], {
+      const orders = await getDocs<Biqpod.Snapbuy.Order>([mainRef, "orders"], {
         where: and(...conditions),
         orders: [orderBy("createdAt", "asc")],
         limit,
@@ -939,7 +919,7 @@ export const createApi = (cloud: ClientCloud) => {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
       // Get existing order data
-      const existingOrder = await getDoc<Snapbuy.Order>([
+      const existingOrder = await getDoc<Biqpod.Snapbuy.Order>([
         "projects",
         appProjectId,
         "orders",
@@ -958,12 +938,15 @@ export const createApi = (cloud: ClientCloud) => {
     async getDeliveryAgents() {
       const uid = getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const agents = await getDocs<Snapbuy.Account>([mainRef, "accounts"], {
-        where: and(
-          where("uid", "==", uid),
-          where("role", "==", "delivery_agent")
-        ),
-      });
+      const agents = await getDocs<Biqpod.Snapbuy.Account>(
+        [mainRef, "accounts"],
+        {
+          where: and(
+            where("uid", "==", uid),
+            where("role", "==", "delivery_agent")
+          ),
+        }
+      );
       return agents?.map((agent) => ({ ...agent.data, id: agent.id })) || [];
     },
     async getDeliveryStats(storeId: string) {
@@ -978,128 +961,120 @@ export const createApi = (cloud: ClientCloud) => {
       return await getDeliveryStats?.({ storeId });
     },
     // Legacy delivery pricing functions (deprecated - use new delivery options/prices functions)
-    async addStoreDeliveryPrice(
-      storeId: string,
-      deliveryPrice: Snapbuy.DeliveryPrice
-    ) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      const deliveryPriceData: Snapbuy.DeliveryPrice = {
-        ...deliveryPrice,
-        id: deliveryPrice.id || crypto.randomUUID(),
-        storeId,
-        uid,
-      };
-      await setDoc(
-        [mainRef, "deliveryPrices", deliveryPriceData.id!],
-        deliveryPriceData
-      );
-    },
-    async updateStoreDeliveryPrice(
-      storeId: string,
-      deliveryPrice: Snapbuy.DeliveryPrice
-    ) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      const deliveryPriceData: Snapbuy.DeliveryPrice = {
-        ...deliveryPrice,
-        storeId,
-        uid,
-      };
-      await setDoc(
-        [mainRef, "deliveryPrices", deliveryPrice.id!],
-        deliveryPriceData
-      );
-    },
-    async deleteStoreDeliveryPrice(_storeId: string, deliveryPriceId: string) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      await deleteDoc([
-        "projects",
-        appProjectId,
-        "deliveryPrices",
-        deliveryPriceId,
-      ]);
-    },
-    async getStoreDeliveryPrices(storeId: string) {
-      const deliveryPrices = await getDocs<Snapbuy.DeliveryOptions>(
-        [mainRef, "deliveryPrices"],
-        {
-          where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
-        }
-      );
-      return (
-        deliveryPrices?.map((price) => ({ ...price.data, id: price.id })) || []
-      );
-    },
-    // New API functions for delivery options (without price)
-    async addStoreDeliveryOption(
-      storeId: string,
-      deliveryOption: Omit<Snapbuy.DeliveryOptions, "id" | "uid" | "storeId">
-    ) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      const id = crypto.randomUUID();
-      await setDoc([mainRef, "deliveryOptions", id], {
-        ...deliveryOption,
-        id,
-        uid,
-        storeId,
-      });
-      return id;
-    },
-    async updateStoreDeliveryOption(
-      deliveryOptionId: string,
-      deliveryOption: Partial<Snapbuy.DeliveryOptions>
-    ) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      await setDoc([mainRef, "deliveryOptions", deliveryOptionId], {
-        ...deliveryOption,
-        uid,
-      });
-    },
-    async deleteStoreDeliveryOption(deliveryOptionId: string) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      // Also delete all associated delivery prices
-      const prices = await this.getDeliveryPricesForOption(deliveryOptionId);
-      for (const price of prices) {
-        if (price.id) {
+    deliveryPrice: {
+      async add(storeId: string, deliveryPrice: Biqpod.Snapbuy.DeliveryPrice) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        const deliveryPriceData: Biqpod.Snapbuy.DeliveryPrice = {
+          ...deliveryPrice,
+          id: deliveryPrice.id || crypto.randomUUID(),
+          storeId,
+          uid,
+        };
+        await setDoc(
+          [mainRef, "deliveryPrices", deliveryPriceData.id!],
+          deliveryPriceData
+        );
+      },
+      async update(
+        storeId: string,
+        deliveryPrice: Biqpod.Snapbuy.DeliveryPrice
+      ) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        const deliveryPriceData: Biqpod.Snapbuy.DeliveryPrice = {
+          ...deliveryPrice,
+          storeId,
+          uid,
+        };
+        await setDoc(
+          [mainRef, "deliveryPrices", deliveryPrice.id!],
+          deliveryPriceData
+        );
+      },
+      async delete(deliveryPriceId: string) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        await deleteDoc([
+          "projects",
+          appProjectId,
+          "deliveryPrices",
+          deliveryPriceId,
+        ]);
+      },
+      async getAll(storeId: string) {
+        const deliveryPrices = await getDocs<Biqpod.Snapbuy.DeliveryOptions>(
+          [mainRef, "deliveryPrices"],
+          {
+            where: and(where("storeId", "==", storeId)),
+            orders: [orderBy("createdAt", "desc")],
+          }
+        );
+        return (
+          deliveryPrices?.map((price) => ({ ...price.data, id: price.id })) ||
+          []
+        );
+      },
+      options: {
+        async add(
+          storeId: string,
+          deliveryOption: Omit<
+            Biqpod.Snapbuy.DeliveryOptions,
+            "id" | "uid" | "storeId"
+          >
+        ) {
+          const uid = await getCurrentAuth();
+          if (!uid) throw "User not authenticated";
+          const id = crypto.randomUUID();
+          await setDoc([mainRef, "deliveryOptions", id], {
+            ...deliveryOption,
+            id,
+            uid,
+            storeId,
+          });
+          return id;
+        },
+        async update(
+          deliveryOptionId: string,
+          deliveryOption: Partial<Biqpod.Snapbuy.DeliveryOptions>
+        ) {
+          const uid = await getCurrentAuth();
+          if (!uid) throw "User not authenticated";
+          await setDoc([mainRef, "deliveryOptions", deliveryOptionId], {
+            ...deliveryOption,
+            uid,
+          });
+        },
+        async delete(deliveryOptionId: string) {
+          const uid = await getCurrentAuth();
+          if (!uid) throw "User not authenticated";
+          // Also delete all associated delivery prices
           await deleteDoc([
             "projects",
             appProjectId,
-            "deliveryPrices",
-            price.id,
+            "deliveryOptions",
+            deliveryOptionId,
           ]);
-        }
-      }
-      await deleteDoc([
-        "projects",
-        appProjectId,
-        "deliveryOptions",
-        deliveryOptionId,
-      ]);
+        },
+        async getAll(storeId: string) {
+          const deliveryOptions = await getDocs<Biqpod.Snapbuy.DeliveryOptions>(
+            [mainRef, "deliveryOptions"],
+            {
+              where: and(where("storeId", "==", storeId)),
+              orders: [orderBy("createdAt", "desc")],
+            }
+          );
+          return (
+            deliveryOptions?.map((deliveryOption) => ({
+              ...deliveryOption.data,
+              id: deliveryOption.id,
+            })) || []
+          );
+        },
+      },
     },
-    async getStoreDeliveryOptions(storeId: string) {
-      const deliveryOptions = await getDocs<Snapbuy.DeliveryOptions>(
-        [mainRef, "deliveryOptions"],
-        {
-          where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
-        }
-      );
-      return (
-        deliveryOptions?.map((deliveryOption) => ({
-          ...deliveryOption.data,
-          id: deliveryOption.id,
-        })) || []
-      );
-    },
-    // New API functions for delivery prices
     async addDeliveryPrice(
-      deliveryPrice: Omit<Snapbuy.DeliveryPrice, "id" | "uid">
+      deliveryPrice: Omit<Biqpod.Snapbuy.DeliveryPrice, "id" | "uid">
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -1113,7 +1088,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     async updateDeliveryPrice(
       deliveryPriceId: string,
-      deliveryPrice: Partial<Snapbuy.DeliveryPrice>
+      deliveryPrice: Partial<Biqpod.Snapbuy.DeliveryPrice>
     ) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
@@ -1133,7 +1108,7 @@ export const createApi = (cloud: ClientCloud) => {
       ]);
     },
     async getDeliveryPricesForOption(deliveryOptionId: string) {
-      const deliveryPrices = await getDocs<Snapbuy.DeliveryPrice>(
+      const deliveryPrices = await getDocs<Biqpod.Snapbuy.DeliveryPrice>(
         [mainRef, "deliveryPrices"],
         {
           where: and(where("deliveryOptionId", "==", deliveryOptionId)),
@@ -1148,7 +1123,7 @@ export const createApi = (cloud: ClientCloud) => {
       );
     },
     async getAllDeliveryPricesForStore(storeId: string) {
-      const deliveryPrices = await getDocs<Snapbuy.DeliveryPrice>(
+      const deliveryPrices = await getDocs<Biqpod.Snapbuy.DeliveryPrice>(
         [mainRef, "deliveryPrices"],
         {
           where: and(where("storeId", "==", storeId)),
@@ -1163,29 +1138,33 @@ export const createApi = (cloud: ClientCloud) => {
       );
     },
     packs: {
-      async add(pack: Snapbuy.Pack) {
-        const createPack = await getUserFunction<Snapbuy.Pack>("create-pack");
+      async add(pack: Biqpod.Snapbuy.Pack) {
+        const createPack = await getUserFunction<Biqpod.Snapbuy.Pack>(
+          "create-pack"
+        );
         return await createPack?.(pack);
       },
-      async update(packId: string, pack: Snapbuy.Pack) {
-        const createPack = await getUserFunction<Snapbuy.Pack>("create-pack");
+      async update(packId: string, pack: Biqpod.Snapbuy.Pack) {
+        const createPack = await getUserFunction<Biqpod.Snapbuy.Pack>(
+          "create-pack"
+        );
         return await createPack?.({
           ...pack,
           id: packId,
         });
       },
       async getAll(storeId: string) {
-        const packs = await getDocs<Snapbuy.Pack>([mainRef, "packs"], {
+        const packs = await getDocs<Biqpod.Snapbuy.Pack>([mainRef, "packs"], {
           where: and(where("storeId", "==", storeId)),
         });
         return packs?.map((pack) => ({ ...pack.data, id: pack.id })) || [];
       },
       async get(packId: string) {
-        const pack = getTempFromStore<Snapbuy.Pack>("packs." + packId);
+        const pack = getTempFromStore<Biqpod.Snapbuy.Pack>("packs." + packId);
         if (pack) {
           return pack;
         }
-        const doc = await getDoc<Snapbuy.Pack>([
+        const doc = await getDoc<Biqpod.Snapbuy.Pack>([
           "projects",
           appProjectId,
           "packs",
@@ -1201,29 +1180,8 @@ export const createApi = (cloud: ClientCloud) => {
         await deletePack?.({ packId });
       },
     },
-    async deleteOrder(orderId: string) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      await deleteDoc([mainRef, "orders", orderId]);
-      setTemp("order-products." + orderId, null);
-    },
-    async editOrder(orderId: string, edit: Snapbuy.Order["edit"]) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      const existingOrder = await getDoc<Snapbuy.Order>([
-        "projects",
-        appProjectId,
-        "orders",
-        orderId,
-      ]);
-      if (!existingOrder) throw "Order not found";
-      await setDoc([mainRef, "orders", orderId], {
-        ...existingOrder,
-        edit,
-      });
-    },
     async getNotificationSettings(storeId: string) {
-      const store = await getDoc<Required<Snapbuy.Store>>([
+      const store = await getDoc<Required<Biqpod.Snapbuy.Store>>([
         "projects",
         appProjectId,
         "stores",
@@ -1233,7 +1191,7 @@ export const createApi = (cloud: ClientCloud) => {
     },
     // Customer Management Functions
     customer: {
-      async create(customer: Omit<Snapbuy.Customer, "createdAt">) {
+      async create(customer: Omit<Biqpod.Snapbuy.Customer, "createdAt">) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
         const customerId = crypto.randomUUID();
@@ -1247,7 +1205,7 @@ export const createApi = (cloud: ClientCloud) => {
       async get(customerId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const customer = await getDoc<Snapbuy.Customer>([
+        const customer = await getDoc<Biqpod.Snapbuy.Customer>([
           "projects",
           appProjectId,
           "customers",
@@ -1258,7 +1216,7 @@ export const createApi = (cloud: ClientCloud) => {
       async getAll(storeId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const customers = await getDocs<Snapbuy.Customer>(
+        const customers = await getDocs<Biqpod.Snapbuy.Customer>(
           [mainRef, "customers"],
           {
             where: and(where("storeId", "==", storeId)),
@@ -1302,26 +1260,31 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     coupon: {
-      async upsert(coupon: Snapbuy.Coupon) {
+      async upsert(coupon: Biqpod.Snapbuy.Coupon) {
         const upsertCoupon = await getUserFunction<string>("create-coupon");
         const couponId = await upsertCoupon?.(coupon);
         return couponId;
       },
       async getAll(storeId: string) {
-        const coupons = await getDocs<Snapbuy.Coupon>([mainRef, "coupons"], {
-          where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
-        });
+        const coupons = await getDocs<Biqpod.Snapbuy.Coupon>(
+          [mainRef, "coupons"],
+          {
+            where: and(where("storeId", "==", storeId)),
+            orders: [orderBy("createdAt", "desc")],
+          }
+        );
         return (
           coupons?.map((coupon) => ({ ...coupon.data, id: coupon.id })) || []
         );
       },
       async get(couponId: string) {
-        const coupon = getTempFromStore<Snapbuy.Coupon>("coupons." + couponId);
+        const coupon = getTempFromStore<Biqpod.Snapbuy.Coupon>(
+          "coupons." + couponId
+        );
         if (coupon) {
           return coupon;
         }
-        const doc = await getDoc<Snapbuy.Coupon>([
+        const doc = await getDoc<Biqpod.Snapbuy.Coupon>([
           "projects",
           appProjectId,
           "coupons",
@@ -1339,13 +1302,16 @@ export const createApi = (cloud: ClientCloud) => {
         setTemp("coupons." + couponId, null);
       },
       async validate(code: string, storeId: string, orderAmount: number) {
-        const coupons = await getDocs<Snapbuy.Coupon>([mainRef, "coupons"], {
-          where: and(
-            where("code", "==", code),
-            where("storeId", "==", storeId),
-            where("isActive", "==", true)
-          ),
-        });
+        const coupons = await getDocs<Biqpod.Snapbuy.Coupon>(
+          [mainRef, "coupons"],
+          {
+            where: and(
+              where("code", "==", code),
+              where("storeId", "==", storeId),
+              where("isActive", "==", true)
+            ),
+          }
+        );
         const coupon = coupons?.at(0)?.data;
         if (!coupon) return { valid: false, error: "Coupon not found" };
         const now = new Date();
@@ -1368,13 +1334,13 @@ export const createApi = (cloud: ClientCloud) => {
     },
     // Vars Management Functions
     var: {
-      async upsert(variable: Snapbuy.Var) {
+      async upsert(variable: Biqpod.Snapbuy.Var) {
         const createVar = await getUserFunction<string>("create-var");
         const varId = await createVar?.(variable);
         return varId;
       },
       async getAll(storeId: string) {
-        const vars = await getDocs<Snapbuy.Var>([mainRef, "vars"], {
+        const vars = await getDocs<Biqpod.Snapbuy.Var>([mainRef, "vars"], {
           where: and(where("storeId", "==", storeId)),
           orders: [orderBy("createdAt", "desc")],
         });
@@ -1383,11 +1349,11 @@ export const createApi = (cloud: ClientCloud) => {
         );
       },
       async get(varId: string) {
-        const variable = getTempFromStore<Snapbuy.Var>("vars." + varId);
+        const variable = getTempFromStore<Biqpod.Snapbuy.Var>("vars." + varId);
         if (variable) {
           return variable;
         }
-        const doc = await getDoc<Snapbuy.Var>([
+        const doc = await getDoc<Biqpod.Snapbuy.Var>([
           "projects",
           appProjectId,
           "vars",
@@ -1420,7 +1386,7 @@ export const createApi = (cloud: ClientCloud) => {
         if (!uid) throw "User not authenticated";
         const accessId = crypto.randomUUID();
         const now = Date.now();
-        const accessData: Snapbuy.StoreUserAccess = {
+        const accessData: Biqpod.Snapbuy.StoreUserAccess = {
           id: accessId,
           storeId,
           uid: uid,
@@ -1443,14 +1409,14 @@ export const createApi = (cloud: ClientCloud) => {
       ) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const existingAccess = await getDoc<Snapbuy.StoreUserAccess>([
+        const existingAccess = await getDoc<Biqpod.Snapbuy.StoreUserAccess>([
           "projects",
           appProjectId,
           "store-access",
           accessId,
         ]);
         if (!existingAccess) throw "Access record not found";
-        const updatedAccess: Snapbuy.StoreUserAccess = {
+        const updatedAccess: Biqpod.Snapbuy.StoreUserAccess = {
           ...existingAccess,
           ...updates,
           updatedAt: Date.now(),
@@ -1462,7 +1428,7 @@ export const createApi = (cloud: ClientCloud) => {
       async getUsersAccess(storeId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const accessRecords = await getDocs<Snapbuy.StoreUserAccess>(
+        const accessRecords = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1485,7 +1451,7 @@ export const createApi = (cloud: ClientCloud) => {
       async getInvitedStores() {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const accessRecords = await getDocs<Snapbuy.StoreUserAccess>(
+        const accessRecords = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
           [mainRef, "store-access"],
           {
             where: and(where("relatedUid", "==", uid)),
@@ -1511,7 +1477,7 @@ export const createApi = (cloud: ClientCloud) => {
         if (!uid) {
           throw "User not authenticated";
         }
-        const docs = await getDocs<Snapbuy.StoreUserAccess>(
+        const docs = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1531,7 +1497,7 @@ export const createApi = (cloud: ClientCloud) => {
       async leave(storeId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const docs = await getDocs<Snapbuy.StoreUserAccess>(
+        const docs = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1552,7 +1518,7 @@ export const createApi = (cloud: ClientCloud) => {
         type: "email" | "username" = "email"
       ) {
         const field = type === "email" ? "userEmail" : "username";
-        const accessRecords = await getDocs<Snapbuy.StoreUserAccess>(
+        const accessRecords = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1566,31 +1532,31 @@ export const createApi = (cloud: ClientCloud) => {
         return accessRecords?.[0]?.data || null;
       },
     },
-    async getUsers(limit: number = 50) {
-      const users = await getDocs<Biqpod.Account.User>(["users"], {
-        limit,
-      });
-      return users?.map((user) => ({ ...user.data, id: user.id })) || [];
-    },
-    async getUser(userId: string) {
-      const user = getTempFromStore<Biqpod.Account.User & { id: string }>(
-        "users." + userId
-      );
-      if (user) {
-        return user;
-      }
-      const doc = await getDoc<Biqpod.Account.User>(["users", userId]);
-      const userWithId = doc ? { ...doc, id: userId } : null;
-      if (userWithId) {
-        setTemp("users." + userId, userWithId);
-      }
-      return userWithId;
+    friends: {
+      async getList(limit: number = 50) {
+        const users = await getDocs<Biqpod.Account.User>(["users"], {
+          limit,
+        });
+        return users?.map((user) => ({ ...user.data, id: user.id })) || [];
+      },
+      async get(userId: string) {
+        const user = getTempFromStore<Biqpod.Account.User>("users." + userId);
+        if (user) {
+          return user;
+        }
+        const doc = await getDoc<Biqpod.Account.User>(["users", userId]);
+        const userWithId = doc ? { ...doc, id: userId } : null;
+        if (userWithId) {
+          setTemp("users." + userId, userWithId);
+        }
+        return userWithId;
+      },
     },
     // Invoice Management Functions
     invoice: {
       async create(
         invoice: Pick<
-          Snapbuy.Invoice,
+          Biqpod.Snapbuy.Invoice,
           | "storeId"
           | "orderId"
           | "customerId"
@@ -1617,7 +1583,7 @@ export const createApi = (cloud: ClientCloud) => {
         const tax = invoice.tax || 0;
         const discount = invoice.discount || 0;
         const total = subtotal + tax - discount;
-        const invoiceData: Snapbuy.Invoice = {
+        const invoiceData: Biqpod.Snapbuy.Invoice = {
           ...invoice,
           id,
           uid,
@@ -1630,10 +1596,13 @@ export const createApi = (cloud: ClientCloud) => {
         return invoiceData;
       },
       async getAll(storeId: string) {
-        const invoices = await getDocs<Snapbuy.Invoice>([mainRef, "invoices"], {
-          where: and(where("storeId", "==", storeId)),
-          orders: [orderBy("createdAt", "desc")],
-        });
+        const invoices = await getDocs<Biqpod.Snapbuy.Invoice>(
+          [mainRef, "invoices"],
+          {
+            where: and(where("storeId", "==", storeId)),
+            orders: [orderBy("createdAt", "desc")],
+          }
+        );
         const result =
           invoices?.map((invoice) => ({ ...invoice.data, id: invoice.id })) ||
           [];
@@ -1643,13 +1612,13 @@ export const createApi = (cloud: ClientCloud) => {
         return result;
       },
       async get(invoiceId: string) {
-        const invoice = getTempFromStore<Snapbuy.Invoice>(
+        const invoice = getTempFromStore<Biqpod.Snapbuy.Invoice>(
           "invoices." + invoiceId
         );
         if (invoice) {
           return invoice;
         }
-        const doc = await getDoc<Snapbuy.Invoice>([
+        const doc = await getDoc<Biqpod.Snapbuy.Invoice>([
           "projects",
           appProjectId,
           "invoices",
@@ -1662,19 +1631,21 @@ export const createApi = (cloud: ClientCloud) => {
       },
       async update(
         invoiceId: string,
-        invoice: Partial<Omit<Snapbuy.Invoice, "id" | "createdAt" | "uid">>
+        invoice: Partial<
+          Omit<Biqpod.Snapbuy.Invoice, "id" | "createdAt" | "uid">
+        >
       ) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
         const now = Date.now();
-        const existingInvoice = await getDoc<Snapbuy.Invoice>([
+        const existingInvoice = await getDoc<Biqpod.Snapbuy.Invoice>([
           "projects",
           appProjectId,
           "invoices",
           invoiceId,
         ]);
         if (!existingInvoice) throw "Invoice not found";
-        const updatedInvoice: Snapbuy.Invoice = {
+        const updatedInvoice: Biqpod.Snapbuy.Invoice = {
           ...existingInvoice,
           ...invoice,
           updatedAt: now,
@@ -1690,61 +1661,187 @@ export const createApi = (cloud: ClientCloud) => {
         setTemp("invoices." + invoiceId, null);
       },
     },
-    async hasExtraLinks(callback?: (text: string) => void) {
-      const uid = await getCurrentAuth();
-      if (!uid) throw "User not authenticated";
-      callback?.("checking products");
-      const products = await getDocs<Snapbuy.Product>([mainRef, "products"], {
-        where: and(where("uid", "==", uid)),
-      });
-      const firestoreLink = "firebasestorage.googleapis.com";
-      const findedProduct = products?.find((p) =>
-        p.data.photos?.some((photo) => photo.includes(firestoreLink))
-      );
-      if (findedProduct) {
-        return findedProduct.data;
-      }
-      callback?.("checking collections");
-      const collections = await getDocs<Snapbuy.Collection>(
-        [mainRef, "collections"],
-        {
-          where: and(where("uid", "==", uid)),
+    order: {
+      async get(orderId: string) {
+        const ref = "orders." + orderId;
+        const saved = getTempFromStore<Biqpod.Snapbuy.Order>(ref);
+        if (saved) {
+          return saved;
         }
-      );
-      const findedCollection = collections?.find((c) =>
-        c.data.photo?.includes(firestoreLink)
-      );
-      if (findedCollection) {
-        return findedCollection.data;
-      }
-      callback?.("checking brands");
-      const brands = await getDocs<Snapbuy.Brand>([mainRef, "brands"], {
-        where: and(where("uid", "==", uid)),
-      });
-      const findedBrands = brands?.find((b) =>
-        b.data.photo?.includes(firestoreLink)
-      );
-      if (findedBrands) {
-        return findedBrands.data;
-      }
-      callback?.("checking stores");
-      const stores = await getDocs<Snapbuy.Store>([mainRef, "stores"], {
-        where: and(where("uid", "==", uid)),
-      });
-      const findedStore = stores?.find((s) =>
-        s.data.photo?.includes(firestoreLink)
-      );
-      if (findedStore) {
-        return findedStore.data;
-      }
-      return false;
+        const fn = await getUserFunction<Biqpod.Snapbuy.Order>("get-order");
+        const order = await fn?.({
+          orderId,
+        });
+        setTemp(ref, order);
+        return order;
+      },
+      async getList(
+        storeId: string,
+        filterOptions?: FilterOrdersProps | null,
+        limit?: number,
+        startAt?: number
+      ) {
+        const uid = getCurrentAuth();
+        const currentTime = new Date();
+        var subTime: Date | null = null;
+        switch (filterOptions?.time) {
+          case "today":
+            currentTime.setHours(0, 0, 0, 0);
+            subTime = new Date(currentTime.getTime());
+            break;
+          case "this week": {
+            const dayOfWeek = currentTime.getDay();
+            const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Sunday
+            currentTime.setDate(currentTime.getDate() - daysToSubtract);
+            currentTime.setHours(0, 0, 0, 0);
+            subTime = new Date(currentTime.getTime());
+            break;
+          }
+          case "this month":
+            currentTime.setDate(1);
+            currentTime.setHours(0, 0, 0, 0);
+            subTime = new Date(currentTime.getTime());
+            break;
+          case "this year":
+            currentTime.setMonth(0, 1);
+            currentTime.setHours(0, 0, 0, 0);
+            subTime = new Date(currentTime.getTime());
+            break;
+          case "last week": {
+            // Go to start of this week, then subtract 7 days
+            const dayOfWeek = currentTime.getDay();
+            const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
+            const startOfThisWeek = new Date(currentTime.getTime());
+            startOfThisWeek.setDate(currentTime.getDate() - daysToSubtract);
+            startOfThisWeek.setHours(0, 0, 0, 0);
+            const startOfLastWeek = new Date(startOfThisWeek.getTime());
+            startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
+            subTime = startOfLastWeek;
+            break;
+          }
+          case "last month": {
+            // Go to start of this month, then subtract 1 month
+            const startOfThisMonth = new Date(
+              currentTime.getFullYear(),
+              currentTime.getMonth(),
+              1,
+              0,
+              0,
+              0,
+              0
+            );
+            const startOfLastMonth = new Date(startOfThisMonth);
+            startOfLastMonth.setMonth(startOfThisMonth.getMonth() - 1);
+            subTime = startOfLastMonth;
+            break;
+          }
+          case "last year": {
+            // Go to start of this year, then subtract 1 year
+            const startOfThisYear = new Date(
+              currentTime.getFullYear(),
+              0,
+              1,
+              0,
+              0,
+              0,
+              0
+            );
+            const startOfLastYear = new Date(startOfThisYear);
+            startOfLastYear.setFullYear(startOfThisYear.getFullYear() - 1);
+            subTime = startOfLastYear;
+            break;
+          }
+        }
+        const selection: CloudSelection<Biqpod.Snapbuy.Order> = {
+          where: and(
+            where("uid", "==", uid),
+            filterOptions?.phone &&
+              where("client.phone", "==", filterOptions.phone),
+            subTime && where("createdAt", ">=", subTime.getTime()),
+            filterOptions?.status &&
+              where("status", "==", filterOptions.status),
+            filterOptions?.delivery &&
+              filterOptions.delivery !== "all" &&
+              where("delivery", "==", filterOptions.delivery == "delivere"),
+            where("storeId", "==", storeId)
+          ),
+          orders: mergeArray(
+            orderBy(
+              "createdAt",
+              filterOptions?.orderBy == "asc" ? "asc" : "desc"
+            )
+          ),
+          limit,
+          startAt: startAt ? [startAt] : undefined,
+        };
+        const newOrders = await cloud.app.nosql.getDocs<Biqpod.Snapbuy.Order>(
+          ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
+          selection
+        );
+        if (!newOrders) {
+          return;
+        }
+        const list = newOrders.map((order) => ({
+          ...order.data,
+          id: order.id,
+        }));
+        list.map((data) => {
+          setTemp("orders." + data.id, data);
+        });
+        return list;
+      },
+      async create(order: CreateOrderOptions) {
+        const createOrder = await getFunction<
+          { id: string },
+          CreateOrderOptions
+        >("create-order");
+        return await createOrder?.(order);
+      },
+      async getProducts(orderId: string) {
+        const savedProducts = getTempFromStore<ProductsResult[]>(
+          "order-products." + orderId
+        );
+        if (savedProducts) {
+          return savedProducts;
+        }
+        const fn = await getUserFunction<ProductsResult[]>(
+          "get-order-products"
+        );
+        const products = await fn?.({
+          orderId,
+        });
+        setTemp("order-products." + orderId, products || []);
+        return products;
+      },
+      async delete(orderId: string) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        await deleteDoc([mainRef, "orders", orderId]);
+        setTemp("order-products." + orderId, null);
+      },
+      async edit(orderId: string, edit: Biqpod.Snapbuy.Order["edit"]) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        const existingOrder = await getDoc<Biqpod.Snapbuy.Order>([
+          "projects",
+          appProjectId,
+          "orders",
+          orderId,
+        ]);
+        if (!existingOrder) throw "Order not found";
+        await setDoc([mainRef, "orders", orderId], {
+          ...existingOrder,
+          edit,
+        });
+      },
     },
     usage: {
-      async get(props: { storeId: string }) {
+      async get(storeId: string) {
         const fn = await getUserFunction<Partial<Record<DataTypes, number>>>(
           "usage"
         );
-        return fn?.({ storeId: props.storeId });
+        const response = await fn?.({ storeId });
+        return response;
       },
       async pay(storeId: string, usages: Partial<Record<DataTypes, number>>) {
         const fn = await getUserFunction<{ url: string }>("pay-usages");
@@ -1759,27 +1856,50 @@ export const createApi = (cloud: ClientCloud) => {
         }
       },
       async getPrices() {
-        const fn = await getFunction<
-          {
-            type: DataTypes;
-            extraPrice: number;
-            unit: string;
-          }[]
-        >("get-usages-pricing");
-        return fn?.({});
+        interface PriceResult {
+          type: DataTypes;
+          extraPrice: number;
+          unit: string;
+        }
+        const ref = "get-usages-pricing";
+        const prices = getTempFromStore<PriceResult[]>(ref);
+        if (prices) {
+          return prices;
+        }
+        const fn = await getFunction<PriceResult[]>("get-usages-pricing");
+        const response = await fn?.({});
+        if (response) {
+          setTemp(ref, response);
+        }
+        return response;
       },
       async getPayments(storeId: string) {
+        const ref = "payments." + storeId;
+        const list = getTempFromStore<Biqpod.Account.Payout[]>(ref);
+        if (list) {
+          return list;
+        }
         const fn = await getUserFunction<Biqpod.Account.Payout[]>(
           "get-payments"
         );
         const result = await fn?.({ storeId });
+        setTemp(ref, result);
         return result;
       },
-      async getCurrentPayment(storeId: string) {
+      async getCurrentPayments(storeId: string) {
+        const ref = "current-payments." + storeId;
+        const savedPays = getTempFromStore<Biqpod.Account.Payout[]>(ref);
+        if (savedPays) {
+          return savedPays;
+        }
         const fn = await getUserFunction<Biqpod.Account.Payout[]>(
           "current-payment"
         );
-        return fn?.({ storeId });
+        const response = await fn?.({ storeId });
+        if (response) {
+          setTemp(ref, response);
+        }
+        return response;
       },
     },
   };

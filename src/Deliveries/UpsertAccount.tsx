@@ -10,16 +10,14 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { execAction, isLoading, useTemp } from "@biqpod/app/ui/hooks";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { rolsInList } from "../utils";
 interface UpsertAccountProps {
-  account?: Snapbuy.Account;
+  account?: Biqpod.Snapbuy.Account;
 }
 export const UpsertAccount = ({ account }: UpsertAccountProps) => {
   const roleState = useTemp<string | Nothing>("roleState");
-
   const loadingAddAccount = isLoading("upsert-account");
-
   return (
     <Card className="relative max-md:rounded-none max-md:w-full min-w-[400px] max-md:h-full">
       <CardHeaderForPopup title={account ? "Edit Account" : "Add Account"} />

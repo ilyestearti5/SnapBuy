@@ -30,7 +30,7 @@ type UserWithId = Biqpod.Account.User & { id: string };
 
 interface UpsertAccessUsertoStoreProps {
   storeId: string;
-  existingAccess?: Snapbuy.StoreUserAccess;
+  existingAccess?: Biqpod.Snapbuy.StoreUserAccess;
   onSuccess?: () => void;
 }
 
@@ -102,7 +102,7 @@ export const UpsertAccessUsertoStore = ({
 
   // Fetch all users once
   const allUsers = useAsyncMemo(async () => {
-    return await snapbuyApi.getUsers(100); // Get more users for better search
+    return await snapbuyApi.friends.getList(100); // Get more users for better search
   }, []);
 
   // Filter users based on search term
@@ -403,7 +403,7 @@ export const UpsertAccessUsertoStore = ({
                       if (!existingAccess.relatedUid) {
                         return <EmptyComponent />;
                       }
-                      const user = await snapbuyApi.getUser(
+                      const user = await snapbuyApi.friends.get(
                         existingAccess.relatedUid
                       );
                       return (

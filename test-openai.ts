@@ -104,7 +104,7 @@ console.log(`
    - The server should provide OpenAI-compatible endpoints like /v1/chat/completions
 
 2. Run this test in a browser console:
-   - Open your Snapbuy app
+   - Open your Biqpod.Snapbuy app
    - Open browser developer tools (F12)
    - Paste this code in the console
    - Call testOpenAiService()

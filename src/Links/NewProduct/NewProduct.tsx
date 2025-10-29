@@ -28,8 +28,9 @@ import {
   clearFormProduct,
 } from "../../apis/getFns";
 import { ProductMetadata } from "./Views/ProductMetadata";
+import { Biqpod } from "@biqpod/app/ui/types";
 export interface ProductFormSectionProps {
-  product?: Partial<Snapbuy.Product>;
+  product?: Partial<Biqpod.Snapbuy.Product>;
 }
 const pages = [
   { name: "Images", component: ProductImages },
@@ -44,7 +45,7 @@ const pages = [
   { name: "Final Data", component: ProductDataBeforeCreate },
 ];
 export interface PostNewProductProps {
-  product?: Partial<Snapbuy.Product>;
+  product?: Partial<Biqpod.Snapbuy.Product>;
 }
 export const PostNewProduct = ({ product }: PostNewProductProps) => {
   const postMarketAction = getAction("post-market");
@@ -105,9 +106,7 @@ export const PostNewProduct = ({ product }: PostNewProductProps) => {
           <div className="flex justify-end gap-2 p-2">
             <Button
               onClick={async () => {
-                const options = {
-                  ...productForm,
-                };
+                const options = productForm;
                 if (product?.id) {
                   options.id = product.id;
                 }

@@ -28,6 +28,7 @@ import { useActionStatus } from "../routes/Clients/CartPopup";
 import { delay, range, tw } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Biqpod } from "@biqpod/app/ui/types";
 // Fuzzy search function
 function filterFuzzySearch<T>(
   list: T[],
@@ -149,7 +150,7 @@ const FilterBrandsPopup = ({
 export const Brands = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const brands = useCopyState<Snapbuy.Brand[]>([]);
+  const brands = useCopyState<Biqpod.Snapbuy.Brand[]>([]);
   const searchQuery = getFieldValue("search-brand");
   const filters = useCopyState({
     noPhoto: false,
@@ -161,7 +162,7 @@ export const Brands = () => {
     async () => {
       if (!storeId) return null;
       await delay(1000);
-      const result = await snapbuyApi.getAllBrands(storeId);
+      const result = await snapbuyApi.brands.getAll(storeId);
       brands.set(result);
     },
     [storeId]

@@ -26,20 +26,16 @@ export const ThreeJSDiagnostic: React.FC = () => {
 
     try {
       // Test Three.js core
-      console.log("Testing Three.js core...");
       const THREE = await import("three");
       result.core = !!THREE && !!THREE.Scene;
-      console.log("Three.js core:", result.core);
 
       if (result.core) {
         // Test GLTFLoader
         try {
-          console.log("Testing GLTFLoader...");
           const { GLTFLoader } = await import(
             "three/examples/jsm/loaders/GLTFLoader.js"
           );
           result.gltfLoader = !!GLTFLoader;
-          console.log("GLTFLoader:", result.gltfLoader);
         } catch (gltfError) {
           console.error("GLTFLoader error:", gltfError);
           result.error = `GLTFLoader: ${gltfError}`;
@@ -47,12 +43,10 @@ export const ThreeJSDiagnostic: React.FC = () => {
 
         // Test OrbitControls
         try {
-          console.log("Testing OrbitControls...");
           const { OrbitControls } = await import(
             "three/examples/jsm/controls/OrbitControls.js"
           );
           result.orbitControls = !!OrbitControls;
-          console.log("OrbitControls:", result.orbitControls);
         } catch (controlsError) {
           console.error("OrbitControls error:", controlsError);
           result.error = result.error || `OrbitControls: ${controlsError}`;

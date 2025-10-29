@@ -26,7 +26,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { snapbuyApi } from "../../apis";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect, useRef } from "react";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 
 // Animation variants
 const containerVariants = {
@@ -222,11 +222,11 @@ const overlayVariants = {
 };
 
 interface SetTemplateProps {
-  store: Snapbuy.Store;
+  store: Biqpod.Snapbuy.Store;
 }
 export const SetTemplate = ({ store }: SetTemplateProps) => {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const templates = useCopyState<Snapbuy.Template[]>([]);
+  const templates = useCopyState<Biqpod.Snapbuy.Template[]>([]);
   const currentPage = useCopyState<string | Nothing>(null);
   const hasMore = useCopyState(true);
   const isLoadingMore = useCopyState(false);
@@ -441,7 +441,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                     </h3>
                     <AnimatePresence>
                       {templates.get.map(
-                        (template: Snapbuy.Template, index) => (
+                        (template: Biqpod.Snapbuy.Template, index) => (
                           <motion.div
                             key={template.id}
                             variants={templateItemVariants}

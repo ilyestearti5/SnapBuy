@@ -14,15 +14,14 @@ import {
   getOrderClientDisplayName,
   getOrderClientAddress,
 } from "../utils/orderClientInfo";
-
+import { Biqpod } from "@biqpod/app/ui/types";
 interface ViewClientProps {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
 }
 export const ViewClient = ({ order }: ViewClientProps) => {
   const clientInfo = useAsyncMemo(async () => {
     return await getOrderClientInfo(order);
   }, [order]);
-
   if (!clientInfo) {
     return (
       <EmptyComponent>
@@ -33,7 +32,6 @@ export const ViewClient = ({ order }: ViewClientProps) => {
       </EmptyComponent>
     );
   }
-
   const displayName = getOrderClientDisplayName(clientInfo);
   const address = getOrderClientAddress(clientInfo);
   const addressParts = address
@@ -42,7 +40,6 @@ export const ViewClient = ({ order }: ViewClientProps) => {
         .map((item) => item.trim())
         .reverse()
     : [];
-
   return (
     <EmptyComponent>
       <div className="flex items-center p-4">

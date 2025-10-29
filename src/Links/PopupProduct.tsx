@@ -21,16 +21,18 @@ import { useMemo } from "react";
 import { snapbuyApi } from "../apis";
 import { loadFromExcel } from "./loadFromExcel";
 import { useStoreId } from "../utils";
+import { Biqpod } from "@biqpod/app/ui/types";
 interface PopupProductProps {
-  products: Snapbuy.Product[];
+  products: Biqpod.Snapbuy.Product[];
   file?: string;
 }
 export const PopupProduct = ({ products, file }: PopupProductProps) => {
   const storeId = useStoreId();
-  const existsState = useCopyState<null | boolean>(false);
-  const newsState = useCopyState<null | boolean>(false);
+  const existsState =
+    useCopyState<Biqpod.System.Setting.Value["boolean"]>(false);
+  const newsState = useCopyState<Biqpod.System.Setting.Value["boolean"]>(false);
   const user = useUser();
-  const allProducts = useCopyState<Snapbuy.Product[] | null>(null);
+  const allProducts = useCopyState<Biqpod.Snapbuy.Product[] | null>(null);
   useAsyncEffect(async () => {
     if (!user?.uid) return allProducts.set(null);
     const newProducts = await snapbuyApi.product.getAll();

@@ -20,7 +20,6 @@ import {
 } from "recharts";
 import { snapbuyApi } from "../../apis";
 import { range } from "@biqpod/app/ui/utils";
-import { Link } from "react-router-dom";
 import { useStoreId } from "../../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -29,6 +28,7 @@ import {
   FadeIn,
 } from "../../animations/components";
 import { staggerContainer, loadingVariants } from "../../animations/index";
+import { useHistory } from "react-router-dom";
 const titlesOveviews: Record<string, string> = {
   totalSales: "Total Sales",
   orders: "Orders",
@@ -58,6 +58,8 @@ export function StoreOverview() {
     if (!storeId) return null;
     return snapbuyApi.getOverview(storeId);
   }, [storeId]);
+
+  const hist = useHistory();
   return (
     <Scroll>
       <motion.div
@@ -117,19 +119,25 @@ export function StoreOverview() {
                     return null;
                   }
                   return (
-                    <AnimatedListItem key={name} index={index}>
+                    <AnimatedListItem
+                      className="max-md:w-full md:w-[200px]"
+                      key={name}
+                      index={index}
+                    >
                       <Card
                         onClick={() => {
                           if (name === "orders") {
-                            document.getElementById("pending-orders")?.click();
+                            hist.push(
+                              `/store/${storeId}/sales?time=all&status=pending&phone=none`
+                            );
                           } else if (name === "totalSales") {
                             if (displayContent == "0") {
                               showToast("No sales yet");
                               return;
                             }
-                            document
-                              .getElementById("completed-orders")
-                              ?.click();
+                            hist.push(
+                              `/store/${storeId}/sales?time=today&status=completed&phone=none`
+                            );
                           }
                         }}
                         className="flex-1 p-3 min-w-[200px] h-[70px] cursor-pointer"
@@ -264,7 +272,9 @@ export function StoreOverview() {
                     showToast("No orders yet");
                     return;
                   }
-                  document.getElementById("today-orders")?.click();
+                  hist.push(
+                    `/store/${storeId}/sales?time=today&status=all&phone=none`
+                  );
                 }}
                 className="flex flex-col justify-evenly active:bg-[--biqpod-gray-opacity] p-3 w-full h-[150px] cursor-pointer"
               >
@@ -292,18 +302,6 @@ export function StoreOverview() {
           )}
         </AnimatePresence>
       </div>
-      <Link
-        id="pending-orders"
-        to={`/store/${storeId}/orders?time=all&status=pending&phone=none`}
-      />
-      <Link
-        id="today-orders"
-        to={`/store/${storeId}/orders?time=today&status=all&phone=none`}
-      />
-      <Link
-        id="completed-orders"
-        to={`/store/${storeId}/orders?time=today&status=completed&phone=none`}
-      />
     </Scroll>
   );
 }

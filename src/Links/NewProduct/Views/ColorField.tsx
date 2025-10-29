@@ -1,8 +1,12 @@
-import React, { useState, useCallback } from "react";
+import React, { useCallback } from "react";
 import { ChromePicker as Picker, ColorResult } from "react-color";
 import { Button, Card, CircleTip, Icon, Line } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { getTemp, setTemp, useCopyState } from "@biqpod/app/ui/hooks";
+import {
+  getMagicField,
+  setMagicField,
+  useCopyState,
+} from "@biqpod/app/ui/hooks";
 interface ColorFieldProps {
   fieldId: string;
   placeholder?: string;
@@ -13,10 +17,9 @@ export const ColorField: React.FC<ColorFieldProps> = ({
   placeholder = "Select colors using the color picker",
   hint = "Use the color picker to add colors",
 }) => {
-  const [showPicker, setShowPicker] = useState(false);
-
+  const showPicker = useCopyState(false);
   // Get current colors from temp storage
-  const currentColors = getTemp<string[]>(`magic-fields.${fieldId}`) || [];
+  const currentColors = getMagicField<string[]>(fieldId) || [];
   const addColor = useCallback(
     (color: string) => {
       if (!color.trim()) return;
@@ -25,29 +28,30 @@ export const ColorField: React.FC<ColorFieldProps> = ({
       // Avoid duplicates
       if (!updatedColors.includes(normalizedColor)) {
         updatedColors.push(normalizedColor);
-        setTemp(`magic-fields.${fieldId}`, updatedColors);
+        setMagicField(fieldId, updatedColors);
       }
     },
     [currentColors, fieldId]
   );
   const removeColor = useCallback(
     (index: number) => {
-      const updatedColors = currentColors.filter((_, i) => i !== index);
-      setTemp(`magic-fields.${fieldId}`, updatedColors);
+      setMagicField(
+        fieldId,
+        currentColors.filter((_, i) => i !== index)
+      );
     },
     [currentColors, fieldId]
   );
   const handleColorPickerChange = useCallback(
     (color: ColorResult) => {
       addColor(color.hex);
-      setShowPicker(false);
+      showPicker.set(false);
       colorState.set(null);
     },
     [addColor]
   );
-
   const clearAllColors = useCallback(() => {
-    setTemp(`magic-fields.${fieldId}`, []);
+    setMagicField(fieldId, []);
   }, [fieldId]);
   const colorState = useCopyState<ColorResult | null>(null);
   return (
@@ -117,9 +121,9 @@ export const ColorField: React.FC<ColorFieldProps> = ({
           <div className="relative w-fit">
             <Button
               onClick={() => {
-                setShowPicker(!showPicker);
+                showPicker.set(!showPicker.get);
                 // Initialize with red color if no color is selected
-                if (!showPicker && !colorState.get) {
+                if (!showPicker.get && !colorState.get) {
                   colorState.set({ hex: "#ff0000" } as ColorResult);
                 }
               }}
@@ -129,7 +133,7 @@ export const ColorField: React.FC<ColorFieldProps> = ({
               <span className="font-medium text-sm">Open Color Picker</span>
             </Button>
             {/* Color Picker Popup */}
-            {showPicker && (
+            {showPicker.get && (
               <Card className="mt-2 w-[calc(100%+40px)] overflow-hidden">
                 <Picker
                   color={colorState.get ? colorState.get.hex : "#ff0000"}

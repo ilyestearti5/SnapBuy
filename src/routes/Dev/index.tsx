@@ -24,6 +24,7 @@ import { snapbuyApi } from "../../apis";
 import { UpsertTemplate } from "./UpsertTemplate";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 // Animation variants
 const containerVariants = {
@@ -222,7 +223,7 @@ export const DeveloperRoute = () => {
     },
     []
   );
-  const templates = useCopyState<Snapbuy.Template[]>([]);
+  const templates = useCopyState<Biqpod.Snapbuy.Template[]>([]);
   const refreshAction = useAction(
     "refresh-templates",
     async () => {

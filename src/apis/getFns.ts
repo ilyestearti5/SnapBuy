@@ -6,7 +6,7 @@ import {
   setFieldValue,
   useFieldValue,
 } from "@biqpod/app/ui/hooks";
-import { SettingValueType, Nothing } from "@biqpod/app/ui/types";
+import { Nothing, Biqpod } from "@biqpod/app/ui/types";
 import { useMemo } from "react";
 function getFns<T>(fieldId: string) {
   const get = () => getTemp<T>(fieldId);
@@ -32,7 +32,7 @@ export const {
   get: getFormPrices,
   use: useFormPrices,
   set: setFormPrices,
-} = getFns<Required<Snapbuy.Product>["multiple"]["prices"] | undefined>(
+} = getFns<Required<Biqpod.Snapbuy.Product>["multiple"]["prices"] | undefined>(
   "product-prices"
 );
 export const {
@@ -62,12 +62,12 @@ export const {
   get: getFormKeys,
   set: setFormKeys,
   use: useFormKeys,
-} = getFns<SettingValueType["array"]>("post-keys");
+} = getFns<Biqpod.System.Setting.Value["array"]>("post-keys");
 export const {
   get: getFormAvailable,
   set: setFormAvailable,
   use: useFormAvailable,
-} = getFns<boolean>("product-form-available");
+} = getFns<Biqpod.System.Setting.Value["boolean"]>("product-form-available");
 export const {
   get: getFormType,
   set: setFormType,
@@ -77,7 +77,7 @@ export const {
   get: getFormPhotos,
   set: setFormPhotos,
   use: useFormPhotos,
-} = getFns<Snapbuy.Product["photos"]>("product-images");
+} = getFns<Biqpod.Snapbuy.Product["photos"]>("product-images");
 export const {
   get: getFormClientPrice,
   set: setFormClientPrice,
@@ -92,7 +92,7 @@ export const {
   get: getFormLimited,
   use: useFormLimited,
   set: setFormLimited,
-} = getFns<boolean>("product-limited");
+} = getFns<Biqpod.System.Setting.Value["boolean"]>("product-limited");
 export const {
   get: getFormBrand,
   set: setFormBrand,
@@ -102,7 +102,9 @@ export const {
   get: getFormMetadata,
   set: setFormMetadata,
   use: useFormMetadata,
-} = getFns<Snapbuy.MetadataField[]>("product-metadata");
+} = getFns<Partial<Record<string, Biqpod.Snapbuy.MetadataField>>>(
+  "product-metadata"
+);
 export const useFormProduct = () => {
   const photos = getFormPhotos();
   const clientPrice = getFormClientPrice();
@@ -119,7 +121,7 @@ export const useFormProduct = () => {
   const metadata = getFormMetadata();
   const product = useMemo(() => {
     // Convert metadata array to object format
-    const result: Partial<Snapbuy.Product> = {
+    const result: Partial<Biqpod.Snapbuy.Product> = {
       photos: photos || [],
       type: type || "single",
       name: name || "",
@@ -128,14 +130,14 @@ export const useFormProduct = () => {
       quantity: quantity || 0,
       description: description || "",
       limited: limited || false,
-      metaData: metadata || [],
+      metaData: metadata || {},
     };
     if (type === "multiple") {
       result.multiple = {
         prices: prices || [],
       };
     } else {
-      const options: Required<Snapbuy.Product>["single"] = {};
+      const options: Required<Biqpod.Snapbuy.Product>["single"] = {};
       if (clientPrice) {
         options.client = clientPrice;
       }
@@ -165,7 +167,7 @@ export const useFormProduct = () => {
   ]);
   return product;
 };
-export const setFormProduct = (value?: Partial<Snapbuy.Product>) => {
+export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
   // Always set all form fields, using the provided value or appropriate defaults
   setFormAvailable(value?.available ?? true);
   setFormKeys(value?.keys ?? []);
@@ -191,7 +193,7 @@ export const setFormProduct = (value?: Partial<Snapbuy.Product>) => {
     setFormMetadata(value?.metaData);
   } else {
     // Clear metadata if not provided
-    setFormMetadata([]);
+    setFormMetadata({});
   }
 };
 
@@ -209,5 +211,5 @@ export const clearFormProduct = () => {
   setFormBrand("");
   setFormType("single");
   setFormPrices(undefined);
-  setFormMetadata([]);
+  setFormMetadata({});
 };

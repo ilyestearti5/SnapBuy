@@ -29,24 +29,26 @@ import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { useEffect, useMemo } from "react";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { Coupons } from "./Coupons";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 export interface UpsertCouponProps {
-  coupon?: Snapbuy.Coupon;
+  coupon?: Biqpod.Snapbuy.Coupon;
   back?: boolean;
 }
 export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
   const storeId = useStoreId();
-  const isActiveState = useCopyState<boolean | null>(coupon?.isActive ?? true);
+  const isActiveState = useCopyState<Biqpod.System.Setting.Value["boolean"]>(
+    coupon?.isActive ?? true
+  );
   const startAt = useTemp<string | undefined>("coupon-start-date");
   const endAt = useTemp<string | undefined>("coupon-end-date");
   const couponType = useTemp<string | Nothing>("coupon-type");
   const applicableProducts = useCopyState<string[]>(
     coupon?.applicableProducts || []
   );
-  const products = useTemp<Snapbuy.Product[]>("fetched-products");
+  const products = useTemp<Biqpod.Snapbuy.Product[]>("fetched-products");
   const productSearch = getFieldValue("coupon-product-search");
   // Filter products based on search
   const filteredProducts = useMemo(() => {
@@ -170,7 +172,7 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
         return;
       }
       const infinity = 1e10;
-      const couponData: Snapbuy.Coupon = {
+      const couponData: Biqpod.Snapbuy.Coupon = {
         id: coupon?.id,
         code: code.trim().toUpperCase(),
         name: name.trim(),

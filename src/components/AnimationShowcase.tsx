@@ -1,8 +1,7 @@
 /**
  * Animation Showcase Component
- * Demonstrates all available animations in the Snapbuy project
+ * Demonstrates all available animations in the Biqpod.Snapbuy project
  */
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button, CircleTip, Line, Icon } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
@@ -21,10 +20,11 @@ import {
   Typewriter,
 } from "../animations";
 import { cardVariants, modalVariants } from "../animations/index";
+import { useCopyState } from "@biqpod/app/ui/hooks";
 export const AnimationShowcase = () => {
-  const [showModal, setShowModal] = useState(false);
-  const [counter, setCounter] = useState(0);
-  const [showCards, setShowCards] = useState(true);
+  const showModal = useCopyState(false);
+  const counter = useCopyState(0);
+  const showCards = useCopyState(true);
   const demoCards = [
     { id: 1, title: "Card Animation 1", content: "Smooth entrance animations" },
     { id: 2, title: "Card Animation 2", content: "Hover effects and scaling" },
@@ -41,7 +41,7 @@ export const AnimationShowcase = () => {
           <div className="text-center">
             <h1 className="mb-2 font-bold text-4xl">
               <Typewriter
-                text="Snapbuy Animation Showcase"
+                text="Biqpod.Snapbuy Animation Showcase"
                 speed={100}
                 delay={0.5}
               />
@@ -58,18 +58,18 @@ export const AnimationShowcase = () => {
             <div className="flex justify-center items-center gap-4 mb-4">
               <HoverScale scale={1.1}>
                 <Button
-                  onClick={() => setCounter(counter - 1)}
+                  onClick={() => counter.set(counter.get - 1)}
                   className="bg-red-500 hover:bg-red-600"
                 >
                   <Icon icon={allIcons.solid.faMinus} />
                 </Button>
               </HoverScale>
               <div className="font-bold text-6xl">
-                <BouncyNumber value={counter} delay={0.1} />
+                <BouncyNumber value={counter.get} delay={0.1} />
               </div>
               <HoverScale scale={1.1}>
                 <Button
-                  onClick={() => setCounter(counter + 1)}
+                  onClick={() => counter.set(counter.get + 1)}
                   className="bg-green-500 hover:bg-green-600"
                 >
                   <Icon icon={allIcons.solid.faPlus} />
@@ -84,7 +84,7 @@ export const AnimationShowcase = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-bold text-2xl">Animated Card Grid</h2>
             <HoverScale scale={1.05}>
-              <Button onClick={() => setShowCards(!showCards)}>
+              <Button onClick={() => showCards.set(!showCards.get)}>
                 <Icon icon={allIcons.solid.faRefresh} />
                 Toggle Cards
               </Button>
@@ -92,7 +92,7 @@ export const AnimationShowcase = () => {
           </div>
         </SlideUpReveal>
         <AnimatePresence>
-          {showCards && (
+          {showCards.get && (
             <StaggeredGrid columns={3} staggerDelay={0.1}>
               {demoCards.map((card) => (
                 <motion.div
@@ -167,7 +167,7 @@ export const AnimationShowcase = () => {
           <AnimatedCard className="p-6 text-center">
             <h2 className="mb-4 font-bold text-2xl">Modal Animation Demo</h2>
             <HoverScale scale={1.05}>
-              <Button onClick={() => setShowModal(true)}>
+              <Button onClick={() => showModal.set(true)}>
                 Open Animated Modal
               </Button>
             </HoverScale>
@@ -183,7 +183,7 @@ export const AnimationShowcase = () => {
         </FloatingButton>
         {/* Modal */}
         <AnimatePresence>
-          {showModal && (
+          {showModal.get && (
             <>
               {/* Backdrop */}
               <motion.div
@@ -191,7 +191,7 @@ export const AnimationShowcase = () => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                onClick={() => setShowModal(false)}
+                onClick={() => showModal.set(false)}
               />
               {/* Modal Content */}
               <motion.div
@@ -227,7 +227,7 @@ export const AnimationShowcase = () => {
                     <div className="flex justify-center gap-4">
                       <HoverScale scale={1.05}>
                         <Button
-                          onClick={() => setShowModal(false)}
+                          onClick={() => showModal.set(false)}
                           className="bg-gray-500 hover:bg-gray-600"
                         >
                           Close
@@ -236,8 +236,8 @@ export const AnimationShowcase = () => {
                       <HoverScale scale={1.05}>
                         <Button
                           onClick={() => {
-                            setCounter(counter + 10);
-                            setShowModal(false);
+                            counter.set(counter.get + 10);
+                            showModal.set(false);
                           }}
                           className="bg-blue-500 hover:bg-blue-600"
                         >

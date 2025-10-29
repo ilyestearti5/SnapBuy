@@ -93,7 +93,7 @@ Note: Delivery prices are now stored in a separate `deliveryPrices` collection i
 
 ### UpsertStoreDeliveryPrice Props
 
-| Prop          | Type                  | Required | Description                         |
-| ------------- | --------------------- | -------- | ----------------------------------- |
-| storeId       | string                | Yes      | Store ID                            |
-| deliveryPrice | Snapbuy.DeliveryPrice | No       | Existing delivery price for editing |
+| Prop          | Type                         | Required | Description                         |
+| ------------- | ---------------------------- | -------- | ----------------------------------- |
+| storeId       | string                       | Yes      | Store ID                            |
+| deliveryPrice | Biqpod.Snapbuy.DeliveryPrice | No       | Existing delivery price for editing |

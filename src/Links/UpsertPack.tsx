@@ -30,10 +30,11 @@ import { motion } from "framer-motion";
 import { useEffect, useMemo } from "react";
 import { snapbuyApi } from "../apis";
 import { Packs } from "./Packs";
+import { Biqpod } from "@biqpod/app/ui/types";
 interface PackLineProductProps {
-  product?: Snapbuy.Product | null;
-  onChange?: (prod: Snapbuy.Product, count: number) => void;
-  onDelete?: (prod: Snapbuy.Product) => void;
+  product?: Biqpod.Snapbuy.Product | null;
+  onChange?: (prod: Biqpod.Snapbuy.Product, count: number) => void;
+  onDelete?: (prod: Biqpod.Snapbuy.Product) => void;
   count?: number;
 }
 const PackLineProduct = ({
@@ -117,14 +118,16 @@ const PackLineProduct = ({
   );
 };
 interface UpsertPackProps {
-  pack?: Snapbuy.Pack;
+  pack?: Biqpod.Snapbuy.Pack;
   back?: boolean;
 }
 export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
-  const priceState = useCopyState<number | null | undefined>(0);
-  const addedProducts = useCopyState<Required<Snapbuy.Pack>["products"]>([]);
-  const products = getTemp<Snapbuy.Product[]>("fetched-products"); // Replace with your actual product data
-  const searchField = getFieldValue("pack-search");
+  const priceState = useCopyState<Biqpod.System.Setting.Value["number"]>(0);
+  const addedProducts = useCopyState<Required<Biqpod.Snapbuy.Pack>["products"]>(
+    []
+  );
+  const products = getTemp<Biqpod.Snapbuy.Product[]>("fetched-products"); // Replace with your actual product data
+  const searchField = getFieldValue("pack-popup-search");
   const filterdProducts = useMemo(() => {
     return filterFuzzySearch(products || [], searchField?.trim() || "", "name");
   }, [products, searchField]);
@@ -223,7 +226,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
             <Card
               className="active:bg-[--biqpod-gray-opacity] w-full scale-100 active:scale-95 transition-[transform] cursor-pointer"
               onClick={() => {
-                setFocused("pack-search");
+                setFocused("pack-popup-search");
               }}
             >
               <div className="flex items-center gap-2 p-2">
@@ -341,7 +344,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                         ...prev,
                         { count: 1, prodId: product.id! },
                       ]);
-                      setFieldValue("pack-search", "");
+                      setFieldValue("pack-popup-search", "");
                     }}
                   >
                     <div className="flex items-center gap-2">
@@ -369,7 +372,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
         <Line />
         <div className="p-2 w-full">
           <Field
-            inputName="pack-search"
+            inputName="pack-popup-search"
             className="rounded-xl"
             placeholder="search for product"
             propositions={products
@@ -386,7 +389,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                     ...prev,
                     { count: 1, prodId: product.id! },
                   ]);
-                  setFieldValue("pack-search", "");
+                  setFieldValue("pack-popup-search", "");
                 }
               }
             }}
@@ -407,7 +410,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                 return;
               }
             }
-            const options: Snapbuy.Pack = {
+            const options: Biqpod.Snapbuy.Pack = {
               name: packName,
               price: priceState.get || 0,
               products: addedProducts.get,

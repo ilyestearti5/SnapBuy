@@ -308,8 +308,8 @@ export function useUsedBy(
 
 export const Stores = () => {
   const storeId = useStoreId();
-  const storesState = useCopyState<Snapbuy.Store[]>([]);
-  const invitedStoresState = useCopyState<Snapbuy.Store[]>([]);
+  const storesState = useCopyState<Biqpod.Snapbuy.Store[]>([]);
+  const invitedStoresState = useCopyState<Biqpod.Snapbuy.Store[]>([]);
   // Helper function to show delivery prices view
   const action = useAction(
     "fetch-my-stores",
@@ -333,7 +333,7 @@ export const Stores = () => {
         showToast("Please enter store phone", "error");
         return;
       }
-      const store: Snapbuy.Store = {
+      const store: Biqpod.Snapbuy.Store = {
         name: storeName,
         phone: storePhone,
         id: id || Date.now().toString(),
@@ -573,7 +573,7 @@ export const Stores = () => {
                                                 await Promise.all(
                                                   products.map(
                                                     async (
-                                                      product: Snapbuy.Product
+                                                      product: Biqpod.Snapbuy.Product
                                                     ) => {
                                                       const updatedProduct = {
                                                         ...product,
@@ -719,7 +719,8 @@ export const Stores = () => {
                                   </div>
                                   <div className="flex justify-center">
                                     {pixels.map(([pixel, value]) => {
-                                      const pixelId = pixel as Snapbuy.PixelId;
+                                      const pixelId =
+                                        pixel as Biqpod.Snapbuy.PixelId;
                                       const photo = pixelsPhoto[pixel];
                                       return (
                                         <motion.div
@@ -775,7 +776,7 @@ export const Stores = () => {
                                                             ...rest
                                                           } = copy.pixels || {};
                                                           copy.pixels = rest;
-                                                          await snapbuyApi.setPixelId(
+                                                          await snapbuyApi.store.setPixelId(
                                                             copy.id,
                                                             pixelId,
                                                             null
@@ -927,7 +928,9 @@ export const Stores = () => {
                                     src={store.photo}
                                     alt={
                                       <div className="flex justify-center items-center font-bold">
-                                        <i className="rotate-12">Snapbuy</i>
+                                        <i className="rotate-12">
+                                          Biqpod.Snapbuy
+                                        </i>
                                       </div>
                                     }
                                   />

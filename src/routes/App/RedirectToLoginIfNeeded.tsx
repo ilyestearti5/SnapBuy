@@ -2,11 +2,12 @@ import {
   AsyncComponent,
   BlurOverlay,
   CircleLoading,
+  EmptyComponent,
 } from "@biqpod/app/ui/components";
 import { setTemp, useAsyncEffect, useUser } from "@biqpod/app/ui/hooks";
 import { getCurrentAuth } from "../../server";
 import { delay } from "@biqpod/app/ui/utils";
-import { Link } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 export const Redirections = () => {
   return (
     <AsyncComponent
@@ -24,13 +25,14 @@ export const Redirections = () => {
 };
 export const RedirectorChildren = () => {
   const user = useUser();
+  const hist = useHistory();
   useAsyncEffect(async () => {
     const authUid = await getCurrentAuth();
     if (authUid) {
       setTemp("userLoaded", true);
       return;
     }
-    document.getElementById("auth-login")?.click();
-  }, [user]);
-  return <Link id="auth-login" to="/auth/login" />;
+    hist.push("/auth/login?redirect=" + location.pathname);
+  }, [user, hist]);
+  return <EmptyComponent />;
 };

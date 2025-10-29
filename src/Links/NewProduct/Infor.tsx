@@ -23,7 +23,7 @@ export const ProductInfo = () => {
   const brand = useFormBrand();
   const storeId = useStoreId();
   const brands = useAsyncMemo(async () => {
-    if (storeId) return snapbuyApi.getAllBrands(storeId);
+    if (storeId) return snapbuyApi.brands.getAll(storeId);
     return [];
   }, [storeId]);
   return (

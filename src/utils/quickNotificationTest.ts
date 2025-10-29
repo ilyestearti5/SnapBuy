@@ -47,7 +47,7 @@ export async function quickNotificationTest(): Promise<void> {
     console.log("✅ Permission granted, sending test notification...");
 
     // Create a simple test notification
-    const notification = new Notification("🔔 Snapbuy Test", {
+    const notification = new Notification("🔔 Biqpod.Snapbuy Test", {
       body: "If you can see this notification, everything is working correctly!",
       icon: "/assets/snapbuy.png",
       tag: "quick-test",

@@ -43,7 +43,7 @@ import {
   useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { isMobile } from "@biqpod/app/ui/app";
 import { Geolocation } from "@capacitor/geolocation";
 import {
@@ -109,14 +109,14 @@ const CardInfo = () => {
   const animationRef = useRef<NodeJS.Timeout | null>(null);
   const [currentLocationObtained, setCurrentLocationObtained] = useState(false);
   // --- Renamed to avoid redeclaration ---
-  const userZones = useTemp<Snapbuy.Zone[]>("user-zones");
-  const [zoneLinks, setZoneLinks] = useState<Snapbuy.LinkZone[]>([]);
+  const userZones = useTemp<Biqpod.Snapbuy.Zone[]>("user-zones");
+  const [zoneLinks, setZoneLinks] = useState<Biqpod.Snapbuy.LinkZone[]>([]);
   // Fetch all links between zones for the user
   useEffect(() => {
     let unsubscribes: Function[] = [];
     if (userZones.get && userZones.get.length > 0) {
       const fetchLinks = async () => {
-        let allLinks: Snapbuy.LinkZone[] = [];
+        let allLinks: Biqpod.Snapbuy.LinkZone[] = [];
         for (const zone of userZones.get!) {
           if (!zone.id) continue;
           const links = await snapbuyApi.getZonesLinkTo(zone.id);
@@ -455,10 +455,12 @@ async function getPlaceName([lat, lon]: [number, number]): Promise<string> {
   }
 }
 export const DeliveriesPricing = () => {
-  const zones = useTemp<Snapbuy.Zone[]>("user-zones");
+  const zones = useTemp<Biqpod.Snapbuy.Zone[]>("user-zones");
   const user = useUser();
   const expandedZones = useCopyState<Record<string, boolean>>({});
-  const linksByZone = useCopyState<Record<string, Snapbuy.LinkZone[]>>({});
+  const linksByZone = useCopyState<Record<string, Biqpod.Snapbuy.LinkZone[]>>(
+    {}
+  );
   const handleExpand = async (zoneId: string) => {
     expandedZones.set((prev) => ({ ...prev, [zoneId]: !prev[zoneId] }));
     if (!linksByZone.get[zoneId]) {
@@ -468,7 +470,7 @@ export const DeliveriesPricing = () => {
   };
   useEffect(() => {
     if (user?.uid)
-      return onCollectionSnapshot<Snapbuy.Zone>(
+      return onCollectionSnapshot<Biqpod.Snapbuy.Zone>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "zones"],
         (zonesData) => {
           zones.set(zonesData.map((zone) => zone.data));
@@ -533,7 +535,7 @@ export const DeliveriesPricing = () => {
                 ],
               });
               const data: {
-                zone: Snapbuy.Zone;
+                zone: Biqpod.Snapbuy.Zone;
                 linked: string[];
               }[] = await fetch(fileContent).then((s) => s.json());
               const redefinedIds = data.map(({ zone }) => ({

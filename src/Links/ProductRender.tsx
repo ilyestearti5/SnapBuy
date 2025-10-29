@@ -26,9 +26,9 @@ import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { useUsedBy } from "../routes/Stores/Stores";
-import { useEffect } from "react";
+import { Biqpod } from "@biqpod/app/ui/types";
 export interface ProductRenderProps {
-  product: Snapbuy.Product;
+  product: Biqpod.Snapbuy.Product;
   index: number;
 }
 export const ProductRender = ({ product, index }: ProductRenderProps) => {
@@ -53,7 +53,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const brand = useAsyncMemo(async () => {
     if (product.brandId) {
       try {
-        return await snapbuyApi.getBrand(product.brandId);
+        return await snapbuyApi.brands.get(product.brandId);
       } catch (error) {
         console.error("Error fetching brand:", error);
         return null;
@@ -63,9 +63,6 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   }, [product.brandId]);
   const selected = getTemp<string[]>("selected-products") || [];
   const isSelected = product.id && selected.includes(product.id);
-  useEffect(() => {
-    console.log(JSON.stringify(product));
-  }, []);
   // Helper: check if any product is selected
   return (
     <motion.div

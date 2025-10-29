@@ -1,4 +1,4 @@
-// Desktop notification fixes for Snapbuy
+// Desktop notification fixes for Biqpod.Snapbuy
 // This module addresses common issues with desktop notifications
 
 export class DesktopNotificationFixer {
@@ -212,7 +212,7 @@ export class DesktopNotificationFixer {
 
       console.log("🧪 Testing notification after applying fixes...");
 
-      const notification = new Notification("🔧 Fix Test - Snapbuy", {
+      const notification = new Notification("🔧 Fix Test - Biqpod.Snapbuy", {
         body: "Desktop notification fixes have been applied successfully!",
         icon: "/assets/snapbuy.png",
         tag: "fix-test",

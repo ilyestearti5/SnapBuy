@@ -15,9 +15,9 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { motion } from "framer-motion";
 import { useState } from "react";
-import { googleDriveHref } from "./Store";
 import { snapbuyApi } from "../../apis";
-interface DriveTransformProps {
+import { images } from "../../utils";
+export interface DriveTransformProps {
   text?: string;
 }
 export const DriveTransform = ({ text }: DriveTransformProps) => {
@@ -41,7 +41,7 @@ export const DriveTransform = ({ text }: DriveTransformProps) => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex flex-col justify-center items-center gap-12 p-3 h-full">
-        <img src={googleDriveHref} className="h-[100px]" />
+        <img src={images.googleDrive} className="h-[100px]" />
         {/* Animated Connection Design */}
         <div className="flex justify-center items-center mx-3">
           <motion.div
@@ -155,7 +155,7 @@ export const DriveConnect = () => {
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-evenly items-center p-3 h-full">
-        <img src={googleDriveHref} className="h-[100px]" />
+        <img src={images.googleDrive} className="h-[100px]" />
         {/* Animated Connection Design */}
         <div className="flex justify-center items-center mx-3">
           <motion.div

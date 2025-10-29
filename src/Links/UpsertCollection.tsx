@@ -32,13 +32,13 @@ import { delay, filterFuzzySearch, mapAsync, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo, useState } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { getPrice } from "../utils";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { Collections } from "./Collections";
 import { compressImage } from "../utils/utilities";
 interface ProductRenderProps {
-  product: Snapbuy.Product;
-  selectedProducts: Snapbuy.Product[];
-  onChangeSelectedProducts?: (products: Snapbuy.Product[]) => void;
+  product: Biqpod.Snapbuy.Product;
+  selectedProducts: Biqpod.Snapbuy.Product[];
+  onChangeSelectedProducts?: (products: Biqpod.Snapbuy.Product[]) => void;
 }
 export const ProductRender = ({
   product,
@@ -96,7 +96,7 @@ export const ProductRender = ({
   );
 };
 interface UpsertCollectionProps {
-  collection?: Snapbuy.Collection;
+  collection?: Biqpod.Snapbuy.Collection;
   back?: boolean;
 }
 export const UpsertCollection = ({
@@ -210,7 +210,7 @@ export const UpsertCollection = ({
     if (!storeId) return [];
     return await snapbuyApi.product.getProductsOf(storeId);
   }, [storeId]);
-  const selectedProducts = useCopyState<Snapbuy.Product[]>([]);
+  const selectedProducts = useCopyState<Biqpod.Snapbuy.Product[]>([]);
   const loadingProducts = useCopyState(false);
   useAsyncEffect(async () => {
     loadingProducts.set(true);
@@ -318,7 +318,7 @@ export const UpsertCollection = ({
         throw new Error("Collection name is required");
       }
       const id = collection?.id || crypto.randomUUID();
-      const options: Snapbuy.Collection = {
+      const options: Biqpod.Snapbuy.Collection = {
         id,
         ...collection,
         name,

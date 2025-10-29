@@ -147,7 +147,7 @@ class AIService {
       {
         role: "system",
         content:
-          "You are a helpful AI assistant for Snapbuy, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
+          "You are a helpful AI assistant for Biqpod.Snapbuy, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
       },
       ...conversationHistory,
       {
@@ -169,7 +169,7 @@ class AIService {
       {
         role: "system",
         content:
-          "You are a helpful AI assistant for Snapbuy, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
+          "You are a helpful AI assistant for Biqpod.Snapbuy, an e-commerce platform. You can help users with product searches, order management, store operations, and general questions about the platform. Be friendly, concise, and helpful.",
       },
       ...conversationHistory,
       {
@@ -183,7 +183,7 @@ class AIService {
       model,
       messages,
       max_tokens: 1000,
-      temperature: 0.7,
+      temperature: 0.05,
       stream: true,
     };
     const response = await fetch(`${endpoint.baseURL}/chat/completions`, {

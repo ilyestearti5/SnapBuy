@@ -1,7 +1,8 @@
+import { Biqpod } from "@biqpod/app/ui/types";
 import { useEffect, useState, useCallback } from "react";
 interface CachedProductsData {
-  products: Snapbuy.Product[];
-  lastDoc: Snapbuy.Product | null;
+  products: Biqpod.Snapbuy.Product[];
+  lastDoc: Biqpod.Snapbuy.Product | null;
   storeId: string;
   timestamp: number;
 }
@@ -53,8 +54,8 @@ const getCachedData = async (
 // Save cached data for a store
 const saveCachedData = async (
   storeId: string,
-  products: Snapbuy.Product[],
-  lastDoc: Snapbuy.Product | null
+  products: Biqpod.Snapbuy.Product[],
+  lastDoc: Biqpod.Snapbuy.Product | null
 ): Promise<void> => {
   try {
     const db = await initDB();
@@ -83,8 +84,8 @@ const clearCachedData = async (storeId: string): Promise<void> => {
   }
 };
 export const useIndexedDBProducts = (storeId: string | null | undefined) => {
-  const [products, setProducts] = useState<Snapbuy.Product[]>([]);
-  const [lastDoc, setLastDoc] = useState<Snapbuy.Product | null>(null);
+  const [products, setProducts] = useState<Biqpod.Snapbuy.Product[]>([]);
+  const [lastDoc, setLastDoc] = useState<Biqpod.Snapbuy.Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Load cached data on mount or storeId change
   useEffect(() => {
@@ -117,7 +118,10 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
   }, [storeId]);
   // Update products and save to cache
   const updateProducts = useCallback(
-    (newProducts: Snapbuy.Product[], newLastDoc: Snapbuy.Product | null) => {
+    (
+      newProducts: Biqpod.Snapbuy.Product[],
+      newLastDoc: Biqpod.Snapbuy.Product | null
+    ) => {
       setProducts(newProducts);
       setLastDoc(newLastDoc);
       if (storeId) {
@@ -129,8 +133,8 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
   // Add more products (for pagination)
   const addProducts = useCallback(
     (
-      additionalProducts: Snapbuy.Product[],
-      newLastDoc: Snapbuy.Product | null
+      additionalProducts: Biqpod.Snapbuy.Product[],
+      newLastDoc: Biqpod.Snapbuy.Product | null
     ) => {
       setProducts((prev) => {
         const updated = [...prev, ...additionalProducts];

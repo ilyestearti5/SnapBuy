@@ -1,11 +1,4 @@
-import {
-  allIcons,
-  and,
-  CloudSelection,
-  getDoc,
-  orderBy,
-  where,
-} from "@biqpod/app/ui/apis";
+import { allIcons, and, getDoc, where } from "@biqpod/app/ui/apis";
 import {
   AsyncComponent,
   Button,
@@ -32,9 +25,9 @@ import {
   useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { include, mergeArray, range, tw } from "@biqpod/app/ui/utils";
+import { include, range, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
-import { cloud, onCollectionSnapshot } from "../server";
+import { onCollectionSnapshot } from "../server";
 import { useLocation } from "react-router-dom";
 import { snapbuyApi } from "../apis";
 import {
@@ -283,7 +276,7 @@ const DesktopOrderLoadingSkeleton = ({ index }: { index: number }) => {
   );
 };
 interface StatusUiProps {
-  status: Snapbuy.OrderStatus;
+  status: Biqpod.Snapbuy.OrderStatus;
 }
 export const StatusUi = ({ status }: StatusUiProps) => {
   return (
@@ -330,16 +323,16 @@ export const Orders = () => {
       isFocused.set(false);
     };
   }, []);
-  const orders = useTemp<Snapbuy.Order[]>("orders-list"); // Replace with your actual orders data
+  const orders = useTemp<Biqpod.Snapbuy.Order[]>("orders-list"); // Replace with your actual orders data
   const user = useUser();
-  const lastDoc = useCopyState<Snapbuy.Order | null>(null);
+  const lastDoc = useCopyState<Biqpod.Snapbuy.Order | null>(null);
   const hasMore = useCopyState(true);
   const loc = useLocation();
   useAsyncEffect(async () => {
     const searcher = new URLSearchParams(loc.search);
     const orderId = searcher.get("order");
     if (orderId) {
-      const order = await snapbuyApi.getOrder(orderId);
+      const order = await snapbuyApi.order.get(orderId);
       if (order) {
         showPopup(<OrderView order={order} />);
       } else {
@@ -386,104 +379,19 @@ export const Orders = () => {
       if (!user?.uid) {
         return;
       }
-      const currentTime = new Date();
-      var subTime: Date | null = null;
-      switch (filterState?.time) {
-        case "today":
-          currentTime.setHours(0, 0, 0, 0);
-          subTime = new Date(currentTime.getTime());
-          break;
-        case "this week": {
-          const dayOfWeek = currentTime.getDay();
-          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // Adjust for Sunday
-          currentTime.setDate(currentTime.getDate() - daysToSubtract);
-          currentTime.setHours(0, 0, 0, 0);
-          subTime = new Date(currentTime.getTime());
-          break;
-        }
-        case "this month":
-          currentTime.setDate(1);
-          currentTime.setHours(0, 0, 0, 0);
-          subTime = new Date(currentTime.getTime());
-          break;
-        case "this year":
-          currentTime.setMonth(0, 1);
-          currentTime.setHours(0, 0, 0, 0);
-          subTime = new Date(currentTime.getTime());
-          break;
-        case "last week": {
-          // Go to start of this week, then subtract 7 days
-          const dayOfWeek = currentTime.getDay();
-          const daysToSubtract = dayOfWeek === 0 ? 6 : dayOfWeek - 1;
-          const startOfThisWeek = new Date(currentTime.getTime());
-          startOfThisWeek.setDate(currentTime.getDate() - daysToSubtract);
-          startOfThisWeek.setHours(0, 0, 0, 0);
-          const startOfLastWeek = new Date(startOfThisWeek.getTime());
-          startOfLastWeek.setDate(startOfThisWeek.getDate() - 7);
-          subTime = startOfLastWeek;
-          break;
-        }
-        case "last month": {
-          // Go to start of this month, then subtract 1 month
-          const startOfThisMonth = new Date(
-            currentTime.getFullYear(),
-            currentTime.getMonth(),
-            1,
-            0,
-            0,
-            0,
-            0
-          );
-          const startOfLastMonth = new Date(startOfThisMonth);
-          startOfLastMonth.setMonth(startOfThisMonth.getMonth() - 1);
-          subTime = startOfLastMonth;
-          break;
-        }
-        case "last year": {
-          // Go to start of this year, then subtract 1 year
-          const startOfThisYear = new Date(
-            currentTime.getFullYear(),
-            0,
-            1,
-            0,
-            0,
-            0,
-            0
-          );
-          const startOfLastYear = new Date(startOfThisYear);
-          startOfLastYear.setFullYear(startOfThisYear.getFullYear() - 1);
-          subTime = startOfLastYear;
-          break;
-        }
-      }
-      const selection: CloudSelection<Snapbuy.Order> = {
-        where: and(
-          where("uid", "==", user?.uid),
-          filterState?.phone && where("client.phone", "==", filterState.phone),
-          subTime && where("createdAt", ">=", subTime.getTime()),
-          filterState?.status && where("status", "==", filterState.status),
-          filterState?.delivery &&
-            filterState.delivery !== "all" &&
-            where("delivery", "==", filterState.delivery == "delivere"),
-          where("storeId", "==", selectedStoreId)
-        ),
-        orders: mergeArray(
-          orderBy("createdAt", filterState?.orderBy == "asc" ? "asc" : "desc")
-        ),
-        limit: PAGE_SIZE,
-        startAt:
-          next && lastDoc.get?.createdAt ? [lastDoc.get?.createdAt] : undefined,
-      };
-      const newOrders = await cloud.app.nosql.getDocs<Snapbuy.Order>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
-        selection
+      const newOrders = await snapbuyApi.order.getList(
+        selectedStoreId,
+        filterState,
+        PAGE_SIZE,
+        next && lastDoc.get?.createdAt
       );
       if (!newOrders) {
         return;
       }
-      const list = newOrders.map((order) => ({ ...order.data, id: order.id }));
-      orders.set((prev) => (next && prev ? [...prev, ...list] : list));
-      const lastDocRef = newOrders.at(-1)?.data;
+      orders.set((prev) =>
+        next && prev ? [...prev, ...newOrders] : newOrders
+      );
+      const lastDocRef = newOrders.at(-1);
       lastDoc.set(lastDocRef || null);
       hasMore.set(newOrders.length === PAGE_SIZE);
     },
@@ -545,10 +453,10 @@ export const Orders = () => {
         })
     );
   }, [searchOrder, orders.get]);
-  const hasNews = useCopyState<Snapbuy.Order[]>([]);
+  const hasNews = useCopyState<Biqpod.Snapbuy.Order[]>([]);
   useEffect(() => {
     if (user?.uid) {
-      return onCollectionSnapshot<Snapbuy.Order>(
+      return onCollectionSnapshot<Biqpod.Snapbuy.Order>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
         (news) => {
           hasNews.set(news.map((order) => ({ ...order.data, id: order.id })));
@@ -953,7 +861,7 @@ export const Orders = () => {
           <AnimatedList className="flex flex-col gap-4 p-2" staggerDelay={0.05}>
             {ordersState?.map(({ order, timeAgo, productCount }, index) => {
               return (
-                <AnimatedListItem key={order.id} index={index}>
+                <AnimatedListItem className="p-2" key={order.id} index={index}>
                   <HoverScale scale={1.01}>
                     <motion.div
                       initial={{ opacity: 0, y: 30 }}
@@ -1073,19 +981,20 @@ export const Orders = () => {
           {isLoading && (
             <AnimatedList staggerDelay={0.05}>
               {range(PAGE_SIZE).map((index) => (
-                <AnimatedListItem key={`mobile-loading-${index}`} index={index}>
+                <AnimatedListItem
+                  className="p-2"
+                  key={`mobile-loading-${index}`}
+                  index={index}
+                >
                   <OrderLoadingSkeleton index={index} />
                 </AnimatedListItem>
               ))}
             </AnimatedList>
           )}
           {hasMore.get && !isLoading && (
-            <HoverScale scale={1.05}>
+            <HoverScale className="p-2">
               <Card className="justify-center items-center w-full h-[180px]">
-                <motion.div
-                  whileHover={{ rotate: 360 }}
-                  transition={{ duration: 0.5 }}
-                >
+                <motion.div transition={{ duration: 0.5 }}>
                   <CircleTip
                     icon={
                       isLoading

@@ -35,7 +35,7 @@ import {
 import { snapbuyApi, CreateOrderOptions } from "../../apis";
 import { useEffect, useMemo } from "react";
 import { mapAsync, setFocused, tw } from "@biqpod/app/ui/utils";
-import { Nothing, SettingValueType } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing, SettingValueType } from "@biqpod/app/ui/types";
 import { CartLine } from "./CartLine";
 import { Carts } from "./ClientStores";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
@@ -43,7 +43,7 @@ import { isWeb } from "@biqpod/app/ui/app";
 import { getAddressFromCoords } from "../../getAddressFromCoords";
 import { deleteCart, useCart, useFullCart } from "../../apis/snapbuy";
 export interface ProductMore {
-  product: Snapbuy.Product;
+  product: Biqpod.Snapbuy.Product;
   count: number;
 }
 export function useActionStatus(actionName?: string | Action) {
@@ -83,7 +83,8 @@ export const CartPopup = ({
   const address = getFieldValue("client-address");
   const wilaya = getFieldValue("client-wilaya");
   const key = getFieldValue("client-key");
-  const deliveryState = useCopyState<boolean | null>(false);
+  const deliveryState =
+    useCopyState<Biqpod.System.Setting.Value["boolean"]>(false);
   const store = useAsyncMemo(() => {
     return snapbuyApi.store.get(storeId);
   }, []);
@@ -144,14 +145,14 @@ export const CartPopup = ({
         }
         return;
       }
-      const products: Snapbuy.Order["products"] = {};
+      const products: Biqpod.Snapbuy.Order["products"] = {};
       await mapAsync(Object.entries(carts), async ([prodId, value]) => {
         products[prodId] = {
           count: value?.count,
         };
       });
       localStorage.setItem("phone", phone);
-      const place: Snapbuy.Order["place"] = {
+      const place: Biqpod.Snapbuy.Order["place"] = {
         address,
         wilaya,
       };
@@ -173,7 +174,7 @@ export const CartPopup = ({
         delivery: deliveryState.get || false,
         metaData: magicForms,
       };
-      await snapbuyApi.createOrder(options);
+      await snapbuyApi.order.create(options);
       closePopup();
       showToast("Order Created", "success");
       visibilityTemp.setTemp("client-form", false);

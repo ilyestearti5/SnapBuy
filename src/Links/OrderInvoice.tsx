@@ -19,15 +19,16 @@ import {
   getOrderClientDisplayName,
   getOrderClientAddress,
 } from "../utils/orderClientInfo";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 interface OrderInvoiceProps {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
 }
 export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
   const invoiceRef = React.useRef<HTMLDivElement>(null);
   const user = useUser();
   const store = useAsyncMemo(async () => {
-    return getDoc<Snapbuy.Store>([
+    return getDoc<Biqpod.Snapbuy.Store>([
       "projects",
       import.meta.env.VITE_PROJECT_ID,
       "stores",
@@ -40,7 +41,7 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
   }, [order]);
 
   const list = useAsyncMemo(async () => {
-    return snapbuyApi.getOrderProducts(order.id);
+    return snapbuyApi.order.getProducts(order.id);
   }, []);
   const handleDownloadPDF = async () => {
     if (!invoiceRef.current) return;

@@ -32,8 +32,9 @@ import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { delay } from "@biqpod/app/ui/utils";
 import places from "../../public/places.json";
-interface DeliveryOptionWithPrices extends Snapbuy.DeliveryOptions {
-  prices: Snapbuy.DeliveryPrice[];
+import { Biqpod } from "@biqpod/app/ui/types";
+interface DeliveryOptionWithPrices extends Biqpod.Snapbuy.DeliveryOptions {
+  prices: Biqpod.Snapbuy.DeliveryPrice[];
 }
 interface StoreDeliveryPricingListProps {
   storeId?: string;
@@ -54,7 +55,7 @@ export const StoreDeliveryPricingList: React.FC<
         return;
       }
       try {
-        const options = await snapbuyApi.getStoreDeliveryOptions(storeId);
+        const options = await snapbuyApi.deliveryPrice.options.getAll(storeId);
         const optionsWithPrices = await Promise.all(
           options.map(async (option) => {
             const prices = await snapbuyApi.getDeliveryPricesForOption(
@@ -88,7 +89,7 @@ export const StoreDeliveryPricingList: React.FC<
         type: "warning",
       });
       if (confirmed) {
-        await snapbuyApi.deleteStoreDeliveryOption(deliveryOptionId);
+        await snapbuyApi.deliveryPrice.options.delete(deliveryOptionId);
         showToast("Delivery option deleted successfully", "success");
         execAction("fetch-delivery-options");
       }
@@ -187,7 +188,9 @@ export const StoreDeliveryPricingList: React.FC<
     }
     selectedPrices.set(newSet);
   };
-  const toggleSelectAllPrices = (optionPrices: Snapbuy.DeliveryPrice[]) => {
+  const toggleSelectAllPrices = (
+    optionPrices: Biqpod.Snapbuy.DeliveryPrice[]
+  ) => {
     const current = selectedPrices.get;
     const optionPriceIds = optionPrices.map((p) => p.id!);
     const allSelected = optionPriceIds.every((id) => current.has(id));
@@ -206,7 +209,7 @@ export const StoreDeliveryPricingList: React.FC<
     showPopup(<UpsertStoreDeliveryOption storeId={storeId} />);
   };
   const handleEditDeliveryOption = (
-    deliveryOption: Snapbuy.DeliveryOptions
+    deliveryOption: Biqpod.Snapbuy.DeliveryOptions
   ) => {
     if (!storeId) return;
     showPopup(
@@ -225,7 +228,9 @@ export const StoreDeliveryPricingList: React.FC<
       />
     );
   };
-  const handleEditDeliveryPrice = (deliveryPrice: Snapbuy.DeliveryPrice) => {
+  const handleEditDeliveryPrice = (
+    deliveryPrice: Biqpod.Snapbuy.DeliveryPrice
+  ) => {
     if (!storeId) return;
     showPopup(
       <UpsertDeliveryPrice
@@ -537,7 +542,7 @@ export const StoreDeliveryPricingList: React.FC<
 };
 interface UpsertStoreDeliveryOptionProps {
   storeId: string;
-  deliveryOption?: Snapbuy.DeliveryOptions;
+  deliveryOption?: Biqpod.Snapbuy.DeliveryOptions;
 }
 export const UpsertStoreDeliveryOption: React.FC<
   UpsertStoreDeliveryOptionProps
@@ -589,14 +594,14 @@ export const UpsertStoreDeliveryOption: React.FC<
       isLoading.set(true);
       try {
         if (isEdit) {
-          await snapbuyApi.updateStoreDeliveryOption(deliveryOption.id!, {
+          await snapbuyApi.deliveryPrice.options.update(deliveryOption.id!, {
             name: name || "",
             description: description || "",
             type: validType,
           });
           showToast("Delivery option updated successfully", "success");
         } else {
-          await snapbuyApi.addStoreDeliveryOption(storeId, {
+          await snapbuyApi.deliveryPrice.options.add(storeId, {
             name: name || "",
             description: description || "",
             type: validType,
@@ -687,7 +692,7 @@ export const UpsertStoreDeliveryOption: React.FC<
 interface UpsertDeliveryPriceProps {
   storeId: string;
   deliveryOptionId: string;
-  deliveryPrice?: Snapbuy.DeliveryPrice;
+  deliveryPrice?: Biqpod.Snapbuy.DeliveryPrice;
 }
 export const UpsertDeliveryPrice: React.FC<UpsertDeliveryPriceProps> = ({
   storeId,

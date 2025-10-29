@@ -1,11 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { Icon, Button, CircleTip } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 import { MediaRenderer } from "./MediaRenderer";
+import { Biqpod } from "@biqpod/app/ui/types";
+import { useCopyState } from "@biqpod/app/ui/hooks";
 export interface ProductCardProps {
-  product: Snapbuy.Product;
+  product: Biqpod.Snapbuy.Product;
   onAddToCart?: (productId: string, quantity?: number) => void;
   onViewDetails?: (productId: string) => void;
   compact?: boolean;
@@ -20,8 +22,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   showPrice = true,
   showDescription = true,
 }) => {
-  const [quantity, setQuantity] = useState(1);
-  const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const quantity = useCopyState(1);
+  const isAddingToCart = useCopyState(false);
   // Get product price
   const getPrice = () => {
     if (product.type === "single" && product.single) {
@@ -38,13 +40,13 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   const canAddToCart = isAvailable && hasStock && onAddToCart;
   const handleAddToCart = async () => {
     if (!canAddToCart || !product.id) return;
-    setIsAddingToCart(true);
+    isAddingToCart.set(true);
     try {
-      onAddToCart(product.id, quantity);
+      onAddToCart(product.id, quantity.get);
     } catch (error) {
       console.error("Failed to add to cart:", error);
     } finally {
-      setIsAddingToCart(false);
+      isAddingToCart.set(false);
     }
   };
   const handleViewDetails = () => {
@@ -191,20 +193,20 @@ export const ProductCard: React.FC<ProductCardProps> = ({
               {/* Quantity Selector */}
               <div className="flex items-center gap-1 border border-[--biqpod-border] rounded">
                 <button
-                  onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                  onClick={() => quantity.set(Math.max(1, quantity.get - 1))}
                   className="hover:bg-[--biqpod-gray-opacity] p-1 transition-colors"
-                  disabled={quantity <= 1}
+                  disabled={quantity.get <= 1}
                 >
                   <Icon icon={allIcons.solid.faMinus} />
                 </button>
                 <span className="px-2 py-1 min-w-[2rem] text-sm text-center">
-                  {quantity}
+                  {quantity.get}
                 </span>
                 <button
-                  onClick={() => setQuantity(quantity + 1)}
+                  onClick={() => quantity.set(quantity.get + 1)}
                   className="hover:bg-[--biqpod-gray-opacity] p-1 transition-colors"
                   disabled={
-                    product.quantity ? quantity >= product.quantity : false
+                    product.quantity ? quantity.get >= product.quantity : false
                   }
                 >
                   <Icon icon={allIcons.solid.faPlus} />
@@ -215,17 +217,17 @@ export const ProductCard: React.FC<ProductCardProps> = ({
                 onClick={handleAddToCart}
                 className={tw(
                   "flex-1 bg-[--biqpod-primary] text-white hover:opacity-90 transition-opacity flex items-center justify-center gap-2",
-                  isAddingToCart && "opacity-50 cursor-not-allowed"
+                  isAddingToCart.get && "opacity-50 cursor-not-allowed"
                 )}
               >
                 <Icon
                   icon={
-                    isAddingToCart
+                    isAddingToCart.get
                       ? allIcons.solid.faSpinner
                       : allIcons.solid.faCartPlus
                   }
                 />
-                {isAddingToCart ? "Adding..." : "Add to Cart"}
+                {isAddingToCart.get ? "Adding..." : "Add to Cart"}
               </Button>
             </div>
           )}

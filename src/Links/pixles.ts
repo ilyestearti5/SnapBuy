@@ -2,8 +2,8 @@ import fcbPixel from "react-facebook-pixel";
 import ttq from "tiktok-pixel";
 import { getPrice } from "../utils";
 import { useMemo } from "react";
-import { Nothing } from "@biqpod/app/ui/types";
-export function initPixels(store: Snapbuy.Store | Nothing) {
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
+export function initPixels(store: Biqpod.Snapbuy.Store | Nothing) {
   return useMemo(() => {
     if (!store) {
       return undefined;
@@ -29,7 +29,7 @@ export function initPixels(store: Snapbuy.Store | Nothing) {
           search_string: value,
         });
       },
-      favorite(product: Snapbuy.Product) {
+      favorite(product: Biqpod.Snapbuy.Product) {
         fcbPixel.track("AddToWishlist", {
           content_ids: [product.id],
           content_name: product.name,
@@ -53,7 +53,7 @@ export function initPixels(store: Snapbuy.Store | Nothing) {
           content_name: tab,
         });
       },
-      view(product: Snapbuy.Product | Nothing) {
+      view(product: Biqpod.Snapbuy.Product | Nothing) {
         if (!product) {
           return;
         }
@@ -74,7 +74,7 @@ export function initPixels(store: Snapbuy.Store | Nothing) {
           currency: "DZD",
         });
       },
-      addToCart(product: Snapbuy.Product, count: number) {
+      addToCart(product: Biqpod.Snapbuy.Product, count: number) {
         const price = getPrice(product, count).total;
         fcbPixel.track("AddToCart", {
           content_ids: [product.id],
@@ -103,7 +103,7 @@ export function initPixels(store: Snapbuy.Store | Nothing) {
           form_id: tab,
         });
       },
-      purchase(order: Snapbuy.Order) {
+      purchase(order: Biqpod.Snapbuy.Order) {
         const prods = Object.entries(order.products || {}).map(
           ([id, product]) => ({
             id,

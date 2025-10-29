@@ -10,7 +10,7 @@ import {
 // Example 1: Show as popup
 export const openNotificationSettings = () => {
   showPopup(
-    <Card className="max-w-full max-h-[80vh] overflow-x-hidden">
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-x-hidden">
       <CardHeaderForPopup title="Notification Settings" />
       <Line />
       <NotificationSettings />

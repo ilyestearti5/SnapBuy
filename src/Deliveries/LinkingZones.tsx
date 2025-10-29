@@ -20,6 +20,7 @@ import { snapbuyApi } from "../apis";
 import { useEffect } from "react";
 import { allIcons, and, getDocs, or, where } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
+import { Biqpod } from "@biqpod/app/ui/types";
 export interface LinkingZonesProps {
   first: string;
   second: string;
@@ -27,7 +28,7 @@ export interface LinkingZonesProps {
 export const LinkingZones = ({ first, second }: LinkingZonesProps) => {
   const priceState = useCopyState<number | undefined | null>(null);
   const link = useAsyncMemo(async () => {
-    const record = await getDocs<Snapbuy.LinkZone>(
+    const record = await getDocs<Biqpod.Snapbuy.LinkZone>(
       ["projects", import.meta.env.VITE_PROJECT_ID, "zone-links"],
       {
         where: or(

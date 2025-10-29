@@ -16,7 +16,7 @@ export const ProductDescription = () => {
     "generate-product-form-description",
     async () => {
       await delay(1000);
-      const result = await snapbuyApi.generateProductDescription(product);
+      const result = await snapbuyApi.product.generateDescription(product);
       setFieldValue(
         "product-form-description",
         result || "No description generated"

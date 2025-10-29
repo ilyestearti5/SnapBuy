@@ -27,6 +27,7 @@ import { UpsertCollection } from "./UpsertCollection";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
+import { Biqpod } from "@biqpod/app/ui/types";
 // Highlight component for search terms
 export function highlightMatch(
   text: string,
@@ -95,7 +96,7 @@ export function highlightMatch(
 export const Collections = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const collections = useCopyState<Snapbuy.Collection[]>([]);
+  const collections = useCopyState<Biqpod.Snapbuy.Collection[]>([]);
   useAction(
     "fetch-collections",
     async () => {

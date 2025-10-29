@@ -13,15 +13,16 @@ import { useAsyncMemo, closePopup } from "@biqpod/app/ui/hooks";
 import { tw, range } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
 import { snapbuyApi } from "../../apis";
+import { Biqpod } from "@biqpod/app/ui/types";
 export interface OrderView {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
 }
 export const OrderView = ({ order }: OrderView) => {
   const time = new Date(order.createdAt!);
   const productsLengths = Object.keys(order.products || {}).length;
   const packsLengths = Object.keys(order.packs || {}).length;
   const productsList = useAsyncMemo(async () => {
-    return snapbuyApi.getOrderProducts(order.id);
+    return snapbuyApi.order.getProducts(order.id);
   }, []);
   const packsList = useAsyncMemo(async () => {
     return snapbuyApi.getOrderPacks(order.id);

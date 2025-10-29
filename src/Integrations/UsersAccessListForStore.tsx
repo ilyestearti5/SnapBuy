@@ -114,7 +114,7 @@ const loadingVariants = {
 export const UsersAccessListForStore = ({
   storeId,
 }: UsersAccessListForStoreProps) => {
-  const usersAccess = useCopyState<Snapbuy.StoreUserAccess[]>([]);
+  const usersAccess = useCopyState<Biqpod.Snapbuy.StoreUserAccess[]>([]);
   const error = useCopyState<string | null>(null);
   const selectedUsers = useCopyState<string[]>([]);
 
@@ -188,7 +188,7 @@ export const UsersAccessListForStore = ({
     execAction("load-users-access");
   }, [storeId]);
 
-  const getStatusColor = (status: Snapbuy.StoreUserAccess["status"]) => {
+  const getStatusColor = (status: Biqpod.Snapbuy.StoreUserAccess["status"]) => {
     switch (status) {
       case "accepted":
         return "bg-green-600/25 text-green-600 border-green-300";
@@ -219,7 +219,7 @@ export const UsersAccessListForStore = ({
     });
   };
 
-  const handleEditUser = (user: Snapbuy.StoreUserAccess) => {
+  const handleEditUser = (user: Biqpod.Snapbuy.StoreUserAccess) => {
     showPopup(
       <UpsertAccessUsertoStore
         storeId={storeId}
@@ -230,11 +230,11 @@ export const UsersAccessListForStore = ({
     );
   };
 
-  const handleRemoveUser = async (user: Snapbuy.StoreUserAccess) => {
+  const handleRemoveUser = async (user: Biqpod.Snapbuy.StoreUserAccess) => {
     let userName = "this user";
     if (user.relatedUid) {
       try {
-        const fetchedUser = await snapbuyApi.getUser(user.relatedUid);
+        const fetchedUser = await snapbuyApi.friends.get(user.relatedUid);
         userName = fetchedUser?.firstname || fetchedUser?.email || "this user";
       } catch (err) {
         console.error("Failed to fetch user for confirm:", err);
@@ -390,7 +390,7 @@ export const UsersAccessListForStore = ({
                                   </EmptyComponent>
                                 );
                               }
-                              const fetchedUser = await snapbuyApi.getUser(
+                              const fetchedUser = await snapbuyApi.friends.get(
                                 user.relatedUid
                               );
                               return (
@@ -416,7 +416,7 @@ export const UsersAccessListForStore = ({
                                   </EmptyComponent>
                                 );
                               }
-                              const fetchedUser = await snapbuyApi.getUser(
+                              const fetchedUser = await snapbuyApi.friends.get(
                                 user.relatedUid
                               );
                               return (

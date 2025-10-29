@@ -19,8 +19,9 @@ import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import { mergeArray } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 import { FadeIn, HoverScale, AnimatedCard } from "../animations/components";
+import { Biqpod } from "@biqpod/app/ui/types";
 interface OrderClientDisplayProps {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
   showAddress?: boolean;
   showPhone?: boolean;
   showCustomerBadge?: boolean;
@@ -137,7 +138,11 @@ export const OrderClientDisplay = ({
   );
 };
 // Component for displaying wilaya/address only
-export const OrderClientLocation = ({ order }: { order: Snapbuy.Order }) => {
+export const OrderClientLocation = ({
+  order,
+}: {
+  order: Biqpod.Snapbuy.Order;
+}) => {
   const clientInfo = useAsyncMemo(async () => {
     return await getOrderClientInfo(order);
   }, [order]);
@@ -151,7 +156,11 @@ export const OrderClientLocation = ({ order }: { order: Snapbuy.Order }) => {
   );
 };
 // Component for actions (phone, map)
-export const OrderClientActions = ({ order }: { order: Snapbuy.Order }) => {
+export const OrderClientActions = ({
+  order,
+}: {
+  order: Biqpod.Snapbuy.Order;
+}) => {
   const clientInfo = useAsyncMemo(async () => {
     return await getOrderClientInfo(order);
   }, [order]);
@@ -207,7 +216,11 @@ export const OrderClientActions = ({ order }: { order: Snapbuy.Order }) => {
   );
 };
 // Component for displaying phone
-export const OrderClientPhone = ({ order }: { order: Snapbuy.Order }) => {
+export const OrderClientPhone = ({
+  order,
+}: {
+  order: Biqpod.Snapbuy.Order;
+}) => {
   const clientInfo = useAsyncMemo(async () => {
     return await getOrderClientInfo(order);
   }, [order]);
@@ -217,7 +230,11 @@ export const OrderClientPhone = ({ order }: { order: Snapbuy.Order }) => {
   return <span>{clientInfo.phone}</span>;
 };
 // Component for displaying address
-export const OrderClientAddress = ({ order }: { order: Snapbuy.Order }) => {
+export const OrderClientAddress = ({
+  order,
+}: {
+  order: Biqpod.Snapbuy.Order;
+}) => {
   const clientInfo = useAsyncMemo(async () => {
     return await getOrderClientInfo(order);
   }, [order]);
@@ -227,7 +244,11 @@ export const OrderClientAddress = ({ order }: { order: Snapbuy.Order }) => {
   return <span>{clientInfo.address || "No address available"}</span>;
 };
 // Component for displaying wilaya
-export const OrderClientWilaya = ({ order }: { order: Snapbuy.Order }) => {
+export const OrderClientWilaya = ({
+  order,
+}: {
+  order: Biqpod.Snapbuy.Order;
+}) => {
   const clientInfo = useAsyncMemo(async () => {
     return await getOrderClientInfo(order);
   }, [order]);
@@ -249,7 +270,7 @@ export const OrderClientMenuActions = ({
   onViewOrder,
   onAssignAgent,
 }: {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
   onViewOrder?: () => void;
   onAssignAgent?: () => void;
 }) => {
@@ -335,7 +356,7 @@ export const OrderClientMenuActions = ({
   );
 };
 // Simple hook to get client info for custom usage
-export const useOrderClientInfo = (order: Snapbuy.Order) => {
+export const useOrderClientInfo = (order: Biqpod.Snapbuy.Order) => {
   return useAsyncMemo(async () => {
     return await getOrderClientInfo(order);
   }, [order]);

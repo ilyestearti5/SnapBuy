@@ -20,7 +20,7 @@ import { tw } from "@biqpod/app/ui/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearchParams } from "../routes/Clients/AddProductToCart";
 import { colorsInListWithNames } from "../utils";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { isWeb } from "@biqpod/app/ui/app";
 import { getAddressFromCoords } from "../getAddressFromCoords";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
@@ -499,13 +499,13 @@ export const ProductRoute = () => {
         showToast("Enter Valid Phone Number", "info");
         return;
       }
-      const products: Snapbuy.Order["products"] = {
+      const products: Biqpod.Snapbuy.Order["products"] = {
         [product?.id!]: {
           count: count.get || 1,
         },
       };
       localStorage.setItem("phone", phone);
-      const place: Snapbuy.Order["place"] = {
+      const place: Biqpod.Snapbuy.Order["place"] = {
         address,
         wilaya,
       };
@@ -531,11 +531,11 @@ export const ProductRoute = () => {
         delivery: deliveryState.get || false,
         metaData,
       };
-      const orderInfo = await snapbuyApi.createOrder(options);
+      const orderInfo = await snapbuyApi.order.create(options);
       if (!orderInfo?.id) {
         throw "Order Info Incorrect";
       }
-      const order = await snapbuyApi.getOrder(orderInfo.id);
+      const order = await snapbuyApi.order.get(orderInfo.id);
       if (order) {
         pixels?.purchase(order);
       }

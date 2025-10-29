@@ -1,6 +1,6 @@
-# Snapbuy - E-commerce Management Platform
+# Biqpod.Snapbuy - E-commerce Management Platform
 
-A comprehensive e-commerce management platform built with React, TypeScript, and Firebase. Snapbuy provides powerful tools for online store management, order processing, delivery management, and customer engagement with a modern, responsive interface.
+A comprehensive e-commerce management platform built with React, TypeScript, and Firebase. Biqpod.Snapbuy provides powerful tools for online store management, order processing, delivery management, and customer engagement with a modern, responsive interface.
 
 ## 🚀 Features
 
@@ -136,7 +136,7 @@ Before you begin, ensure you have the following installed on your system:
 
 ### 📦 Quick Start - Run from Scratch
 
-Follow these step-by-step instructions to get Snapbuy running on your local machine:
+Follow these step-by-step instructions to get Biqpod.Snapbuy running on your local machine:
 
 #### 1. **Clone the Repository**
 
@@ -347,7 +347,7 @@ npm run build
 
 ## 📋 Key Features Implementation
 
-## 🎯 How to Use Snapbuy
+## 🎯 How to Use Biqpod.Snapbuy
 
 ### For Store Owners
 
@@ -417,7 +417,7 @@ The application uses a modular configuration system:
 
 ## 🔗 Available Routes
 
-Snapbuy includes the following main routes and features:
+Biqpod.Snapbuy includes the following main routes and features:
 
 ### Store Management Routes
 
@@ -483,7 +483,7 @@ Developed by the Biq Pod team for modern e-commerce management.
 
 ## 🏆 What's Next?
 
-After getting Snapbuy running, you can:
+After getting Biqpod.Snapbuy running, you can:
 
 1. **Customize the theme** using Tailwind CSS configurations
 2. **Add new features** by extending the component system

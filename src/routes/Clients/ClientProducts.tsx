@@ -77,6 +77,7 @@ import { initPixels } from "../../Links/pixles";
 import { ClientProductRender } from "./ClientProductRender";
 import { CartPopup } from "./CartPopup";
 import { useFullCart } from "../../apis/snapbuy";
+import { Biqpod } from "@biqpod/app/ui/types";
 export const ClientProducts = () => {
   const storeId = useParams<{ storeId: string }>().storeId;
   const store = useAsyncMemo(async () => {
@@ -84,8 +85,8 @@ export const ClientProducts = () => {
     return snapbuyApi.store.get(storeId);
   }, [storeId]);
   const pixles = initPixels(store);
-  const products = useCopyState<Snapbuy.Product[]>([]); // Replace with your actual product data
-  const lastDoc = useCopyState<Snapbuy.Product | null>(null);
+  const products = useCopyState<Biqpod.Snapbuy.Product[]>([]); // Replace with your actual product data
+  const lastDoc = useCopyState<Biqpod.Snapbuy.Product | null>(null);
   const action = useAction(
     "fetch-store-products",
     async (next = false) => {
@@ -223,7 +224,7 @@ export const ClientProducts = () => {
                 }: {
                   index: number;
                   style: React.CSSProperties;
-                  data: (Snapbuy.Product | number)[];
+                  data: (Biqpod.Snapbuy.Product | number)[];
                 }) => {
                   if (typeof data === "number") {
                     return <div style={style} />;

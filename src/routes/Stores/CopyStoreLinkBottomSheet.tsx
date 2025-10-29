@@ -13,7 +13,7 @@ import {
   showToast,
   closeBottomSheet,
 } from "@biqpod/app/ui/hooks";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 interface CopyStoreLinkBottomSheetProps {
   storeId: string;
 }
@@ -22,8 +22,8 @@ export const CopyStoreLinkBottomSheet = ({
 }: CopyStoreLinkBottomSheetProps) => {
   const langState = useCopyState<string | Nothing>(null);
   const langs = useSettingConfig("window/lang.enum");
-  const isDark = useCopyState<boolean | null>(false);
-  const showPhoto = useCopyState<boolean | null>(true);
+  const isDark = useCopyState<Biqpod.System.Setting.Value["boolean"]>(false);
+  const showPhoto = useCopyState<Biqpod.System.Setting.Value["boolean"]>(true);
   const copy = async () => {
     closeBottomSheet();
     const url = new URL(window.location.href);

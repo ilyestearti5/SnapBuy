@@ -22,7 +22,7 @@ import {
   setTab,
   useCopyState,
 } from "@biqpod/app/ui/hooks";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -105,7 +105,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
   const productTypeState = useCopyState<string | Nothing>("");
   const metadataKeyState = useCopyState<string>("");
   const metadataValueState = useCopyState<string>("");
-  const [brands, setBrands] = useState<Snapbuy.Brand[]>([]);
+  const [brands, setBrands] = useState<Biqpod.Snapbuy.Brand[]>([]);
   const brandSearchValue = getFieldValue("brand-search");
   const fuzzySearch = (text: string, search: string): boolean => {
     if (!search) return true;
@@ -127,7 +127,7 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
     const fetchBrands = async () => {
       if (!storeId) return;
       try {
-        const fetchedBrands = await snapbuyApi.getAllBrands(storeId);
+        const fetchedBrands = await snapbuyApi.brands.getAll(storeId);
         setBrands(fetchedBrands || []);
       } catch (error) {
         console.error("Failed to fetch brands:", error);

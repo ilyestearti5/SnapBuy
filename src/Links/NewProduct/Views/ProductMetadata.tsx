@@ -2,6 +2,7 @@ import {
   Button,
   Card,
   CircleTip,
+  EmptyComponent,
   EnumField,
   Field,
   Icon,
@@ -12,30 +13,30 @@ import {
 } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { useFormMetadata, setFormMetadata } from "../../../apis/getFns";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
-  getTemp,
   showToast,
-  useFieldValue,
   useCopyState,
+  showPopup,
+  closePopup,
+  getMagicField,
+  getFieldValue,
+  setFieldValue,
+  openMenu,
 } from "@biqpod/app/ui/hooks";
-import { ColorField } from "./ColorField";
 import { motion, AnimatePresence } from "framer-motion";
-import { Nothing } from "@biqpod/app/ui/types";
-type MetadataField = Snapbuy.MetadataField;
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
+import { tw } from "@biqpod/app/ui/utils";
+type MetadataField = Biqpod.Snapbuy.MetadataField;
 interface RenderFieldProps {
   field: MetadataField;
 }
 const RenderField = ({ field }: RenderFieldProps) => {
   const metadataState = useFormMetadata();
   const metadata = metadataState?.get;
-  // For now, just render the value as text to avoid hooks in loops
-  // This will be improved later once the basic structure works
-  const value = getTemp<string | number | boolean | string[] | Nothing>(
-    ["magic-fields", "product-metadata-" + field.key].join(".")
-  );
+  const value = getMagicField("product-metadata-" + field.key);
   useEffect(() => {
-    const metadataField = metadata?.find((f) => f.key === field.key);
+    const metadataField = metadata?.[field.key];
     if (
       metadataField &&
       metadata &&
@@ -44,20 +45,10 @@ const RenderField = ({ field }: RenderFieldProps) => {
       if (!value) {
         return;
       }
-      const prev = metadata;
-      const index = prev.findIndex((f) => f.key === field.key);
-      var result: MetadataField[] = [];
-      if (index !== -1) {
-        const updatedField = { ...prev[index], value };
-        result = [
-          ...prev.slice(0, index),
-          updatedField,
-          ...prev.slice(index + 1),
-        ];
-      } else {
-        result = prev;
-      }
-      setFormMetadata(result);
+      setFormMetadata({
+        ...metadata,
+        [field.key]: metadataField,
+      });
     }
   }, [value, metadata]);
   const options =
@@ -75,38 +66,107 @@ const RenderField = ({ field }: RenderFieldProps) => {
   // For colors type, we'll use array type but with special handling
   const fieldType = field.type === "colors" ? "array" : field.type;
   return (
-    <div className="bg-[--biqpod-primary-background] p-2 border border-[--biqpod-borders] border-solid rounded-xl">
-      {field.type === "colors" ? (
-        <ColorField
-          fieldId={"product-metadata-" + field.key}
-          placeholder="Enter colors"
-          hint="Add colors using the color picker, predefined colors, or type color names/hex codes"
-        />
-      ) : (
-        <MagicField
-          config={options as any}
-          fieldId={"product-metadata-" + field.key}
-          type={fieldType}
-        />
-      )}
+    <div className="flex justify-center items-centerq bg-[--biqpod-primary-background] p-2 border border-[--biqpod-borders] border-solid rounded-xl">
+      <MagicField
+        config={options as any}
+        fieldId={"product-metadata-" + field.key}
+        type={fieldType}
+      />
     </div>
   );
 };
+const types = [
+  {
+    value: "string",
+    content: "🪈 Text",
+  },
+  {
+    value: "number",
+    content: "🔢 Number",
+  },
+  {
+    value: "boolean",
+    content: "✅ Boolean",
+  },
+  {
+    value: "array",
+    content: "📚 Text Array",
+  },
+  {
+    value: "colors",
+    content: "🔵 Colors",
+  },
+];
+interface EditTypePopupProps {
+  field: MetadataField;
+  onChangeField?: (field: MetadataField) => void;
+}
+const EditTypePopup = ({ field, onChangeField }: EditTypePopupProps) => {
+  const state = useCopyState<string | Nothing>(undefined);
+  const isDiff = field.type !== state.get;
+  return (
+    <Card className="min-w-[300px]">
+      <div className="flex justify-between items-center gap-2 p-2">
+        <h1 className="text-2xl capitalize">
+          <Translate content="edit type" />
+        </h1>
+        <div>
+          <CircleTip
+            icon={allIcons.solid.faXmark}
+            onClick={() => {
+              closePopup("edit-type");
+            }}
+          />
+        </div>
+      </div>
+      <Line />
+      <div className="p-3">
+        <EnumField
+          config={{
+            list: types,
+          }}
+          state={state}
+        />
+      </div>
+      {isDiff && state.get && (
+        <EmptyComponent>
+          <Line />
+          <div className="p-2">
+            <Button
+              onClick={() => {
+                onChangeField?.({
+                  ...field,
+                  type: state.get! as MetadataField["type"],
+                });
+                showToast(`type modifed from ${field.type} to ${state.get}`);
+              }}
+              className="rounded-2xl"
+              icon={allIcons.solid.faRefresh}
+            >
+              <Translate content="modify" />
+            </Button>
+          </div>
+        </EmptyComponent>
+      )}
+    </Card>
+  );
+};
+
 export const ProductMetadata = () => {
   const metadataState = useFormMetadata();
   const metadata = metadataState?.get;
-  const [newFieldKey, setNewFieldKey] = useState("");
-  const [expandedFields, setExpandedFields] = useState<Set<number>>(new Set());
+  const metadataInArray = useMemo(() => {
+    return Object.values(metadata || {}).map((s) => s!);
+  }, [metadata]);
   // Use useCopyState for the field type selection with EnumField
   const fieldTypeState = useCopyState<string | false | 0 | null | undefined>(
     undefined
   );
   // Create field value state for the new field key input
-  const newFieldKeyValue = useFieldValue("new-field-key");
+  const inputFieldKey = getFieldValue("new-field-key");
   const addMetadataField = () => {
     // Get the field value from the form field using the hook
-    const fieldKeyValue = newFieldKeyValue.get || newFieldKey;
-    if (!fieldKeyValue.trim()) return;
+    if (!inputFieldKey?.trim()) return;
     const selectedFieldType = fieldTypeState.get as MetadataField["type"];
     if (!selectedFieldType) {
       showToast("Field type is required", "error");
@@ -114,30 +174,21 @@ export const ProductMetadata = () => {
     }
     const defaultValue = getDefaultValueForType(selectedFieldType);
     const newField: MetadataField = {
-      key: fieldKeyValue.trim(),
       type: selectedFieldType,
       value: defaultValue,
+      key: inputFieldKey,
     };
-    const updatedMetadata = [...(metadata || []), newField];
-    setFormMetadata(updatedMetadata);
+    setFormMetadata({
+      ...metadata,
+      [inputFieldKey]: newField,
+    });
     // Clear the fields
-    newFieldKeyValue.set("");
-    setNewFieldKey("");
+    setFieldValue("new-field-key", "");
     fieldTypeState.set(undefined);
   };
-  const removeMetadataField = (index: number) => {
-    if (!metadata) return;
-    const updatedMetadata = metadata.filter((_: any, i: number) => i !== index);
-    setFormMetadata(updatedMetadata);
-  };
-  const toggleFieldExpansion = (index: number) => {
-    const newExpandedFields = new Set(expandedFields);
-    if (newExpandedFields.has(index)) {
-      newExpandedFields.delete(index);
-    } else {
-      newExpandedFields.add(index);
-    }
-    setExpandedFields(newExpandedFields);
+  const removeMetadataField = (key: string) => {
+    const { [key]: _, ...rest } = metadata || {};
+    setFormMetadata(rest);
   };
   const getDefaultValueForType = (type: MetadataField["type"]) => {
     switch (type) {
@@ -173,28 +224,7 @@ export const ProductMetadata = () => {
             <EnumField
               state={fieldTypeState}
               config={{
-                list: [
-                  {
-                    value: "string",
-                    content: "Text",
-                  },
-                  {
-                    value: "number",
-                    content: "Number",
-                  },
-                  {
-                    value: "boolean",
-                    content: "Boolean",
-                  },
-                  {
-                    value: "array",
-                    content: "Text Array",
-                  },
-                  {
-                    value: "colors",
-                    content: "Colors",
-                  },
-                ],
+                list: types,
               }}
               id="metadata-field-type-selector"
             />
@@ -208,7 +238,7 @@ export const ProductMetadata = () => {
             >
               <Button
                 onClick={addMetadataField}
-                disabled={!(newFieldKeyValue.get || newFieldKey)?.trim()}
+                disabled={!fieldTypeState.get || !inputFieldKey?.trim()}
                 className="disabled:opacity-50 p-2 rounded-full w-full disabled:cursor-not-allowed"
                 icon={allIcons.solid.faPlus}
               >
@@ -221,7 +251,7 @@ export const ProductMetadata = () => {
       <Line />
       {/* Existing fields */}
       <div className="flex-1 overflow-y-auto">
-        {!metadata || metadata.length === 0 ? (
+        {!metadataInArray || metadataInArray.length === 0 ? (
           <div className="flex flex-col justify-center items-center h-full text-[--biqpod-gray-opacity]">
             <Icon
               icon={allIcons.solid.faBoxOpen}
@@ -232,96 +262,122 @@ export const ProductMetadata = () => {
             </p>
           </div>
         ) : (
-          <div>
-            <AnimatePresence>
-              {metadata.map((field: MetadataField, index: number) => {
-                const isExpanded = expandedFields.has(index);
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="flex flex-col gap-2 odd:bg-[--biqpod-primary-background] p-3 border-[--biqpod-borders] border-b border-solid"
-                  >
-                    <div className="flex justify-between items-center">
-                      <div className="flex flex-1 items-center gap-2">
-                        <motion.button
-                          onClick={() => toggleFieldExpansion(index)}
-                          className="flex items-center gap-2 hover:bg-[--biqpod-gray-opacity] px-4 py-1 rounded-lg transition-all duration-200 ease-in-out"
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
+          <AnimatePresence>
+            {metadataInArray.map((field, index) => {
+              const menu = [
+                {
+                  label: "Edit",
+                  click() {
+                    const popupId = showPopup(
+                      <Card>
+                        <div className="flex justify-between items-center gap-2 p-2">
+                          <h1 className="text-2xl capitalize">
+                            <Translate content="edit value" />
+                          </h1>
+                          <div>
+                            <CircleTip
+                              icon={allIcons.solid.faXmark}
+                              onClick={() => {
+                                closePopup(popupId);
+                              }}
+                            />
+                          </div>
+                        </div>
+                        <Line />
+                        <div className="p-2">
+                          <RenderField field={field} />
+                        </div>
+                      </Card>
+                    );
+                  },
+                  defaultIcon: allIcons.solid.faPen,
+                },
+                {
+                  label: "Remove",
+                  click() {
+                    removeMetadataField(field.key);
+                  },
+                  defaultIcon: allIcons.solid.faTrash,
+                },
+              ];
+              return (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.2 }}
+                  className={tw(
+                    "flex flex-col gap-2 odd:bg-[--biqpod-primary-background] px-4 py-2 border-[--biqpod-borders] border-b last:border-b-0 border-solid"
+                  )}
+                >
+                  <div className="flex justify-between items-center">
+                    <div className="flex flex-1 items-center gap-2">
+                      <span className="font-semibold">{field.key}</span>
+                      <Key
+                        onClick={() => {
+                          showPopup(<EditTypePopup field={field} />, {
+                            id: "edit-type",
+                          });
+                        }}
+                        className="inline-flex items-center gap-1 hover:bg-[--biqpod-gray-opacity-2] cursor-pointer"
+                      >
+                        <Icon
+                          icon={
+                            field.type === "number"
+                              ? allIcons.solid.faHashtag
+                              : field.type === "boolean"
+                              ? allIcons.solid.faToggleOn
+                              : field.type === "array"
+                              ? allIcons.solid.faList
+                              : field.type === "colors"
+                              ? allIcons.solid.faPalette
+                              : allIcons.solid.faTextHeight
+                          }
+                        />
+                        <Translate content={field.type} />
+                      </Key>
+                    </div>
+                    <div className="max-md:hidden md:flex">
+                      {menu.map((item, index) => {
+                        return (
                           <motion.div
-                            initial={false}
-                            animate={{ rotate: isExpanded ? 90 : 0 }}
-                            transition={{ duration: 0.3, ease: "easeInOut" }}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                            key={index}
                           >
-                            <Icon
-                              icon={allIcons.solid.faChevronRight}
-                              iconClassName="text-sm text-[--biqpod-gray-opacity]"
+                            <CircleTip
+                              icon={item.defaultIcon}
+                              onClick={() => {
+                                item.click?.();
+                              }}
                             />
                           </motion.div>
-                          <span className="font-semibold">{field.key}</span>
-                        </motion.button>
-                        <Key className="inline-flex items-center gap-1">
-                          <Icon
-                            icon={
-                              field.type === "number"
-                                ? allIcons.solid.faHashtag
-                                : field.type === "boolean"
-                                ? allIcons.solid.faToggleOn
-                                : field.type === "array"
-                                ? allIcons.solid.faList
-                                : field.type === "colors"
-                                ? allIcons.solid.faPalette
-                                : allIcons.solid.faTextHeight
-                            }
-                          />
-                          <Translate content={field.type} />
-                        </Key>
-                      </div>
+                        );
+                      })}
+                    </div>
+                    <div className="md:hidden max-md:flex">
                       <motion.div
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
                         <CircleTip
-                          onClick={() => removeMetadataField(index)}
-                          icon={allIcons.solid.faTrash}
+                          onClick={({ clientX, clientY }) => {
+                            openMenu({
+                              x: clientX,
+                              y: clientY,
+                              menu,
+                            });
+                          }}
+                          icon={allIcons.solid.faEllipsisV}
                         />
                       </motion.div>
                     </div>
-                    <AnimatePresence>
-                      {isExpanded && (
-                        <motion.div
-                          initial={{ height: 0, opacity: 0 }}
-                          animate={{ height: "auto", opacity: 1 }}
-                          exit={{ height: 0, opacity: 0 }}
-                          transition={{
-                            duration: 0.3,
-                            ease: "easeInOut",
-                            opacity: { duration: 0.2 },
-                          }}
-                          className="overflow-hidden"
-                        >
-                          <motion.div
-                            initial={{ y: -10 }}
-                            animate={{ y: 0 }}
-                            exit={{ y: -10 }}
-                            transition={{ duration: 0.2, delay: 0.1 }}
-                            className="mt-2 pl-6"
-                          >
-                            <RenderField field={field} />
-                          </motion.div>
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
-          </div>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </AnimatePresence>
         )}
       </div>
     </div>

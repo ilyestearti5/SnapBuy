@@ -62,8 +62,8 @@ import { loadFromExcel } from "./loadFromExcel";
 import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
 import { AnimatedCard, FadeIn } from "../animations/components";
 import { useUsedBy } from "../routes/Stores/Stores";
-import { Nothing } from "@biqpod/app/ui/types";
-const productKeys: (keyof Snapbuy.Product)[] = [
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
+const productKeys: (keyof Biqpod.Snapbuy.Product)[] = [
   "available",
   "createdAt",
   "description",
@@ -75,7 +75,7 @@ const productKeys: (keyof Snapbuy.Product)[] = [
   "type",
 ];
 interface KeyLineProps {
-  prodKey: keyof Snapbuy.Product;
+  prodKey: keyof Biqpod.Snapbuy.Product;
   value: boolean;
   onChange: (value: boolean) => void;
 }
@@ -159,12 +159,12 @@ const JsonImportFrom = () => {
       if (data.products && Array.isArray(data.products)) {
         await snapbuyApi.product.upsert(
           storeId!,
-          data.products.map((p: Partial<Snapbuy.Product>) => p)
+          data.products.map((p: Partial<Biqpod.Snapbuy.Product>) => p)
         );
       }
       if (data.brands && Array.isArray(data.brands)) {
         for (const brand of data.brands) {
-          await snapbuyApi.createBrand({ ...brand, storeId });
+          await snapbuyApi.brands.create({ ...brand, storeId });
         }
       }
       if (data.packs && Array.isArray(data.packs)) {
@@ -219,7 +219,7 @@ const JsonImportFrom = () => {
   );
 };
 export const KeyLine = ({ prodKey, onChange, value }: KeyLineProps) => {
-  const state = useCopyState<null | boolean>(value);
+  const state = useCopyState<Biqpod.System.Setting.Value["boolean"]>(value);
   useEffect(() => {
     if (state.get != value) {
       onChange(!!state.get);
@@ -233,7 +233,7 @@ export const KeyLine = ({ prodKey, onChange, value }: KeyLineProps) => {
   );
 };
 export const ExportExcelPopupProducts = () => {
-  var keys = useCopyState<(keyof Snapbuy.Product)[]>([]);
+  var keys = useCopyState<(keyof Biqpod.Snapbuy.Product)[]>([]);
   const action = useAction(
     "export-products",
     async () => {
@@ -293,8 +293,8 @@ export const ExportExcelPopupProducts = () => {
   );
 };
 const exportExcel = async (
-  products: Snapbuy.Product[],
-  keys: (keyof Snapbuy.Product)[]
+  products: Biqpod.Snapbuy.Product[],
+  keys: (keyof Biqpod.Snapbuy.Product)[]
 ) => {
   const workbook = new ExcelJS.Workbook();
   const worksheet = workbook.addWorksheet("Products");
@@ -349,7 +349,7 @@ const AddMetadataPopup = ({
       Partial<Record<string, Nothing | string | number | string[] | boolean>>
     >("magic-fields");
   // Create a temporary metadata field for form management
-  const tempMetadata = useTemp<Snapbuy.MetadataField[]>(
+  const tempMetadata = useTemp<Biqpod.Snapbuy.MetadataField[]>(
     "temp-bulk-metadata-fields"
   );
   const addMetadataField = () => {
@@ -358,7 +358,8 @@ const AddMetadataPopup = ({
       showToast("Field key is required", "error");
       return;
     }
-    const selectedFieldType = metadataType.get as Snapbuy.MetadataField["type"];
+    const selectedFieldType =
+      metadataType.get as Biqpod.Snapbuy.MetadataField["type"];
     if (!selectedFieldType) {
       showToast("Field type is required", "error");
       return;
@@ -370,7 +371,7 @@ const AddMetadataPopup = ({
       return;
     }
     const defaultValue = getDefaultValueForType(selectedFieldType);
-    const newField: Snapbuy.MetadataField = {
+    const newField: Biqpod.Snapbuy.MetadataField = {
       key: fieldKeyValue.trim(),
       type: selectedFieldType,
       value: defaultValue,
@@ -386,7 +387,9 @@ const AddMetadataPopup = ({
     const updatedFields = existingFields.filter((_, i) => i !== index);
     tempMetadata.set(updatedFields);
   };
-  const getDefaultValueForType = (type: Snapbuy.MetadataField["type"]) => {
+  const getDefaultValueForType = (
+    type: Biqpod.Snapbuy.MetadataField["type"]
+  ) => {
     switch (type) {
       case "number":
         return 0;
@@ -425,21 +428,13 @@ const AddMetadataPopup = ({
         try {
           const product = await snapbuyApi.product.get(productId);
           if (product) {
-            let updatedMetaData = [...(product.metaData || [])];
+            let updatedMetaData = product.metaData || {};
             // Add or update each metadata field
             metadataFields.forEach((field) => {
-              const existingFieldIndex = updatedMetaData.findIndex(
-                (f) => f.key === field.key
-              );
-              if (existingFieldIndex >= 0) {
-                // Update existing field
-                updatedMetaData[existingFieldIndex] = field;
-              } else {
-                // Add new field
-                updatedMetaData.push(field);
-              }
+              const { [field.key]: _ } = updatedMetaData;
+              updatedMetaData[field.key] = field;
             });
-            const updatedProduct: Partial<Snapbuy.Product> = {
+            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
               id: productId,
               metaData: updatedMetaData,
             };
@@ -581,7 +576,7 @@ const AddMetadataPopup = ({
                                     : allIcons.solid.faTextHeight
                                 }
                               />
-                              <Translate content={field.type} />
+                              <Translate content={field.type.toString()} />
                             </Key>
                           </div>
                           <CircleTip
@@ -607,7 +602,9 @@ const AddMetadataPopup = ({
                           ) : (
                             <MagicField
                               config={options}
-                              fieldId={`${field.type}-temp-bulk-metadata-${field.key}`}
+                              fieldId={`${field.type.toString()}-temp-bulk-metadata-${
+                                field.key
+                              }`}
                               type={field.type}
                             />
                           )}
@@ -690,12 +687,17 @@ const RemoveMetadataPopup = ({
         try {
           const product = await snapbuyApi.product.get(productId);
           if (product && product.metaData) {
-            let updatedMetaData = product.metaData.filter(
-              (field) => !metadataKeysList.includes(field.key)
+            let metadataKey = Object.keys(product.metaData).filter(
+              (field) => !metadataKeysList.includes(field)
             );
-            const updatedProduct: Partial<Snapbuy.Product> = {
+            var meta = { ...product.metaData };
+            metadataKey.forEach((key) => {
+              const { [key]: _, ...rest } = meta;
+              meta = rest;
+            });
+            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
               id: productId,
-              metaData: updatedMetaData,
+              metaData: meta,
             };
             await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
           }
@@ -807,11 +809,11 @@ export const ExportJsonPopup = () => {
     setLoadingPreview(true);
     try {
       const exportData: {
-        products?: Snapbuy.Product[];
-        brands?: Snapbuy.Brand[];
-        packs?: Snapbuy.Pack[];
-        collections?: Snapbuy.Collection[];
-        coupons?: Snapbuy.Coupon[];
+        products?: Biqpod.Snapbuy.Product[];
+        brands?: Biqpod.Snapbuy.Brand[];
+        packs?: Biqpod.Snapbuy.Pack[];
+        collections?: Biqpod.Snapbuy.Collection[];
+        coupons?: Biqpod.Snapbuy.Coupon[];
       } = {};
       // Fetch all products
       try {
@@ -822,7 +824,7 @@ export const ExportJsonPopup = () => {
       }
       // Fetch all brands
       try {
-        const brands = await snapbuyApi.getAllBrands(storeId);
+        const brands = await snapbuyApi.brands.getAll(storeId);
         exportData.brands = brands || [];
       } catch (error) {
         exportData.brands = [];
@@ -1348,7 +1350,7 @@ const ToolsCard = memo(
   }
 );
 const PAGE_SIZE = 30;
-const sortBy: keyof Snapbuy.Product = "id";
+const sortBy: keyof Biqpod.Snapbuy.Product = "id";
 export const Products = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
@@ -1368,7 +1370,7 @@ export const Products = () => {
         return;
       }
       await delay(200);
-      const newProducts = await getDocs<Snapbuy.Product>(
+      const newProducts = await getDocs<Biqpod.Snapbuy.Product>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
         {
           where: and(
@@ -1455,7 +1457,7 @@ export const Products = () => {
           selectedProductIds.map(async (productId) => {
             const product = await snapbuyApi.product.get(productId);
             if (product) {
-              const updatedProduct: Partial<Snapbuy.Product> = {
+              const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
                 id: productId,
                 available: enable,
               };
@@ -1491,89 +1493,91 @@ export const Products = () => {
   const search = getFieldValue("producer-search-product");
   const [_, filterProducts] = useMemoDelay(
     () => {
-      let filteredProducts = products?.filter((prod: Snapbuy.Product) => {
-        // Apply filter options with AND logic
-        if (options.get) {
-          // Filter by availability
-          if (
-            options.get.available !== null &&
-            options.get.available !== undefined &&
-            options.get.available !== ""
-          ) {
-            const isAvailable = options.get.available === "true";
-            if (prod.available !== isAvailable) {
-              return false;
-            }
-          }
-          // Filter by brand
-          if (
-            options.get.brand !== null &&
-            options.get.brand !== undefined &&
-            options.get.brand !== ""
-          ) {
-            if (prod.brandId !== options.get.brand) {
-              return false;
-            }
-          }
-          // Filter by promoted status (if implemented in your product structure)
-          if (
-            options.get.promoted !== null &&
-            options.get.promoted !== undefined &&
-            options.get.promoted !== ""
-          ) {
-            const isPromoted = options.get.promoted === "true";
-            // Assuming promoted is a field in your product structure
-            // If not implemented, you can add it to the Product interface
-            if (!!prod.multiple?.prices !== isPromoted) {
-              return false;
-            }
-          }
-          // Filter by price range
-          if (
-            options.get.minPrice !== null &&
-            options.get.minPrice !== undefined &&
-            options.get.minPrice > 0
-          ) {
-            let productPrice = 0;
-            if (prod.type === "single" && prod.single?.client) {
-              productPrice = prod.single.client;
-            } else if (
-              prod.type === "multiple" &&
-              prod.multiple?.prices?.length
+      let filteredProducts = products?.filter(
+        (prod: Biqpod.Snapbuy.Product) => {
+          // Apply filter options with AND logic
+          if (options.get) {
+            // Filter by availability
+            if (
+              options.get.available !== null &&
+              options.get.available !== undefined &&
+              options.get.available !== ""
             ) {
-              // For multiple prices, use the minimum price
-              productPrice = Math.min(
-                ...prod.multiple.prices.map((p) => p.price)
-              );
+              const isAvailable = options.get.available === "true";
+              if (prod.available !== isAvailable) {
+                return false;
+              }
             }
-            if (productPrice < options.get.minPrice) {
-              return false;
-            }
-          }
-          if (
-            options.get.maxPrice !== null &&
-            options.get.maxPrice !== undefined &&
-            options.get.maxPrice > 0
-          ) {
-            let productPrice = 0;
-            if (prod.type === "single" && prod.single?.client) {
-              productPrice = prod.single.client;
-            } else if (
-              prod.type === "multiple" &&
-              prod.multiple?.prices?.length
+            // Filter by brand
+            if (
+              options.get.brand !== null &&
+              options.get.brand !== undefined &&
+              options.get.brand !== ""
             ) {
-              // For multiple prices, use the maximum price
-              productPrice = Math.max(
-                ...prod.multiple.prices.map((p) => p.price)
-              );
+              if (prod.brandId !== options.get.brand) {
+                return false;
+              }
             }
-            if (productPrice > options.get.maxPrice) {
-              return false;
+            // Filter by promoted status (if implemented in your product structure)
+            if (
+              options.get.promoted !== null &&
+              options.get.promoted !== undefined &&
+              options.get.promoted !== ""
+            ) {
+              const isPromoted = options.get.promoted === "true";
+              // Assuming promoted is a field in your product structure
+              // If not implemented, you can add it to the Product interface
+              if (!!prod.multiple?.prices !== isPromoted) {
+                return false;
+              }
+            }
+            // Filter by price range
+            if (
+              options.get.minPrice !== null &&
+              options.get.minPrice !== undefined &&
+              options.get.minPrice > 0
+            ) {
+              let productPrice = 0;
+              if (prod.type === "single" && prod.single?.client) {
+                productPrice = prod.single.client;
+              } else if (
+                prod.type === "multiple" &&
+                prod.multiple?.prices?.length
+              ) {
+                // For multiple prices, use the minimum price
+                productPrice = Math.min(
+                  ...prod.multiple.prices.map((p) => p.price)
+                );
+              }
+              if (productPrice < options.get.minPrice) {
+                return false;
+              }
+            }
+            if (
+              options.get.maxPrice !== null &&
+              options.get.maxPrice !== undefined &&
+              options.get.maxPrice > 0
+            ) {
+              let productPrice = 0;
+              if (prod.type === "single" && prod.single?.client) {
+                productPrice = prod.single.client;
+              } else if (
+                prod.type === "multiple" &&
+                prod.multiple?.prices?.length
+              ) {
+                // For multiple prices, use the maximum price
+                productPrice = Math.max(
+                  ...prod.multiple.prices.map((p) => p.price)
+                );
+              }
+              if (productPrice > options.get.maxPrice) {
+                return false;
+              }
             }
           }
+          return true;
         }
-        return true;
-      });
+      );
       // Apply search filter after other filters
       if (!search) {
         return filteredProducts;
@@ -1657,7 +1661,7 @@ export const Products = () => {
     }: {
       index: number;
       style: React.CSSProperties;
-      data: (Snapbuy.Product | number)[];
+      data: (Biqpod.Snapbuy.Product | number)[];
     }) => {
       const itsNumber = data.some((item) => typeof item === "number");
       if (itsNumber) {

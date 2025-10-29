@@ -15,7 +15,7 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { tw } from "@biqpod/app/ui/utils";
-import { useStoreId } from "../../utils";
+import { DAYS_LEFT, useStoreId } from "../../utils";
 import { DataTypes, snapbuyApi } from "../../apis";
 import { confirm, useAsyncMemo, useCopyState } from "@biqpod/app/ui/hooks";
 import { Nothing, State } from "@biqpod/app/ui/types";
@@ -34,7 +34,7 @@ export const Plans = () => {
   }, [storeId]);
   const usageData = useAsyncMemo(async () => {
     if (storeId) {
-      return await snapbuyApi.usage.get({ storeId });
+      return await snapbuyApi.usage.get(storeId);
     } else {
       return null;
     }
@@ -50,7 +50,7 @@ export const Plans = () => {
   }, [storeId]);
   const currentPayments = useAsyncMemo(async () => {
     if (storeId) {
-      return await snapbuyApi.usage.getCurrentPayment(storeId);
+      return await snapbuyApi.usage.getCurrentPayments(storeId);
     }
     return null;
   }, [storeId]);
@@ -67,7 +67,6 @@ export const Plans = () => {
   useEffect(() => {
     // Calculate combined meta values from all active payments
     const combinedMeta: Record<string, number> = {};
-
     if (Array.isArray(currentPayments)) {
       currentPayments.forEach((payment) => {
         if (payment.meta) {
@@ -81,13 +80,11 @@ export const Plans = () => {
         }
       });
     }
-
     const get = (type: DataTypes) => {
       return combinedMeta[type] !== undefined
         ? Number(combinedMeta[type])
         : usageData?.[type] || 0;
     };
-
     photosUsage.set(get("photos"));
     orderUsage.set(get("orders"));
     customersUsage.set(get("customers"));
@@ -110,7 +107,6 @@ export const Plans = () => {
     coupons: couponUsage,
     vars: variablesUsage,
   };
-
   const calculateTotalCost = () => {
     if (!pricesData) return 0;
     return pricesData.reduce((total, price) => {
@@ -207,12 +203,11 @@ export const Plans = () => {
               <span>{totalDetected().toFixed(2)}DA</span>
             </div>
           </div>
-
           {/* Subscription End Date Progress */}
           {currentPayments &&
             Array.isArray(currentPayments) &&
             currentPayments.length > 0 && (
-              <>
+              <EmptyComponent>
                 <Line />
                 <div className="p-4">
                   <div className="bg-[--biqpod-secondary-background] p-4 border border-[--biqpod-borders] border-solid rounded-lg">
@@ -230,12 +225,10 @@ export const Plans = () => {
                         {currentPayments.length} active
                       </span>
                     </div>
-
                     {/* Show each subscription */}
                     <div className="space-y-3">
                       {currentPayments.map((payment, index) => {
                         if (!payment.meta?.endAt) return null;
-
                         const now = Date.now();
                         const endTime = Number(payment.meta.endAt);
                         const startTime = payment.createdAt
@@ -252,7 +245,6 @@ export const Plans = () => {
                           remaining / (1000 * 60 * 60 * 24)
                         );
                         const isExpired = now >= endTime;
-
                         // Determine colors based on status
                         const bgColor = isExpired
                           ? "bg-red-100"
@@ -269,7 +261,6 @@ export const Plans = () => {
                           : progressPercentage >= 80
                           ? "text-[--biqpod-primary]"
                           : "text-green-600";
-
                         // Determine remaining time text
                         let remainingText = "";
                         if (isExpired) {
@@ -281,7 +272,6 @@ export const Plans = () => {
                         } else {
                           remainingText = "Less than 1 day remaining";
                         }
-
                         return (
                           <div
                             key={index}
@@ -322,11 +312,23 @@ export const Plans = () => {
                                     remainingText
                                   )}
                                 </span>
-                                <span
-                                  className={`text-xs font-medium ${textColor}`}
-                                >
-                                  {progressPercentage.toFixed(1)}%
-                                </span>
+                                <div className="flex items-center gap-2">
+                                  {daysRemaining <= DAYS_LEFT && !isExpired && (
+                                    <Button
+                                      onClick={handlePayment}
+                                      className="px-2 py-1"
+                                      disabled={isPaymentLoading}
+                                      icon={allIcons.solid.faRedo}
+                                    >
+                                      <Translate content="Renew" />
+                                    </Button>
+                                  )}
+                                  <span
+                                    className={`text-xs font-medium ${textColor}`}
+                                  >
+                                    {progressPercentage.toFixed(1)}%
+                                  </span>
+                                </div>
                               </div>
                             </div>
                           </div>
@@ -335,9 +337,8 @@ export const Plans = () => {
                     </div>
                   </div>
                 </div>
-              </>
+              </EmptyComponent>
             )}
-
           <Line />
           <div className="p-4">
             <div className="space-y-4">
@@ -368,7 +369,6 @@ export const Plans = () => {
                   const getUsageLimit = (type: string): number | null => {
                     let totalLimit = 0;
                     let hasAnyLimit = false;
-
                     if (Array.isArray(currentPayments)) {
                       currentPayments.forEach((payment) => {
                         if (payment?.meta && payment.meta[type]) {
@@ -377,7 +377,6 @@ export const Plans = () => {
                         }
                       });
                     }
-
                     return hasAnyLimit ? totalLimit : null;
                   };
                   const limit = getUsageLimit(price.type);
@@ -389,12 +388,6 @@ export const Plans = () => {
                     if (percent >= 80) return "bg-red-500"; // High usage - red
                     if (percent >= 50) return "bg-[--biqpod-primary]"; // Medium usage - biqpod primary
                     return "bg-blue-500"; // Low usage - blue (keeping blue as it's not red/green)
-                  };
-                  const getProgressBgColor = (percent: number) => {
-                    if (percent >= 80) return "bg-red-100"; // High usage - light red bg
-                    if (percent >= 50)
-                      return "bg-[--biqpod-secondary-background]"; // Medium usage - biqpod secondary bg
-                    return "bg-blue-100"; // Low usage - light blue bg (keeping blue as it's not red/green)
                   };
                   return (
                     <div key={price.type} className="space-y-2">
@@ -425,9 +418,7 @@ export const Plans = () => {
                       {usageData !== null && limit !== null && (
                         <div className="w-full">
                           <div
-                            className={`w-full h-2 rounded-full ${getProgressBgColor(
-                              percentage
-                            )}`}
+                            className={`w-full h-2 rounded-full bg-[--biqpod-primary-background]`}
                           >
                             <div
                               className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(
@@ -532,15 +523,7 @@ export const Plans = () => {
                                     iconClassName="text-[--biqpod-text-color] text-sm opacity-60 hover:opacity-80 transition-colors"
                                   />
                                   {tooltipVisible === price.type && (
-                                    <div
-                                      className="top-1/2 left-full z-10 absolute shadow-lg ml-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap -translate-y-1/2 transform"
-                                      style={{
-                                        backgroundColor:
-                                          "var(--biqpod-gray-opacity)",
-                                        backdropFilter: "blur(8px)",
-                                        color: "var(--biqpod-text-color)",
-                                      }}
-                                    >
+                                    <div className="top-1/2 left-full z-10 absolute bg-[--biqpod-gray-opacity] shadow-lg backdrop-blur-md ml-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap -translate-y-1/2 transform">
                                       <Translate content={unitInfo} />
                                       <div
                                         className="top-1/2 right-full absolute border-4 border-transparent -translate-y-1/2 transform"
@@ -548,7 +531,7 @@ export const Plans = () => {
                                           borderRightColor:
                                             "var(--biqpod-gray-opacity)",
                                         }}
-                                      ></div>
+                                      />
                                     </div>
                                   )}
                                 </div>
@@ -572,7 +555,7 @@ export const Plans = () => {
                                     <input
                                       type="number"
                                       min="0"
-                                      max={10000000000}
+                                      max={range.max}
                                       value={selectedValue || ""}
                                       onChange={(e) => {
                                         const value = e.target.value;
@@ -580,7 +563,13 @@ export const Plans = () => {
                                           state.set(0);
                                         } else {
                                           const numValue = parseInt(value) || 0;
-                                          state.set(numValue);
+                                          if (numValue < range.min) {
+                                            state.set(range.min);
+                                          } else if (numValue > range.max) {
+                                            state.set(range.max);
+                                          } else {
+                                            state.set(numValue);
+                                          }
                                         }
                                       }}
                                       className="bg-[--biqpod-primary-background] px-2 py-1 border border-[--biqpod-borders] focus:border-transparent border-solid rounded focus:outline-none focus:ring-[--biqpod-primary] focus:ring-1 w-full text-[--biqpod-text-color] text-base text-center"
@@ -669,6 +658,9 @@ export const Plans = () => {
                           const paymentId =
                             payment.payoutId || `payment-${index}`;
                           const isExpanded = expandedPayments.has(paymentId);
+                          const now = Date.now();
+                          const endTime = Number(payment?.meta?.endAt);
+                          const wasExpired = now >= endTime;
                           return (
                             <div
                               key={paymentId}
@@ -679,16 +671,12 @@ export const Plans = () => {
                                 <div className="flex flex-1 items-center gap-2">
                                   <Icon
                                     icon={
-                                      payment.status?.includes("success") ||
-                                      payment.status?.includes("paid") ||
-                                      payment.status?.includes("complete")
+                                      payment.status === "paid"
                                         ? allIcons.solid.faCheckCircle
                                         : allIcons.solid.faClock
                                     }
                                     iconClassName={
-                                      payment.status?.includes("success") ||
-                                      payment.status?.includes("paid") ||
-                                      payment.status?.includes("complete")
+                                      payment.status === "paid"
                                         ? "text-green-500 text-sm"
                                         : "text-[--biqpod-primary] text-sm"
                                     }
@@ -697,9 +685,7 @@ export const Plans = () => {
                                     <span className="font-medium text-sm">
                                       <Translate
                                         content={
-                                          payment.status?.includes("success") ||
-                                          payment.status?.includes("paid") ||
-                                          payment.status?.includes("complete")
+                                          payment.status === "paid"
                                             ? "Payment Completed"
                                             : "Payment Processing"
                                         }
@@ -722,17 +708,10 @@ export const Plans = () => {
                                     {payment.status && (
                                       <p
                                         className={`text-xs mt-1 capitalize ${
-                                          payment.status.includes("success") ||
-                                          payment.status.includes("paid") ||
-                                          payment.status.includes("complete")
+                                          payment.status === "paid"
                                             ? "text-green-500"
-                                            : payment.status.includes(
-                                                "pending"
-                                              ) ||
-                                              payment.status.includes(
-                                                "processing"
-                                              )
-                                            ? "text-[--biqpod-primary]"
+                                            : payment.status === "pending"
+                                            ? "text-orange-400"
                                             : "text-[--biqpod-text-color] opacity-70"
                                         }`}
                                       >
@@ -786,15 +765,6 @@ export const Plans = () => {
                                           ).toLocaleTimeString()}
                                         </p>
                                       )}
-                                      {/* Payment Type */}
-                                      {payment.type && (
-                                        <div className="mb-2">
-                                          <span className="bg-[--biqpod-primary-background] px-2 py-1 rounded text-xs">
-                                            <Translate content="Type:" />{" "}
-                                            {payment.type}
-                                          </span>
-                                        </div>
-                                      )}
                                       {/* Transaction Note */}
                                       {payment.transaction?.note && (
                                         <p className="opacity-80 mb-2 text-[--biqpod-text-color] text-xs">
@@ -803,12 +773,8 @@ export const Plans = () => {
                                         </p>
                                       )}
                                       {/* Subscription Info */}
-                                      {payment.subscription && (
+                                      {!!payment.subscription?.duration && (
                                         <div className="mb-2">
-                                          <p className="opacity-80 text-[--biqpod-text-color] text-xs">
-                                            <Translate content="Subscription:" />{" "}
-                                            {payment.subscription.label}
-                                          </p>
                                           <p className="opacity-70 text-[--biqpod-text-color] text-xs">
                                             <Translate content="Duration:" />{" "}
                                             {payment.subscription.duration /
@@ -819,7 +785,6 @@ export const Plans = () => {
                                           </p>
                                         </div>
                                       )}
-
                                       {/* Subscription End Date */}
                                       {payment.meta?.endAt && (
                                         <div className="mb-2">
@@ -832,44 +797,26 @@ export const Plans = () => {
                                               Number(payment.meta.endAt)
                                             ).toLocaleTimeString()}
                                           </p>
-                                          {(() => {
-                                            const now = Date.now();
-                                            const endTime = Number(
-                                              payment.meta.endAt
-                                            );
-                                            const wasExpired = now >= endTime;
-
-                                            return (
-                                              <div className="mt-1">
-                                                <span
-                                                  className={`px-2 py-1 rounded text-xs ${
-                                                    wasExpired
-                                                      ? "bg-red-500/25 text-red-500"
-                                                      : "bg-green-500/25 text-green-500"
-                                                  }`}
-                                                >
-                                                  <Translate
-                                                    content={
-                                                      wasExpired
-                                                        ? "Expired"
-                                                        : "Active"
-                                                    }
-                                                  />
-                                                </span>
-                                              </div>
-                                            );
-                                          })()}
+                                          <div className="mt-1">
+                                            <span
+                                              className={`px-2 py-1 rounded text-xs ${
+                                                wasExpired
+                                                  ? "bg-red-500/25 text-red-500"
+                                                  : "bg-green-500/25 text-green-500"
+                                              }`}
+                                            >
+                                              <Translate
+                                                content={
+                                                  wasExpired
+                                                    ? "Expired"
+                                                    : "Active"
+                                                }
+                                              />
+                                            </span>
+                                          </div>
                                         </div>
                                       )}
                                       {/* Product Info */}
-                                      {payment.product && (
-                                        <div className="mb-2">
-                                          <p className="opacity-80 text-[--biqpod-text-color] text-xs">
-                                            <Translate content="Product:" />{" "}
-                                            {payment.product.name}
-                                          </p>
-                                        </div>
-                                      )}
                                       {/* Usage Breakdown */}
                                       {payment.meta &&
                                         Object.keys(payment.meta).length >
@@ -895,9 +842,11 @@ export const Plans = () => {
                                                       className="bg-[--biqpod-primary-background] px-2 py-1 border border-[--biqpod-borders] border-solid rounded text-xs"
                                                     >
                                                       {type}:{" "}
-                                                      {Array.isArray(value)
-                                                        ? value.length
-                                                        : String(value)}
+                                                      <span className="bg-[--biqpod-gray-opacit] px-2 py-1 rounded-2xl">
+                                                        {Array.isArray(value)
+                                                          ? value.length
+                                                          : String(value)}
+                                                      </span>
                                                     </span>
                                                   );
                                                 }
@@ -905,21 +854,6 @@ export const Plans = () => {
                                             </div>
                                           </div>
                                         )}
-                                      {/* Payment Mode */}
-                                      {payment.mode && (
-                                        <div>
-                                          <span
-                                            className={`px-2 py-1 rounded text-xs ${
-                                              payment.mode === "live"
-                                                ? "bg-green-500/25 text-green-500"
-                                                : "bg-[--biqpod-primary]/25 text-[--biqpod-primary]"
-                                            }`}
-                                          >
-                                            <Translate content="Mode:" />{" "}
-                                            {payment.mode}
-                                          </span>
-                                        </div>
-                                      )}
                                     </div>
                                   </motion.div>
                                 )}

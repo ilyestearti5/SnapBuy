@@ -27,10 +27,11 @@ import { OrderView } from "../routes/Clients/OrderView";
 import { snapbuyApi } from "../apis";
 import { notifyOrderDeleted } from "../utils/orderNotifications";
 import { OrderEditPopup } from "../components/OrderEditPopup";
+import { Biqpod } from "@biqpod/app/ui/types";
 export interface OpenOrderMenuOptions {
   x: number;
   y: number;
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
 }
 export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
   openMenu({
@@ -80,6 +81,8 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
                                     <Key key={index}>{content}</Key>
                                   ))}
                                 />
+                              ) : typeof value === "object" ? (
+                                JSON.stringify(value)
                               ) : (
                                 value
                               )}
@@ -186,7 +189,7 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
               if (order.storeId) {
                 await notifyOrderDeleted(order.storeId, order);
               }
-              await snapbuyApi.deleteOrder(order.id);
+              await snapbuyApi.order.delete(order.id);
               showToast("Order deleted successfully", "success");
               // Refresh the orders list
               execAction("fetch-orders", {});

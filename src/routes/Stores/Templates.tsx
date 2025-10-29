@@ -22,6 +22,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { snapbuyApi } from "../../apis";
 import { useStoreId } from "../../utils";
+import { Biqpod } from "@biqpod/app/ui/types";
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -65,7 +66,7 @@ const templateCardVariants = {
 export const Templates = () => {
   const storeId = useStoreId();
   const scrollRef = useRef<HTMLDivElement>(null);
-  const templates = useCopyState<Snapbuy.Template[]>([]);
+  const templates = useCopyState<Biqpod.Snapbuy.Template[]>([]);
   const searchQuery = getFieldValue("template-search");
   const hasMore = useCopyState(true);
   const isLoadingMore = useCopyState(false);

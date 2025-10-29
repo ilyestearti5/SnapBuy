@@ -31,10 +31,10 @@ import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
-import { Nothing, SettingConfig } from "@biqpod/app/ui/types";
+import { Biqpod, FullTypes, Nothing } from "@biqpod/app/ui/types";
 import { useEffect } from "react";
 interface UpsertVarProps {
-  variable?: Snapbuy.Var;
+  variable?: Biqpod.Snapbuy.Var;
 }
 const UpsertVar = ({ variable }: UpsertVarProps) => {
   const storeId = useStoreId();
@@ -46,7 +46,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
     "var-value"
   );
   const selectedType = useTemp<string | Nothing>("selected-var-type");
-  const type = selectedType.get as Snapbuy.Var["type"] | Nothing;
+  const type = selectedType.get as Biqpod.Snapbuy.Var["type"] | Nothing;
   const upsertAction = useAction(
     "upsert-var",
     async () => {
@@ -66,7 +66,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
         showToast("Variable type is required", "error");
         return;
       }
-      const varData: Snapbuy.Var = {
+      const varData: Biqpod.Snapbuy.Var = {
         id: variable?.id || crypto.randomUUID(),
         name: name.trim(),
         value: value.get,
@@ -86,16 +86,14 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
     },
     [storeId, name, value.get, variable]
   );
-  const types: (keyof SettingType)[] = [
+  const types: FullTypes.Data[] = [
     "array",
     "string",
     "boolean",
     "date",
     "number",
   ];
-  const defaultConfig: Partial<
-    Record<keyof SettingType, SettingConfig[keyof SettingConfig]>
-  > = {
+  const defaultConfig: any = {
     string: { autoChange: true, hint: "Enter text..." },
     number: { autoChange: true, placeholder: "Enter number..." },
   };
@@ -115,7 +113,9 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
             state={selectedType}
             config={{
               list: types.map((type) => ({
-                label: type.charAt(0).toUpperCase() + type.slice(1),
+                label:
+                  type.toString().charAt(0).toUpperCase() +
+                  type.toString().slice(1),
                 value: type,
                 ...defaultConfig[type],
               })),
@@ -274,7 +274,9 @@ export const Vars = () => {
                                 iconClassName="text-xs"
                               />
                             )}
-                            <span className="capitalize">{variable.type}</span>
+                            <span className="capitalize">
+                              {variable.type.toString()}
+                            </span>
                           </span>
                         </div>
                         <div className="flex-1 min-w-0">

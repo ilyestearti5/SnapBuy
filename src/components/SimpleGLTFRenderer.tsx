@@ -1,6 +1,7 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect } from "react";
 import { Icon } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
+import { useCopyState } from "@biqpod/app/ui/hooks";
 interface SimpleGLTFRendererProps {
   src: string;
   className?: string;
@@ -14,20 +15,18 @@ export const SimpleGLTFRenderer: React.FC<SimpleGLTFRendererProps> = ({
   style,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const loading = useCopyState(true);
+  const error = useCopyState<string | null>(null);
   useEffect(() => {
     let mounted = true;
     const initSimpleThreeJS = async () => {
       try {
-        console.log("SimpleGLTFRenderer: Loading Three.js...");
         // Try to import Three.js with simpler error handling
         const THREE = await import("three");
         const { GLTFLoader } = await import(
           "three/examples/jsm/loaders/GLTFLoader.js"
         );
         if (!mounted || !containerRef.current) return;
-        console.log("SimpleGLTFRenderer: Three.js loaded successfully");
         const container = containerRef.current;
         const width = container.clientWidth || 200;
         const height = container.clientHeight || 200;
@@ -56,12 +55,10 @@ export const SimpleGLTFRenderer: React.FC<SimpleGLTFRendererProps> = ({
         scene.add(ambientLight);
         // Load GLTF
         const loader = new GLTFLoader();
-        console.log("SimpleGLTFRenderer: Loading model from:", src);
         loader.load(
           src,
           (gltf: any) => {
             if (!mounted) return;
-            console.log("SimpleGLTFRenderer: Model loaded:", gltf);
             const model = gltf.scene;
             // Simple scaling
             const box = new THREE.Box3().setFromObject(model);
@@ -80,22 +77,21 @@ export const SimpleGLTFRenderer: React.FC<SimpleGLTFRendererProps> = ({
               renderer.render(scene, camera);
             };
             animate();
-            setLoading(false);
-            console.log("SimpleGLTFRenderer: Rendering started");
+            loading.set(false);
           },
           (progress: any) => {
             console.log("SimpleGLTFRenderer: Progress:", progress);
           },
           (loadError: any) => {
             console.error("SimpleGLTFRenderer: Load error:", loadError);
-            setError(`Load failed: ${loadError.message || "Unknown error"}`);
-            setLoading(false);
+            error.set(`Load failed: ${loadError.message || "Unknown error"}`);
+            loading.set(false);
           }
         );
       } catch (initError) {
         console.error("SimpleGLTFRenderer: Init error:", initError);
-        setError(`Three.js error: ${initError}`);
-        setLoading(false);
+        error.set(`Three.js error: ${initError}`);
+        loading.set(false);
       }
     };
     initSimpleThreeJS();
@@ -103,7 +99,7 @@ export const SimpleGLTFRenderer: React.FC<SimpleGLTFRendererProps> = ({
       mounted = false;
     };
   }, [src]);
-  if (error) {
+  if (error.get) {
     return (
       <div
         className={`flex flex-col justify-center items-center bg-red-100 rounded-lg p-4 ${className}`}
@@ -114,11 +110,11 @@ export const SimpleGLTFRenderer: React.FC<SimpleGLTFRendererProps> = ({
           icon={allIcons.solid.faExclamationTriangle}
           iconClassName="text-2xl text-red-500 mb-2"
         />
-        <span className="text-red-700 text-xs text-center">{error}</span>
+        <span className="text-red-700 text-xs text-center">{error.get}</span>
       </div>
     );
   }
-  if (loading) {
+  if (loading.get) {
     return (
       <div
         className={`flex flex-col justify-center items-center bg-blue-100 rounded-lg p-4 ${className}`}

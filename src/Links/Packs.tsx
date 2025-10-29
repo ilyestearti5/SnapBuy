@@ -35,6 +35,7 @@ import { UpsertPack } from "./UpsertPack";
 import { useMemo } from "react";
 import { range, filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion, AnimatePresence } from "framer-motion";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 // Highlight component for search terms
 function highlightMatch(
@@ -115,7 +116,7 @@ function highlightMatch(
 export const Packs = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const packs = useCopyState<Snapbuy.Pack[]>([]);
+  const packs = useCopyState<Biqpod.Snapbuy.Pack[]>([]);
   const fetchingAction = useAction(
     "fetch-packs",
     async () => {

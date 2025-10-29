@@ -47,6 +47,7 @@ import { range, tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 import { Stores } from "./routes/Stores/Stores";
 import { Store } from "./routes/Stores/Store";
+import { Homepage } from "./routes/Homepage";
 const CheckBeforeShow = () => {
   return (
     <div className="h-full overflow-hidden">
@@ -83,7 +84,7 @@ const TestGrid = memo(() => {
       }),
     []
   );
-  return <>{testItems}</>;
+  return <EmptyComponent>{testItems}</EmptyComponent>;
 });
 export const App = () => {
   useUrlSettings();
@@ -284,7 +285,10 @@ export const App = () => {
             <Route path="/link">
               <LinkAccount />
             </Route>
-            <Route exact path="/">
+            <Route exact path="/home">
+              <Homepage />
+            </Route>
+            <Route path="/dashboard">
               <Profile>
                 <Redirect to="/profile" />
               </Profile>
@@ -393,7 +397,7 @@ export const App = () => {
                 <Client />
               </AnimatedPage>
             </Route>
-            <Route path="/feedbacks" exact>
+            <Route path="/feedback" exact>
               <AnimatedPage>
                 <FeedbackRoute />
               </AnimatedPage>
@@ -432,6 +436,9 @@ export const App = () => {
               <AnimatedPage className="grid grid-cols-3 grid-rows-3 w-full h-full">
                 <TestGrid />
               </AnimatedPage>
+            </Route>
+            <Route path="/" exact>
+              <Redirect to="/home" />
             </Route>
             <Route path="*">
               <AnimatedPage>

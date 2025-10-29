@@ -24,8 +24,9 @@ import { useLocation } from "react-router";
 import { snapbuyApi } from "../../apis";
 import { initPixels } from "../../Links/pixles";
 import { addToCart, useCartCount } from "../../apis/snapbuy";
+import { Biqpod } from "@biqpod/app/ui/types";
 export interface ProductPopupProps {
-  product: Snapbuy.Product;
+  product: Biqpod.Snapbuy.Product;
 }
 export const useSearchParams = () => {
   const loc = useLocation();

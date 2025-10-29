@@ -1,5 +1,5 @@
 /**
- * Centralized Framer Motion animation configurations for Snapbuy
+ * Centralized Framer Motion animation configurations for Biqpod.Snapbuy
  * This file contains reusable animation variants and utilities
  */
 

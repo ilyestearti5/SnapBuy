@@ -34,6 +34,7 @@ import { getDocs } from "../server";
 import { motion, AnimatePresence } from "framer-motion";
 import { useStoreId } from "../utils";
 import { UpsertCoupon } from "./UpsertCoupon";
+import { Biqpod } from "@biqpod/app/ui/types";
 const PAGE_SIZE = 20;
 interface FilterOptionsForCoupon {
   isActive?: string | null;
@@ -196,7 +197,7 @@ const SlidingCouponFilter = ({
     </EmptyComponent>
   );
 };
-const CouponRender = memo(({ coupon }: { coupon: Snapbuy.Coupon }) => {
+const CouponRender = memo(({ coupon }: { coupon: Biqpod.Snapbuy.Coupon }) => {
   const isExpired = new Date(coupon.endDate) < new Date();
   const isActive = coupon.isActive && !isExpired;
   const getTypeIcon = () => {
@@ -349,8 +350,8 @@ const CouponRender = memo(({ coupon }: { coupon: Snapbuy.Coupon }) => {
 });
 export const Coupons = () => {
   const user = useUser();
-  const coupons = useTemp<Snapbuy.Coupon[]>("fetched-coupons");
-  const lastDoc = useCopyState<Snapbuy.Coupon | null>(null);
+  const coupons = useTemp<Biqpod.Snapbuy.Coupon[]>("fetched-coupons");
+  const lastDoc = useCopyState<Biqpod.Snapbuy.Coupon | null>(null);
   const hasMore = useCopyState(true);
   const storeId = useStoreId();
   const showFilter = useCopyState(false); // Add filter state
@@ -358,7 +359,7 @@ export const Coupons = () => {
     "fetch-coupons",
     async (next = false) => {
       if (!storeId) return;
-      const newCoupons = await getDocs<Snapbuy.Coupon>(
+      const newCoupons = await getDocs<Biqpod.Snapbuy.Coupon>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "coupons"],
         {
           where: and(where("storeId", "==", storeId)),

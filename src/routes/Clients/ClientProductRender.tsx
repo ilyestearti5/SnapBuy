@@ -26,12 +26,12 @@ import {
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
 import { AddProductInCart, useSearchParams } from "./AddProductToCart";
 import { ImageSlider } from "../../Links/ImageSlider";
-import { MenuRecordProps } from "@biqpod/app/ui/types";
+import { Biqpod, MenuRecordProps } from "@biqpod/app/ui/types";
 import { initPixels } from "../../Links/pixles";
 import { snapbuyApi } from "../../apis";
 import { removeCart, useCartCount } from "../../apis/snapbuy";
 export interface ProductRenderProps {
-  product: Snapbuy.Product;
+  product: Biqpod.Snapbuy.Product;
   index: number;
 }
 export function highlightMatch(text: string, search: string | undefined) {

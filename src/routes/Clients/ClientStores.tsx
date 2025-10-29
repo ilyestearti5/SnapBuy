@@ -282,7 +282,7 @@ export const UserLine = ({ user }: UserLineProps) => {
   );
 };
 interface StoreRecordProps {
-  store: Snapbuy.Store;
+  store: Biqpod.Snapbuy.Store;
 }
 export const StoreRecord = ({ store }: StoreRecordProps) => {
   const { name, photo } = store;
@@ -433,8 +433,8 @@ export const Carts = () => {
   );
 };
 export const ExploreStores = () => {
-  const stores = useCopyState<Snapbuy.Store[]>([]);
-  const lastDoc = useCopyState<Snapbuy.Store | null>(null);
+  const stores = useCopyState<Biqpod.Snapbuy.Store[]>([]);
+  const lastDoc = useCopyState<Biqpod.Snapbuy.Store | null>(null);
   const hasMore = useCopyState(true);
   const action = useAction(
     "fetch-explore-stores",

@@ -30,8 +30,9 @@ import { snapbuyApi } from "../apis";
 import { colorsInListWithNames } from "../utils";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { sharSocialMedia } from "../utils";
+import { Biqpod } from "@biqpod/app/ui/types";
 interface CopyLinkPickColorProps {
-  product: Snapbuy.Product;
+  product: Biqpod.Snapbuy.Product;
 }
 type Orientation = "portrait" | "landscape";
 interface PreviewWindowProps {
@@ -361,7 +362,7 @@ export const ProductToolsBottomSheet = ({
   usedBy,
 }: {
   index: number;
-  product: Snapbuy.Product;
+  product: Biqpod.Snapbuy.Product;
   usedBy: "owned" | "random" | "read/edit" | "read" | null;
 }) => {
   const uri = useMemo(() => {

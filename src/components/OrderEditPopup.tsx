@@ -15,9 +15,10 @@ import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { motion } from "framer-motion";
 import { TabsView } from "./TabsView";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 interface OrderEditPopupProps {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
   onSave?: () => void;
 }
 
@@ -26,8 +27,8 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
   onSave,
 }) => {
   const storeId = useStoreId();
-  const [products, setProducts] = useState<Snapbuy.Product[]>([]);
-  const [packs, setPacks] = useState<Snapbuy.Pack[]>([]);
+  const [products, setProducts] = useState<Biqpod.Snapbuy.Product[]>([]);
+  const [packs, setPacks] = useState<Biqpod.Snapbuy.Pack[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [editedProducts, setEditedProducts] = useState<
@@ -128,7 +129,7 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await snapbuyApi.editOrder(order.id, {
+      await snapbuyApi.order.edit(order.id, {
         products: editedProducts,
         packs: editedPacks,
       });

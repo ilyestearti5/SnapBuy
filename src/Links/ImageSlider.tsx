@@ -2,7 +2,7 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { EmptyComponent, CircleTip, Line } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef } from "react";
 import { MediaRenderer } from "../components/MediaRenderer";
 import { isGLTFFile } from "../utils";
 interface SliderProps {
@@ -20,17 +20,17 @@ export const ImageSlider: React.FC<SliderProps> = ({
   viewImages = false,
 }) => {
   const current = useCopyState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [translateX, setTranslateX] = useState(0);
-  const [animation, setAnimation] = useState(true);
-  const [zoomLevel, setZoomLevel] = useState(1);
-  const [zoomOrigin, setZoomOrigin] = useState({ x: 50, y: 50 });
-  const [isZooming, setIsZooming] = useState(false);
+  const isDragging = useCopyState(false);
+  const startX = useCopyState(0);
+  const translateX = useCopyState(0);
+  const animation = useCopyState(true);
+  const zoomLevel = useCopyState(1);
+  const zoomOrigin = useCopyState({ x: 50, y: 50 });
+  const isZooming = useCopyState(false);
   const sliderRef = useRef<HTMLDivElement>(null);
   const intervalRef = useRef<number | null>(null);
   const nextSlide = () => {
-    setAnimation(true);
+    animation.set(true);
     current.set((prev) => {
       if (prev + 1 < photos.length) {
         return prev + 1;
@@ -39,7 +39,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
     });
   };
   const prevSlide = () => {
-    setAnimation(true);
+    animation.set(true);
     current.set((prev) => {
       if (prev - 1 >= 0) {
         return prev - 1;
@@ -47,32 +47,30 @@ export const ImageSlider: React.FC<SliderProps> = ({
       return prev; // Stay on the first slide
     });
   };
-
   const goToSlide = (index: number) => {
-    setAnimation(true);
+    animation.set(true);
     current.set(index);
   };
   const handleMouseDown = (e: MouseEvent) => {
-    setIsDragging(true);
-    setStartX(e.clientX);
-    setTranslateX(0);
-    setAnimation(false);
+    isDragging.set(true);
+    startX.set(e.clientX);
+    translateX.set(0);
+    animation.set(false);
     // Disable zoom when dragging starts
-    setIsZooming(false);
-    setZoomLevel(1);
+    isZooming.set(false);
+    zoomLevel.set(1);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
   };
   const handleMouseMove = (e: MouseEvent) => {
-    if (isDragging) {
+    if (isDragging.get) {
       // Prioritize dragging over zoom
-      const deltaX = e.clientX - startX;
-      setTranslateX(deltaX);
+      const deltaX = e.clientX - startX.get;
+      translateX.set(deltaX);
       return;
     }
-
-    if (zoom && !isDragging) {
+    if (zoom && !isDragging.get) {
       // Handle zoom functionality only when not dragging
       const rect = sliderRef.current?.getBoundingClientRect();
       if (rect) {
@@ -81,70 +79,70 @@ export const ImageSlider: React.FC<SliderProps> = ({
         const adjustedX = e.clientX - rect.left + currentImageOffset;
         const x = ((adjustedX % rect.width) / rect.width) * 100;
         const y = ((e.clientY - rect.top) / rect.height) * 100;
-        setZoomOrigin({ x, y });
-        setIsZooming(true);
-        setZoomLevel(2);
+        zoomOrigin.set({ x, y });
+        isZooming.set(true);
+        zoomLevel.set(2);
       }
       return;
     }
   };
   const handleMouseUp = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
+    if (!isDragging.get) return;
+    isDragging.set(false);
     const sensitivity = 0.3;
-    if (Math.abs(translateX) > window.innerWidth * sensitivity) {
-      if (translateX > 0) {
+    if (Math.abs(translateX.get) > window.innerWidth * sensitivity) {
+      if (translateX.get > 0) {
         prevSlide();
       } else {
         nextSlide();
       }
     } else {
-      setTranslateX(0);
-      setAnimation(true);
+      translateX.set(0);
+      animation.set(true);
     }
-    setTranslateX(0);
+    translateX.set(0);
   };
   const handleMouseLeave = () => {
-    if (isDragging) {
+    if (isDragging.get) {
       handleMouseUp();
     }
-    if (zoom && isZooming) {
-      setIsZooming(false);
-      setZoomLevel(1);
+    if (zoom && isZooming.get) {
+      isZooming.set(false);
+      zoomLevel.set(1);
     }
   };
   const handleTouchStart = (e: TouchEvent) => {
-    setIsDragging(true);
-    setStartX(e.touches[0].clientX);
-    setTranslateX(0);
-    setAnimation(false);
+    isDragging.set(true);
+    startX.set(e.touches[0].clientX);
+    translateX.set(0);
+    animation.set(false);
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
   };
   const handleTouchMove = (e: TouchEvent) => {
-    if (!isDragging) return;
-    const deltaX = e.touches[0].clientX - startX;
-    setTranslateX(deltaX);
+    if (!isDragging.get) return;
+    const deltaX = e.touches[0].clientX - startX.get;
+    translateX.set(deltaX);
   };
   const handleTouchEnd = () => {
-    if (!isDragging) return;
-    setIsDragging(false);
+    if (!isDragging.get) return;
+    isDragging.set(false);
     const sensitivity = 0.3;
-    if (Math.abs(translateX) > window.innerWidth * sensitivity) {
-      if (translateX > 0) {
+    if (Math.abs(translateX.get) > window.innerWidth * sensitivity) {
+      if (translateX.get > 0) {
         prevSlide();
       } else {
         nextSlide();
       }
     } else {
-      setTranslateX(0);
-      setAnimation(true);
+      translateX.set(0);
+      animation.set(true);
     }
-    setTranslateX(0);
+    translateX.set(0);
   };
   const handleTouchCancel = () => {
-    if (isDragging) {
+    if (isDragging.get) {
       handleTouchEnd();
     }
   };
@@ -177,7 +175,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
         }
       };
     }
-  }, [isDragging, startX, translateX, zoom, isZooming]);
+  }, [isDragging.get, startX.get, translateX.get, zoom, isZooming.get]);
   useEffect(() => {
     if (autoSlide) {
       intervalRef.current = window.setInterval(nextSlide, slideInterval);
@@ -201,8 +199,8 @@ export const ImageSlider: React.FC<SliderProps> = ({
     };
   }, [autoSlide, slideInterval]);
   const slideStyle = {
-    transform: `translateX(calc(${-current.get * 100}% + ${translateX}px))`,
-    transition: animation ? "transform 0.5s ease-in-out" : "none",
+    transform: `translateX(calc(${-current.get * 100}% + ${translateX.get}px))`,
+    transition: animation.get ? "transform 0.5s ease-in-out" : "none",
     display: "flex",
   };
   return (
@@ -242,10 +240,10 @@ export const ImageSlider: React.FC<SliderProps> = ({
                           zoom && "transition-transform duration-200 ease-out"
                         )}
                         style={
-                          zoom && index === current.get && isZooming
+                          zoom && index === current.get && isZooming.get
                             ? {
-                                transform: `translate(-50%, -50%) scale(${zoomLevel})`,
-                                transformOrigin: `${zoomOrigin.x}% ${zoomOrigin.y}%`,
+                                transform: `translate(-50%, -50%) scale(${zoomLevel.get})`,
+                                transformOrigin: `${zoomOrigin.get.x}% ${zoomOrigin.get.y}%`,
                               }
                             : {
                                 transform: `translate(-50%, -50%) scale(1)`,

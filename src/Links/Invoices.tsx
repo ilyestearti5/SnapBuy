@@ -30,6 +30,7 @@ import { useStoreId } from "../utils";
 import { motion } from "framer-motion";
 import { AnimatedList, AnimatedListItem, ScaleIn } from "../animations";
 import { useUsedBy } from "../routes/Stores/Stores";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 const NoInvoicesFound = ({ usedBy }: { usedBy: string | null }) => {
   return (
@@ -115,7 +116,7 @@ const AddProductPopup = ({
   existingProducts = {},
 }: {
   onAdd: (products: Record<string, { count: number; price: number }>) => void;
-  productsList: Snapbuy.Product[];
+  productsList: Biqpod.Snapbuy.Product[];
   existingProducts?: Record<string, { count: number; price: number }>;
 }) => {
   const searchProduct = getFieldValue("search-product");
@@ -371,7 +372,7 @@ const CreateInvoicePopup = () => {
   const tax = useCopyState(0);
   const discount = useCopyState(0);
   const notes = useCopyState("");
-  const productsList = useCopyState<Snapbuy.Product[]>([]);
+  const productsList = useCopyState<Biqpod.Snapbuy.Product[]>([]);
 
   useAsyncEffect(async () => {
     if (!storeId) return;
@@ -593,7 +594,7 @@ const CreateInvoicePopup = () => {
 const InvoiceStatusBadge = ({
   status,
 }: {
-  status: Snapbuy.Invoice["status"];
+  status: Biqpod.Snapbuy.Invoice["status"];
 }) => {
   const statusColors = {
     draft: "bg-gray-100 text-gray-800",
@@ -614,7 +615,7 @@ const InvoiceStatusBadge = ({
 
 export const Invoices = () => {
   const searchInvoice = getFieldValue("search-invoice");
-  const invoices = useTemp<Snapbuy.Invoice[]>("invoices-list");
+  const invoices = useTemp<Biqpod.Snapbuy.Invoice[]>("invoices-list");
   const storeId = useStoreId();
   const usedBy = useUsedBy();
 

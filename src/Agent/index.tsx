@@ -6,16 +6,18 @@ import {
   Icon,
   Line,
   Tip,
+  Translate,
   UserAvatar,
 } from "@biqpod/app/ui/components";
 import {
   getFieldValue,
   setFieldValue,
   showToast,
+  useCopyState,
   useUser,
 } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
-import { useState, useRef, useEffect } from "react";
+import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import chatBotSrc from "../../assets/Bot Face.mp4";
 import { aiService, AIMessage } from "../apis/aiService";
@@ -35,7 +37,6 @@ interface Message {
   timestamp: Date;
   attachments?: FileAttachment[]; // Array of file attachments
 }
-
 interface AIModel {
   id: string;
   name: string;
@@ -43,7 +44,6 @@ interface AIModel {
   description?: string;
   logo: string; // URL or path to model logo
 }
-
 const AVAILABLE_MODELS: AIModel[] = [
   // Local Models
   {
@@ -53,7 +53,6 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: "Local model running on localhost",
     logo: "https://static.vecteezy.com/system/resources/previews/022/227/364/non_2x/openai-chatgpt-logo-icon-free-png.png",
   },
-
   // OpenAI Models via GitHub
   {
     id: "openai/gpt-4.1",
@@ -97,7 +96,6 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: "Faster reasoning model",
     logo: "https://static.vecteezy.com/system/resources/previews/022/227/364/non_2x/openai-chatgpt-logo-icon-free-png.png",
   },
-
   // Claude Models
   {
     id: "anthropic/claude-3-5-sonnet-20241022",
@@ -113,7 +111,6 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: "Next-generation Claude with enhanced capabilities",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Claude_AI_symbol.svg/2048px-Claude_AI_symbol.svg.png",
   },
-
   // Meta Models
   {
     id: "meta/llama-3.3-70b-instruct",
@@ -122,7 +119,6 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: "Enhanced Llama 3.3",
     logo: "https://cdn-icons-png.flaticon.com/512/6033/6033716.png",
   },
-
   // Microsoft Models
   {
     id: "microsoft/phi-4",
@@ -131,7 +127,6 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: "High capability 14B model",
     logo: "https://www.svgrepo.com/show/452062/microsoft.svg",
   },
-
   // Mistral Models
   {
     id: "mistral-ai/mistral-large-2411",
@@ -140,7 +135,6 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: "Enhanced reasoning and function calling",
     logo: "https://uxwing.com/wp-content/themes/uxwing/download/brands-and-social-media/mistral-ai-icon.png",
   },
-
   // Google Models
   {
     id: "google/gemini-1.5-pro",
@@ -156,7 +150,6 @@ const AVAILABLE_MODELS: AIModel[] = [
     description: "Fast and efficient multimodal model",
     logo: "https://www.gstatic.com/lamda/images/gemini_sparkle_v002_d4735304ff6292a690345.svg",
   },
-
   // DeepSeek Models
   {
     id: "deepseek/deepseek-r1",
@@ -190,7 +183,6 @@ const AVAILABLE_MODELS: AIModel[] = [
       "Specialized coding model with enhanced programming capabilities",
     logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/DeepSeek-icon.svg/512px-DeepSeek-icon.svg.png?20250630230357",
   },
-
   // Qwen Models (Local)
   {
     id: "qwen2.5-coder-7b-instruct",
@@ -201,26 +193,18 @@ const AVAILABLE_MODELS: AIModel[] = [
   },
 ];
 export const AgentAi = () => {
-  const [messages, setMessages] = useState<Message[]>([]);
+  const messages = useCopyState<Message[]>([]);
   const inputValue = getFieldValue("chat-input") || "";
-  const [selectedFiles, setSelectedFiles] = useState<FileAttachment[]>([]);
-  const [conversationHistory, setConversationHistory] = useState<AIMessage[]>(
-    []
-  );
-  const [streamingMessageId, setStreamingMessageId] = useState<string | null>(
-    null
-  );
-  const [selectedModel, setSelectedModel] = useState<AIModel>(
-    AVAILABLE_MODELS[0]
-  );
-  const [showModelSelector, setShowModelSelector] = useState(false);
+  const selectedFiles = useCopyState<FileAttachment[]>([]);
+  const conversationHistory = useCopyState<AIMessage[]>([]);
+  const streamingMessageId = useCopyState<string | null>(null);
+  const selectedModel = useCopyState<AIModel>(AVAILABLE_MODELS[0]);
+  const showModelSelector = useCopyState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const modelSelectorRef = useRef<HTMLDivElement>(null);
-
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
+  }, [messages.get]);
   // Close model selector when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -228,17 +212,16 @@ export const AgentAi = () => {
         modelSelectorRef.current &&
         !modelSelectorRef.current.contains(event.target as Node)
       ) {
-        setShowModelSelector(false);
+        showModelSelector.set(false);
       }
     };
-
-    if (showModelSelector) {
+    if (showModelSelector.get) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
       };
     }
-  }, [showModelSelector]);
+  }, [showModelSelector.get]);
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
@@ -288,14 +271,12 @@ export const AgentAi = () => {
           // Extract file type from base64 data URL
           let fileType = "application/octet-stream";
           let fileName = "file";
-
           if (filePath.startsWith("data:")) {
             // Extract MIME type from base64 data URL (e.g., "data:image/jpeg;base64,...")
             const mimeMatch = filePath.match(/^data:([^;]+)/);
             if (mimeMatch) {
               fileType = mimeMatch[1];
             }
-
             // Generate appropriate filename based on MIME type
             if (fileType.startsWith("image/")) {
               const ext = fileType.split("/")[1];
@@ -329,7 +310,6 @@ export const AgentAi = () => {
             const fileExtension =
               pathFileName.split(".").pop()?.toLowerCase() || "";
             fileName = pathFileName;
-
             // Determine file type based on extension as fallback
             if (
               ["jpg", "jpeg", "png", "gif", "bmp", "svg", "webp"].includes(
@@ -359,7 +339,6 @@ export const AgentAi = () => {
               fileType = "text/plain";
             }
           }
-
           // Calculate file size from base64 if it's a data URL
           let fileSize = 0;
           if (filePath.startsWith("data:")) {
@@ -369,7 +348,6 @@ export const AgentAi = () => {
               fileSize = Math.round((base64Data.length * 3) / 4);
             }
           }
-
           return {
             name: fileName,
             size: fileSize,
@@ -377,7 +355,7 @@ export const AgentAi = () => {
             url: filePath,
           };
         });
-        setSelectedFiles((prev) => [...prev, ...newFiles]);
+        selectedFiles.set((prev) => [...prev, ...newFiles]);
       }
     } catch (error) {
       console.error("Error selecting files:", error);
@@ -385,7 +363,6 @@ export const AgentAi = () => {
     }
   };
   const user = useUser();
-
   // Function to send message to AI and get streaming response
   const sendToAI = async (
     userMessage: string,
@@ -393,7 +370,6 @@ export const AgentAi = () => {
   ) => {
     // Create a placeholder message for the AI response
     const aiResponseId = (Date.now() + 1).toString();
-
     try {
       const aiResponseMessage: Message = {
         id: aiResponseId,
@@ -401,10 +377,8 @@ export const AgentAi = () => {
         sender: "ai",
         timestamp: new Date(),
       };
-
       // Add the empty AI message to show it's starting to respond
-      setMessages((prev) => [...prev, aiResponseMessage]);
-
+      messages.set((prev) => [...prev, aiResponseMessage]);
       // Handle different types of messages
       if (attachments && attachments.length > 0) {
         // Handle file attachments (non-streaming for now)
@@ -414,14 +388,13 @@ export const AgentAi = () => {
         const otherAttachments = attachments.filter(
           (file) => !file.type.startsWith("image/")
         );
-
         let aiResponse: string;
         if (imageAttachments.length > 0) {
           // For images, use image analysis with selected model
           aiResponse = await aiService.analyzeImage(
             imageAttachments[0].url,
             userMessage,
-            { model: selectedModel.id }
+            { model: selectedModel.get.id }
           );
         } else {
           // For other files, analyze file types with selected model
@@ -431,17 +404,15 @@ export const AgentAi = () => {
               name: file.name,
             })),
             userMessage,
-            { model: selectedModel.id }
+            { model: selectedModel.get.id }
           );
         }
-
         // Update the message with the complete response
-        setMessages((prev) =>
+        messages.set((prev) =>
           prev.map((msg) =>
             msg.id === aiResponseId ? { ...msg, content: aiResponse } : msg
           )
         );
-
         // Update conversation history
         const newUserMessage: AIMessage = {
           role: "user",
@@ -451,7 +422,7 @@ export const AgentAi = () => {
           role: "assistant",
           content: aiResponse,
         };
-        setConversationHistory((prev) => [
+        conversationHistory.set((prev) => [
           ...prev,
           newUserMessage,
           newAIMessage,
@@ -459,18 +430,15 @@ export const AgentAi = () => {
       } else {
         // Regular text message with streaming
         let accumulatedResponse = "";
-
         // Set this message as actively streaming
-        setStreamingMessageId(aiResponseId);
-
+        streamingMessageId.set(aiResponseId);
         await aiService.sendStreamingMessage(
           userMessage,
-          conversationHistory,
+          conversationHistory.get,
           (chunk: string) => {
             accumulatedResponse += chunk;
-
             // Update the message content with the accumulated response
-            setMessages((prev) =>
+            messages.set((prev) =>
               prev.map((msg) =>
                 msg.id === aiResponseId
                   ? { ...msg, content: accumulatedResponse }
@@ -478,12 +446,10 @@ export const AgentAi = () => {
               )
             );
           },
-          { model: selectedModel.id }
+          { model: selectedModel.get.id }
         );
-
         // Clear streaming state when done
-        setStreamingMessageId(null);
-
+        streamingMessageId.set(null);
         // Update conversation history with the complete response
         const newUserMessage: AIMessage = {
           role: "user",
@@ -493,7 +459,7 @@ export const AgentAi = () => {
           role: "assistant",
           content: accumulatedResponse,
         };
-        setConversationHistory((prev) => [
+        conversationHistory.set((prev) => [
           ...prev,
           newUserMessage,
           newAIMessage,
@@ -501,13 +467,10 @@ export const AgentAi = () => {
       }
     } catch (error) {
       console.error("AI Service Error:", error);
-
       // Clear streaming state
-      setStreamingMessageId(null);
-
+      streamingMessageId.set(null);
       // Remove the placeholder message if it exists
-      setMessages((prev) => prev.filter((msg) => msg.id !== aiResponseId));
-
+      messages.set((prev) => prev.filter((msg) => msg.id !== aiResponseId));
       // Add error message
       const errorMessage: Message = {
         id: (Date.now() + 2).toString(),
@@ -516,9 +479,8 @@ export const AgentAi = () => {
         sender: "ai",
         timestamp: new Date(),
       };
-
-      setMessages((prev) => [...prev, errorMessage]);
-      showToast(`AI service error with ${selectedModel.name}`, "error");
+      messages.set((prev) => [...prev, errorMessage]);
+      showToast(`AI service error with ${selectedModel.get.name}`, "error");
     } finally {
     }
   };
@@ -545,87 +507,33 @@ export const AgentAi = () => {
               loop
             />
             <div>
-              <h1 className="font-semibold text-lg">Snapbuy AI Assistant</h1>
-              <div className="flex items-center gap-2 opacity-70 text-sm">
-                <span>Powered by</span>
-                <img src={selectedModel.logo} className="rounded w-4 h-4" />
+              <h1 className="font-semibold text-lg capitalize">
+                <Translate content="snapbuy ai assistant" />
+              </h1>
+              <div className="flex items-center gap-2 opacity-70 text-sm capitalize">
+                <span>
+                  <Translate content="powered by" />
+                </span>
+                <img src={selectedModel.get.logo} className="rounded w-4 h-4" />
                 <CircleTip
                   icon={allIcons.solid.faMicrochip}
                   className="hidden bg-[--biqpod-primary] w-4 h-4 text-[--biqpod-primary-content] header-fallback-icon"
                 />
                 <button
-                  onClick={() => setShowModelSelector(!showModelSelector)}
+                  onClick={() => showModelSelector.set(!showModelSelector.get)}
                   className="flex items-center gap-1 hover:opacity-100 transition-opacity"
                 >
-                  <span className="font-medium">{selectedModel.name}</span>
+                  <span className="font-medium">{selectedModel.get.name}</span>
                   <span className="text-xs">
-                    {showModelSelector ? "▲" : "▼"}
+                    {showModelSelector.get ? "▲" : "▼"}
                   </span>
                 </button>
               </div>
             </div>
           </div>
-
-          <div className="flex items-center gap-2">
-            <Tip
-              icon={allIcons.solid.faRocket}
-              className="bg-[--biqpod-primary] w-8 h-8 text-[--biqpod-primary-content]"
-              onClick={async () => {
-                try {
-                  // Open AI Toolkit Model Playground with the current model
-                  const modelName = selectedModel.id.includes("/")
-                    ? selectedModel.id.split("/")[1]
-                    : selectedModel.id;
-
-                  showToast(
-                    `Opening AI Toolkit Playground with ${selectedModel.name}...`,
-                    "info"
-                  );
-
-                  // Use VS Code command to open playground
-                  await (window as any).vscode?.postMessage({
-                    command: "ai-mlstudio.modelPlayground",
-                    args: JSON.stringify({
-                      triggeredFrom: "copilot",
-                      initialSelectedModel: {
-                        providerName: selectedModel.id.includes("/")
-                          ? "GitHub"
-                          : "Local",
-                        name: modelName,
-                      },
-                    }),
-                  });
-                } catch (error) {
-                  console.error("Failed to open AI Toolkit:", error);
-                  showToast("Failed to open AI Toolkit Playground", "error");
-                }
-              }}
-            />
-            <Tip
-              icon={allIcons.solid.faLayerGroup}
-              className="bg-[--biqpod-secondary] w-8 h-8 text-[--biqpod-text-color]"
-              onClick={async () => {
-                try {
-                  showToast("Opening AI Toolkit Model Catalog...", "info");
-
-                  // Use VS Code command to open model catalog
-                  await (window as any).vscode?.postMessage({
-                    command: "ai-mlstudio.models",
-                    args: JSON.stringify({
-                      triggeredFrom: "copilot",
-                    }),
-                  });
-                } catch (error) {
-                  console.error("Failed to open Model Catalog:", error);
-                  showToast("Failed to open Model Catalog", "error");
-                }
-              }}
-            />
-          </div>
         </div>
-
         {/* Model Selector Dropdown */}
-        {showModelSelector && (
+        {showModelSelector.get && (
           <motion.div
             ref={modelSelectorRef}
             className="top-full right-0 left-0 z-50 absolute bg-[--biqpod-secondary-background] shadow-xl border border-[--biqpod-borders]"
@@ -634,20 +542,22 @@ export const AgentAi = () => {
             transition={{ duration: 0.2 }}
           >
             <div className="mx-auto p-4 max-w-4xl">
-              <h3 className="mb-3 font-semibold">Select AI Model</h3>
+              <h3 className="mb-3 font-semibold capitalize">
+                <Translate content="select ai model" />
+              </h3>
               <div className="gap-3 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 max-h-96 overflow-y-auto">
                 {AVAILABLE_MODELS.map((model) => (
                   <motion.button
                     key={model.id}
                     className={tw(
                       "text-left p-4 rounded-lg border transition-colors",
-                      selectedModel.id === model.id
+                      selectedModel.get.id === model.id
                         ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] border-[--biqpod-primary]"
                         : "bg-[--biqpod-primary-background] border-[--biqpod-borders] hover:bg-[--biqpod-gray-opacity]"
                     )}
                     onClick={() => {
-                      setSelectedModel(model);
-                      setShowModelSelector(false);
+                      selectedModel.set(model);
+                      showModelSelector.set(false);
                       showToast(`Switched to ${model.name}`, "success");
                     }}
                     whileHover={{ scale: 1.02 }}
@@ -672,7 +582,7 @@ export const AgentAi = () => {
                         icon={allIcons.solid.faCloud}
                         className={tw(
                           "w-8 h-8 fallback-icon hidden",
-                          selectedModel.id === model.id
+                          selectedModel.get.id === model.id
                             ? "bg-[--biqpod-primary-content] text-[--biqpod-primary]"
                             : "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
                         )}
@@ -686,7 +596,7 @@ export const AgentAi = () => {
                     </div>
                     {model.description && (
                       <div className="opacity-60 text-xs leading-relaxed">
-                        {model.description}
+                        <Translate content={model.description.toLowerCase()} />
                       </div>
                     )}
                   </motion.button>
@@ -696,7 +606,7 @@ export const AgentAi = () => {
           </motion.div>
         )}
       </motion.div>
-
+      <Line />
       {/* Chat Messages Area */}
       <motion.div
         className="flex-1 space-y-4 p-4 overflow-y-auto"
@@ -704,7 +614,7 @@ export const AgentAi = () => {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, delay: 0.1 }}
       >
-        {messages.length === 0 && (
+        {messages.get.length === 0 && (
           <motion.div
             className="flex flex-col justify-center items-center h-full text-center"
             initial={{ opacity: 0, scale: 0.9 }}
@@ -721,12 +631,12 @@ export const AgentAi = () => {
               transition={{ duration: 0.5, delay: 0.7 }}
             />
             <motion.h2
-              className="mb-2 font-semibold text-[--biqpod-text-color] text-xl"
+              className="mb-2 font-semibold text-[--biqpod-text-color] text-xl capitalize"
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.8 }}
             >
-              Welcome to Snapbuy AI Assistant
+              <Translate content="welcome to AI agent" />
             </motion.h2>
             <motion.p
               className="opacity-70 max-w-md text-[--biqpod-text-color]"
@@ -734,13 +644,11 @@ export const AgentAi = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.9 }}
             >
-              I'm here to help you with your shopping needs. Ask me anything or
-              share files to get started!
+              <Translate content="i'm here to help you with your shopping needs. ask me anything or share files to get started!" />
             </motion.p>
           </motion.div>
         )}
-
-        {messages.map((message, index) => (
+        {messages.get.map((message, index) => (
           <motion.div
             key={message.id}
             className={tw(
@@ -751,7 +659,7 @@ export const AgentAi = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: 0.3,
-              delay: index === messages.length - 1 ? 0 : 0,
+              delay: index === messages.get.length - 1 ? 0 : 0,
               ease: "easeOut",
             }}
           >
@@ -775,7 +683,7 @@ export const AgentAi = () => {
                 <AnimatedMarkdownRenderer
                   content={message.content}
                   className="text-sm leading-relaxed"
-                  isStreaming={streamingMessageId === message.id}
+                  isStreaming={streamingMessageId.get === message.id}
                 />
               ) : (
                 <div className="text-sm leading-relaxed whitespace-pre-wrap">
@@ -892,7 +800,6 @@ export const AgentAi = () => {
             {message.sender === "user" && <UserAvatar user={user} />}
           </motion.div>
         ))}
-
         {/* AI Typing Indicator */}
         <div ref={messagesEndRef} />
       </motion.div>
@@ -919,7 +826,7 @@ export const AgentAi = () => {
           </motion.div>
         </div>
         {/* File Previews */}
-        {selectedFiles.length > 0 && (
+        {selectedFiles.get.length > 0 && (
           <motion.div
             className="bg-[--biqpod-gray-opacity] mb-3 p-2 rounded-lg"
             initial={{ opacity: 0, height: 0 }}
@@ -928,18 +835,18 @@ export const AgentAi = () => {
             transition={{ duration: 0.3 }}
           >
             <div className="flex justify-between items-center mb-2">
-              <span className="font-medium text-[--biqpod-text-color] text-sm">
-                Attachments ({selectedFiles.length})
+              <span className="font-medium text-[--biqpod-text-color] text-sm capitalize">
+                <Translate content="attachments" /> ({selectedFiles.get.length})
               </span>
               <Tip
                 icon={allIcons.solid.faXmark}
                 className="w-5 h-5 text-[--biqpod-text-color]"
-                onClick={() => setSelectedFiles([])}
+                onClick={() => selectedFiles.set([])}
               />
             </div>
             <div className="space-y-1 max-h-32 overflow-y-auto">
               <AnimatePresence>
-                {selectedFiles.map((file, index) => (
+                {selectedFiles.get.map((file, index) => (
                   <motion.div
                     key={index}
                     initial={{ opacity: 0, x: -20 }}
@@ -968,7 +875,7 @@ export const AgentAi = () => {
                             icon={allIcons.solid.faXmark}
                             className="w-5 h-5"
                             onClick={() => {
-                              setSelectedFiles((prev) =>
+                              selectedFiles.set((prev) =>
                                 prev.filter((_, i) => i !== index)
                               );
                             }}
@@ -988,7 +895,7 @@ export const AgentAi = () => {
                           icon={allIcons.solid.faXmark}
                           className="w-5 h-5 text-[--biqpod-text-color]"
                           onClick={() => {
-                            setSelectedFiles((prev) =>
+                            selectedFiles.set((prev) =>
                               prev.filter((_, i) => i !== index)
                             );
                           }}
@@ -1041,33 +948,33 @@ export const AgentAi = () => {
             transition={{ duration: 0.3, delay: 0.6 }}
           >
             <CircleTip
-              icon={
-                inputValue.trim() || selectedFiles.length > 0
-                  ? allIcons.solid.faPaperPlane
-                  : allIcons.solid.faArrowUp
-              }
+              icon={allIcons.solid.faPaperPlane}
+              iconClassName={tw(
+                !inputValue.trim().length && "text-[--biqpod-gray-opacity-2]"
+              )}
               onClick={async () => {
-                if (inputValue.trim() || selectedFiles.length > 0) {
+                if (inputValue.trim() || selectedFiles.get.length > 0) {
                   const messageContent =
                     inputValue.trim() ||
-                    (selectedFiles.length > 0 ? "📎 File attachments" : "");
-
+                    (selectedFiles.get.length > 0 ? "📎 File attachments" : "");
                   const newMessage: Message = {
                     id: Date.now().toString(),
                     content: messageContent,
                     sender: "user",
                     timestamp: new Date(),
                     attachments:
-                      selectedFiles.length > 0 ? [...selectedFiles] : undefined,
+                      selectedFiles.get.length > 0
+                        ? [...selectedFiles.get]
+                        : undefined,
                   };
-
-                  setMessages((prev) => [...prev, newMessage]);
+                  messages.set((prev) => [...prev, newMessage]);
                   setFieldValue("chat-input", "");
                   // Store files for AI processing before clearing
                   const attachmentsForAI =
-                    selectedFiles.length > 0 ? [...selectedFiles] : undefined;
-                  setSelectedFiles([]);
-
+                    selectedFiles.get.length > 0
+                      ? [...selectedFiles.get]
+                      : undefined;
+                  selectedFiles.set([]);
                   // Send to AI service
                   await sendToAI(messageContent, attachmentsForAI);
                 }

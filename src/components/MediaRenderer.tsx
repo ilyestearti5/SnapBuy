@@ -47,14 +47,6 @@ export const MediaRenderer: React.FC<MediaRendererProps> = ({
       </div>
     );
   }
-
-  // Debug logging (reduced for performance)
-  if (process.env.NODE_ENV === "development") {
-    console.log("MediaRenderer - src:", actualSrc);
-    console.log("MediaRenderer - fileType:", fileType);
-    console.log("MediaRenderer - isObjectURL:", actualSrc.startsWith("blob:"));
-  }
-
   // Use explicit type from MediaFile if available, otherwise detect from URL
   const isGLTF = fileType === "gltf" || (!fileType && isGLTFFile(actualSrc));
   // Render based on type

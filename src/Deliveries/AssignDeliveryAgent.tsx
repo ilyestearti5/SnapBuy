@@ -16,9 +16,14 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { useEffect } from "react";
 import { snapbuyApi } from "../apis";
+import { Biqpod } from "@biqpod/app/ui/types";
 
-export const AssignDeliveryAgent = ({ order }: { order: Snapbuy.Order }) => {
-  const agents = useCopyState<Snapbuy.Account[] | null>(null);
+export const AssignDeliveryAgent = ({
+  order,
+}: {
+  order: Biqpod.Snapbuy.Order;
+}) => {
+  const agents = useCopyState<Biqpod.Snapbuy.Account[] | null>(null);
   const selectedAgent = useCopyState<string | null>(null);
   useEffect(() => {
     snapbuyApi.getDeliveryAgents().then(agents.set);

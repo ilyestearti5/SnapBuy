@@ -42,8 +42,7 @@ import { Route, Switch, useHistory, useLocation } from "react-router";
 import { snapbuyApi } from "./apis";
 import { useEffect, useMemo } from "react";
 import { mapAsync, mergeArray, tw } from "@biqpod/app/ui/utils";
-import { OpenMenuProps } from "@biqpod/app/ui/types";
-import { Link } from "react-router-dom";
+import { Biqpod, OpenMenuProps } from "@biqpod/app/ui/types";
 import { useStoreId } from "./utils";
 import { initStoreIdSave } from "./utils";
 import { AiAssistance } from "./AiAssistance";
@@ -63,7 +62,7 @@ export const HeaderContent = () => {
   const storeId = useStoreId();
   useAction(
     "upsert-pack",
-    async (packInfo: Snapbuy.Pack) => {
+    async (packInfo: Biqpod.Snapbuy.Pack) => {
       if (!user) {
         showToast("You must be logged in to add a pack");
         return;
@@ -163,19 +162,14 @@ export const HeaderContent = () => {
     },
     [user]
   );
-
   const orders = useAsyncMemo(async () => {
     if (storeId) return snapbuyApi.ordersWillDeletingAfter7Day(storeId);
   }, [user?.uid, storeId]);
-
   const loc = useLocation();
-
   const id = useMemo(() => {
     return getId();
   }, [loc.pathname]);
-
   const usedBy = useUsedBy(user);
-
   return (
     <EmptyComponent>
       <motion.div
@@ -305,14 +299,23 @@ export const HeaderContent = () => {
                         defaultIcon: allIcons.solid.faHome,
                         label: "Home",
                         click() {
-                          document.getElementById("home")?.click();
+                          hist.push("/home");
+                        },
+                      },
+                      {
+                        defaultIcon: allIcons.solid.faUser,
+                        label: "Profile",
+                        click() {
+                          hist.push("/profile");
                         },
                       },
                       storeId &&
                         usedBy === "owned" && {
                           label: "Plans",
                           click() {
-                            document.getElementById("plans")?.click();
+                            hist.push(
+                              "/" + ["store", storeId, "plans"].join("/")
+                            );
                           },
                           defaultIcon: allIcons.solid.faMoneyBill,
                         },
@@ -341,7 +344,7 @@ export const HeaderContent = () => {
                       {
                         label: "Send Feedback",
                         click() {
-                          document.getElementById("feedback")?.click();
+                          hist.push("/feedback");
                         },
                         defaultIcon: allIcons.solid.faComment,
                       },
@@ -464,9 +467,6 @@ export const HeaderContent = () => {
         </div>
       </motion.div>
       {isDesktop && <WindowControls />}
-      <Link to="/profile" id="home" />
-      <Link to={storeId ? `/store/${storeId}/plans` : "/plans"} id="plans" />
-      <Link to="/feedbacks" id="feedback" />
     </EmptyComponent>
   );
 };

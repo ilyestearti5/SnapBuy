@@ -3,9 +3,10 @@ import { Icon, Button, CircleTip } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 export interface OrderCardProps {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
   onViewDetails?: (orderId: string) => void;
   onTrackOrder?: (orderId: string) => void;
   onReorder?: (orderId: string) => void;
@@ -34,7 +35,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   // Get status color and icon
-  const getStatusInfo = (status: Snapbuy.OrderStatus) => {
+  const getStatusInfo = (status: Biqpod.Snapbuy.OrderStatus) => {
     switch (status) {
       case "pending":
         return {

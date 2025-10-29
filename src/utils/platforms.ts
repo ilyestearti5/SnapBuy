@@ -12,9 +12,10 @@ import xIcon from "../assets/platforms/x.png";
 import chromeIcon from "../assets/platforms/chrome.png";
 import edgeIcon from "../assets/platforms/edge.png";
 import safariIcon from "../assets/platforms/safari.png";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 export interface PlatformInfo {
-  id: keyof Required<Required<Snapbuy.Store>["platforms"]>;
+  id: keyof Required<Required<Biqpod.Snapbuy.Store>["platforms"]>;
   name: string;
   icon: string;
   placeholder: string;
@@ -124,13 +125,13 @@ export const platformsInfo: PlatformInfo[] = [
 ];
 
 export const getPlatformInfo = (
-  platformId: keyof Required<Required<Snapbuy.Store>["platforms"]>
+  platformId: keyof Required<Required<Biqpod.Snapbuy.Store>["platforms"]>
 ): PlatformInfo | undefined => {
   return platformsInfo.find((platform) => platform.id === platformId);
 };
 
 export const platformsPhoto: Record<
-  keyof Required<Required<Snapbuy.Store>["platforms"]>,
+  keyof Required<Required<Biqpod.Snapbuy.Store>["platforms"]>,
   string
 > = {
   facebook: facebookIcon,

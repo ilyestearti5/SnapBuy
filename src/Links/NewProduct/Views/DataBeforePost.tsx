@@ -5,11 +5,8 @@ import {
   Key,
   Line,
   MarkDown,
-  Tip,
   Translate,
 } from "@biqpod/app/ui/components";
-import { setTemp } from "@biqpod/app/ui/hooks";
-import {} from "@biqpod/app/ui/utils";
 import { useFormProduct } from "../../../apis/getFns";
 export const ProductDataBeforeCreate = () => {
   const product = useFormProduct();
@@ -29,12 +26,6 @@ export const ProductDataBeforeCreate = () => {
                 <Translate content="no title" />
               </span>
             )}
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 1);
-              }}
-            />
           </div>
         </div>
         <div className="flex items-center gap-2 p-2 w-full">
@@ -46,12 +37,6 @@ export const ProductDataBeforeCreate = () => {
           </div>
           <div className="flex items-center gap-1 w-full">
             <div>{product.type}</div>
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 2);
-              }}
-            />
           </div>
         </div>
         <div className="flex items-center gap-2 p-2 w-full">
@@ -71,12 +56,6 @@ export const ProductDataBeforeCreate = () => {
                 <Translate content="no keys" />
               </span>
             )}
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 1);
-              }}
-            />
           </div>
         </div>
         <div className="flex items-center gap-2 p-2 w-full">
@@ -88,12 +67,6 @@ export const ProductDataBeforeCreate = () => {
           </div>
           <div className="flex items-center gap-1 w-full">
             <Translate content={product.limited ? "yes" : "no"} />
-            <Tip
-              icon={allIcons.solid.faExternalLink}
-              onClick={() => {
-                setTemp("post-focused", 1);
-              }}
-            />
           </div>
         </div>
         {product.limited && (
@@ -149,8 +122,8 @@ export const ProductDataBeforeCreate = () => {
       {product.type === "multiple" && (
         <EmptyComponent>
           <Line />
-          <div>
-            <h3 className="my-2 px-2 font-semibold text-primary text-2xl">
+          <div className="flex flex-col gap-2 py-2">
+            <h3 className="px-2 font-semibold text-primary text-xl">
               <Translate content="prices list" />:
             </h3>
             <div className="px-2 overflow-x-auto">

@@ -37,16 +37,18 @@ import { snapbuyApi } from "../apis";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
 import { cloud } from "../server";
 import { useEffect, useMemo } from "react";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { rolsInList } from "../utils";
 import { FilterAccounts, useAccountFilterState } from "./FilterAccounts";
 const PAGE_SIZE = 10;
 export const Accounts = () => {
-  const accounts = useCopyState<Snapbuy.Account[] | null>(null);
+  const accounts = useCopyState<Biqpod.Snapbuy.Account[] | null>(null);
   const firstname = getFieldValue("account-firstname");
   const lastname = getFieldValue("account-lastname");
   const phone = getFieldValue("account-phone");
-  const role = getTemp<Snapbuy.DeliveryCompanyRole | Nothing>("roleState");
+  const role = getTemp<Biqpod.Snapbuy.DeliveryCompanyRole | Nothing>(
+    "roleState"
+  );
   useAction(
     "upsert-account",
     async (id?: string) => {
@@ -58,7 +60,7 @@ export const Accounts = () => {
         showToast("Please fill all fields", "error");
         return;
       }
-      const account: Snapbuy.Account = {
+      const account: Biqpod.Snapbuy.Account = {
         id,
         firstname,
         lastname,
@@ -80,7 +82,7 @@ export const Accounts = () => {
     [firstname, lastname, phone]
   );
   const user = useUser();
-  const lastDoc = useCopyState<Snapbuy.Account | null>(null);
+  const lastDoc = useCopyState<Biqpod.Snapbuy.Account | null>(null);
   const hasMore = useCopyState(false);
   const filterState = useAccountFilterState();
   useAction(
@@ -115,7 +117,7 @@ export const Accounts = () => {
           subTime = new Date(currentTime.getTime() - 730 * 24 * 60 * 60 * 1000);
           break;
       }
-      const selection: CloudSelection<Snapbuy.Account> = {
+      const selection: CloudSelection<Biqpod.Snapbuy.Account> = {
         where: and(
           where("uid", "==", user?.uid),
           filterState?.phone && where("phone", "==", filterState.phone),
@@ -127,7 +129,7 @@ export const Accounts = () => {
         startAt:
           next && lastDoc.get?.createdAt ? [lastDoc.get?.createdAt] : undefined,
       };
-      const newAccounts = await cloud.app.nosql.getDocs<Snapbuy.Account>(
+      const newAccounts = await cloud.app.nosql.getDocs<Biqpod.Snapbuy.Account>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "accounts"],
         selection
       );

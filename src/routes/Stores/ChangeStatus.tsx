@@ -18,10 +18,11 @@ import {
 import { colors, icons } from "../../utils";
 import { deleteDoc, setDoc } from "../../server";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
+import { Biqpod } from "@biqpod/app/ui/types";
 export interface ChangeStatusProps {
-  order: Snapbuy.Order;
+  order: Biqpod.Snapbuy.Order;
 }
-export const allStatus: Snapbuy.OrderStatus[] = [
+export const allStatus: Biqpod.Snapbuy.OrderStatus[] = [
   "pending",
   "cancelled",
   "processing",
@@ -30,7 +31,7 @@ export const allStatus: Snapbuy.OrderStatus[] = [
   "done",
 ];
 export const ChangeStatus = ({ order }: ChangeStatusProps) => {
-  const selectOne = getTemp<Snapbuy.OrderStatus>("selected-status");
+  const selectOne = getTemp<Biqpod.Snapbuy.OrderStatus>("selected-status");
   return (
     <Card className="max-md:w-11/12 md:w-2/3">
       <div className="flex justify-between items-center p-2">
@@ -105,7 +106,8 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
                 status: selectOne,
               }
             );
-            const allOredrs = getTempFromStore<Snapbuy.Order[]>("orders-list");
+            const allOredrs =
+              getTempFromStore<Biqpod.Snapbuy.Order[]>("orders-list");
             const findedIndex = allOredrs?.findIndex(
               (item) => item.id === order.id
             );

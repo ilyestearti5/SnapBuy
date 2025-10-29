@@ -22,11 +22,11 @@ import {
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { useEffect, useState } from "react";
 import { compressImage } from "../utils/utilities";
 export interface UpsertBrandProps {
-  brand?: Snapbuy.Brand;
+  brand?: Biqpod.Snapbuy.Brand;
 }
 export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
   const storeId = useStoreId();
@@ -162,7 +162,10 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
         showToast("Store ID not found", "error");
         return;
       }
-      const brandData: Omit<Snapbuy.Brand, "id" | "createdAt" | "updatedAt"> = {
+      const brandData: Omit<
+        Biqpod.Snapbuy.Brand,
+        "id" | "createdAt" | "updatedAt"
+      > = {
         name: name.trim(),
         description: description?.trim(),
         photo: photo.get || undefined,
@@ -170,11 +173,11 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
       };
       if (brand?.id) {
         // Update existing brand
-        await snapbuyApi.updateBrand(brand.id, brandData);
+        await snapbuyApi.brands.update(brand.id, brandData);
         showToast("Brand updated successfully", "success");
       } else {
         // Create new brand
-        await snapbuyApi.createBrand(brandData);
+        await snapbuyApi.brands.create(brandData);
         showToast("Brand created successfully", "success");
       }
       execAction("fetch-brands");
@@ -389,7 +392,7 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
                 detail: "This action cannot be undone.",
               });
               if (response) {
-                await snapbuyApi.deleteBrand(brand.id!);
+                await snapbuyApi.brands.delete(brand.id!);
                 showToast("Brand deleted successfully", "success");
                 closePopup();
               }

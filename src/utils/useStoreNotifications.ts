@@ -3,6 +3,7 @@ import { useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { StoreNotificationHandler } from "./notifications";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
+import { Biqpod } from "@biqpod/app/ui/types";
 
 // Hook to manage store notifications
 export const useStoreNotifications = () => {
@@ -45,25 +46,25 @@ export const useStoreNotifications = () => {
     notifySettings: store?.notify || {},
 
     // Helper methods to trigger notifications
-    notifyNewOrder: (order: Snapbuy.Order) =>
+    notifyNewOrder: (order: Biqpod.Snapbuy.Order) =>
       notificationHandler?.notifyNewOrder(order),
     notifyOrderStatusChanged: (
-      order: Snapbuy.Order,
-      oldStatus: Snapbuy.OrderStatus
+      order: Biqpod.Snapbuy.Order,
+      oldStatus: Biqpod.Snapbuy.OrderStatus
     ) => notificationHandler?.notifyOrderStatusChanged(order, oldStatus),
-    notifyOrderCompleted: (order: Snapbuy.Order) =>
+    notifyOrderCompleted: (order: Biqpod.Snapbuy.Order) =>
       notificationHandler?.notifyOrderCompleted(order),
-    notifyOrderCancelled: (order: Snapbuy.Order) =>
+    notifyOrderCancelled: (order: Biqpod.Snapbuy.Order) =>
       notificationHandler?.notifyOrderCancelled(order),
-    notifyOrderProcessing: (order: Snapbuy.Order) =>
+    notifyOrderProcessing: (order: Biqpod.Snapbuy.Order) =>
       notificationHandler?.notifyOrderProcessing(order),
-    notifyOrderDelivery: (order: Snapbuy.Order) =>
+    notifyOrderDelivery: (order: Biqpod.Snapbuy.Order) =>
       notificationHandler?.notifyOrderDelivery(order),
-    notifyLowStock: (product: Snapbuy.Product) =>
+    notifyLowStock: (product: Biqpod.Snapbuy.Product) =>
       notificationHandler?.notifyLowStock(product),
-    notifyNewProduct: (product: Snapbuy.Product) =>
+    notifyNewProduct: (product: Biqpod.Snapbuy.Product) =>
       notificationHandler?.notifyNewProduct(product),
-    notifyNewClient: (client: Snapbuy.Client) =>
+    notifyNewClient: (client: Biqpod.Snapbuy.Client) =>
       notificationHandler?.notifyNewClient(client),
   };
 };
@@ -72,14 +73,14 @@ export const useStoreNotifications = () => {
 // const MyComponent = () => {
 //   const { notifyNewOrder, notifyOrderStatusChanged, notifySettings } = useStoreNotifications();
 //
-//   const handleNewOrder = (order: Snapbuy.Order) => {
+//   const handleNewOrder = (order: Biqpod.Snapbuy.Order) => {
 //     // Your existing order logic...
 //
 //     // Trigger notification if enabled
 //     notifyNewOrder(order);
 //   };
 //
-//   const handleStatusChange = (order: Snapbuy.Order, oldStatus: Snapbuy.OrderStatus) => {
+//   const handleStatusChange = (order: Biqpod.Snapbuy.Order, oldStatus: Biqpod.Snapbuy.OrderStatus) => {
 //     // Your existing status change logic...
 //
 //     // Trigger notification if enabled

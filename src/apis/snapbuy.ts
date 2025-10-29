@@ -4,18 +4,20 @@ import {
   getTemp,
   useCopyState,
 } from "@biqpod/app/ui/hooks";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { useMemo, useEffect } from "react";
 export const addToCart = (storeId: string, prodId: string, count: number) => {
   setTemp(`cart.${storeId}.${prodId}.count`, count);
 };
 export const removeCart = (storeId: string, prodId: string) => {
-  var fullCart = getTempFromStore<Snapbuy.Order["products"]>("cart." + storeId);
+  var fullCart = getTempFromStore<Biqpod.Snapbuy.Order["products"]>(
+    "cart." + storeId
+  );
   var { [prodId]: _, ...rest } = fullCart || {};
   setTemp("cart." + storeId, rest);
 };
 export const useCart = (storeId: string | Nothing) => {
-  const carts = getTemp<Snapbuy.Order["products"]>("cart." + storeId);
+  const carts = getTemp<Biqpod.Snapbuy.Order["products"]>("cart." + storeId);
   return carts;
 };
 export interface FullCartResult {

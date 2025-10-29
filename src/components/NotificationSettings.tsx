@@ -27,6 +27,7 @@ import { useStoreId } from "../utils";
 import { notificationService } from "../utils/notifications";
 import { motion, AnimatePresence } from "framer-motion";
 import { tw } from "@biqpod/app/ui/utils";
+import { Biqpod } from "@biqpod/app/ui/types";
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -343,13 +344,13 @@ export const NotificationSettings: React.FC = () => {
     }
   };
   const [notifications, setNotifications] = useState<
-    Required<Snapbuy.Store>["notify"]
+    Required<Biqpod.Snapbuy.Store>["notify"]
   >({});
   const [originalNotifications, setOriginalNotifications] = useState<
-    Required<Snapbuy.Store>["notify"]
+    Required<Biqpod.Snapbuy.Store>["notify"]
   >({});
   const updateNotificationSetting = async (
-    setting: keyof NonNullable<Snapbuy.Store["notify"]>,
+    setting: keyof NonNullable<Biqpod.Snapbuy.Store["notify"]>,
     enabled: boolean
   ) => {
     const newNotifications = {
@@ -366,7 +367,7 @@ export const NotificationSettings: React.FC = () => {
     try {
       await notificationService.sendNotification({
         title: "🛒 Test Notification",
-        body: "This is a test notification from Snapbuy!",
+        body: "This is a test notification from Biqpod.Snapbuy!",
         icon: "/assets/snapbuy.png",
         tag: "test-notification",
       });
@@ -567,7 +568,7 @@ export const NotificationSettings: React.FC = () => {
   // Only show changes after the component is initialized with data
   const hasUnsavedChanges = useMemo(() => {
     if (!isInited.get) return false; // Don't show changes until data is loaded
-    const list: (keyof NonNullable<Snapbuy.Store["notify"]>)[] = [
+    const list: (keyof NonNullable<Biqpod.Snapbuy.Store["notify"]>)[] = [
       "newOrder",
       "orderStatusChanged",
       "orderCompleted",

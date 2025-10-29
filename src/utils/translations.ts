@@ -1393,15 +1393,15 @@ export const translations = [
     word: "documentation",
   },
   {
-    en: "Snapbuy Documentation",
-    fr: "Documentation Snapbuy",
-    ar: "توثيق Snapbuy",
-    word: "Snapbuy%20Documentation",
+    en: "Biqpod.Snapbuy Documentation",
+    fr: "Documentation Biqpod.Snapbuy",
+    ar: "توثيق Biqpod.Snapbuy",
+    word: "Biqpod.Snapbuy%20Documentation",
   },
   {
-    en: "Discover all features, tips, and best practices to maximize your e-commerce success with Snapbuy",
-    fr: "Découvrez toutes les fonctionnalités, astuces et meilleures pratiques pour maximiser votre succès e-commerce avec Snapbuy",
-    ar: "اكتشف جميع الميزات والنصائح وأفضل الممارسات لتحقيق أقصى نجاح في التجارة الإلكترونية مع Snapbuy",
+    en: "Discover all features, tips, and best practices to maximize your e-commerce success with Biqpod.Snapbuy",
+    fr: "Découvrez toutes les fonctionnalités, astuces et meilleures pratiques pour maximiser votre succès e-commerce avec Biqpod.Snapbuy",
+    ar: "اكتشف جميع الميزات والنصائح وأفضل الممارسات لتحقيق أقصى نجاح في التجارة الإلكترونية مع Biqpod.Snapbuy",
     word: "Discover%20all%20features%2C%20tips%2C%20and%20best%20practices%20to%20maximize%20your%20e-commerce%20success%20with%20Snapbuy",
   },
   {

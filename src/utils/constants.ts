@@ -23,33 +23,32 @@ import edge from "../assets/platforms/edge.png";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { IconProps } from "@biqpod/app/ui/components";
 import { ColorIds } from "@biqpod/app/ui/hooks";
-import { SettingValueType } from "@biqpod/app/ui/types";
+import { Biqpod, SettingValueType } from "@biqpod/app/ui/types";
 import productsPhoto from "../assets/products.png";
 import shoppingPhoto from "../assets/shopping.png";
 import overviewPhoto from "../assets/overview.png";
 import settingsPhoto from "../assets/settings.png";
-export const platformsPhotos: Partial<Record<Snapbuy.Platform, string>> = {
-  discord,
-  facebook,
-  instagram,
-  snapchat,
-  tiktok,
-  twitter,
-  reddit,
-  telegram,
-  linkedin,
-  pinterest,
-  youtube,
-  unknown,
-  chrome,
-  safari,
-  edge,
-};
-
-export const getImageByPlatform = (string?: Snapbuy.Platform) => {
+export const platformsPhotos: Partial<Record<Biqpod.Snapbuy.Platform, string>> =
+  {
+    discord,
+    facebook,
+    instagram,
+    snapchat,
+    tiktok,
+    twitter,
+    reddit,
+    telegram,
+    linkedin,
+    pinterest,
+    youtube,
+    unknown,
+    chrome,
+    safari,
+    edge,
+  };
+export const getImageByPlatform = (string?: Biqpod.Snapbuy.Platform) => {
   return (string && platformsPhotos[string]) || unknown;
 };
-
 export const colors: Record<string, string> = {
   pending: "#F59E0B", // Yellow
   completed: "#10B981", // Green
@@ -58,7 +57,6 @@ export const colors: Record<string, string> = {
   cancelled: "#EF4444", // Red
   delivery: "#129999",
 };
-
 export const icons: Record<string, IconProps["icon"]> = {
   pending: allIcons.solid.faClock,
   completed: allIcons.solid.faCheckCircle,
@@ -67,20 +65,20 @@ export const icons: Record<string, IconProps["icon"]> = {
   cancelled: allIcons.solid.faBan,
   delivery: allIcons.solid.faCar,
 };
-
-export const roleIcons: Record<Snapbuy.DeliveryCompanyRole, IconProps["icon"]> =
-  {
-    customer: allIcons.solid.faUser,
-    admin: allIcons.solid.faUserTie,
-    finance: allIcons.solid.faMoneyBill,
-    warehouse_operator: allIcons.solid.faBox,
-    delivery_agent: allIcons.solid.faTruck,
-    support: allIcons.solid.faHeadset,
-    franchise_partner: allIcons.solid.faHandshake,
-    merchant: allIcons.solid.faStore,
-  };
-
-export const roleColors: Record<Snapbuy.DeliveryCompanyRole, string> = {
+export const roleIcons: Record<
+  Biqpod.Snapbuy.DeliveryCompanyRole,
+  IconProps["icon"]
+> = {
+  customer: allIcons.solid.faUser,
+  admin: allIcons.solid.faUserTie,
+  finance: allIcons.solid.faMoneyBill,
+  warehouse_operator: allIcons.solid.faBox,
+  delivery_agent: allIcons.solid.faTruck,
+  support: allIcons.solid.faHeadset,
+  franchise_partner: allIcons.solid.faHandshake,
+  merchant: allIcons.solid.faStore,
+};
+export const roleColors: Record<Biqpod.Snapbuy.DeliveryCompanyRole, string> = {
   customer: "#4CAF50",
   admin: "#2196F3",
   finance: "#FF9800",
@@ -90,7 +88,7 @@ export const roleColors: Record<Snapbuy.DeliveryCompanyRole, string> = {
   franchise_partner: "#009688",
   merchant: "#FFEB3B",
 };
-
+export const DAYS_LEFT = 31;
 export const tabServices = [
   {
     name: "Stores",
@@ -108,7 +106,6 @@ export const tabServices = [
     photo: deliveryPhoto,
   },
 ];
-
 export const extraTabs = [
   {
     name: "offers",
@@ -133,7 +130,6 @@ export const extraTabs = [
       "https://cdn1.iconfinder.com/data/icons/3d-web-design/512/11._Developer.png",
   },
 ];
-
 if (import.meta.env.DEV) {
   extraTabs.push({
     name: "agent",
@@ -142,7 +138,6 @@ if (import.meta.env.DEV) {
       "https://cdn3d.iconscout.com/3d/premium/thumb/robot-reading-a-book-3d-icon-png-download-11431719.png",
   });
 }
-
 export const appTabs = [
   {
     name: "Android",
@@ -150,15 +145,13 @@ export const appTabs = [
     photo: androidPhoto,
   },
 ];
-
 export const rolsInList: {
   content: string;
-  value: Snapbuy.DeliveryCompanyRole;
+  value: Biqpod.Snapbuy.DeliveryCompanyRole;
 }[] = [
   { content: "🏭 Warehouse Operator", value: "warehouse_operator" },
   { content: "🚚 Delivery Agent", value: "delivery_agent" },
 ];
-
 export const userTabs = [
   {
     name: "dashboard",
@@ -192,7 +185,6 @@ export const userTabs = [
     photo: integrationsPhoto,
   },
 ];
-
 export const clientTabs: Tab[] = [
   {
     name: "orders",
@@ -205,7 +197,6 @@ export const clientTabs: Tab[] = [
     link: "/client/stores",
   },
 ];
-
 export const types: {
   id: keyof SettingValueType;
   name: string;
@@ -222,7 +213,6 @@ export const types: {
   { id: "range", name: "🎚️ Range", description: "Range slider" },
   { id: "string", name: "🔤 String", description: "Text value" },
 ];
-
 export const colorsInListWithNames: { colorId: ColorIds; name: string }[] = [
   { colorId: "borders", name: "Borders" },
   { colorId: "primary.content", name: "Order Button Text" },
@@ -233,16 +223,15 @@ export const colorsInListWithNames: { colorId: ColorIds; name: string }[] = [
   { colorId: "text.color", name: "Text" },
   { colorId: "field.background", name: "Inputs" },
 ];
-
 export const arraySeparator = ",;,";
-
 export const images = {
   pricing:
     "https://cdn3d.iconscout.com/3d/premium/thumb/price-tag-3d-icon-download-in-png-blend-fbx-gltf-file-formats--label-sale-discount-shopping-pack-e-commerce-icons-5326821.png?f=webp",
   settings:
     "https://static.vecteezy.com/system/resources/previews/047/248/352/non_2x/setting-3d-setting-icon-3d-setting-symbol-3d-setting-image-free-png.png",
+  googleDrive:
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Google_Drive_icon_%282020%29.svg/2295px-Google_Drive_icon_%282020%29.svg.png",
 };
-
 export const sharSocialMedia = [
   {
     name: "Facebook",
@@ -285,3 +274,135 @@ export const sharSocialMedia = [
     link: "https://pinterest.com/pin/create/button/?url={link}",
   },
 ];
+// Animation variants
+export const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
+export const cardVariants = {
+  hidden: {
+    opacity: 0,
+    y: 30,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+    },
+  },
+  hover: {
+    y: -5,
+    transition: {
+      duration: 0.3,
+    },
+  },
+};
+export const headerVariants = {
+  hidden: {
+    opacity: 0,
+    y: -20,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+    },
+  },
+};
+export const buttonVariants = {
+  hidden: {
+    opacity: 0,
+  },
+  visible: {
+    opacity: 1,
+    transition: {
+      duration: 0.4,
+    },
+  },
+  hover: {
+    y: -2,
+    transition: {
+      duration: 0.2,
+    },
+  },
+  tap: {
+    transition: {
+      duration: 0.1,
+    },
+  },
+};
+export const tokenContainerVariants = {
+  hidden: {
+    opacity: 0,
+    height: 0,
+  },
+  visible: {
+    opacity: 1,
+    height: "auto",
+    transition: {
+      duration: 0.5,
+      staggerChildren: 0.1,
+    },
+  },
+  exit: {
+    opacity: 0,
+    height: 0,
+    transition: {
+      duration: 0.4,
+    },
+  },
+};
+export const tokenVariants = {
+  hidden: {
+    opacity: 0,
+    x: -20,
+  },
+  visible: {
+    opacity: 1,
+    x: 0,
+    transition: {
+      duration: 0.4,
+    },
+  },
+};
+export const codeBlockVariants = {
+  hidden: {
+    opacity: 0,
+    y: 20,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+    },
+  },
+};
+export const errorVariants = {
+  hidden: {
+    opacity: 0,
+    y: -10,
+  },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.4,
+    },
+  },
+  exit: {
+    opacity: 0,
+    y: -10,
+    transition: {
+      duration: 0.3,
+    },
+  },
+};

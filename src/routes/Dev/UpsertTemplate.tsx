@@ -23,9 +23,9 @@ import {
 import { tw } from "@biqpod/app/ui/utils";
 import { useEffect } from "react";
 import { snapbuyApi } from "../../apis";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 export interface UpsertTemplateProps {
-  template?: Snapbuy.Template;
+  template?: Biqpod.Snapbuy.Template;
 }
 export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   const photoState = useCopyState<string | Nothing>(null);
@@ -158,7 +158,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         }
       }
 
-      const templateData: Snapbuy.Template = {
+      const templateData: Biqpod.Snapbuy.Template = {
         id: template?.id,
         name: templateName.trim(),
         description: templateDescription?.trim() || "",

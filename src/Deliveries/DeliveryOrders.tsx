@@ -32,7 +32,7 @@ import {
 import { useEffect } from "react";
 import { snapbuyApi } from "../apis";
 import { mergeArray, range } from "@biqpod/app/ui/utils";
-import { Nothing } from "@biqpod/app/ui/types";
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { FilterPopup } from "./FilterPopup";
 import { AssignDeliveryAgent } from "./AssignDeliveryAgent";
 import { OrderView } from "../routes/Clients/OrderView";
@@ -47,12 +47,12 @@ interface DeliveryOrdersProps {}
 const PAGE_SIZE = 20;
 export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
   const user = useUser();
-  const orders = useCopyState<Snapbuy.Order[] | null>(null);
+  const orders = useCopyState<Biqpod.Snapbuy.Order[] | null>(null);
   const filterStatus = useTemp<string | Nothing>(
     "filter-delivery-management-status"
   );
   const filterDelivery = getTemp<string>("filter-delivery-management-delivery");
-  const lastDoc = useCopyState<Snapbuy.Order | null>(null);
+  const lastDoc = useCopyState<Biqpod.Snapbuy.Order | null>(null);
   const hasMore = useCopyState(false);
   const action = useAction(
     "fetch-delivery-orders",
@@ -62,14 +62,14 @@ export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
       }
       // const currentTime = new Date();
       // var subTime: Date | null = null;
-      const selection: CloudSelection<Snapbuy.Order> = {
+      const selection: CloudSelection<Biqpod.Snapbuy.Order> = {
         orders: mergeArray(orderBy("createdAt", "desc")),
         limit: PAGE_SIZE,
         where: and(where("delivery.uid", "==", user.uid)),
         startAt:
           next && lastDoc.get?.createdAt ? [lastDoc.get?.createdAt] : undefined,
       };
-      const newOrders = await getDocs<Snapbuy.Order>(
+      const newOrders = await getDocs<Biqpod.Snapbuy.Order>(
         ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
         selection
       );

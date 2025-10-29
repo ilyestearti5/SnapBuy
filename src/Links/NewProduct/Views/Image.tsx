@@ -19,9 +19,11 @@ import {
   createMediaFile,
   cleanupMediaFile,
   MediaFile,
+  isGLTFFile,
 } from "../../../utils/utilities";
 import { snapbuyApi } from "../../../apis/index";
 import { MediaRenderer } from "../../../components/MediaRenderer";
+import { fuzzySearch } from "@biqpod/app/ui/utils";
 export const ProductImages = () => {
   const images = useFormPhotos();
   const url = useCopyState("");
@@ -203,24 +205,24 @@ export const ProductImages = () => {
             }}
           />
           {showDropdown && (
-            <div className="top-full right-0 left-0 z-10 absolute bg-white shadow-lg border border-gray-300 rounded-lg max-h-60 overflow-y-auto">
+            <div className="top-full right-0 left-0 z-10 absolute bg-[--biqpod-primary-background] shadow-lg border border-[--biqpod-borders] border-solid rounded-lg max-h-60 overflow-y-auto">
               {loadingPhotos ? (
                 <div className="p-2 text-center">
                   <Translate content="loading" />
+                  ...
                 </div>
               ) : drivePhotos.length > 0 ? (
                 drivePhotos
-                  .filter((e) => {
+                  .filter(({ name, link }) => {
                     if (!url.get) return true;
                     return (
-                      e.name.toLowerCase().includes(url.get.toLowerCase()) ||
-                      e.link.toLowerCase().includes(url.get.toLowerCase())
+                      fuzzySearch(name, url.get) || fuzzySearch(link, url.get)
                     );
                   })
                   .map((photo, index) => (
                     <div
                       key={index}
-                      className="flex items-center hover:bg-gray-100 p-2 cursor-pointer"
+                      className="flex items-center hover:bg-[--biqpod-secondary-background] p-2 cursor-pointer"
                       onClick={async () => {
                         setShowDropdown(false);
                         if (
@@ -239,7 +241,7 @@ export const ProductImages = () => {
                     </div>
                   ))
               ) : (
-                <div className="p-2 text-gray-500 text-center">
+                <div className="text-[--biqpod-gray-opacity-2] p-2 text-center">
                   <Translate content="no photos found" />
                 </div>
               )}
@@ -261,32 +263,34 @@ export const ProductImages = () => {
       <Line />
       <Scroll className="p-1">
         <div className="flex flex-wrap">
-          <CircleTip
-            className="flex justify-center items-center p-2 rounded-3xl w-[100px] h-[100px]"
-            onClick={async () => {
-              // Create a hidden file input element
-              const fileInput = document.createElement("input");
-              fileInput.type = "file";
-              fileInput.accept = "image/*,.gltf,.glb";
-              fileInput.multiple = true; // Allow multiple file selection
-              fileInput.style.display = "none";
-              // Handle file selection
-              fileInput.onchange = (event) => {
-                const files = (event.target as HTMLInputElement).files;
-                if (files) {
-                  Array.from(files).forEach(async (file) => {
-                    await addMediaFile(file);
-                  });
-                }
-                // Clean up the input element
-                document.body.removeChild(fileInput);
-              };
-              // Add to DOM and trigger click
-              document.body.appendChild(fileInput);
-              fileInput.click();
-            }}
-            icon={allIcons.solid.faAdd}
-          />
+          {mediaFiles.length <= 5 && (
+            <CircleTip
+              className="flex justify-center items-center p-2 rounded-3xl w-[100px] h-[100px]"
+              onClick={async () => {
+                // Create a hidden file input element
+                const fileInput = document.createElement("input");
+                fileInput.type = "file";
+                fileInput.accept = "image/*,.gltf,.glb";
+                fileInput.multiple = true; // Allow multiple file selection
+                fileInput.style.display = "none";
+                // Handle file selection
+                fileInput.onchange = (event) => {
+                  const files = (event.target as HTMLInputElement).files;
+                  if (files) {
+                    Array.from(files).forEach(async (file) => {
+                      await addMediaFile(file);
+                    });
+                  }
+                  // Clean up the input element
+                  document.body.removeChild(fileInput);
+                };
+                // Add to DOM and trigger click
+                document.body.appendChild(fileInput);
+                fileInput.click();
+              }}
+              icon={allIcons.solid.faAdd}
+            />
+          )}
           {mediaFiles.map((mediaFile, index) => {
             return (
               <div
@@ -294,17 +298,25 @@ export const ProductImages = () => {
                 className="relative border border-[--biqpod-borders] border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden cursor-pointer"
                 onClick={() => setSelectedMedia(mediaFile)}
               >
-                <MediaRenderer
-                  mediaFile={mediaFile}
-                  className="w-full h-full object-cover"
-                />
+                {isGLTFFile(mediaFile.url) && (
+                  <MediaRenderer
+                    mediaFile={mediaFile}
+                    className="w-full h-full object-cover"
+                  />
+                )}
+                {!isGLTFFile(mediaFile.url) && (
+                  <img
+                    className="w-full h-full object-cover"
+                    src={mediaFile.url}
+                  />
+                )}
                 <TitleView title="remove" className="right-1 bottom-1 absolute">
                   <Tip
                     onClick={(e) => {
                       e.stopPropagation(); // Prevent triggering the image click
                       removeMediaFile(index);
                     }}
-                    className="bg-[--biqpod-secondary-background] rounded-full"
+                    className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-secondary-background] rounded-full"
                     icon={allIcons.regular.faXmarkCircle}
                   />
                 </TitleView>

@@ -278,10 +278,10 @@ export const DocumentationRoute = () => {
           {/* Header */}
           <div className="mb-8 text-center">
             <h1 className="mb-4 font-bold text-4xl">
-              <Translate content="Snapbuy Documentation" />
+              <Translate content="Biqpod.Snapbuy Documentation" />
             </h1>
             <p className="mx-auto max-w-3xl text-[--biqpod-text-secondary] text-lg">
-              <Translate content="Discover all features, tips, and best practices to maximize your e-commerce success with Snapbuy" />
+              <Translate content="Discover all features, tips, and best practices to maximize your e-commerce success with Biqpod.Snapbuy" />
             </p>
           </div>
 

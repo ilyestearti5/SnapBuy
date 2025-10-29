@@ -1,6 +1,7 @@
-// Browser notification service for Snapbuy
+// Browser notification service for Biqpod.Snapbuy
 // This handles native browser notifications that work even when the app is closed
 
+import { Biqpod } from "@biqpod/app/ui/types";
 import {
   getOrderClientInfo,
   getOrderClientDisplayName,
@@ -140,21 +141,21 @@ export class NotificationService {
 export class StoreNotificationHandler {
   private notificationService: NotificationService;
   private storeId: string;
-  private storeNotifySettings: Snapbuy.Store["notify"];
+  private storeNotifySettings: Biqpod.Snapbuy.Store["notify"];
 
-  constructor(storeId: string, notifySettings: Snapbuy.Store["notify"]) {
+  constructor(storeId: string, notifySettings: Biqpod.Snapbuy.Store["notify"]) {
     this.notificationService = NotificationService.getInstance();
     this.storeId = storeId;
     this.storeNotifySettings = notifySettings || {};
   }
 
   // Update notification settings
-  public updateSettings(notifySettings: Snapbuy.Store["notify"]) {
+  public updateSettings(notifySettings: Biqpod.Snapbuy.Store["notify"]) {
     this.storeNotifySettings = notifySettings || {};
   }
 
   // New order notification
-  public async notifyNewOrder(order: Snapbuy.Order): Promise<void> {
+  public async notifyNewOrder(order: Biqpod.Snapbuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.newOrder) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -176,12 +177,12 @@ export class StoreNotificationHandler {
 
   // Order status change notification
   public async notifyOrderStatusChanged(
-    order: Snapbuy.Order,
-    oldStatus: Snapbuy.OrderStatus
+    order: Biqpod.Snapbuy.Order,
+    oldStatus: Biqpod.Snapbuy.OrderStatus
   ): Promise<void> {
     if (!this.storeNotifySettings?.orderStatusChanged) return;
 
-    const statusEmojis: Record<Snapbuy.OrderStatus, string> = {
+    const statusEmojis: Record<Biqpod.Snapbuy.OrderStatus, string> = {
       pending: "⏳",
       processing: "🔄",
       delivery: "🚚",
@@ -208,7 +209,9 @@ export class StoreNotificationHandler {
   }
 
   // Order completed notification
-  public async notifyOrderCompleted(order: Snapbuy.Order): Promise<void> {
+  public async notifyOrderCompleted(
+    order: Biqpod.Snapbuy.Order
+  ): Promise<void> {
     if (!this.storeNotifySettings?.orderCompleted) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -228,7 +231,9 @@ export class StoreNotificationHandler {
   }
 
   // Order cancelled notification
-  public async notifyOrderCancelled(order: Snapbuy.Order): Promise<void> {
+  public async notifyOrderCancelled(
+    order: Biqpod.Snapbuy.Order
+  ): Promise<void> {
     if (!this.storeNotifySettings?.orderCancelled) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -248,7 +253,7 @@ export class StoreNotificationHandler {
   }
 
   // Order deleted notification
-  public async notifyOrderDeleted(order: Snapbuy.Order): Promise<void> {
+  public async notifyOrderDeleted(order: Biqpod.Snapbuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderCancelled) return; // Use same setting as cancelled
 
     const clientInfo = await getOrderClientInfo(order);
@@ -268,7 +273,9 @@ export class StoreNotificationHandler {
   }
 
   // Order processing notification
-  public async notifyOrderProcessing(order: Snapbuy.Order): Promise<void> {
+  public async notifyOrderProcessing(
+    order: Biqpod.Snapbuy.Order
+  ): Promise<void> {
     if (!this.storeNotifySettings?.orderProcessing) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -288,7 +295,7 @@ export class StoreNotificationHandler {
   }
 
   // Order delivery notification
-  public async notifyOrderDelivery(order: Snapbuy.Order): Promise<void> {
+  public async notifyOrderDelivery(order: Biqpod.Snapbuy.Order): Promise<void> {
     if (!this.storeNotifySettings?.orderDelivery) return;
 
     const clientInfo = await getOrderClientInfo(order);
@@ -308,7 +315,7 @@ export class StoreNotificationHandler {
   }
 
   // Low stock notification
-  public async notifyLowStock(product: Snapbuy.Product): Promise<void> {
+  public async notifyLowStock(product: Biqpod.Snapbuy.Product): Promise<void> {
     if (!this.storeNotifySettings?.lowStock) return;
 
     await this.notificationService.sendNotification({
@@ -327,7 +334,9 @@ export class StoreNotificationHandler {
   }
 
   // New product notification
-  public async notifyNewProduct(product: Snapbuy.Product): Promise<void> {
+  public async notifyNewProduct(
+    product: Biqpod.Snapbuy.Product
+  ): Promise<void> {
     if (!this.storeNotifySettings?.newProduct) return;
 
     await this.notificationService.sendNotification({
@@ -344,7 +353,7 @@ export class StoreNotificationHandler {
   }
 
   // New client notification
-  public async notifyNewClient(client: Snapbuy.Client): Promise<void> {
+  public async notifyNewClient(client: Biqpod.Snapbuy.Client): Promise<void> {
     if (!this.storeNotifySettings?.newClient) return;
 
     await this.notificationService.sendNotification({

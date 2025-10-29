@@ -21,154 +21,24 @@ import {
   vs,
 } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { snapbuyApi } from "../apis";
-import { useParams } from "react-router-dom";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { UpsertAccessUsertoStore } from "./UpsertAccessUsertoStore";
 import { UsersAccessListForStore } from "./UsersAccessListForStore";
 import { useUsedBy } from "../routes/Stores/Stores";
-
-// Animation variants
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
-    },
-  },
-};
-
-const cardVariants = {
-  hidden: {
-    opacity: 0,
-    y: 30,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-    },
-  },
-  hover: {
-    y: -5,
-    transition: {
-      duration: 0.3,
-    },
-  },
-};
-
-const headerVariants = {
-  hidden: {
-    opacity: 0,
-    y: -20,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-    },
-  },
-};
-
-const buttonVariants = {
-  hidden: {
-    opacity: 0,
-  },
-  visible: {
-    opacity: 1,
-    transition: {
-      duration: 0.4,
-    },
-  },
-  hover: {
-    y: -2,
-    transition: {
-      duration: 0.2,
-    },
-  },
-  tap: {
-    transition: {
-      duration: 0.1,
-    },
-  },
-};
-
-const tokenContainerVariants = {
-  hidden: {
-    opacity: 0,
-    height: 0,
-  },
-  visible: {
-    opacity: 1,
-    height: "auto",
-    transition: {
-      duration: 0.5,
-      staggerChildren: 0.1,
-    },
-  },
-  exit: {
-    opacity: 0,
-    height: 0,
-    transition: {
-      duration: 0.4,
-    },
-  },
-};
-
-const tokenVariants = {
-  hidden: {
-    opacity: 0,
-    x: -20,
-  },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.4,
-    },
-  },
-};
-
-const codeBlockVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.5,
-    },
-  },
-};
-
-const errorVariants = {
-  hidden: {
-    opacity: 0,
-    y: -10,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.4,
-    },
-  },
-  exit: {
-    opacity: 0,
-    y: -10,
-    transition: {
-      duration: 0.3,
-    },
-  },
-};
+import { useStoreId } from "../utils";
+import {
+  containerVariants,
+  headerVariants,
+  cardVariants,
+  errorVariants,
+  tokenContainerVariants,
+  tokenVariants,
+  buttonVariants,
+  codeBlockVariants,
+} from "../utils/constants";
 export const Integrations = () => {
-  const { storeId } = useParams<{ storeId: string }>();
+  const storeId = useStoreId();
   const usedBy = useUsedBy();
   const origins = useCopyState<string[] | Nothing>([]);
   const apiToken = useCopyState<string | null>(null);
@@ -397,7 +267,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
           <Translate content="Configure your Snapbuy API integration settings" />
         </motion.p>
       </motion.div>
-      {/* Snapbuy API Integration Section */}
+      {/* Biqpod.Snapbuy API Integration Section */}
       <motion.div variants={cardVariants} whileHover="hover">
         <Card className="p-6">
           <motion.h2
@@ -682,7 +552,6 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
           </AnimatePresence>
         </Card>
       </motion.div>
-
       {/* User Access Management Section */}
       {storeId && (
         <motion.div variants={cardVariants} whileHover="hover">
@@ -695,7 +564,6 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
             >
               <Translate content="Store Access Management" />
             </motion.h2>
-
             {/* Add User Button */}
             <motion.div
               className="mb-6"
@@ -741,7 +609,6 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                   </Button>
                 </motion.div>
               </motion.div>
-
               {/* Users List */}
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
