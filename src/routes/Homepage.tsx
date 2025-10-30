@@ -208,7 +208,7 @@ export const Homepage = () => {
             transition={{ duration: 0.8, delay: 0.4 }}
             className="relative mt-16"
           >
-            <div className="flex justify-evenly items-center bg-[--biqpod-secondary-background] py-14 border border-[--biqpod-borders] border-solid rounded-[60px]">
+            <div className="flex max-md:flex-col justify-evenly items-center bg-[--biqpod-secondary-background] py-14 border border-[--biqpod-borders] border-solid rounded-[60px]">
               <div className="text-center">
                 <Icon
                   icon={allIcons.solid.faStore}

@@ -14,14 +14,11 @@ import {
   CircleLoading,
   CircleTip,
   EmptyComponent,
-  EnumField,
   Field,
   Icon,
-  Key,
   Line,
   PositionView,
   Translate,
-  MagicField,
   ArrayField,
   Scroll,
 } from "@biqpod/app/ui/components";
@@ -42,7 +39,6 @@ import {
   useDeviceResolution,
   useMemoDelay,
   useTemp,
-  useFieldValue,
   confirm,
   openMenu,
   getTemp,
@@ -59,10 +55,11 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useStoreId } from "../utils";
 import { useIndexedDBProducts } from "../hooks/useIndexedDBProducts";
 import { loadFromExcel } from "./loadFromExcel";
-import { FilterOptionsForProduct, PopupFilter } from "./PopupFilter";
+import { FilterOptionsForProduct, AdminFilterProducts } from "./PopupFilter";
 import { AnimatedCard, FadeIn } from "../animations/components";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
+import { MetadataFieldComponent } from "../components/MetadataField";
 const productKeys: (keyof Biqpod.Snapbuy.Product)[] = [
   "available",
   "createdAt",
@@ -79,120 +76,200 @@ interface KeyLineProps {
   value: boolean;
   onChange: (value: boolean) => void;
 }
-const ExcelImportFrom = () => {
-  return (
-    <Card className="flex">
-      <div className="flex items-center gap-2 p-3">
-        <h1 className="text-2xl uppercase">
-          <Translate content="import from excel" />
-        </h1>
-        <div>
-          <CircleTip
-            icon={allIcons.solid.faXmark}
-            onClick={() => {
-              closePopup();
-            }}
-          />
-        </div>
-      </div>
-      <Line />
-      <div className="flex justify-center items-center gap-2 p-2">
-        <div
-          className="flex justify-center items-center bg-[--biqpod-gray-opacity] active:bg-[--biqpod-gray-opacity-2] rounded-2xl w-[60px] h-[60px] cursor-pointer"
-          onClick={async () => {
-            const files = await openPath({
-              filters: [
-                {
-                  name: "*",
-                  extensions: ["xlsx", "xls", "csv"],
-                },
-              ],
-            });
-            const file = files.at(0);
-            if (!file) {
-              showToast("Please select a file");
-              return;
-            }
-            loadFromExcel(file);
-          }}
-        >
-          <Icon iconClassName="text-3xl" icon={allIcons.solid.faUpload} />
-        </div>
-        <div
-          className="flex justify-center items-center bg-[--biqpod-gray-opacity] opacity-20 active:bg-[--biqpod-gray-opacity-2] p-2 rounded-2xl w-[60px] h-[60px] pointer-events-none"
-          onClick={() => {
-            window.open("https://account.biqpod.com/link");
-          }}
-        >
-          <img
-            className="object-cover"
-            draggable={false}
-            src={
-              "https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg"
-            }
-          />
-        </div>
-      </div>
-    </Card>
-  );
+// Platform logos configuration
+const PLATFORM_LOGOS = {
+  woocommerce:
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/WooCommerce_logo.svg/2560px-WooCommerce_logo.svg.png",
+  shopify:
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Shopify_logo_2018.svg/2560px-Shopify_logo_2018.svg.png",
+  wordpress:
+    "https://logos-world.net/wp-content/uploads/2020/10/WordPress-Emblem.png",
+  json: "https://upload.wikimedia.org/wikipedia/commons/c/c9/JSON_vector_logo.svg",
+  excel:
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/7/73/Microsoft_Excel_2013-2019_logo.svg/1085px-Microsoft_Excel_2013-2019_logo.svg.png",
+  bigcommerce: "https://cdn.worldvectorlogo.com/logos/bigcommerce-1.svg",
+  magento:
+    "https://upload.wikimedia.org/wikipedia/commons/5/55/Magento_Logo.svg",
 };
-const JsonImportFrom = () => {
+interface ImportExportMethod {
+  name: string;
+  logo: string;
+  onClick: () => void;
+  comingSoon?: boolean;
+}
+interface ImportExportPopupProps {
+  mode: "import" | "export";
+}
+const ImportExportPopup = ({ mode }: ImportExportPopupProps) => {
   const storeId = useStoreId();
-  const action = useAction(
-    "import-json",
-    async () => {
-      const files = await openPath({
-        filters: [
-          {
-            name: "*",
-            extensions: ["json"],
-          },
-        ],
-      });
-      const file = files.at(0);
-      if (!file) {
-        showToast("Please select a file");
-        return;
-      }
-      const text = await (file as unknown as File).text();
-      const data = JSON.parse(text);
-      if (data.products && Array.isArray(data.products)) {
-        await snapbuyApi.product.upsert(
-          storeId!,
-          data.products.map((p: Partial<Biqpod.Snapbuy.Product>) => p)
-        );
-      }
-      if (data.brands && Array.isArray(data.brands)) {
-        for (const brand of data.brands) {
-          await snapbuyApi.brands.create({ ...brand, storeId });
-        }
-      }
-      if (data.packs && Array.isArray(data.packs)) {
-        for (const pack of data.packs) {
-          await snapbuyApi.packs.add({ ...pack, storeId });
-        }
-      }
-      if (data.collections && Array.isArray(data.collections)) {
-        for (const collection of data.collections) {
-          await snapbuyApi.collections.upsert({ ...collection, storeId });
-        }
-      }
-      if (data.coupons && Array.isArray(data.coupons)) {
-        for (const coupon of data.coupons) {
-          await snapbuyApi.coupon.upsert({ ...coupon, storeId });
-        }
-      }
-      showToast("Import completed successfully");
-      closePopup();
+  const bigMerchants: ImportExportMethod[] = [
+    {
+      name: "WooCommerce",
+      logo: PLATFORM_LOGOS.woocommerce,
+      onClick: () => {
+        showToast("WooCommerce integration coming soon!", "info");
+      },
     },
-    [storeId]
+    {
+      name: "Shopify",
+      logo: PLATFORM_LOGOS.shopify,
+      onClick: () => {
+        showToast("Shopify integration coming soon!", "info");
+      },
+    },
+    {
+      name: "WordPress",
+      logo: PLATFORM_LOGOS.wordpress,
+      onClick: () => {
+        showToast("WordPress integration coming soon!", "info");
+      },
+    },
+    {
+      name: "BigCommerce",
+      logo: PLATFORM_LOGOS.bigcommerce,
+      onClick: () => {
+        showToast("BigCommerce integration coming soon!", "info");
+      },
+    },
+    {
+      name: "Magento",
+      logo: PLATFORM_LOGOS.magento,
+      onClick: () => {
+        showToast("Magento integration coming soon!", "info");
+      },
+    },
+  ];
+  const fileSystems: ImportExportMethod[] =
+    mode === "import"
+      ? [
+          {
+            name: "JSON",
+            logo: PLATFORM_LOGOS.json,
+            onClick: async () => {
+              const files = await openPath({
+                filters: [
+                  {
+                    name: "*",
+                    extensions: ["json"],
+                  },
+                ],
+              });
+              const file = files.at(0);
+              if (!file) {
+                showToast("Please select a file");
+                return;
+              }
+              const text = await (file as unknown as File).text();
+              const data = JSON.parse(text);
+              if (data.products && Array.isArray(data.products)) {
+                await snapbuyApi.product.upsert(
+                  storeId!,
+                  data.products.map((p: Partial<Biqpod.Snapbuy.Product>) => p)
+                );
+              }
+              if (data.brands && Array.isArray(data.brands)) {
+                for (const brand of data.brands) {
+                  await snapbuyApi.brands.create({ ...brand, storeId });
+                }
+              }
+              if (data.packs && Array.isArray(data.packs)) {
+                for (const pack of data.packs) {
+                  await snapbuyApi.packs.add({ ...pack, storeId });
+                }
+              }
+              if (data.collections && Array.isArray(data.collections)) {
+                for (const collection of data.collections) {
+                  await snapbuyApi.collections.upsert({
+                    ...collection,
+                    storeId,
+                  });
+                }
+              }
+              if (data.coupons && Array.isArray(data.coupons)) {
+                for (const coupon of data.coupons) {
+                  await snapbuyApi.coupon.upsert({ ...coupon, storeId });
+                }
+              }
+              showToast("Import completed successfully");
+              closePopup();
+            },
+          },
+          {
+            name: "Excel",
+            logo: PLATFORM_LOGOS.excel,
+            onClick: async () => {
+              const files = await openPath({
+                filters: [
+                  {
+                    name: "*",
+                    extensions: ["xlsx", "xls", "csv"],
+                  },
+                ],
+              });
+              const file = files.at(0);
+              if (!file) {
+                showToast("Please select a file");
+                return;
+              }
+              loadFromExcel(file);
+              closePopup();
+            },
+          },
+        ]
+      : [
+          {
+            name: "JSON",
+            logo: PLATFORM_LOGOS.json,
+            onClick: () => {
+              closePopup();
+              showPopup(<ExportJsonPopup />);
+            },
+          },
+          {
+            name: "Excel",
+            logo: PLATFORM_LOGOS.excel,
+            onClick: () => {
+              closePopup();
+              showPopup(<ExportExcelPopupProducts />);
+            },
+          },
+        ];
+  const renderMethodCard = (method: ImportExportMethod) => (
+    <motion.div
+      key={method.name}
+      whileHover={{ scale: 1.05, y: -5 }}
+      whileTap={{ scale: 0.95 }}
+      onClick={method.onClick}
+      className={tw(
+        "relative flex flex-col items-center gap-3 bg-[--biqpod-primary-background] hover:bg-[--biqpod-gray-opacity] border p-4 rounded-2xl cursor-pointer border-solid border-[--biqpod-borders] duration-200",
+        method.comingSoon && "opacity-60"
+      )}
+    >
+      {method.comingSoon && (
+        <div className="top-2 right-2 absolute bg-yellow-500 px-2 py-1 rounded-full font-semibold text-white text-xs">
+          Soon
+        </div>
+      )}
+      <div className="flex justify-center items-center bg-white rounded-xl w-full h-20 overflow-hidden">
+        <img
+          src={method.logo}
+          alt={method.name}
+          className="p-2 w-full h-full object-contain"
+          draggable={false}
+        />
+      </div>
+      <span className="font-semibold text-sm text-center capitalize">
+        {method.name}
+      </span>
+    </motion.div>
   );
-  const loading = isLoading(action);
   return (
-    <Card className="flex">
-      <div className="flex items-center gap-2 p-3">
+    <Card className="max-md:rounded-none max-md:w-full md:w-3/4 lg:w-2/3 max-md:h-full md:max-h-[85vh] overflow-hidden">
+      <div className="flex justify-between items-center p-3">
         <h1 className="text-2xl uppercase">
-          <Translate content="import from json" />
+          <Translate
+            content={mode === "import" ? "import products" : "export products"}
+          />
         </h1>
         <CircleTip
           icon={allIcons.solid.faXmark}
@@ -202,19 +279,28 @@ const JsonImportFrom = () => {
         />
       </div>
       <Line />
-      <div className="flex justify-center items-center p-4">
-        <Button
-          onClick={() => {
-            execAction("import-json");
-          }}
-          icon={
-            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faUpload
-          }
-          iconClassName={tw(loading && "animate-spin")}
-        >
-          <Translate content="select json file" />
-        </Button>
-      </div>
+      <Scroll className="flex flex-col gap-6 p-4 h-full">
+        {/* Big Merchants Section */}
+        <div>
+          <h2 className="mb-4 font-semibold text-xl capitalize">
+            <Icon icon={allIcons.solid.faStore} iconClassName="mr-2" />
+            <Translate content="big merchants" />
+          </h2>
+          <div className="gap-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {bigMerchants.map(renderMethodCard)}
+          </div>
+        </div>
+        {/* File Systems Section */}
+        <div>
+          <h2 className="mb-4 font-semibold text-xl capitalize">
+            <Icon icon={allIcons.solid.faFile} iconClassName="mr-2" />
+            <Translate content="file systems" />
+          </h2>
+          <div className="gap-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+            {fileSystems.map(renderMethodCard)}
+          </div>
+        </div>
+      </Scroll>
     </Card>
   );
 };
@@ -339,54 +425,14 @@ const AddMetadataPopup = ({
   onSuccess: () => void;
 }) => {
   const storeId = useStoreId();
-  // Use proper form field management like ProductMetadata
-  const metadataKeyField = useFieldValue("add-metadata-key");
-  const metadataType = useCopyState<string | false | 0 | null | undefined>(
-    "string"
-  );
+  // Convert array-based approach to object-based for MetadataFieldComponent
+  const tempMetadata = useTemp<
+    Record<string, Biqpod.Snapbuy.MetadataField | undefined>
+  >("temp-bulk-metadata-fields");
   const fullMagicFields =
     getTemp<
       Partial<Record<string, Nothing | string | number | string[] | boolean>>
     >("magic-fields");
-  // Create a temporary metadata field for form management
-  const tempMetadata = useTemp<Biqpod.Snapbuy.MetadataField[]>(
-    "temp-bulk-metadata-fields"
-  );
-  const addMetadataField = () => {
-    const fieldKeyValue = metadataKeyField.get || "";
-    if (!fieldKeyValue.trim()) {
-      showToast("Field key is required", "error");
-      return;
-    }
-    const selectedFieldType =
-      metadataType.get as Biqpod.Snapbuy.MetadataField["type"];
-    if (!selectedFieldType) {
-      showToast("Field type is required", "error");
-      return;
-    }
-    // Check if field key already exists in the list
-    const existingFields = tempMetadata.get || [];
-    if (existingFields.some((field) => field.key === fieldKeyValue.trim())) {
-      showToast("Field key already exists in the list", "error");
-      return;
-    }
-    const defaultValue = getDefaultValueForType(selectedFieldType);
-    const newField: Biqpod.Snapbuy.MetadataField = {
-      key: fieldKeyValue.trim(),
-      type: selectedFieldType,
-      value: defaultValue,
-    };
-    // Add to the list of fields
-    const updatedFields = [...existingFields, newField];
-    tempMetadata.set(updatedFields);
-    // Clear the key field
-    metadataKeyField.set("");
-  };
-  const removeMetadataField = (index: number) => {
-    const existingFields = tempMetadata.get || [];
-    const updatedFields = existingFields.filter((_, i) => i !== index);
-    tempMetadata.set(updatedFields);
-  };
   const getDefaultValueForType = (
     type: Biqpod.Snapbuy.MetadataField["type"]
   ) => {
@@ -406,14 +452,17 @@ const AddMetadataPopup = ({
     }
   };
   const requiredFields = useMemo(() => {
-    return tempMetadata.get?.map((field) => {
-      return {
-        ...field,
-        value:
-          fullMagicFields?.[`${field.type}-temp-bulk-metadata-${field.key}`] ||
-          getDefaultValueForType(field.type),
-      };
-    });
+    const metadata = tempMetadata.get || {};
+    return Object.values(metadata)
+      .filter(Boolean)
+      .map((field) => {
+        return {
+          ...field!,
+          value:
+            fullMagicFields?.[`temp-bulk-metadata-${field!.key}`] ||
+            getDefaultValueForType(field!.type),
+        };
+      });
   }, [tempMetadata.get, fullMagicFields]);
   const action = useAction(
     "add-metadata",
@@ -431,7 +480,6 @@ const AddMetadataPopup = ({
             let updatedMetaData = product.metaData || {};
             // Add or update each metadata field
             metadataFields.forEach((field) => {
-              const { [field.key]: _ } = updatedMetaData;
               updatedMetaData[field.key] = field;
             });
             const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
@@ -453,12 +501,12 @@ const AddMetadataPopup = ({
       onSuccess();
       closePopup();
       // Clear temp data
-      tempMetadata.set([]);
+      tempMetadata.set({});
     },
-    [selectedProducts, storeId, tempMetadata]
+    [selectedProducts, storeId, tempMetadata, requiredFields]
   );
   const loading = isLoading(action);
-  const metadataFields = tempMetadata.get || [];
+  const metadataFields = Object.values(tempMetadata.get || {}).filter(Boolean);
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-3">
@@ -473,152 +521,22 @@ const AddMetadataPopup = ({
         />
       </div>
       <Line />
-      <div className="flex flex-col justify-between gap-4 h-full overflow-hidden">
-        <Scroll className="h-full">
-          <div className="flex flex-col gap-2 p-2">
-            <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
-              <p className="text-sm">
-                <strong>Selected Products:</strong> {selectedProducts.length}
-              </p>
-            </div>
-            {/* Add new field section - same as ProductMetadata */}
-            <Card>
-              <h3 className="p-2 font-semibold text-lg capitalize">
-                <Translate content="add metadata field" />
-              </h3>
-              <Line />
-              <div className="flex flex-col gap-2 p-2">
-                <Field
-                  inputName="add-metadata-key"
-                  className="rounded-2xl"
-                  placeholder="Enter field name"
-                />
-                <EnumField
-                  state={metadataType}
-                  config={{
-                    list: [
-                      {
-                        value: "string",
-                        content: "Text",
-                      },
-                      {
-                        value: "number",
-                        content: "Number",
-                      },
-                      {
-                        value: "boolean",
-                        content: "Boolean",
-                      },
-                      {
-                        value: "array",
-                        content: "Text Array",
-                      },
-                      {
-                        value: "colors",
-                        content: "Colors",
-                      },
-                    ],
-                  }}
-                  id="add-metadata-field-type-selector"
-                />
-              </div>
-              <Line />
-              <div className="p-2">
-                <Button
-                  onClick={addMetadataField}
-                  disabled={!(metadataKeyField.get || "")?.trim()}
-                  className="disabled:opacity-50 p-2 rounded-full w-full disabled:cursor-not-allowed"
-                  icon={allIcons.solid.faPlus}
-                >
-                  <Translate content="add field" />
-                </Button>
-              </div>
-            </Card>
-            {/* Field preview - same as ProductMetadata */}
-            {metadataFields.length > 0 && (
-              <div className="flex flex-col gap-3">
-                <h4 className="mb-2 font-semibold text-lg">
-                  Metadata Fields to Add ({metadataFields.length}):
-                </h4>
-                <div className="space-y-3">
-                  {metadataFields.map((field, index) => {
-                    const options: any =
-                      field.type === "string"
-                        ? { hint: "Enter text", autoChange: true }
-                        : field.type === "number"
-                        ? { placeholder: "Enter a number", autoChange: true }
-                        : field.type === "colors"
-                        ? {
-                            placeholder: "Enter colors (comma separated)",
-                            hint: "e.g. red, blue, green, #ff0000, rgb(255,0,0)",
-                            separator: ",",
-                          }
-                        : {};
-                    return (
-                      <div
-                        key={index}
-                        className="bg-[--biqpod-primary-background] border border-[--biqpod-borders] border-solid rounded-xl"
-                      >
-                        <div className="flex justify-between items-center p-3">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold">{field.key}</span>
-                            <Key className="inline-flex items-center gap-1">
-                              <Icon
-                                icon={
-                                  field.type === "number"
-                                    ? allIcons.solid.faHashtag
-                                    : field.type === "boolean"
-                                    ? allIcons.solid.faToggleOn
-                                    : field.type === "array"
-                                    ? allIcons.solid.faList
-                                    : field.type === "colors"
-                                    ? allIcons.solid.faPalette
-                                    : allIcons.solid.faTextHeight
-                                }
-                              />
-                              <Translate content={field.type.toString()} />
-                            </Key>
-                          </div>
-                          <CircleTip
-                            icon={allIcons.solid.faTrash}
-                            onClick={() => removeMetadataField(index)}
-                            className="text-red-500 hover:text-red-700"
-                          />
-                        </div>
-                        <Line />
-                        <div className="p-3">
-                          {field.type === "colors" ? (
-                            <div className="space-y-2">
-                              <p className="text-[--biqpod-gray-opacity-2] text-sm">
-                                Add colors using the color picker, predefined
-                                colors, or type color names/hex codes
-                              </p>
-                              <div className="flex flex-wrap gap-2 bg-[--biqpod-field-background] p-3 border border-[--biqpod-borders] border-solid rounded-lg min-h-[50px]">
-                                <span className="self-center text-[--biqpod-gray-opacity] text-sm">
-                                  Select colors using the color picker below
-                                </span>
-                              </div>
-                            </div>
-                          ) : (
-                            <MagicField
-                              config={options}
-                              fieldId={`${field.type.toString()}-temp-bulk-metadata-${
-                                field.key
-                              }`}
-                              type={field.type}
-                            />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}{" "}
-          </div>
-        </Scroll>
-        <Line />
-        <div className="bg-yellow-600/20 p-3 rounded-lg">
+      <div className="flex flex-col gap-4 h-full overflow-hidden">
+        <div className="bg-[--biqpod-gray-opacity] mx-2 mt-2 p-3 rounded-lg">
+          <p className="text-sm">
+            <strong>Selected Products:</strong> {selectedProducts.length}
+          </p>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <MetadataFieldComponent
+            metadata={tempMetadata.get || undefined}
+            onChangeMetadata={(metadata) => tempMetadata.set(metadata)}
+            fieldIdPrefix="temp-bulk-metadata"
+            showAddSection={true}
+            showFieldActions={true}
+          />
+        </div>
+        <div className="bg-yellow-600/20 mx-2 p-3 rounded-lg">
           <p className="text-yellow-600 text-sm">
             <strong>Note:</strong> This will add the selected metadata fields to
             all selected products. If a product already has any of these
@@ -631,7 +549,7 @@ const AddMetadataPopup = ({
         <Button
           onClick={() => {
             closePopup();
-            tempMetadata.set([]);
+            tempMetadata.set({});
           }}
           className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
         >
@@ -643,7 +561,7 @@ const AddMetadataPopup = ({
               showToast("Please add a metadata field first", "error");
               return;
             }
-            const fieldNames = metadataFields.map((f) => f.key).join(", ");
+            const fieldNames = metadataFields.map((f) => f!.key).join(", ");
             const response = await confirm({
               title: "Add Metadata",
               message: `Are you sure you want to add metadata fields "${fieldNames}" to ${selectedProducts.length} products?`,
@@ -1228,6 +1146,7 @@ const ToolsCard = memo(
                         />
                       </motion.div>
                     )}
+                    {/* Import Button */}
                     <motion.div
                       whileHover={{ scale: 1.1, rotate: -5 }}
                       whileTap={{ scale: 0.95 }}
@@ -1242,13 +1161,14 @@ const ToolsCard = memo(
                       }}
                     >
                       <CircleTip
-                        icon={allIcons.solid.faFileCode}
+                        icon={allIcons.solid.faFileImport}
                         className="text-blue-600 hover:text-blue-700 transition-colors duration-200"
-                        onClick={async () => {
-                          showPopup(<JsonImportFrom />);
+                        onClick={() => {
+                          showPopup(<ImportExportPopup mode="import" />);
                         }}
                       />
                     </motion.div>
+                    {/* Export Button */}
                     <motion.div
                       whileHover={{ scale: 1.1, rotate: 5 }}
                       whileTap={{ scale: 0.95 }}
@@ -1263,53 +1183,11 @@ const ToolsCard = memo(
                       }}
                     >
                       <CircleTip
-                        icon={allIcons.solid.faFileCode}
+                        icon={allIcons.solid.faFileExport}
                         className="text-purple-600 hover:text-purple-700 transition-colors duration-200"
                         onClick={() => {
-                          showPopup(<ExportJsonPopup />);
+                          showPopup(<ImportExportPopup mode="export" />);
                         }}
-                      />
-                    </motion.div>
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: -5 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 17,
-                      }}
-                      variants={{
-                        hidden: { scale: 0, opacity: 0, y: 20 },
-                        visible: { scale: 1, opacity: 1, y: 0 },
-                      }}
-                    >
-                      <CircleTip
-                        icon={allIcons.regular.faFileExcel}
-                        className="text-green-600 hover:text-green-700 transition-colors duration-200"
-                        onClick={async () => {
-                          showPopup(<ExcelImportFrom />);
-                        }}
-                      />
-                    </motion.div>
-                    <motion.div
-                      whileHover={{ scale: 1.1, rotate: 5 }}
-                      whileTap={{ scale: 0.95 }}
-                      transition={{
-                        type: "spring",
-                        stiffness: 400,
-                        damping: 17,
-                      }}
-                      variants={{
-                        hidden: { scale: 0, opacity: 0, y: 20 },
-                        visible: { scale: 1, opacity: 1, y: 0 },
-                      }}
-                    >
-                      <CircleTip
-                        className="text-green-600 hover:text-green-700 transition-colors duration-200"
-                        onClick={() => {
-                          showPopup(<ExportExcelPopupProducts />);
-                        }}
-                        icon={allIcons.solid.faFileExcel}
                       />
                     </motion.div>
                   </motion.div>
@@ -1621,8 +1499,12 @@ export const Products = () => {
   }, [search]);
   // Memoize the item data to prevent unnecessary re-renders
   const listItemData = useMemo(() => {
+    // During loading or when no filters are active, use products directly to avoid delay
+    if (loading || cacheLoading || (!search && !options.get)) {
+      return products || [];
+    }
     return filterProducts || [];
-  }, [filterProducts]);
+  }, [filterProducts, products, loading, cacheLoading, search, options.get]);
   const { isMobile, isDesktop, isTablet } = useDeviceResolution();
   const columns = useMemo(() => {
     if (isMobile) return 2;
@@ -1632,8 +1514,8 @@ export const Products = () => {
   }, [isMobile, isTablet, isDesktop]);
   // Memoize the item count to prevent recalculation
   const itemCount = useMemo(() => {
-    return Math.ceil((filterProducts?.length || 0 + 1) / columns);
-  }, [filterProducts?.length, columns]);
+    return Math.ceil((listItemData?.length || 0 + 1) / columns);
+  }, [listItemData?.length, columns]);
   // Stable onScroll callback
   const handleScroll = useCallback(
     (e: ListOnScrollProps) => {
@@ -1645,12 +1527,12 @@ export const Products = () => {
       const isNearBottom =
         scrollDirection === "forward" &&
         scrollOffset + listHeight >=
-          Math.ceil((filterProducts?.length || 0) / columns) * 340 - threshold;
+          Math.ceil((listItemData?.length || 0) / columns) * 340 - threshold;
       if (isNearBottom && hasMore.get && !loading) {
         execAction("fetch-products", true);
       }
     },
-    [listHeight, filterProducts?.length, hasMore.get, loading, columns]
+    [listHeight, listItemData?.length, hasMore.get, loading, columns]
   );
   // Memoized render item function
   const RenderItem = useCallback(
@@ -1844,7 +1726,10 @@ export const Products = () => {
               icon={allIcons.solid.faFilter}
               onClick={() => {
                 showPopup(
-                  <PopupFilter value={options.get} onChange={options.set} />
+                  <AdminFilterProducts
+                    value={options.get}
+                    onChange={options.set}
+                  />
                 );
               }}
             />

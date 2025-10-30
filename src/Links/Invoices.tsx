@@ -31,7 +31,6 @@ import { motion } from "framer-motion";
 import { AnimatedList, AnimatedListItem, ScaleIn } from "../animations";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Biqpod } from "@biqpod/app/ui/types";
-
 const NoInvoicesFound = ({ usedBy }: { usedBy: string | null }) => {
   return (
     <motion.div className="flex justify-center items-center h-full min-h-[400px]">
@@ -109,7 +108,6 @@ const NoInvoicesFound = ({ usedBy }: { usedBy: string | null }) => {
     </motion.div>
   );
 };
-
 const AddProductPopup = ({
   onAdd,
   productsList,
@@ -126,14 +124,12 @@ const AddProductPopup = ({
   const selectedProducts = useCopyState<
     Record<string, { count: number; price: number }>
   >({ ...existingProducts });
-
   const filteredProducts = useMemo(() => {
     if (!productsList) return [];
     return productsList.filter((product) =>
       include(`${product.name} ${product.description}`, searchProduct)
     );
   }, [searchProduct, productsList]);
-
   const handleAddProduct = () => {
     if (
       !selectedProductId.get ||
@@ -148,7 +144,6 @@ const AddProductPopup = ({
       );
       return;
     }
-
     selectedProducts.set((prev) => ({
       ...prev,
       [selectedProductId.get]: {
@@ -156,13 +151,11 @@ const AddProductPopup = ({
         price: price.get as number,
       },
     }));
-
     // Reset form for next product
     selectedProductId.set("");
     count.set(1);
     price.set(0);
   };
-
   const handleDone = () => {
     if (Object.keys(selectedProducts.get).length === 0) {
       showToast("please add at least one product", "error");
@@ -171,7 +164,6 @@ const AddProductPopup = ({
     onAdd(selectedProducts.get);
     closePopup();
   };
-
   const removeProduct = (prodId: string) => {
     selectedProducts.set((prev) => {
       const newProducts = { ...prev };
@@ -179,7 +171,6 @@ const AddProductPopup = ({
       return newProducts;
     });
   };
-
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-3/4 max-md:h-full md:max-h-[90vh] overflow-hidden">
       <CardHeaderForPopup title="add products to invoice" />
@@ -187,7 +178,6 @@ const AddProductPopup = ({
       <Scroll className="flex-1">
         <div className="flex flex-col gap-4 p-4">
           <Field inputName="search-product" placeholder="search products" />
-
           {/* Selected Products Section */}
           {Object.keys(selectedProducts.get).length > 0 && (
             <div className="p-3 border border-[--biqpod-borders] rounded-lg">
@@ -246,7 +236,6 @@ const AddProductPopup = ({
               </div>
             </div>
           )}
-
           {filteredProducts.length === 0 ? (
             <div className="py-4 text-[--biqpod-gray-opacity] text-center">
               <Translate content="no products found" />
@@ -299,7 +288,6 @@ const AddProductPopup = ({
               ))}
             </div>
           )}
-
           {selectedProductId.get && (
             <div className="space-y-3 p-3 border border-[--biqpod-borders] rounded-lg">
               <h3 className="font-medium">
@@ -361,7 +349,6 @@ const AddProductPopup = ({
     </Card>
   );
 };
-
 const CreateInvoicePopup = () => {
   const storeId = useStoreId();
   const customerName = useCopyState("");
@@ -373,7 +360,6 @@ const CreateInvoicePopup = () => {
   const discount = useCopyState(0);
   const notes = useCopyState("");
   const productsList = useCopyState<Biqpod.Snapbuy.Product[]>([]);
-
   useAsyncEffect(async () => {
     if (!storeId) return;
     try {
@@ -420,7 +406,6 @@ const CreateInvoicePopup = () => {
       ]);
     }
   }, [storeId]);
-
   const total = useMemo(() => {
     const subtotal = Object.values(products.get).reduce(
       (sum: number, product: { count: number; price: number }) =>
@@ -429,7 +414,6 @@ const CreateInvoicePopup = () => {
     );
     return subtotal + tax.get - discount.get;
   }, [products.get, tax.get, discount.get]);
-
   const createInvoice = async () => {
     if (
       !storeId ||
@@ -442,27 +426,23 @@ const CreateInvoicePopup = () => {
       );
       return;
     }
-
-    const invoiceData = {
+    await snapbuyApi.invoice.create({
       storeId,
       customerName: customerName.get,
       customerEmail: customerEmail.get,
       products: products.get,
       tax: tax.get,
       discount: discount.get,
-      status: "draft" as const,
+      status: "draft",
       notes: notes.get,
-    };
-
-    await snapbuyApi.invoice.create(invoiceData);
+    });
     showToast("invoice created successfully", "success");
     closePopup();
     // Refresh invoices list
     execAction("fetch-invoices", {});
   };
-
   return (
-    <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full">
       <CardHeaderForPopup title="create invoice" />
       <Line />
       <Scroll className="flex-1">
@@ -479,7 +459,6 @@ const CreateInvoicePopup = () => {
             value={customerEmail.get}
             onChange={(e) => customerEmail.set(e.target.value)}
           />
-
           {/* Products Section */}
           <div className="p-3 border border-[--biqpod-borders] rounded-lg">
             <div className="flex justify-between items-center mb-3">
@@ -508,7 +487,6 @@ const CreateInvoicePopup = () => {
                 <Translate content="add product" />
               </Button>
             </div>
-
             {Object.keys(products.get).length === 0 ? (
               <div className="py-4 text-[--biqpod-gray-opacity] text-center">
                 <Translate content="no products added yet" />
@@ -550,7 +528,6 @@ const CreateInvoicePopup = () => {
               </div>
             )}
           </div>
-
           <Field
             inputName="tax"
             placeholder="tax"
@@ -590,7 +567,6 @@ const CreateInvoicePopup = () => {
     </Card>
   );
 };
-
 const InvoiceStatusBadge = ({
   status,
 }: {
@@ -603,7 +579,6 @@ const InvoiceStatusBadge = ({
     overdue: "bg-red-100 text-red-800",
     cancelled: "bg-gray-100 text-gray-800",
   };
-
   return (
     <span
       className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[status]}`}
@@ -612,17 +587,14 @@ const InvoiceStatusBadge = ({
     </span>
   );
 };
-
 export const Invoices = () => {
   const searchInvoice = getFieldValue("search-invoice");
   const invoices = useTemp<Biqpod.Snapbuy.Invoice[]>("invoices-list");
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-
   useAsyncEffect(async () => {
     execAction("fetch-invoices", {});
   }, [storeId]);
-
   const filteredInvoices = useMemo(() => {
     if (!invoices.get) return [];
     return invoices.get.filter((invoice) =>
@@ -632,10 +604,8 @@ export const Invoices = () => {
       )
     );
   }, [searchInvoice, invoices.get]);
-
   const { isMobile, isTablet } = useDeviceResolution();
   const isSmallView = isMobile || isTablet;
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-2">

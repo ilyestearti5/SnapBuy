@@ -20,15 +20,17 @@ import {
   confirm,
   execAction,
   getFieldValue,
-  getTemp,
   setFieldValue,
+  setTemp,
   showPopup,
   useCopyState,
+  useTemp,
 } from "@biqpod/app/ui/hooks";
 import { filterFuzzySearch, setFocused, tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { snapbuyApi } from "../apis";
+import { useStoreId } from "../utils";
 import { Packs } from "./Packs";
 import { Biqpod } from "@biqpod/app/ui/types";
 interface PackLineProductProps {
@@ -126,16 +128,99 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
   const addedProducts = useCopyState<Required<Biqpod.Snapbuy.Pack>["products"]>(
     []
   );
-  const products = getTemp<Biqpod.Snapbuy.Product[]>("fetched-products"); // Replace with your actual product data
+  const storeId = useStoreId();
+  const products = useTemp<Biqpod.Snapbuy.Product[]>("fetched-products");
   const searchField = getFieldValue("pack-popup-search");
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const filterdProducts = useMemo(() => {
-    return filterFuzzySearch(products || [], searchField?.trim() || "", "name");
-  }, [products, searchField]);
+    return filterFuzzySearch(
+      products.get || [],
+      searchField?.trim() || "",
+      "name"
+    );
+  }, [products.get, searchField]);
+  useEffect(() => {
+    if (!storeId) return;
+    snapbuyApi.product.getProductsOf(storeId).then((fetchedProducts) => {
+      setTemp("fetched-products", fetchedProducts || []);
+    });
+  }, [storeId]);
   useEffect(() => {
     priceState.set(pack?.price);
     addedProducts.set(pack?.products || []);
     setFieldValue("pack-name", pack?.name || "");
   }, [pack]);
+  // Handle keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (!searchField) return;
+      const totalItems = filterdProducts.length;
+      if (totalItems === 0) return;
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev < totalItems - 1 ? prev + 1 : 0));
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          setSelectedIndex((prev) => (prev > 0 ? prev - 1 : totalItems - 1));
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (selectedIndex >= 0 && selectedIndex < totalItems) {
+            const product = filterdProducts[selectedIndex];
+            const isExists = addedProducts.get.find(
+              (prod) => prod.prodId === product.id
+            );
+            if (!isExists) {
+              addedProducts.set((prev) => [
+                ...prev,
+                { count: 1, prodId: product.id! },
+              ]);
+              setFieldValue("pack-popup-search", "");
+            }
+            setSelectedIndex(-1);
+          }
+          break;
+        case "Escape":
+          setFieldValue("pack-popup-search", "");
+          setSelectedIndex(-1);
+          break;
+      }
+    };
+    if (searchField) {
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [searchField, selectedIndex, filterdProducts, addedProducts]);
+  // Reset selected index when search field changes
+  useEffect(() => {
+    if (searchField) {
+      setSelectedIndex(-1);
+      itemRefs.current = [];
+    }
+  }, [searchField]);
+  // Auto-scroll selected item into view
+  useEffect(() => {
+    const container = document.getElementById("pack-dropdown");
+    if (selectedIndex >= 0 && itemRefs.current[selectedIndex] && container) {
+      const item = itemRefs.current[selectedIndex];
+      const containerRect = container.getBoundingClientRect();
+      const itemRect = item.getBoundingClientRect();
+      if (itemRect.bottom > containerRect.bottom) {
+        container.scrollTop += itemRect.bottom - containerRect.bottom;
+      } else if (itemRect.top < containerRect.top) {
+        container.scrollTop -= containerRect.top - itemRect.top;
+      }
+    }
+  }, [selectedIndex]);
+  // Update itemRefs array size
+  useEffect(() => {
+    itemRefs.current = itemRefs.current.slice(0, filterdProducts.length);
+  }, [filterdProducts]);
   const packName = getFieldValue("pack-name");
   return (
     <Card className="relative max-md:rounded-none max-md:w-full md:w-[75vw] max-md:h-full overflow-hidden">
@@ -190,7 +275,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
               icon={allIcons.solid.faBrain}
               onClick={() => {
                 // Calculate the sum of all added product prices
-                const productsList = products || [];
+                const productsList = products.get || [];
                 let total = 0;
                 addedProducts.get.forEach((prodRecord) => {
                   const prod = productsList.find(
@@ -300,84 +385,14 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
       </Scroll>
       <Line />
       <div className="flex flex-col items-center">
-        <div className="w-full max-h-[400px] overflow-y-auto">
-          {searchField &&
-            filterdProducts
-              .map((product) => {
-                const isExists = addedProducts.get.find(
-                  (prod) => prod.prodId === product.id
-                );
-                return {
-                  product,
-                  isExists,
-                };
-              })
-              .sort((prev, current) => {
-                // make the products that are already added to the pack appear last
-                if (prev.isExists && !current.isExists) return 1;
-                if (!prev.isExists && current.isExists) return -1;
-                return 0;
-              })
-              .map(({ product, isExists }, index) => {
-                const photo = product?.photos?.at(0);
-                const prices =
-                  product?.type === "multiple"
-                    ? product?.multiple?.prices?.map((p) => p.price)
-                    : [product?.single?.client || 0];
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ x: -50, opacity: 0 }}
-                    animate={{ x: 0, opacity: 1 }}
-                    transition={{
-                      delay: index * 0.08,
-                      type: "spring",
-                      stiffness: 60,
-                      duration: 0.5,
-                    }}
-                    className="flex justify-between items-center active:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] p-2 cursor-pointer"
-                    onClick={() => {
-                      if (isExists) {
-                        return;
-                      }
-                      addedProducts.set((prev) => [
-                        ...prev,
-                        { count: 1, prodId: product.id! },
-                      ]);
-                      setFieldValue("pack-popup-search", "");
-                    }}
-                  >
-                    <div className="flex items-center gap-2">
-                      <Icon
-                        icon={allIcons.solid.faCheckCircle}
-                        iconClassName={tw(
-                          "text-[--biqpod-success] invisible",
-                          isExists && "visible"
-                        )}
-                      />
-                      <Image
-                        src={photo}
-                        alt={<Icon icon={allIcons.solid.faBoxOpen} />}
-                        className="bg-[--biqpod-gray-opacity] w-[50px] h-[50px]"
-                      />
-                      <div>{product.name}</div>
-                    </div>
-                    <div className="text-[--biqpod-primary]">
-                      {prices?.map((price) => `${price}DA`).join(" ,")}
-                    </div>
-                  </motion.div>
-                );
-              })}
-        </div>
-        <Line />
-        <div className="p-2 w-full">
+        <div className="relative p-2 w-full">
           <Field
             inputName="pack-popup-search"
             className="rounded-xl"
             placeholder="search for product"
-            propositions={products
-              ?.map((prod) => (prod.name ? prod.name.toLowerCase() : ""))
-              .filter(Boolean)}
+            propositions={products.get
+              ?.map((prod) => prod.name)
+              .filter((name): name is string => Boolean(name))}
             onKeyDown={(e) => {
               if (filterdProducts.length === 1 && e.key === "Enter") {
                 const product = filterdProducts[0];
@@ -394,6 +409,90 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
               }
             }}
           />
+          {searchField && (
+            <Card
+              id="pack-dropdown"
+              className="right-0 bottom-[90%] z-[1000000000000000000000] absolute w-3/4 max-h-60 overflow-y-auto"
+            >
+              {filterdProducts
+                .map((product) => {
+                  const isExists = addedProducts.get.find(
+                    (prod) => prod.prodId === product.id
+                  );
+                  return {
+                    product,
+                    isExists,
+                  };
+                })
+                .sort((prev, current) => {
+                  // make the products that are already added to the pack appear last
+                  if (prev.isExists && !current.isExists) return 1;
+                  if (!prev.isExists && current.isExists) return -1;
+                  return 0;
+                })
+                .map(({ product, isExists }, index) => {
+                  const photo = product?.photos?.at(0);
+                  const prices =
+                    product?.type === "multiple"
+                      ? product?.multiple?.prices?.map((p) => p.price)
+                      : [product?.single?.client || 0];
+                  const isSelected = selectedIndex === index;
+                  return (
+                    <motion.div
+                      key={index}
+                      ref={(el) => (itemRefs.current[index] = el)}
+                      initial={{ x: -50, opacity: 0 }}
+                      animate={{ x: 0, opacity: 1 }}
+                      transition={{
+                        delay: index * 0.08,
+                        type: "spring",
+                        stiffness: 60,
+                        duration: 0.5,
+                      }}
+                      className={tw(
+                        "flex justify-between items-center active:bg-[--biqpod-gray-opacity] p-2 cursor-pointer",
+                        index % 2 === 0 && "bg-[--biqpod-secondary-background]",
+                        isSelected && "bg-[--biqpod-accent] text-white"
+                      )}
+                      onClick={() => {
+                        if (isExists) {
+                          return;
+                        }
+                        addedProducts.set((prev) => [
+                          ...prev,
+                          { count: 1, prodId: product.id! },
+                        ]);
+                        setFieldValue("pack-popup-search", "");
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <Icon
+                          icon={allIcons.solid.faCheckCircle}
+                          iconClassName={tw(
+                            "text-[--biqpod-success] invisible",
+                            isExists && "visible"
+                          )}
+                        />
+                        <Image
+                          src={photo}
+                          alt={<Icon icon={allIcons.solid.faBoxOpen} />}
+                          className="bg-[--biqpod-gray-opacity] rounded-lg w-[50px] h-[50px]"
+                        />
+                        <div>{product.name}</div>
+                      </div>
+                      <div
+                        className={tw(
+                          "text-[--biqpod-primary]",
+                          isSelected && "text-white"
+                        )}
+                      >
+                        {prices?.map((price) => `${price}DA`).join(" ,")}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+            </Card>
+          )}
         </div>
       </div>
       <Line />

@@ -112,28 +112,46 @@ export const HeaderContent = () => {
       const newList = news || [];
       const existsList = exists || [];
       closePopup();
-      loadingText.set("Adding News products...");
-      loadingPercent.set(0);
-      await snapbuyApi.product.upsert(storeId, newList, (product, index) => {
-        loadingText.set(
-          `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
-            newList.length
-          } ...`
+      try {
+        loadingText.set("Adding News products...");
+        loadingPercent.set(0);
+        await snapbuyApi.product.upsert(storeId, newList, (product, index) => {
+          loadingText.set(
+            `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
+              newList.length
+            } ...`
+          );
+          loadingPercent.set(Math.round(((index + 1) / newList.length) * 100));
+        });
+      } catch (e) {
+        loadingPercent.set(0);
+        loadingText.set("");
+        showToast("Error adding new products");
+        return;
+      }
+      try {
+        loadingText.set("Adding Exists products...");
+        loadingPercent.set(0);
+        await snapbuyApi.product.upsert(
+          storeId,
+          existsList,
+          (product, index) => {
+            loadingText.set(
+              `Updating ${product.name?.slice(0, 10)} ${index + 1}/${
+                existsList.length
+              } ...`
+            );
+            loadingPercent.set(
+              Math.round(((index + 1) / existsList.length) * 100)
+            );
+          }
         );
-        loadingPercent.set(Math.round(((index + 1) / newList.length) * 100));
-      });
-      loadingText.set("Adding Exists products...");
-      loadingPercent.set(0);
-      await snapbuyApi.product.upsert(storeId, existsList, (product, index) => {
-        loadingText.set(
-          `Updating ${product.name?.slice(0, 10)} ${index + 1}/${
-            existsList.length
-          } ...`
-        );
-        loadingPercent.set(Math.round(((index + 1) / existsList.length) * 100));
-      });
-      loadingText.set("");
-      loadingPercent.set(0);
+        loadingText.set("");
+        loadingPercent.set(0);
+      } catch (e) {
+        loadingPercent.set(0);
+        loadingText.set("");
+      }
       execAction("fetch-products");
     },
     [storeId]

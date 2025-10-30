@@ -225,7 +225,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
               <Button
                 className={tw(
                   "rounded-full",
-                  !isSelected &&
+                  isSelected &&
                     "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
                 )}
                 onClick={() => {

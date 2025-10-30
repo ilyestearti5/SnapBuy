@@ -19,6 +19,7 @@ import {
   confirm,
   execAction,
   getFieldValue,
+  isLoading,
   openMenu,
   setFieldValue,
   showPopup,
@@ -31,8 +32,38 @@ import { motion, AnimatePresence } from "framer-motion";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { delay } from "@biqpod/app/ui/utils";
-import places from "../../public/places.json";
+import dz from "../../public/places/dz.json";
+import ma from "../../public/places/ma.json";
+import tn from "../../public/places/tn.json";
+import ly from "../../public/places/ly.json";
+import fr from "../../public/places/fr.json";
+import de from "../../public/places/de.json";
+import us from "../../public/places/us.json";
+import es from "../../public/places/es.json";
+import it from "../../public/places/it.json";
 import { Biqpod } from "@biqpod/app/ui/types";
+const places: Record<string, { name: string }[]> = {
+  dz,
+  ma,
+  tn,
+  ly,
+  fr,
+  de,
+  us,
+  es,
+  it,
+};
+const placeOptions = [
+  { value: "dz", content: `*(${dz.length})* Algeria` },
+  { value: "ma", content: `*(${ma.length})* Morocco` },
+  { value: "tn", content: `*(${tn.length})* Tunisia` },
+  { value: "ly", content: `*(${ly.length})* Libya` },
+  { value: "fr", content: `*(${fr.length})* France` },
+  { value: "de", content: `*(${de.length})* Germany` },
+  { value: "us", content: `*(${us.length})* USA` },
+  { value: "es", content: `*(${es.length})* Spain` },
+  { value: "it", content: `*(${it.length})* Italy` },
+];
 interface DeliveryOptionWithPrices extends Biqpod.Snapbuy.DeliveryOptions {
   prices: Biqpod.Snapbuy.DeliveryPrice[];
 }
@@ -113,17 +144,19 @@ export const StoreDeliveryPricingList: React.FC<
     },
     []
   );
-  useAction(
+  const action = useAction(
     "create-delivery-prices",
-    async (deliveryOptionId: string) => {
+    async (args: { deliveryOptionId: string; selectedPlace: string }) => {
+      const { deliveryOptionId, selectedPlace } = args;
       if (!storeId) return;
       try {
-        // Create delivery prices for each wilaya
+        const placeData = places[selectedPlace];
+        // Create delivery prices for each division
         const promises = [];
-        for (const wilaya of places) {
+        for (const division of placeData) {
           promises.push(
             snapbuyApi.addDeliveryPrice({
-              name: wilaya.name,
+              name: division.name,
               price: 0,
               deliveryOptionId,
               storeId,
@@ -132,15 +165,18 @@ export const StoreDeliveryPricingList: React.FC<
           );
         }
         await Promise.all(promises);
+        const placeName =
+          placeOptions.find((p) => p.value === selectedPlace)?.content ||
+          selectedPlace;
         showToast(
-          `Successfully added ${promises.length} delivery prices from Navex places`,
+          `Successfully added ${promises.length} delivery prices from ${placeName} places`,
           "success"
         );
         execAction("fetch-delivery-options");
       } catch (error) {
-        console.error("Failed to create navex delivery prices:", error);
+        console.error("Failed to create delivery prices:", error);
         showToast(
-          "Failed to create delivery prices from Navex places",
+          "Failed to create delivery prices from selected places",
           "error"
         );
       }
@@ -178,6 +214,7 @@ export const StoreDeliveryPricingList: React.FC<
     },
     []
   );
+  const loading = isLoading(action);
   const togglePriceSelection = (priceId: string) => {
     const current = selectedPrices.get;
     const newSet = new Set(current);
@@ -242,15 +279,12 @@ export const StoreDeliveryPricingList: React.FC<
   };
   const handleAddNavexPlaces = async (deliveryOptionId: string) => {
     if (!storeId) return;
-    const confirmed = await confirm({
-      title: "Add Places",
-      message:
-        "This will create delivery prices for all Algerian wilayas and offices with price 0. You can edit the prices later. Continue?",
-      type: "info",
-    });
-    if (confirmed) {
-      execAction("create-delivery-prices", deliveryOptionId);
-    }
+    showPopup(
+      <SelectPlaceForDelivery
+        deliveryOptionId={deliveryOptionId}
+        loading={loading}
+      />
+    );
   };
   if (!storeId) {
     return (
@@ -404,22 +438,24 @@ export const StoreDeliveryPricingList: React.FC<
                                     Array.from(selectedPrices.get)
                                   )
                                 }
+                                icon={
+                                  isDeletingBulk.get
+                                    ? allIcons.solid.faRotate
+                                    : allIcons.solid.faTrashCan
+                                }
                                 disabled={isDeletingBulk.get}
                                 className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 px-2 py-1 rounded text-white text-xs disabled:cursor-not-allowed"
                               >
                                 {isDeletingBulk.get ? (
-                                  <div className="flex items-center gap-1">
-                                    <CircleLoading />
-                                    <span>Deleting...</span>
-                                  </div>
+                                  <EmptyComponent>
+                                    <Translate content="deleting" />
+                                    ...
+                                  </EmptyComponent>
                                 ) : (
-                                  <>
-                                    <Icon
-                                      icon={allIcons.solid.faTrash}
-                                      iconClassName="mr-1 text-xs"
-                                    />
-                                    Delete ({selectedPrices.get.size})
-                                  </>
+                                  <EmptyComponent>
+                                    <Translate content="delete" /> (
+                                    {selectedPrices.get.size})
+                                  </EmptyComponent>
                                 )}
                               </Button>
                             )}
@@ -435,11 +471,8 @@ export const StoreDeliveryPricingList: React.FC<
                         <Button
                           onClick={() => handleAddDeliveryPrice(option.id!)}
                           className="px-3 rounded-full w-fit text-xs"
+                          icon={allIcons.solid.faPlus}
                         >
-                          <Icon
-                            icon={allIcons.solid.faPlus}
-                            iconClassName="mr-1 text-xs"
-                          />
                           <Translate content="add price" />
                         </Button>
                       </div>
@@ -554,13 +587,11 @@ export const UpsertStoreDeliveryOption: React.FC<
   );
   const isEdit = !!deliveryOption;
   const isLoading = useCopyState(false);
-
   const deliveryTypeOptions = [
     { value: "store", content: "Store Pickup" },
     { value: "domicile", content: "Home Delivery" },
     { value: "office", content: "Office Delivery" },
   ];
-
   const formData = useMemo(() => {
     return {
       name,
@@ -584,13 +615,11 @@ export const UpsertStoreDeliveryOption: React.FC<
         showToast("Please enter a name", "error");
         return;
       }
-
       // Validate and ensure type is one of the allowed values
       const validType =
         type === "store" || type === "domicile" || type === "office"
           ? type
           : "store";
-
       isLoading.set(true);
       try {
         if (isEdit) {
@@ -683,6 +712,75 @@ export const UpsertStoreDeliveryOption: React.FC<
             </div>
           ) : (
             <Translate content={isEdit ? "update" : "add"} />
+          )}
+        </Button>
+      </div>
+    </Card>
+  );
+};
+interface SelectPlaceForDeliveryProps {
+  deliveryOptionId: string;
+  loading: boolean;
+}
+export const SelectPlaceForDelivery: React.FC<SelectPlaceForDeliveryProps> = ({
+  deliveryOptionId,
+  loading,
+}) => {
+  const selectedPlace = useCopyState<string | false | 0 | null | undefined>(
+    "dz"
+  );
+  const handleAdd = () => {
+    if (typeof selectedPlace.get !== "string") {
+      showToast("Please select a place", "error");
+      return;
+    }
+    execAction("create-delivery-prices", {
+      deliveryOptionId,
+      selectedPlace: selectedPlace.get,
+    });
+    closePopup();
+  };
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-[400px] max-md:h-full md:max-h-[90vh] overflow-hidden">
+      <CardHeaderForPopup title="Select Place" />
+      <Line />
+      <div className="space-y-4 p-4 h-full">
+        <div>
+          <label className="block mb-2 font-medium capitalize">
+            <Translate content="choos a country" />:
+          </label>
+          <EnumField
+            state={selectedPlace}
+            id="select-place-popup"
+            config={{
+              list: placeOptions,
+              search: true,
+            }}
+          />
+        </div>
+        <div className="text-[--biqpod-gray-opacity-2] text-sm">
+          <Translate content="This will create delivery prices for all administrative divisions of the selected country with price 0. You can edit the prices later." />
+        </div>
+      </div>
+      <Line />
+      <div className="flex gap-3 p-4">
+        <Button
+          onClick={() => {
+            closePopup();
+          }}
+          className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+          disabled={loading}
+        >
+          <Translate content="cancel" />
+        </Button>
+        <Button onClick={handleAdd} disabled={loading}>
+          {loading ? (
+            <div className="flex items-center gap-2">
+              <CircleLoading />
+              <span>Adding...</span>
+            </div>
+          ) : (
+            <Translate content="add" />
           )}
         </Button>
       </div>

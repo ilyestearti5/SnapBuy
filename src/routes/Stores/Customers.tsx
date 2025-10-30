@@ -46,26 +46,22 @@ const cardVariants = {
   hidden: {
     opacity: 0,
     y: 20,
-    scale: 0.95,
   },
   visible: {
     opacity: 1,
     y: 0,
-    scale: 1,
     transition: {
       duration: 0.5,
     },
   },
   hover: {
     y: -4,
-    scale: 1.02,
     boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
     transition: {
       duration: 0.3,
     },
   },
   tap: {
-    scale: 0.98,
     transition: {
       duration: 0.1,
     },
@@ -75,19 +71,16 @@ const cardVariants = {
 const statsCardVariants = {
   hidden: {
     opacity: 0,
-    scale: 0.8,
     y: 30,
   },
   visible: {
     opacity: 1,
-    scale: 1,
     y: 0,
     transition: {
       duration: 0.6,
     },
   },
   hover: {
-    scale: 1.05,
     y: -5,
     transition: {
       duration: 0.2,
@@ -123,19 +116,16 @@ const metadataVariants = {
 const metadataItemVariants = {
   hidden: {
     opacity: 0,
-    scale: 0.8,
     x: -10,
   },
   visible: {
     opacity: 1,
-    scale: 1,
     x: 0,
     transition: {
       duration: 0.3,
     },
   },
   hover: {
-    scale: 1.05,
     y: -2,
     transition: {
       duration: 0.2,
@@ -144,9 +134,9 @@ const metadataItemVariants = {
 };
 
 const iconVariants = {
-  hidden: { scale: 0 },
+  hidden: { opacity: 0 },
   visible: {
-    scale: 1,
+    opacity: 1,
     transition: {
       type: "spring" as const,
       stiffness: 200,
@@ -154,7 +144,6 @@ const iconVariants = {
     },
   },
   hover: {
-    scale: 1.2,
     transition: {
       duration: 0.2,
     },
@@ -300,12 +289,10 @@ export const Customers = () => {
           >
             <div className="flex items-center gap-3">
               <motion.div
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{
-                  type: "spring",
-                  stiffness: 200,
-                  damping: 15,
+                  duration: 0.4,
                   delay: 0.2,
                 }}
               >
@@ -352,13 +339,10 @@ export const Customers = () => {
                     "bg-emerald-400/10 text-emerald-400",
                   customer.status === "rejected" && "bg-red-400/10 text-red-400"
                 )}
-                initial={{ scale: 0, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                whileHover={{ scale: 1.1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{
                   delay: 0.3,
-                  type: "spring",
-                  stiffness: 200,
                 }}
               >
                 <Translate content={customer.status} />
@@ -366,13 +350,12 @@ export const Customers = () => {
               {(!isProcessing && usedBy === "owned") ||
                 (usedBy === "read/edit" && (
                   <motion.div
-                    initial={{ scale: 0 }}
-                    animate={{ scale: 1 }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
                     whileHover={{ scale: 1.1 }}
                     whileTap={{ scale: 0.95 }}
                     transition={{
-                      type: "spring",
-                      stiffness: 200,
+                      duration: 0.2,
                       delay: 0.4,
                     }}
                   >
@@ -634,8 +617,8 @@ export const Customers = () => {
     return (
       <motion.div
         className="flex justify-center items-center p-8"
-        initial={{ opacity: 0, scale: 0.8 }}
-        animate={{ opacity: 1, scale: 1 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
         <motion.div
@@ -645,11 +628,10 @@ export const Customers = () => {
           transition={{ delay: 0.2 }}
         >
           <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{
-              type: "spring",
-              stiffness: 200,
+              duration: 0.3,
               delay: 0.3,
             }}
           >
@@ -682,11 +664,10 @@ export const Customers = () => {
         >
           <motion.h1
             className="font-bold text-3xl"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{
-              type: "spring",
-              stiffness: 200,
+              duration: 0.3,
               delay: 0.2,
             }}
           >
@@ -738,11 +719,10 @@ export const Customers = () => {
                   <div>
                     <motion.p
                       className="font-bold text-2xl"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{
-                        type: "spring",
-                        stiffness: 200,
+                        duration: 0.3,
                         delay: 0.3,
                       }}
                     >
@@ -783,11 +763,10 @@ export const Customers = () => {
                   <div>
                     <motion.p
                       className="font-bold text-2xl"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{
-                        type: "spring",
-                        stiffness: 200,
+                        duration: 0.3,
                         delay: 0.3,
                       }}
                     >
@@ -828,11 +807,10 @@ export const Customers = () => {
                   <div>
                     <motion.p
                       className="font-bold text-2xl"
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
                       transition={{
-                        type: "spring",
-                        stiffness: 200,
+                        duration: 0.3,
                         delay: 0.3,
                       }}
                     >
@@ -1027,8 +1005,8 @@ export const Customers = () => {
             ) : (
               <motion.div
                 className="flex justify-center items-center py-12"
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
                 transition={{ duration: 0.6 }}
               >
                 <motion.div
@@ -1053,11 +1031,10 @@ export const Customers = () => {
                     >
                       <motion.h3
                         className="mb-2 font-bold text-2xl"
-                        initial={{ scale: 0.8 }}
-                        animate={{ scale: 1 }}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
                         transition={{
-                          type: "spring",
-                          stiffness: 200,
+                          duration: 0.3,
                           delay: 0.4,
                         }}
                       >

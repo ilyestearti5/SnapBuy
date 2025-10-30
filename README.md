@@ -100,7 +100,7 @@ A comprehensive e-commerce management platform built with React, TypeScript, and
 snapbuy/
 ├── public/             # Static public assets
 │   ├── routes.json     # Application routes configuration
-│   └── places.json     # Location data
+│   └── dz.json     # Location data
 ├── src/
 │   ├── components/     # Reusable UI components
 │   ├── routes/         # Page components and routing

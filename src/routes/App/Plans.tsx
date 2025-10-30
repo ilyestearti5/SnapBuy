@@ -476,16 +476,91 @@ export const Plans = () => {
                     </h2>
                     <CircleTip
                       onClick={() => {
-                        // Set all usage states to current usage values
-                        photosUsage.set(usageData?.photos || 0);
-                        orderUsage.set(usageData?.orders || 0);
-                        customersUsage.set(usageData?.customers || 0);
-                        productsUsage.set(usageData?.products || 0);
-                        brandsUsage.set(usageData?.brands || 0);
-                        collectionsUsage.set(usageData?.collections || 0);
-                        packsUsage.set(usageData?.packs || 0);
-                        couponUsage.set(usageData?.coupons || 0);
-                        variablesUsage.set(usageData?.vars || 0);
+                        // Calculate combined meta values from all active payments
+                        const combinedMeta: Record<string, number> = {};
+                        if (Array.isArray(currentPayments)) {
+                          currentPayments.forEach((payment) => {
+                            if (payment.meta) {
+                              Object.entries(payment.meta).forEach(
+                                ([key, value]) => {
+                                  if (typeof value === "number") {
+                                    combinedMeta[key] =
+                                      (combinedMeta[key] || 0) + value;
+                                  } else if (
+                                    typeof value === "string" &&
+                                    !isNaN(Number(value))
+                                  ) {
+                                    combinedMeta[key] =
+                                      (combinedMeta[key] || 0) + Number(value);
+                                  }
+                                }
+                              );
+                            }
+                          });
+                        }
+
+                        // Set usage states to current usage minus what's already covered by active subscriptions
+                        photosUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.photos || 0) -
+                              (combinedMeta.photos || 0)
+                          )
+                        );
+                        orderUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.orders || 0) -
+                              (combinedMeta.orders || 0)
+                          )
+                        );
+                        customersUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.customers || 0) -
+                              (combinedMeta.customers || 0)
+                          )
+                        );
+                        productsUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.products || 0) -
+                              (combinedMeta.products || 0)
+                          )
+                        );
+                        brandsUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.brands || 0) -
+                              (combinedMeta.brands || 0)
+                          )
+                        );
+                        collectionsUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.collections || 0) -
+                              (combinedMeta.collections || 0)
+                          )
+                        );
+                        packsUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.packs || 0) - (combinedMeta.packs || 0)
+                          )
+                        );
+                        couponUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.coupons || 0) -
+                              (combinedMeta.coupons || 0)
+                          )
+                        );
+                        variablesUsage.set(
+                          Math.max(
+                            0,
+                            (usageData?.vars || 0) - (combinedMeta.vars || 0)
+                          )
+                        );
                       }}
                       icon={allIcons.solid.faSync}
                     />

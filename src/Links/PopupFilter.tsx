@@ -93,7 +93,7 @@ interface PopupFilterProps {
   onChange?: (props: FilterOptionsForProduct | null) => void;
   value: FilterOptionsForProduct | null;
 }
-export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
+export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
   const storeId = useStoreId();
   const isAvailable = useCopyState<string | Nothing>(false);
   const brand = useCopyState<string | Nothing>("");
@@ -205,13 +205,12 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
             {filterFields.map((field, index) => (
               <motion.div
                 key={field.value}
-                initial={{ x: -50, opacity: 0 }}
-                animate={{ x: 0, opacity: 1 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
                 transition={{
-                  delay: 0.4 + index * 0.1,
-                  duration: 0.3,
-                  type: "spring",
-                  stiffness: 300,
+                  delay: index * 0.1,
+                  duration: 0.4,
+                  ease: "easeOut",
                 }}
               >
                 <Card
@@ -222,21 +221,21 @@ export const PopupFilter = ({ onChange, value }: PopupFilterProps) => {
                 >
                   <motion.div
                     className="flex justify-between items-center gap-x-3 p-3 text-xl"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                    transition={{ duration: 0.2 }}
+                    whileHover={{ scale: 1.01 }}
+                    whileTap={{ scale: 0.99 }}
+                    transition={{ duration: 0.15 }}
                   >
                     <div className="flex items-center gap-x-2 text-xl">
                       <motion.div
-                        whileHover={{ rotate: 360 }}
-                        transition={{ duration: 0.5 }}
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ duration: 0.2 }}
                       >
                         <Icon icon={field.icon} />
                       </motion.div>
                       <h1>{field.label}</h1>
                     </div>
                     <motion.div
-                      whileHover={{ x: 5 }}
+                      whileHover={{ x: 3 }}
                       transition={{ duration: 0.2 }}
                     >
                       <CircleTip icon={allIcons.solid.faChevronRight} />

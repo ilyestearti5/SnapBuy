@@ -88,7 +88,7 @@ export const roleColors: Record<Biqpod.Snapbuy.DeliveryCompanyRole, string> = {
   franchise_partner: "#009688",
   merchant: "#FFEB3B",
 };
-export const DAYS_LEFT = 31;
+export const DAYS_LEFT = 15;
 export const tabServices = [
   {
     name: "Stores",

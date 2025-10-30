@@ -168,6 +168,7 @@ export const useFormProduct = () => {
   return product;
 };
 export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
+  console.log("Setting form product with value:", value);
   // Always set all form fields, using the provided value or appropriate defaults
   setFormAvailable(value?.available ?? true);
   setFormKeys(value?.keys ?? []);
@@ -180,14 +181,12 @@ export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
   setFormLimited(value?.limited ?? false);
   setFormBrand(value?.brandId ?? "");
   setFormType(value?.type ?? "single");
-
   // Handle multiple prices
   if (value?.type === "multiple" && value?.multiple?.prices) {
     setFormPrices(value.multiple.prices);
   } else {
     setFormPrices(undefined);
   }
-
   // Convert metaData object back to array format for form
   if (value?.metaData) {
     setFormMetadata(value?.metaData);
@@ -196,7 +195,6 @@ export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
     setFormMetadata({});
   }
 };
-
 // Function to clear all form data (useful for creating new products)
 export const clearFormProduct = () => {
   setFormAvailable(true); // Default to available for new products
