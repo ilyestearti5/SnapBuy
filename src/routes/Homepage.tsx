@@ -201,40 +201,78 @@ export const Homepage = () => {
               </Button>
             </motion.div>
           </motion.div>
-          {/* Hero Illustration */}
+          {/* Hero Illustration with Image */}
           <motion.div
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
             className="relative mt-16"
           >
-            <div className="flex max-md:flex-col justify-evenly items-center bg-[--biqpod-secondary-background] py-14 border border-[--biqpod-borders] border-solid rounded-[60px]">
-              <div className="text-center">
-                <Icon
-                  icon={allIcons.solid.faStore}
-                  iconClassName="text-4xl mb-2"
+            <div className="bg-[--biqpod-secondary-background] border border-[--biqpod-borders] border-solid rounded-[60px] overflow-hidden">
+              {/* Main Hero Image */}
+              <div className="relative px-6 py-8">
+                <motion.img
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.8, delay: 0.6 }}
+                  src="/src/assets/snapbuy.png"
+                  alt="SnapBuy Platform"
+                  className="mx-auto max-w-full h-auto max-h-[400px] object-contain"
                 />
-                <h3 className="font-semibold">
-                  <Translate content="Store Management" />
-                </h3>
               </div>
-              <div className="text-center">
-                <Icon
-                  icon={allIcons.solid.faTruck}
-                  iconClassName="text-4xl mb-2"
-                />
-                <h3 className="font-semibold">
-                  <Translate content="Delivery Network" />
-                </h3>
-              </div>
-              <div className="text-center">
-                <Icon
-                  icon={allIcons.solid.faCreditCard}
-                  iconClassName="text-4xl mb-2"
-                />
-                <h3 className="font-semibold">
-                  <Translate content="Payment Processing" />
-                </h3>
+              {/* Feature Cards Below Image */}
+              <div className="flex max-md:flex-col justify-evenly items-center px-6 py-8 border-[--biqpod-borders] border-t">
+                <motion.div
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 0.8 }}
+                  className="p-4 text-center hover:scale-105 transition-transform duration-300"
+                >
+                  <div className="mb-3">
+                    <img
+                      src="/src/assets/store.png"
+                      alt="Store Management"
+                      className="mx-auto w-16 h-16 object-contain"
+                    />
+                  </div>
+                  <h3 className="font-semibold">
+                    <Translate content="Store Management" />
+                  </h3>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: 0.9 }}
+                  className="p-4 text-center hover:scale-105 transition-transform duration-300"
+                >
+                  <div className="mb-3">
+                    <img
+                      src="/src/assets/delivery.png"
+                      alt="Delivery Network"
+                      className="mx-auto w-16 h-16 object-contain"
+                    />
+                  </div>
+                  <h3 className="font-semibold">
+                    <Translate content="Delivery Network" />
+                  </h3>
+                </motion.div>
+                <motion.div
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.6, delay: 1.0 }}
+                  className="p-4 text-center hover:scale-105 transition-transform duration-300"
+                >
+                  <div className="mb-3">
+                    <img
+                      src="/src/assets/payment-checked.png"
+                      alt="Payment Processing"
+                      className="mx-auto w-16 h-16 object-contain"
+                    />
+                  </div>
+                  <h3 className="font-semibold">
+                    <Translate content="Payment Processing" />
+                  </h3>
+                </motion.div>
               </div>
             </div>
           </motion.div>
@@ -263,7 +301,6 @@ export const Homepage = () => {
             >
               <Translate content="Watch how SnapBuy transforms your e-commerce operations with seamless store management, delivery integration, and payment processing." />
             </motion.p>
-
             <motion.div
               variants={scaleIn}
               className="relative mx-auto max-w-4xl"
@@ -282,7 +319,6 @@ export const Homepage = () => {
                   />
                 </div>
               </div>
-
               {/* Video Stats */}
               <motion.div
                 variants={fadeInUp}
@@ -318,7 +354,183 @@ export const Homepage = () => {
         </div>
       </section>
       <Line />
-      {/* Features Section */}
+      {/* Image Showcase Section */}
+      <section className="py-20">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+          <motion.div
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            variants={staggerContainer}
+          >
+            {/* First Row: Products Management */}
+            <div className="items-center gap-8 grid grid-cols-1 lg:grid-cols-2 mb-20">
+              <motion.div variants={fadeInUp}>
+                <h3 className="mb-4 font-bold text-[--biqpod-text-color] text-3xl">
+                  <Translate content="Effortless Product Management" />
+                </h3>
+                <p className="opacity-80 mb-6 text-[--biqpod-text-color] text-lg leading-relaxed">
+                  <Translate content="Organize and manage your entire product catalog with ease. Add, edit, and track inventory in real-time with our intuitive interface." />
+                </p>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Bulk product uploads and editing" />
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Real-time inventory tracking" />
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Advanced categorization and filters" />
+                    </span>
+                  </li>
+                </ul>
+              </motion.div>
+              <motion.div
+                variants={scaleIn}
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="shadow-xl p-4 overflow-hidden">
+                  <img
+                    src="/src/assets/products.png"
+                    alt="Products Management"
+                    className="rounded-lg w-full h-auto max-h-[300px] object-contain"
+                  />
+                </Card>
+              </motion.div>
+            </div>
+            {/* Second Row: Shopping Experience (Reversed) */}
+            <div className="items-center gap-8 grid grid-cols-1 lg:grid-cols-2 mb-20">
+              <motion.div
+                variants={scaleIn}
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+                className="order-last lg:order-first"
+              >
+                <Card className="shadow-xl p-4 overflow-hidden">
+                  <img
+                    src="/src/assets/shopping.png"
+                    alt="Shopping Experience"
+                    className="rounded-lg w-full h-auto max-h-[300px] object-contain"
+                  />
+                </Card>
+              </motion.div>
+              <motion.div
+                variants={fadeInUp}
+                className="order-first lg:order-last"
+              >
+                <h3 className="mb-4 font-bold text-[--biqpod-text-color] text-3xl">
+                  <Translate content="Seamless Shopping Experience" />
+                </h3>
+                <p className="opacity-80 mb-6 text-[--biqpod-text-color] text-lg leading-relaxed">
+                  <Translate content="Provide your customers with a smooth and enjoyable shopping journey from browsing to checkout." />
+                </p>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Mobile-optimized shopping interface" />
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Quick checkout process" />
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Personalized recommendations" />
+                    </span>
+                  </li>
+                </ul>
+              </motion.div>
+            </div>
+            {/* Third Row: Overview Dashboard */}
+            <div className="items-center gap-8 grid grid-cols-1 lg:grid-cols-2">
+              <motion.div variants={fadeInUp}>
+                <h3 className="mb-4 font-bold text-[--biqpod-text-color] text-3xl">
+                  <Translate content="Comprehensive Overview Dashboard" />
+                </h3>
+                <p className="opacity-80 mb-6 text-[--biqpod-text-color] text-lg leading-relaxed">
+                  <Translate content="Monitor your business performance at a glance with detailed analytics and insights." />
+                </p>
+                <ul className="space-y-3">
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Real-time sales analytics" />
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Customer insights and behavior" />
+                    </span>
+                  </li>
+                  <li className="flex items-start">
+                    <Icon
+                      icon={allIcons.solid.faCheck}
+                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                    />
+                    <span className="text-[--biqpod-text-color]">
+                      <Translate content="Performance reports and trends" />
+                    </span>
+                  </li>
+                </ul>
+              </motion.div>
+              <motion.div
+                variants={scaleIn}
+                whileHover={{ scale: 1.05 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Card className="shadow-xl p-4 overflow-hidden">
+                  <img
+                    src="/src/assets/overview.png"
+                    alt="Overview Dashboard"
+                    className="rounded-lg w-full h-auto max-h-[300px] object-contain"
+                  />
+                </Card>
+              </motion.div>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+      <Line />
+      {/* Features Section with Images */}
       <section
         id="features"
         className="bg-[--biqpod-secondary-background] py-20"
@@ -352,11 +564,26 @@ export const Homepage = () => {
             className="gap-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4"
           >
             {features.map((feature, index) => (
-              <motion.div key={index} variants={scaleIn}>
-                <Card className="hover:shadow-lg p-6 h-full transition-shadow duration-300">
+              <motion.div
+                key={index}
+                variants={scaleIn}
+                whileHover={{ y: -8, transition: { duration: 0.3 } }}
+              >
+                <Card className="group hover:shadow-2xl p-6 h-full overflow-hidden transition-all duration-300">
                   <div className="text-center">
-                    <div className="mb-4 text-[--biqpod-primary]">
-                      <Icon icon={feature.icon} iconClassName="text-4xl" />
+                    {/* Animated Icon Background */}
+                    <div className="relative mx-auto mb-4 w-20 h-20">
+                      <motion.div
+                        className="absolute inset-0 bg-[--biqpod-primary] opacity-10 rounded-full"
+                        animate={{ scale: [1, 1.2, 1] }}
+                        transition={{ duration: 2, repeat: Infinity }}
+                      />
+                      <div className="relative flex justify-center items-center w-full h-full text-[--biqpod-primary]">
+                        <Icon
+                          icon={feature.icon}
+                          iconClassName="text-4xl group-hover:scale-110 transition-transform duration-300"
+                        />
+                      </div>
                     </div>
                     <h3 className="mb-3 font-semibold text-[--biqpod-text-color] text-xl">
                       <Translate content={feature.title} />
@@ -440,8 +667,21 @@ export const Homepage = () => {
       </section>
       <Line />
       {/* Testimonials Section */}
-      <section className="bg-[--biqpod-secondary-background] py-20">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+      <section className="relative bg-[--biqpod-secondary-background] py-20 overflow-hidden">
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 opacity-5">
+          <motion.div
+            className="top-10 left-10 absolute bg-[--biqpod-primary] rounded-full w-32 h-32"
+            animate={{ y: [0, 30, 0], rotate: 360 }}
+            transition={{ duration: 10, repeat: Infinity }}
+          />
+          <motion.div
+            className="right-10 bottom-10 absolute bg-[--biqpod-primary] rounded-full w-48 h-48"
+            animate={{ y: [0, -40, 0], rotate: -360 }}
+            transition={{ duration: 15, repeat: Infinity }}
+          />
+        </div>
+        <div className="relative mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
           <motion.div
             initial="hidden"
             whileInView="visible"
@@ -470,27 +710,50 @@ export const Homepage = () => {
             className="gap-8 grid grid-cols-1 md:grid-cols-3"
           >
             {testimonials.map((testimonial, index) => (
-              <motion.div key={index} variants={scaleIn}>
-                <Card className="p-6 h-full">
+              <motion.div
+                key={index}
+                variants={scaleIn}
+                whileHover={{ y: -10, transition: { duration: 0.3 } }}
+              >
+                <Card className="relative hover:shadow-2xl p-6 h-full overflow-hidden transition-all duration-300">
+                  {/* Decorative Quote Icon */}
+                  <div className="top-4 right-4 absolute opacity-10">
+                    <Icon
+                      icon={allIcons.solid.faQuoteRight}
+                      iconClassName="text-[--biqpod-primary] text-5xl"
+                    />
+                  </div>
                   <div className="flex items-center mb-4">
                     {[...Array(testimonial.rating)].map((_, i) => (
-                      <Icon
+                      <motion.div
                         key={i}
-                        icon={allIcons.solid.faStar}
-                        iconClassName="text-[--biqpod-primary] text-sm"
-                      />
+                        initial={{ opacity: 0, scale: 0 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
+                        <Icon
+                          icon={allIcons.solid.faStar}
+                          iconClassName="text-[--biqpod-primary] text-sm"
+                        />
+                      </motion.div>
                     ))}
                   </div>
                   <p className="opacity-80 mb-6 text-[--biqpod-text-color] italic leading-relaxed">
                     "{testimonial.content}"
                   </p>
-                  <div className="pt-4 border-[--biqpod-borders] border-t">
-                    <h4 className="font-semibold text-[--biqpod-text-color]">
-                      {testimonial.name}
-                    </h4>
-                    <p className="opacity-60 text-[--biqpod-text-color] text-sm">
-                      {testimonial.role}
-                    </p>
+                  <div className="flex items-center gap-3 pt-4 border-[--biqpod-borders] border-t">
+                    {/* Avatar Circle with Initial */}
+                    <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-12 h-12 font-bold text-white">
+                      {testimonial.name.charAt(0)}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-[--biqpod-text-color]">
+                        {testimonial.name}
+                      </h4>
+                      <p className="opacity-60 text-[--biqpod-text-color] text-sm">
+                        {testimonial.role}
+                      </p>
+                    </div>
                   </div>
                 </Card>
               </motion.div>
@@ -499,7 +762,6 @@ export const Homepage = () => {
         </div>
       </section>
       <Line />
-
       {/* Documentation Section */}
       <section id="documentation" className="py-20">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
@@ -522,18 +784,25 @@ export const Homepage = () => {
             >
               <Translate content="Everything you need to get started with SnapBuy. From quick setup guides to advanced features, we've got you covered." />
             </motion.p>
-
             <motion.div
               variants={staggerContainer}
               className="gap-8 grid grid-cols-1 md:grid-cols-3 mb-12"
             >
-              <motion.div variants={scaleIn}>
-                <Card className="hover:shadow-lg p-6 h-full text-center transition-shadow duration-300">
-                  <div className="mb-4 text-[--biqpod-primary]">
-                    <Icon
-                      icon={allIcons.solid.faRocket}
-                      iconClassName="text-4xl"
+              <motion.div variants={scaleIn} whileHover={{ y: -8 }}>
+                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center transition-all duration-300">
+                  {/* Image Header */}
+                  <div className="relative -mx-6 -mt-6 mb-4 h-32 overflow-hidden">
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-[--biqpod-primary] to-purple-600 opacity-80"
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
                     />
+                    <div className="relative flex justify-center items-center h-full">
+                      <Icon
+                        icon={allIcons.solid.faRocket}
+                        iconClassName="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
                   </div>
                   <h3 className="mb-3 font-semibold text-[--biqpod-text-color] text-xl">
                     <Translate content="Quick Start Guide" />
@@ -542,20 +811,27 @@ export const Homepage = () => {
                     <Translate content="Get your store up and running in minutes with our step-by-step setup guide." />
                   </p>
                   <Link to="/documentation#quick-start">
-                    <Button className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-primary] border border-[--biqpod-primary] border-solid text-[--biqpod-primary] hover:text-white">
+                    <Button className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-primary] border border-[--biqpod-primary] border-solid w-full text-[--biqpod-primary] hover:text-white">
                       <Translate content="Start Setup" />
                     </Button>
                   </Link>
                 </Card>
               </motion.div>
-
-              <motion.div variants={scaleIn}>
-                <Card className="hover:shadow-lg p-6 h-full text-center transition-shadow duration-300">
-                  <div className="mb-4 text-[--biqpod-primary]">
-                    <Icon
-                      icon={allIcons.solid.faBook}
-                      iconClassName="text-4xl"
+              <motion.div variants={scaleIn} whileHover={{ y: -8 }}>
+                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center transition-all duration-300">
+                  {/* Image Header */}
+                  <div className="relative -mx-6 -mt-6 mb-4 h-32 overflow-hidden">
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-blue-500 to-cyan-600 opacity-80"
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
                     />
+                    <div className="relative flex justify-center items-center h-full">
+                      <Icon
+                        icon={allIcons.solid.faBook}
+                        iconClassName="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
                   </div>
                   <h3 className="mb-3 font-semibold text-[--biqpod-text-color] text-xl">
                     <Translate content="API Reference" />
@@ -564,20 +840,27 @@ export const Homepage = () => {
                     <Translate content="Complete API documentation for developers who want to integrate with SnapBuy." />
                   </p>
                   <Link to="/documentation#api">
-                    <Button className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-primary] border border-[--biqpod-primary] border-solid text-[--biqpod-primary] hover:text-white">
+                    <Button className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-primary] border border-[--biqpod-primary] border-solid w-full text-[--biqpod-primary] hover:text-white">
                       <Translate content="View API" />
                     </Button>
                   </Link>
                 </Card>
               </motion.div>
-
-              <motion.div variants={scaleIn}>
-                <Card className="hover:shadow-lg p-6 h-full text-center transition-shadow duration-300">
-                  <div className="mb-4 text-[--biqpod-primary]">
-                    <Icon
-                      icon={allIcons.solid.faQuestionCircle}
-                      iconClassName="text-4xl"
+              <motion.div variants={scaleIn} whileHover={{ y: -8 }}>
+                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center transition-all duration-300">
+                  {/* Image Header */}
+                  <div className="relative -mx-6 -mt-6 mb-4 h-32 overflow-hidden">
+                    <motion.div
+                      className="absolute inset-0 bg-gradient-to-br from-green-500 to-emerald-600 opacity-80"
+                      whileHover={{ scale: 1.1 }}
+                      transition={{ duration: 0.3 }}
                     />
+                    <div className="relative flex justify-center items-center h-full">
+                      <Icon
+                        icon={allIcons.solid.faQuestionCircle}
+                        iconClassName="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                      />
+                    </div>
                   </div>
                   <h3 className="mb-3 font-semibold text-[--biqpod-text-color] text-xl">
                     <Translate content="FAQ & Support" />
@@ -586,14 +869,13 @@ export const Homepage = () => {
                     <Translate content="Find answers to common questions and get help from our support team." />
                   </p>
                   <Link to="/documentation#faq">
-                    <Button className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-primary] border border-[--biqpod-primary] border-solid text-[--biqpod-primary] hover:text-white">
+                    <Button className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-primary] border border-[--biqpod-primary] border-solid w-full text-[--biqpod-primary] hover:text-white">
                       <Translate content="Get Help" />
                     </Button>
                   </Link>
                 </Card>
               </motion.div>
             </motion.div>
-
             <motion.div
               variants={fadeInUp}
               className="bg-[--biqpod-secondary-background] p-8 rounded-2xl"
@@ -633,7 +915,6 @@ export const Homepage = () => {
         </div>
       </section>
       <Line />
-
       {/* CTA Section */}
       <section className="py-16">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl text-center">

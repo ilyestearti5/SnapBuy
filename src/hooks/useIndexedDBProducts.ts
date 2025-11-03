@@ -2,7 +2,6 @@ import { Biqpod } from "@biqpod/app/ui/types";
 import { useEffect, useState, useCallback } from "react";
 interface CachedProductsData {
   products: Biqpod.Snapbuy.Product[];
-  lastDoc: Biqpod.Snapbuy.Product | null;
   storeId: string;
   timestamp: number;
 }
@@ -23,7 +22,7 @@ const initDB = (): Promise<IDBDatabase> => {
     };
   });
 };
-const CACH_TIME_SEC = 1 * 60; // 1 minute
+const CACH_TIME_SEC = import.meta.env.DEV ? 5 : 1 * 60; // 1 minute
 // Get cached data for a store
 const getCachedData = async (
   storeId: string
@@ -54,8 +53,7 @@ const getCachedData = async (
 // Save cached data for a store
 const saveCachedData = async (
   storeId: string,
-  products: Biqpod.Snapbuy.Product[],
-  lastDoc: Biqpod.Snapbuy.Product | null
+  products: Biqpod.Snapbuy.Product[]
 ): Promise<void> => {
   try {
     const db = await initDB();
@@ -63,7 +61,6 @@ const saveCachedData = async (
     const store = transaction.objectStore(STORE_NAME);
     const data: CachedProductsData = {
       products,
-      lastDoc,
       storeId,
       timestamp: Date.now(),
     };
@@ -85,13 +82,11 @@ const clearCachedData = async (storeId: string): Promise<void> => {
 };
 export const useIndexedDBProducts = (storeId: string | null | undefined) => {
   const [products, setProducts] = useState<Biqpod.Snapbuy.Product[]>([]);
-  const [lastDoc, setLastDoc] = useState<Biqpod.Snapbuy.Product | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   // Load cached data on mount or storeId change
   useEffect(() => {
     if (!storeId) {
       setProducts([]);
-      setLastDoc(null);
       setIsLoading(false);
       return;
     }
@@ -101,69 +96,34 @@ export const useIndexedDBProducts = (storeId: string | null | undefined) => {
         const cached = await getCachedData(storeId);
         if (cached) {
           setProducts(cached.products);
-          setLastDoc(cached.lastDoc);
         } else {
           setProducts([]);
-          setLastDoc(null);
         }
       } catch (error) {
         console.error("Error loading cached products:", error);
         setProducts([]);
-        setLastDoc(null);
       } finally {
         setIsLoading(false);
       }
     };
     loadCachedData();
   }, [storeId]);
-  // Update products and save to cache
-  const updateProducts = useCallback(
-    (
-      newProducts: Biqpod.Snapbuy.Product[],
-      newLastDoc: Biqpod.Snapbuy.Product | null
-    ) => {
-      setProducts(newProducts);
-      setLastDoc(newLastDoc);
-      if (storeId) {
-        saveCachedData(storeId, newProducts, newLastDoc);
-      }
-    },
-    [storeId]
-  );
-  // Add more products (for pagination)
-  const addProducts = useCallback(
-    (
-      additionalProducts: Biqpod.Snapbuy.Product[],
-      newLastDoc: Biqpod.Snapbuy.Product | null
-    ) => {
-      setProducts((prev) => {
-        const updated = [...prev, ...additionalProducts];
-        const newArray = Array.from(new Set(updated.map((p) => p.id))).map(
-          (id) => updated.find((p) => p.id === id)!
-        );
-        setLastDoc(newLastDoc);
-        if (storeId) {
-          saveCachedData(storeId, newArray, newLastDoc);
-        }
-        return newArray;
-      });
-    },
-    [storeId]
-  );
   // Clear cache for current store
   const clearCache = useCallback(() => {
     if (storeId) {
       clearCachedData(storeId);
       setProducts([]);
-      setLastDoc(null);
     }
   }, [storeId]);
   return {
     products,
-    lastDoc,
     isLoading,
-    updateProducts,
-    addProducts,
+    setProducts: (prods: Biqpod.Snapbuy.Product[]) => {
+      setProducts(prods);
+      if (storeId) {
+        saveCachedData(storeId, prods);
+      }
+    },
     clearCache,
   };
 };

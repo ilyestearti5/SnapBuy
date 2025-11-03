@@ -72,6 +72,13 @@ export interface ActionInterpret {
   action: string;
   params?: Record<string, string | number | undefined>;
 }
+export const isAccountLinked = async (name: string) => {
+  const isAccountLinkedCallback = await cloud.app.functions.getUserFunction<{
+    linked: boolean;
+  }>("is-account-linked");
+  const result = await isAccountLinkedCallback?.({ name });
+  return result?.linked || false;
+};
 export const isAccountLinkedWithDrive = async () => {
   const isAccountLinkedCallback = await cloud.app.functions.getUserFunction<{
     linked: boolean;
@@ -388,12 +395,18 @@ export const createApi = (cloud: ClientCloud) => {
           }
           const prod = {
             ...product,
-            photos: product.photos?.filter((p) => !p.startsWith("data:")),
             storeId,
           };
+          if (product.photos) {
+            prod.photos = product.photos.filter((p) => !p.startsWith("data:"));
+          }
           const result = await createProduct?.(prod, files);
           if (result) {
-            setTemp("products." + result.id, result);
+            const temp = getTempFromStore<Biqpod.Snapbuy.Product>(
+              "products." + prod.id
+            );
+            const s = temp ? { ...temp, ...result } : result;
+            setTemp("products." + result.id, s);
           }
         });
       },
@@ -614,6 +627,27 @@ export const createApi = (cloud: ClientCloud) => {
       async getPayed() {
         const fn = await getUserFunction<string[]>("purchased-templates");
         return fn?.({});
+      },
+      async getGithubRepository() {
+        var getRepos = await getUserFunction<
+          {
+            name: string;
+            fullName: string;
+            private: boolean;
+            url: string;
+            description: string | null;
+          }[]
+        >("get-private-github-repos");
+        const repos = await getRepos?.({});
+        return repos;
+      },
+      async getNpmPackage() {
+        return [
+          { name: "Functions" },
+          {
+            name: "Core",
+          },
+        ];
       },
     },
     account: {
@@ -883,7 +917,6 @@ export const createApi = (cloud: ClientCloud) => {
         command,
       });
     },
-
     // account config auth
     async getDeliveryOrders(options?: {
       status?: string;
@@ -1681,7 +1714,7 @@ export const createApi = (cloud: ClientCloud) => {
         limit?: number,
         startAt?: number
       ) {
-        const uid = getCurrentAuth();
+        const uid = await getCurrentAuth();
         const currentTime = new Date();
         var subTime: Date | null = null;
         switch (filterOptions?.time) {

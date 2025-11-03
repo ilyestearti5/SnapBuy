@@ -95,15 +95,17 @@ export const Templates = () => {
           limit
         );
         if (newTemplates && newTemplates.length > 0) {
+          // Filter for accepted templates
+          const acceptedTemplates = newTemplates.filter(template => template.status === "accepted");
           // Filter templates based on search query if there's one
           const query = searchQuery?.toLowerCase();
           const filteredTemplates = query
-            ? newTemplates.filter(
+            ? acceptedTemplates.filter(
                 (template) =>
                   template.name?.toLowerCase().includes(query) ||
                   template.description?.toLowerCase().includes(query)
               )
-            : newTemplates;
+            : acceptedTemplates;
           if (loadMore) {
             // Append to existing templates
             templates.set([...templates.get, ...filteredTemplates]);
@@ -112,8 +114,8 @@ export const Templates = () => {
             templates.set(filteredTemplates);
           }
           // Update pagination state
-          const lastTemplate = newTemplates[newTemplates.length - 1];
-          lastDocId.set(lastTemplate.id || null);
+          const lastTemplate = acceptedTemplates.length > 0 ? acceptedTemplates[acceptedTemplates.length - 1] : newTemplates[newTemplates.length - 1];
+          lastDocId.set(lastTemplate?.id || null);
           // Check if we have more templates to load
           hasMore.set(newTemplates.length === limit);
         } else {
@@ -193,9 +195,8 @@ export const Templates = () => {
           return;
         }
         // Confirm purchase with user
-        const priceText = template.price
-          ? ` for $${template.price.toFixed(2)}`
-          : "";
+        const price = template.multiPrice || template.singlePrice || 0;
+        const priceText = price > 0 ? ` for $${price.toFixed(2)}` : "";
         const response = await confirm({
           title: "Purchase Template",
           message: `Do you want to purchase "${template.name}" template${priceText}?`,
@@ -373,9 +374,10 @@ export const Templates = () => {
                               {template.name || "Untitled Template"}
                             </h3>
                             <div className="ml-2 font-bold text-[--biqpod-primary] text-lg">
-                              {template.price
-                                ? template.price.toFixed(2).concat("$")
-                                : "Free"}
+                              {(() => {
+                                const price = template.multiPrice || template.singlePrice || 0;
+                                return price > 0 ? price.toFixed(2).concat("$") : "Free";
+                              })()}
                             </div>
                           </div>
                           {template.description && (
@@ -387,14 +389,14 @@ export const Templates = () => {
                           <div className="flex items-center gap-1">
                             <Icon
                               icon={
-                                template.use === "multiple"
+                                !!template.multiPrice
                                   ? allIcons.solid.faUsers
                                   : allIcons.solid.faUser
                               }
                               iconClassName="text-[--biqpod-gray-opacity-2] text-xs"
                             />
                             <span className="text-[--biqpod-gray-opacity-2] font-medium text-xs">
-                              {template.use === "multiple"
+                              {!!template.multiPrice
                                 ? "Multiple Use"
                                 : "Single Use"}
                             </span>
@@ -457,9 +459,10 @@ export const Templates = () => {
                                 <span>
                                   {" "}
                                   - $
-                                  {template.price
-                                    ? template.price.toFixed(2)
-                                    : "0.00"}
+                                  {(() => {
+                                    const price = template.multiPrice || template.singlePrice || 0;
+                                    return price > 0 ? price.toFixed(2) : "0.00";
+                                  })()}
                                 </span>
                               </span>
                             )}

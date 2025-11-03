@@ -1,11 +1,5 @@
-import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
-import {
-  delay,
-  filterFuzzySearch,
-  mergeArray,
-  range,
-  tw,
-} from "@biqpod/app/ui/utils";
+import { allIcons } from "@biqpod/app/ui/apis";
+import { delay, filterFuzzySearch, range, tw } from "@biqpod/app/ui/utils";
 import {
   BooleanField,
   Button,
@@ -44,8 +38,7 @@ import {
   getTemp,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo, useRef, useState, useCallback, memo } from "react";
-import { FixedSizeList as List, ListOnScrollProps } from "react-window";
-import { getDocs } from "../server";
+import { FixedSizeList as List } from "react-window";
 import { snapbuyApi } from "../apis";
 import { PostNewProduct } from "./NewProduct/NewProduct";
 import { ProductRender } from "./ProductRender";
@@ -55,11 +48,15 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useStoreId } from "../utils";
 import { useIndexedDBProducts } from "../hooks/useIndexedDBProducts";
 import { loadFromExcel } from "./loadFromExcel";
-import { FilterOptionsForProduct, AdminFilterProducts } from "./PopupFilter";
+import {
+  FilterOptionsForProduct,
+  AdminFilterProducts,
+} from "./AdminPopupFilter";
 import { AnimatedCard, FadeIn } from "../animations/components";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { MetadataFieldComponent } from "../components/MetadataField";
+import { MergePhotosPopup } from "./MergePhotosPopup";
 const productKeys: (keyof Biqpod.Snapbuy.Product)[] = [
   "available",
   "createdAt",
@@ -416,307 +413,6 @@ const exportExcel = async (
     type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
   });
   saveAs(blob, "products.xlsx");
-};
-const AddMetadataPopup = ({
-  selectedProducts,
-  onSuccess,
-}: {
-  selectedProducts: string[];
-  onSuccess: () => void;
-}) => {
-  const storeId = useStoreId();
-  // Convert array-based approach to object-based for MetadataFieldComponent
-  const tempMetadata = useTemp<
-    Record<string, Biqpod.Snapbuy.MetadataField | undefined>
-  >("temp-bulk-metadata-fields");
-  const fullMagicFields =
-    getTemp<
-      Partial<Record<string, Nothing | string | number | string[] | boolean>>
-    >("magic-fields");
-  const getDefaultValueForType = (
-    type: Biqpod.Snapbuy.MetadataField["type"]
-  ) => {
-    switch (type) {
-      case "number":
-        return 0;
-      case "boolean":
-        return false;
-      case "array":
-        return [];
-      case "colors":
-        return [];
-      case "string":
-        return "";
-      default:
-        return "";
-    }
-  };
-  const requiredFields = useMemo(() => {
-    const metadata = tempMetadata.get || {};
-    return Object.values(metadata)
-      .filter(Boolean)
-      .map((field) => {
-        return {
-          ...field!,
-          value:
-            fullMagicFields?.[`temp-bulk-metadata-${field!.key}`] ||
-            getDefaultValueForType(field!.type),
-        };
-      });
-  }, [tempMetadata.get, fullMagicFields]);
-  const action = useAction(
-    "add-metadata",
-    async () => {
-      const metadataFields = requiredFields || [];
-      if (metadataFields.length === 0) {
-        showToast("Please add a metadata field first", "error");
-        return;
-      }
-      // Update each selected product with all metadata fields
-      const updatePromises = selectedProducts.map(async (productId) => {
-        try {
-          const product = await snapbuyApi.product.get(productId);
-          if (product) {
-            let updatedMetaData = product.metaData || {};
-            // Add or update each metadata field
-            metadataFields.forEach((field) => {
-              updatedMetaData[field.key] = field;
-            });
-            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
-              id: productId,
-              metaData: updatedMetaData,
-            };
-            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
-          }
-        } catch (error) {
-          console.error(`Failed to update product ${productId}:`, error);
-        }
-      });
-      await Promise.all(updatePromises);
-      const fieldNames = metadataFields.map((f) => f.key).join(", ");
-      showToast(
-        `Metadata fields "${fieldNames}" added to ${selectedProducts.length} products successfully`,
-        "success"
-      );
-      onSuccess();
-      closePopup();
-      // Clear temp data
-      tempMetadata.set({});
-    },
-    [selectedProducts, storeId, tempMetadata, requiredFields]
-  );
-  const loading = isLoading(action);
-  const metadataFields = Object.values(tempMetadata.get || {}).filter(Boolean);
-  return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
-      <div className="flex justify-between items-center p-3">
-        <h1 className="text-2xl uppercase">
-          <Translate content="add metadata to products" />
-        </h1>
-        <CircleTip
-          icon={allIcons.solid.faXmark}
-          onClick={() => {
-            closePopup();
-          }}
-        />
-      </div>
-      <Line />
-      <div className="flex flex-col gap-4 h-full overflow-hidden">
-        <div className="bg-[--biqpod-gray-opacity] mx-2 mt-2 p-3 rounded-lg">
-          <p className="text-sm">
-            <strong>Selected Products:</strong> {selectedProducts.length}
-          </p>
-        </div>
-        <div className="flex-1 overflow-hidden">
-          <MetadataFieldComponent
-            metadata={tempMetadata.get || undefined}
-            onChangeMetadata={(metadata) => tempMetadata.set(metadata)}
-            fieldIdPrefix="temp-bulk-metadata"
-            showAddSection={true}
-            showFieldActions={true}
-          />
-        </div>
-        <div className="bg-yellow-600/20 mx-2 p-3 rounded-lg">
-          <p className="text-yellow-600 text-sm">
-            <strong>Note:</strong> This will add the selected metadata fields to
-            all selected products. If a product already has any of these
-            metadata keys, they will be overwritten.
-          </p>
-        </div>
-      </div>
-      <Line />
-      <div className="flex gap-2 p-4">
-        <Button
-          onClick={() => {
-            closePopup();
-            tempMetadata.set({});
-          }}
-          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
-        >
-          <Translate content="cancel" />
-        </Button>
-        <Button
-          onClick={async () => {
-            if (metadataFields.length === 0) {
-              showToast("Please add a metadata field first", "error");
-              return;
-            }
-            const fieldNames = metadataFields.map((f) => f!.key).join(", ");
-            const response = await confirm({
-              title: "Add Metadata",
-              message: `Are you sure you want to add metadata fields "${fieldNames}" to ${selectedProducts.length} products?`,
-            });
-            if (response) {
-              execAction("add-metadata");
-            }
-          }}
-          disabled={loading || metadataFields.length === 0}
-          rightIcon={
-            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faCheck
-          }
-          className="flex-1"
-          iconClassName={tw(loading && "animate-spin")}
-        >
-          <Translate content="add metadata" />
-        </Button>
-      </div>
-    </Card>
-  );
-};
-const RemoveMetadataPopup = ({
-  selectedProducts,
-  onSuccess,
-}: {
-  selectedProducts: string[];
-  onSuccess: () => void;
-}) => {
-  const storeId = useStoreId();
-  const metadataKeys = useCopyState<string[] | Nothing>([]);
-  const action = useAction(
-    "remove-metadata",
-    async () => {
-      const metadataKeysList = metadataKeys.get || [];
-      if (metadataKeysList.length === 0) {
-        showToast("Please enter metadata keys to remove", "error");
-        return;
-      }
-      // Update each selected product by removing the specified metadata fields
-      const updatePromises = selectedProducts.map(async (productId) => {
-        try {
-          const product = await snapbuyApi.product.get(productId);
-          if (product && product.metaData) {
-            let metadataKey = Object.keys(product.metaData).filter(
-              (field) => !metadataKeysList.includes(field)
-            );
-            var meta = { ...product.metaData };
-            metadataKey.forEach((key) => {
-              const { [key]: _, ...rest } = meta;
-              meta = rest;
-            });
-            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
-              id: productId,
-              metaData: meta,
-            };
-            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
-          }
-        } catch (error) {
-          console.error(`Failed to update product ${productId}:`, error);
-        }
-      });
-      await Promise.all(updatePromises);
-      const keysString = metadataKeysList.join(", ");
-      showToast(
-        `Metadata fields "${keysString}" removed from ${selectedProducts.length} products successfully`,
-        "success"
-      );
-      onSuccess();
-      closePopup();
-      // Clear the field
-      metadataKeys.set([]);
-    },
-    [selectedProducts, storeId, metadataKeys.get]
-  );
-  const loading = isLoading(action);
-  return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
-      <div className="flex justify-between items-center p-3">
-        <h1 className="text-2xl uppercase">
-          <Translate content="remove metadata from products" />
-        </h1>
-        <CircleTip
-          icon={allIcons.solid.faXmark}
-          onClick={() => {
-            closePopup();
-          }}
-        />
-      </div>
-      <Line />
-      <div className="flex flex-col justify-between gap-4 p-4 h-full">
-        <div className="flex flex-col gap-2">
-          <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
-            <p className="text-sm">
-              <strong>Selected Products:</strong> {selectedProducts.length}
-            </p>
-          </div>
-          <Card>
-            <h3 className="p-2 font-semibold text-lg capitalize">
-              <Translate content="metadata keys to remove" />
-            </h3>
-            <Line />
-            <div className="flex flex-col gap-2 p-2">
-              <ArrayField id="metadata-keys" state={metadataKeys} />
-            </div>
-          </Card>
-        </div>
-        <div className="bg-red-600/20 p-3 rounded-lg">
-          <p className="text-red-600 text-sm">
-            <strong>Warning:</strong> This will permanently remove the specified
-            metadata fields from all selected products. This action cannot be
-            undone.
-          </p>
-        </div>
-      </div>
-      <Line />
-      <div className="flex gap-2 p-4">
-        <Button
-          onClick={() => {
-            closePopup();
-            metadataKeys.set([]);
-          }}
-          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
-        >
-          <Translate content="cancel" />
-        </Button>
-        <Button
-          onClick={async () => {
-            const metadataKeysList = metadataKeys.get || [];
-            if (metadataKeysList.length === 0) {
-              showToast("Please enter metadata keys to remove", "error");
-              return;
-            }
-            const keysString = metadataKeysList.join(", ");
-            const response = await confirm({
-              title: "Remove Metadata",
-              message: `Are you sure you want to remove metadata fields "${keysString}" from ${selectedProducts.length} products?`,
-              detail: "This action cannot be undone.",
-              type: "warning",
-            });
-            if (response) {
-              execAction("remove-metadata");
-            }
-          }}
-          disabled={loading || (metadataKeys.get || []).length === 0}
-          rightIcon={
-            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faTrash
-          }
-          className="flex-1"
-          iconClassName={tw(loading && "animate-spin")}
-        >
-          <Translate content="remove metadata" />
-        </Button>
-      </div>
-    </Card>
-  );
 };
 export const ExportJsonPopup = () => {
   const storeId = useStoreId();
@@ -1227,53 +923,33 @@ const ToolsCard = memo(
     );
   }
 );
-const PAGE_SIZE = 30;
-const sortBy: keyof Biqpod.Snapbuy.Product = "id";
 export const Products = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
   const {
     products,
-    lastDoc,
     isLoading: cacheLoading,
-    updateProducts,
-    addProducts,
+    setProducts,
   } = useIndexedDBProducts(storeId);
-  const hasMore = useCopyState(true);
   const tabsPosition = getPosition("products-and-brands");
   const action = useAction(
     "fetch-products",
-    async (next = false) => {
+    async () => {
       if (!storeId) {
         return;
       }
       await delay(200);
-      const newProducts = await getDocs<Biqpod.Snapbuy.Product>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "products"],
-        {
-          where: and(
-            where("storeId", "==", storeId) // Assuming storeId is the same as uid
-          ),
-          orders: mergeArray(orderBy(sortBy, "asc")),
-          limit: PAGE_SIZE,
-          startAt: next && lastDoc?.[sortBy] && mergeArray(lastDoc?.[sortBy]),
-        }
-      );
-      if (!newProducts) {
+      var result = await snapbuyApi.product.getProductsOf(storeId);
+      if (!result) {
         return;
       }
-      const list = newProducts.map((order) => ({
-        ...order.data,
-        id: order.id,
-      }));
-      if (next) {
-        addProducts(list, newProducts.at(-1)?.data || null);
-      } else {
-        updateProducts(list, newProducts.at(-1)?.data || null);
-      }
-      hasMore.set(newProducts.length === PAGE_SIZE);
+      setProducts(
+        result.sort((a, b) => {
+          return a.name?.localeCompare(b.name || "") || 0;
+        })
+      );
     },
-    [storeId, lastDoc]
+    [storeId]
   );
   const success = isSuccess(action);
   useEffect(() => {
@@ -1281,7 +957,7 @@ export const Products = () => {
     if (products.length === 0) {
       execAction("fetch-products", false);
     }
-  }, [cacheLoading, products.length, lastDoc]);
+  }, [cacheLoading, products.length]);
   const showTools = useCopyState(false);
   const selectedProducts = useTemp<string[]>("selected-products");
   const isSelectionMode = useTemp<boolean>("is-selection-mode");
@@ -1371,91 +1047,93 @@ export const Products = () => {
   const search = getFieldValue("producer-search-product");
   const [_, filterProducts] = useMemoDelay(
     () => {
-      let filteredProducts = products?.filter(
-        (prod: Biqpod.Snapbuy.Product) => {
-          // Apply filter options with AND logic
-          if (options.get) {
-            // Filter by availability
-            if (
-              options.get.available !== null &&
-              options.get.available !== undefined &&
-              options.get.available !== ""
-            ) {
-              const isAvailable = options.get.available === "true";
-              if (prod.available !== isAvailable) {
-                return false;
-              }
-            }
-            // Filter by brand
-            if (
-              options.get.brand !== null &&
-              options.get.brand !== undefined &&
-              options.get.brand !== ""
-            ) {
-              if (prod.brandId !== options.get.brand) {
-                return false;
-              }
-            }
-            // Filter by promoted status (if implemented in your product structure)
-            if (
-              options.get.promoted !== null &&
-              options.get.promoted !== undefined &&
-              options.get.promoted !== ""
-            ) {
-              const isPromoted = options.get.promoted === "true";
-              // Assuming promoted is a field in your product structure
-              // If not implemented, you can add it to the Product interface
-              if (!!prod.multiple?.prices !== isPromoted) {
-                return false;
-              }
-            }
-            // Filter by price range
-            if (
-              options.get.minPrice !== null &&
-              options.get.minPrice !== undefined &&
-              options.get.minPrice > 0
-            ) {
-              let productPrice = 0;
-              if (prod.type === "single" && prod.single?.client) {
-                productPrice = prod.single.client;
-              } else if (
-                prod.type === "multiple" &&
-                prod.multiple?.prices?.length
-              ) {
-                // For multiple prices, use the minimum price
-                productPrice = Math.min(
-                  ...prod.multiple.prices.map((p) => p.price)
-                );
-              }
-              if (productPrice < options.get.minPrice) {
-                return false;
-              }
-            }
-            if (
-              options.get.maxPrice !== null &&
-              options.get.maxPrice !== undefined &&
-              options.get.maxPrice > 0
-            ) {
-              let productPrice = 0;
-              if (prod.type === "single" && prod.single?.client) {
-                productPrice = prod.single.client;
-              } else if (
-                prod.type === "multiple" &&
-                prod.multiple?.prices?.length
-              ) {
-                // For multiple prices, use the maximum price
-                productPrice = Math.max(
-                  ...prod.multiple.prices.map((p) => p.price)
-                );
-              }
-              if (productPrice > options.get.maxPrice) {
-                return false;
-              }
+      let filteredProducts = products?.filter((prod) => {
+        // Apply filter options with AND logic
+        if (options.get) {
+          // Filter by availability
+          if (options.get.available && options.get.available !== "all") {
+            const isAvailable = options.get.available === "true";
+            if (prod.available !== isAvailable) {
+              return false;
             }
           }
-          return true;
+          // Filter by multiple brands
+          if (options.get.brands && options.get.brands.length > 0) {
+            if (!options.get.brands.includes(prod.brandId || "")) {
+              return false;
+            }
+          }
+          // Filter by keys
+          if (options.get.keys && options.get.keys.length > 0) {
+            // Assuming keys are metadata keys
+            const hasKeys = options.get.keys.every(
+              (key) => prod.metaData && key in prod.metaData
+            );
+            if (!hasKeys) {
+              return false;
+            }
+          }
+          // Filter by product type
+          if (options.get.productType) {
+            if (prod.type !== options.get.productType) {
+              return false;
+            }
+          }
+          // Filter by metadata
+          if (
+            options.get.metadata &&
+            Object.keys(options.get.metadata).length > 0
+          ) {
+            const hasAllMetadata = Object.entries(options.get.metadata).every(
+              ([key, field]) => {
+                if (!field) return true; // Skip undefined fields
+                if (!prod.metaData || !prod.metaData[key]) return false;
+                // For now, just check if the key exists. In the future, we could check values too
+                return true;
+              }
+            );
+            if (!hasAllMetadata) {
+              return false;
+            }
+          }
+          // Filter by price range
+          if (options.get.minPrice) {
+            let productPrice = 0;
+            if (prod.type === "single" && prod.single?.client) {
+              productPrice = prod.single.client;
+            } else if (
+              prod.type === "multiple" &&
+              prod.multiple?.prices?.length
+            ) {
+              // For multiple prices, use the minimum price
+              productPrice = Math.min(
+                ...prod.multiple.prices.map((p) => p.price)
+              );
+            }
+            if (productPrice < options.get.minPrice) {
+              return false;
+            }
+          }
+          if (options.get.maxPrice) {
+            let productPrice = 0;
+            if (prod.type === "single" && prod.single?.client) {
+              productPrice = prod.single.client;
+            } else if (
+              prod.type === "multiple" &&
+              prod.multiple?.prices?.length
+            ) {
+              // For multiple prices, use the maximum price
+              productPrice = Math.max(
+                ...prod.multiple.prices.map((p) => p.price)
+              );
+            }
+            if (productPrice > options.get.maxPrice) {
+              return false;
+            }
+          }
         }
-      );
+        return true;
+      });
       // Apply search filter after other filters
       if (!search) {
         return filteredProducts;
@@ -1468,7 +1146,6 @@ export const Products = () => {
   const loading = isLoading(action);
   // FastList related state and refs
   const listRef = useRef<any>(null);
-  const scrollState = useRef(0);
   const [showShadow, setShowShadow] = useState(false);
   // Position and height calculation for FastList
   const position = getPosition("searching");
@@ -1516,24 +1193,6 @@ export const Products = () => {
   const itemCount = useMemo(() => {
     return Math.ceil((listItemData?.length || 0 + 1) / columns);
   }, [listItemData?.length, columns]);
-  // Stable onScroll callback
-  const handleScroll = useCallback(
-    (e: ListOnScrollProps) => {
-      scrollState.current = e.scrollOffset || 0;
-      setShowShadow((e.scrollOffset || 0) > 40);
-      // Infinite scroll logic
-      const { scrollOffset, scrollDirection } = e;
-      const threshold = 200; // Increased threshold to fetch when there's just a little scrolling left
-      const isNearBottom =
-        scrollDirection === "forward" &&
-        scrollOffset + listHeight >=
-          Math.ceil((listItemData?.length || 0) / columns) * 340 - threshold;
-      if (isNearBottom && hasMore.get && !loading) {
-        execAction("fetch-products", true);
-      }
-    },
-    [listHeight, listItemData?.length, hasMore.get, loading, columns]
-  );
   // Memoized render item function
   const RenderItem = useCallback(
     ({
@@ -1644,7 +1303,9 @@ export const Products = () => {
             itemSize={340}
             width={"100%"}
             itemData={data}
-            onScroll={handleScroll}
+            onScroll={(e) => {
+              setShowShadow(e.scrollOffset > 10);
+            }}
           >
             {RenderItem}
           </List>
@@ -1684,7 +1345,6 @@ export const Products = () => {
     listHeight,
     itemCount,
     listItemData,
-    handleScroll,
     RenderItem,
   ]);
   return (
@@ -1866,6 +1526,54 @@ export const Products = () => {
                           );
                         },
                       },
+                      {
+                        label: "Remove All Metadata",
+                        defaultIcon: allIcons.solid.faTrashAlt,
+                        click: () => {
+                          showPopup(
+                            <RemoveAllMetadataPopup
+                              selectedProducts={selectedProducts.get || []}
+                              onSuccess={() => {
+                                isSelectionMode.set(false);
+                                selectedProducts.set([]);
+                                showToast("All metadata removed successfully!");
+                              }}
+                            />
+                          );
+                        },
+                      },
+                      {
+                        label: "Set Brand",
+                        defaultIcon: allIcons.solid.faTag,
+                        click: () => {
+                          showPopup(
+                            <SetBrandPopup
+                              selectedProducts={selectedProducts.get || []}
+                              onSuccess={() => {
+                                isSelectionMode.set(false);
+                                selectedProducts.set([]);
+                                showToast("Brand set successfully!");
+                              }}
+                            />
+                          );
+                        },
+                      },
+                      {
+                        label: "Merge Photos",
+                        defaultIcon: allIcons.solid.faImages,
+                        click: () => {
+                          showPopup(
+                            <MergePhotosPopup
+                              selectedProducts={selectedProducts.get || []}
+                              onSuccess={() => {
+                                isSelectionMode.set(false);
+                                selectedProducts.set([]);
+                                showToast("Photos merged successfully!");
+                              }}
+                            />
+                          );
+                        },
+                      },
                     ],
                   });
                 }}
@@ -1900,5 +1608,551 @@ export const Products = () => {
         />
       )}
     </motion.div>
+  );
+};
+const AddMetadataPopup = ({
+  selectedProducts,
+  onSuccess,
+}: {
+  selectedProducts: string[];
+  onSuccess: () => void;
+}) => {
+  const storeId = useStoreId();
+  const tempMetadata = useCopyState<
+    Record<string, Biqpod.Snapbuy.MetadataField | undefined>
+  >({});
+  const metadataFields = useMemo(() => {
+    return Object.values(tempMetadata.get || {})
+      .map((field) => field!)
+      .filter(Boolean);
+  }, [tempMetadata.get]);
+  // Convert array-based approach to object-based for MetadataFieldComponent
+  const action = useAction(
+    "add-metadata",
+    async () => {
+      if (metadataFields.length === 0) {
+        showToast("Please add a metadata field first", "error");
+        return;
+      }
+      // Update each selected product with all metadata fields
+      const updatePromises = selectedProducts.map(async (productId) => {
+        try {
+          const product = await snapbuyApi.product.get(productId);
+          if (product) {
+            let updatedMetaData = { ...product.metaData, ...tempMetadata.get };
+            // Add or update each metadata field
+            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
+              id: productId,
+              metaData: updatedMetaData,
+            };
+            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
+          }
+        } catch (error) {
+          console.error(`Failed to update product ${productId}:`, error);
+        }
+      });
+      await Promise.all(updatePromises);
+      const fieldNames = metadataFields.map((f) => f.key).join(", ");
+      showToast(
+        `Metadata fields "${fieldNames}" added to ${selectedProducts.length} products successfully`,
+        "success"
+      );
+      onSuccess();
+      closePopup();
+      execAction("fetch-products");
+      // Clear temp data
+      tempMetadata.set({});
+    },
+    [selectedProducts, storeId, tempMetadata.get]
+  );
+  const loading = isLoading(action);
+  useEffect(() => {
+    return () => {
+      tempMetadata.set({});
+    };
+  }, []);
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
+      <div className="flex justify-between items-center p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="add metadata to products" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex flex-col gap-4 h-full overflow-hidden">
+        <div className="bg-[--biqpod-gray-opacity] mx-2 mt-2 p-3 rounded-lg">
+          <p className="text-sm">
+            <strong>Selected Products:</strong> {selectedProducts.length}
+          </p>
+        </div>
+        <div className="flex-1 overflow-hidden">
+          <MetadataFieldComponent
+            metadata={tempMetadata.get || undefined}
+            onChangeMetadata={(metadata) => {
+              tempMetadata.set(metadata);
+              console.log(metadata);
+            }}
+            showAddSection={true}
+            showFieldActions={true}
+          />
+        </div>
+        <div className="bg-yellow-600/20 mx-2 p-3 rounded-lg">
+          <p className="text-yellow-600 text-sm">
+            <strong>Note:</strong> This will add the selected metadata fields to
+            all selected products. If a product already has any of these
+            metadata keys, they will be overwritten.
+          </p>
+        </div>
+      </div>
+      <Line />
+      <div className="flex gap-2 p-4">
+        <Button
+          onClick={() => {
+            closePopup();
+            tempMetadata.set({});
+          }}
+          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+        >
+          <Translate content="cancel" />
+        </Button>
+        <Button
+          onClick={async () => {
+            if (metadataFields.length === 0) {
+              showToast("Please add a metadata field first", "error");
+              return;
+            }
+            const fieldNames = metadataFields.map((f) => f!.key).join(", ");
+            const response = await confirm({
+              title: "Add Metadata",
+              message: `Are you sure you want to add metadata fields "${fieldNames}" to ${selectedProducts.length} products?`,
+            });
+            if (response) {
+              execAction("add-metadata");
+            }
+          }}
+          disabled={loading || metadataFields.length === 0}
+          rightIcon={
+            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faCheck
+          }
+          className="flex-1"
+          iconClassName={tw(loading && "animate-spin")}
+        >
+          <Translate content="add metadata" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
+const RemoveMetadataPopup = ({
+  selectedProducts,
+  onSuccess,
+}: {
+  selectedProducts: string[];
+  onSuccess: () => void;
+}) => {
+  const storeId = useStoreId();
+  const metadataKeys = useCopyState<string[] | Nothing>([]);
+  const action = useAction(
+    "remove-metadata",
+    async () => {
+      const metadataKeysList = metadataKeys.get || [];
+      if (metadataKeysList.length === 0) {
+        showToast("Please enter metadata keys to remove", "error");
+        return;
+      }
+      // Update each selected product by removing the specified metadata fields
+      const updatePromises = selectedProducts.map(async (productId) => {
+        try {
+          const product = await snapbuyApi.product.get(productId);
+          if (product && product.metaData) {
+            var meta = { ...product.metaData };
+            metadataKeysList.forEach((key) => {
+              const { [key]: _, ...rest } = meta;
+              meta = rest;
+            });
+            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
+              id: productId,
+              metaData: meta,
+            };
+            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
+          }
+        } catch (error) {
+          console.error(`Failed to update product ${productId}:`, error);
+        }
+      });
+      await Promise.all(updatePromises);
+      const keysString = metadataKeysList.join(", ");
+      showToast(
+        `Metadata fields "${keysString}" removed from ${selectedProducts.length} products successfully`,
+        "success"
+      );
+      onSuccess();
+      closePopup();
+      execAction("fetch-products");
+      // Clear the field
+      metadataKeys.set([]);
+    },
+    [selectedProducts, storeId, metadataKeys.get]
+  );
+  const loading = isLoading(action);
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
+      <div className="flex justify-between items-center p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="remove metadata from products" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex flex-col justify-between gap-4 p-4 h-full">
+        <div className="flex flex-col gap-2">
+          <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
+            <p className="text-sm">
+              <strong>Selected Products:</strong> {selectedProducts.length}
+            </p>
+          </div>
+          <Card>
+            <h3 className="p-2 font-semibold text-lg capitalize">
+              <Translate content="metadata keys to remove" />
+            </h3>
+            <Line />
+            <div className="flex flex-col gap-2 p-2">
+              <ArrayField id="metadata-keys" state={metadataKeys} />
+            </div>
+          </Card>
+        </div>
+        <div className="bg-red-600/20 p-3 rounded-lg">
+          <p className="text-red-600 text-sm">
+            <strong>Warning:</strong> This will permanently remove the specified
+            metadata fields from all selected products. This action cannot be
+            undone.
+          </p>
+        </div>
+      </div>
+      <Line />
+      <div className="flex gap-2 p-4">
+        <Button
+          onClick={() => {
+            closePopup();
+            metadataKeys.set([]);
+          }}
+          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+        >
+          <Translate content="cancel" />
+        </Button>
+        <Button
+          onClick={async () => {
+            const metadataKeysList = metadataKeys.get || [];
+            if (metadataKeysList.length === 0) {
+              showToast("Please enter metadata keys to remove", "error");
+              return;
+            }
+            const keysString = metadataKeysList.join(", ");
+            const response = await confirm({
+              title: "Remove Metadata",
+              message: `Are you sure you want to remove metadata fields "${keysString}" from ${selectedProducts.length} products?`,
+              detail: "This action cannot be undone.",
+              type: "warning",
+            });
+            if (response) {
+              execAction("remove-metadata");
+            }
+          }}
+          disabled={loading || (metadataKeys.get || []).length === 0}
+          rightIcon={
+            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faTrash
+          }
+          className="flex-1"
+          iconClassName={tw(loading && "animate-spin")}
+        >
+          <Translate content="remove metadata" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
+const RemoveAllMetadataPopup = ({
+  selectedProducts,
+  onSuccess,
+}: {
+  selectedProducts: string[];
+  onSuccess: () => void;
+}) => {
+  const storeId = useStoreId();
+  const action = useAction(
+    "remove-all-metadata",
+    async () => {
+      // Update each selected product by removing all metadata
+      const updatePromises = selectedProducts.map(async (productId) => {
+        try {
+          const product = await snapbuyApi.product.get(productId);
+          if (product) {
+            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
+              id: productId,
+              metaData: {},
+            };
+            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
+          }
+        } catch (error) {
+          console.error(`Failed to update product ${productId}:`, error);
+        }
+      });
+      await Promise.all(updatePromises);
+      showToast(
+        `All metadata removed from ${selectedProducts.length} products successfully`,
+        "success"
+      );
+      onSuccess();
+      closePopup();
+      execAction("fetch-products");
+    },
+    [selectedProducts, storeId]
+  );
+  const loading = isLoading(action);
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
+      <div className="flex justify-between items-center p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="remove all metadata from products" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex flex-col justify-between gap-4 p-4 h-full">
+        <div className="flex flex-col gap-2">
+          <div className="bg-[--biqpod-gray-opacity] p-3 rounded-lg">
+            <p className="text-sm">
+              <strong>Selected Products:</strong> {selectedProducts.length}
+            </p>
+          </div>
+        </div>
+        <div className="bg-red-600/20 p-3 rounded-lg">
+          <p className="text-red-600 text-sm">
+            <strong>Warning:</strong> This will permanently remove ALL metadata
+            fields from all selected products. This action cannot be undone.
+          </p>
+        </div>
+      </div>
+      <Line />
+      <div className="flex gap-2 p-4">
+        <Button
+          onClick={() => {
+            closePopup();
+          }}
+          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+        >
+          <Translate content="cancel" />
+        </Button>
+        <Button
+          onClick={async () => {
+            const response = await confirm({
+              title: "Remove All Metadata",
+              message: `Are you sure you want to remove ALL metadata from ${selectedProducts.length} products?`,
+              detail: "This action cannot be undone.",
+              type: "warning",
+            });
+            if (response) {
+              execAction("remove-all-metadata");
+            }
+          }}
+          disabled={loading}
+          rightIcon={
+            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faTrashAlt
+          }
+          className="flex-1"
+          iconClassName={tw(loading && "animate-spin")}
+        >
+          <Translate content="remove all metadata" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
+const SetBrandPopup = ({
+  selectedProducts,
+  onSuccess,
+}: {
+  selectedProducts: string[];
+  onSuccess: () => void;
+}) => {
+  const storeId = useStoreId();
+  const [brands, setBrands] = useState<Biqpod.Snapbuy.Brand[]>([]);
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
+  const [loadingBrands, setLoadingBrands] = useState(false);
+  const searchTerm = getFieldValue("set-brand-search");
+  useEffect(() => {
+    const fetchBrands = async () => {
+      if (!storeId) return;
+      setLoadingBrands(true);
+      try {
+        const fetchedBrands = await snapbuyApi.brands.getAll(storeId);
+        setBrands(fetchedBrands || []);
+      } catch (error) {
+        console.error("Failed to load brands:", error);
+        showToast("Failed to load brands", "error");
+      } finally {
+        setLoadingBrands(false);
+      }
+    };
+    fetchBrands();
+  }, [storeId]);
+  const filteredBrands = useMemo(() => {
+    if (!searchTerm?.trim()) return brands;
+    const nameMatches = filterFuzzySearch(brands, searchTerm, "name");
+    const descMatches = filterFuzzySearch(brands, searchTerm, "description");
+    return [...new Set([...nameMatches, ...descMatches])];
+  }, [brands, searchTerm]);
+  const action = useAction(
+    "set-brand",
+    async () => {
+      if (!selectedBrandId) {
+        showToast("Please select a brand", "error");
+        return;
+      }
+      const updatePromises = selectedProducts.map(async (productId) => {
+        try {
+          const product = await snapbuyApi.product.get(productId);
+          if (product) {
+            const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
+              id: productId,
+              brandId: selectedBrandId,
+            };
+            await snapbuyApi.product.upsert(storeId!, [updatedProduct]);
+          }
+        } catch (error) {
+          console.error(`Failed to update product ${productId}:`, error);
+        }
+      });
+      await Promise.all(updatePromises);
+      const brandName =
+        brands.find((b) => b.id === selectedBrandId)?.name || selectedBrandId;
+      showToast(
+        `Brand "${brandName}" set to ${selectedProducts.length} products successfully`,
+        "success"
+      );
+      onSuccess();
+      closePopup();
+      execAction("fetch-products");
+    },
+    [selectedProducts, storeId, selectedBrandId, brands]
+  );
+  const loading = isLoading(action);
+  return (
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
+      <div className="flex justify-between items-center p-3">
+        <h1 className="text-2xl uppercase">
+          <Translate content="set brand to products" />
+        </h1>
+        <CircleTip
+          icon={allIcons.solid.faXmark}
+          onClick={() => {
+            closePopup();
+          }}
+        />
+      </div>
+      <Line />
+      <div className="flex flex-col gap-4 h-full overflow-hidden">
+        <div className="bg-[--biqpod-gray-opacity] mx-2 mt-2 p-3 rounded-lg">
+          <p className="text-sm">
+            <Translate content="select a brand to assign to the selected products" />
+          </p>
+        </div>
+        <div className="mx-2">
+          <Field
+            inputName="set-brand-search"
+            placeholder="Search brands..."
+            className="rounded-xl"
+          />
+        </div>
+        <Scroll className="flex-1 overflow-hidden">
+          {loadingBrands ? (
+            <div className="flex justify-center items-center py-8">
+              <CircleLoading />
+              <span className="ml-2">
+                <Translate content="loading brands..." />
+              </span>
+            </div>
+          ) : filteredBrands.length === 0 ? (
+            <div className="flex justify-center items-center py-8">
+              <span className="text-gray-500">
+                {searchTerm?.trim()
+                  ? "No brands match your search"
+                  : "No brands found"}
+              </span>
+            </div>
+          ) : (
+            <div className="flex flex-col gap-2 p-2">
+              {filteredBrands.map((brand) => (
+                <div
+                  key={brand.id}
+                  className={tw(
+                    "flex items-center gap-2 p-3 rounded-lg cursor-pointer border",
+                    selectedBrandId === brand.id
+                      ? "bg-[--biqpod-primary] text-[--biqpod-primary-content] border-[--biqpod-primary]"
+                      : "hover:bg-[--biqpod-gray-opacity] border-[--biqpod-borders]"
+                  )}
+                  onClick={() => setSelectedBrandId(brand.id!)}
+                >
+                  <input
+                    type="radio"
+                    checked={selectedBrandId === brand.id}
+                    onChange={() => setSelectedBrandId(brand.id!)}
+                    className="mr-2"
+                  />
+                  <div className="flex flex-col">
+                    <span className="font-semibold">{brand.name}</span>
+                    {brand.description && (
+                      <span className="opacity-75 text-sm">
+                        {brand.description}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </Scroll>
+      </div>
+      <Line />
+      <div className="flex gap-2 p-4">
+        <Button
+          onClick={() => {
+            closePopup();
+          }}
+          className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+        >
+          <Translate content="cancel" />
+        </Button>
+        <Button
+          onClick={async () => {
+            execAction("set-brand");
+          }}
+          disabled={loading || !selectedBrandId || loadingBrands}
+          rightIcon={
+            loading ? allIcons.solid.faCircleNotch : allIcons.solid.faCheck
+          }
+          className="flex-1"
+          iconClassName={tw(loading && "animate-spin")}
+        >
+          <Translate content="set brand" />
+        </Button>
+      </div>
+    </Card>
   );
 };

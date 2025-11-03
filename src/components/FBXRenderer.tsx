@@ -133,7 +133,7 @@ export const GLTFRenderer: React.FC<GLTFRendererProps> = ({
           (progress: any) => {
             // Loading progress
             const loaded = (progress.loaded / progress.total) * 100;
-            console.log(`GLTF loading progress: ${loaded}%`);
+            console.log(`GLTFLoader: ${loaded.toFixed(2)}% loaded`);
           },
           (error: any) => {
             console.error("Error loading GLTF:", error);

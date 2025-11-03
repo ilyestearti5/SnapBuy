@@ -383,9 +383,9 @@ export const ProductImages = () => {
                         .filter(({ name, link, productName }) => {
                           if (!url.get) return true;
                           return (
-                            fuzzySearch(url.get, name) ||
-                            fuzzySearch(url.get, link) ||
-                            fuzzySearch(url.get, productName)
+                            fuzzySearch(name, url.get) ||
+                            fuzzySearch(link, url.get) ||
+                            fuzzySearch(productName, url.get)
                           );
                         })
                         .map((photo, index) => {

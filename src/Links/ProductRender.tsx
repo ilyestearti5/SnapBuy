@@ -128,6 +128,11 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             <div className="flex-1">
               {highlightMatch(product.name!, search)}
             </div>
+            {Object.keys(product.metaData || {}).length > 0 && (
+              <div className="text-[--biqpod-gray-opacity] text-xs truncate">
+                {Object.keys(product.metaData || {}).join(", ")}
+              </div>
+            )}
           </div>
         </div>
         <Line />

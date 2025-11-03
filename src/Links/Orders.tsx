@@ -3,6 +3,7 @@ import {
   AsyncComponent,
   Button,
   Card,
+  CardHeaderForPopup,
   CircleTip,
   EmptyComponent,
   Field,
@@ -25,7 +26,7 @@ import {
   useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { include, range, tw } from "@biqpod/app/ui/utils";
+import { fuzzySearch, range, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
 import { onCollectionSnapshot } from "../server";
 import { useLocation } from "react-router-dom";
@@ -318,6 +319,16 @@ export const Orders = () => {
     false
   );
   const usedBy = useUsedBy();
+  const noteHover = useCopyState<
+    Record<string, { top: number; left: number } | null>
+  >({});
+  const expandedNotes = useCopyState<Record<string, boolean>>({});
+  const setNoteHover = (
+    orderId: string,
+    position: { top: number; left: number } | null
+  ) => {
+    noteHover.set((prev) => ({ ...prev, [orderId]: position }));
+  };
   useEffect(() => {
     return () => {
       isFocused.set(false);
@@ -388,9 +399,10 @@ export const Orders = () => {
       if (!newOrders) {
         return;
       }
-      orders.set((prev) =>
-        next && prev ? [...prev, ...newOrders] : newOrders
-      );
+      orders.set((prev) => {
+        const result = next && prev ? [...prev, ...newOrders] : newOrders;
+        return result;
+      });
       const lastDocRef = newOrders.at(-1);
       lastDoc.set(lastDocRef || null);
       hasMore.set(newOrders.length === PAGE_SIZE);
@@ -407,51 +419,50 @@ export const Orders = () => {
   const isSmallView = isMobile || isTablet;
   const ordersState = useMemo(() => {
     const currentTime = new Date();
-    return (
-      orders.get &&
-      orders.get
-        .filter((order) => {
-          return include(`${order.id} @status ${order.status}`, searchOrder);
-        })
-        .map((order) => {
-          const time = new Date(order.createdAt!);
-          const timeDifference = Math.floor(
-            (currentTime.getTime() - time.getTime()) / 1000
-          );
-          let timeAgo = "";
-          if (timeDifference < 60) {
-            timeAgo = `${timeDifference} sec${
-              timeDifference > 1 ? "s" : ""
-            } ago`;
-          } else if (timeDifference < 3600) {
-            const minutes = Math.floor(timeDifference / 60);
-            timeAgo = `${minutes} min${minutes > 1 ? "s" : ""} ago`;
-          } else if (timeDifference < 86400) {
-            const hours = Math.floor(timeDifference / 3600);
-            timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
-          } else if (timeDifference < 604800) {
-            const days = Math.floor(timeDifference / 86400);
-            timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
-          } else if (timeDifference < 2419200) {
-            const weeks = Math.floor(timeDifference / 604800);
-            timeAgo = `${weeks} week${weeks > 1 ? "s" : ""} ago`;
-          } else if (timeDifference < 29030400) {
-            const months = Math.floor(timeDifference / 2419200);
-            timeAgo = `${months} month${months > 1 ? "s" : ""} ago`;
-          } else {
-            const years = Math.floor(timeDifference / 29030400);
-            timeAgo = `${years} year${years > 1 ? "s" : ""} ago`;
-          }
-          const { products = {}, packs = {} } = order;
-          const productCount =
-            Object.keys(products).length + Object.keys(packs).length;
-          return {
-            order,
-            timeAgo,
-            productCount,
-          };
-        })
-    );
+    var result = orders.get
+      ?.filter((order) => {
+        return fuzzySearch(
+          `${order.id} @status ${order.status}`,
+          searchOrder || ""
+        );
+      })
+      .map((order) => {
+        const time = new Date(order.createdAt!);
+        const timeDifference = Math.floor(
+          (currentTime.getTime() - time.getTime()) / 1000
+        );
+        let timeAgo = "";
+        if (timeDifference < 60) {
+          timeAgo = `${timeDifference} sec${timeDifference > 1 ? "s" : ""} ago`;
+        } else if (timeDifference < 3600) {
+          const minutes = Math.floor(timeDifference / 60);
+          timeAgo = `${minutes} min${minutes > 1 ? "s" : ""} ago`;
+        } else if (timeDifference < 86400) {
+          const hours = Math.floor(timeDifference / 3600);
+          timeAgo = `${hours} hour${hours > 1 ? "s" : ""} ago`;
+        } else if (timeDifference < 604800) {
+          const days = Math.floor(timeDifference / 86400);
+          timeAgo = `${days} day${days > 1 ? "s" : ""} ago`;
+        } else if (timeDifference < 2419200) {
+          const weeks = Math.floor(timeDifference / 604800);
+          timeAgo = `${weeks} week${weeks > 1 ? "s" : ""} ago`;
+        } else if (timeDifference < 29030400) {
+          const months = Math.floor(timeDifference / 2419200);
+          timeAgo = `${months} month${months > 1 ? "s" : ""} ago`;
+        } else {
+          const years = Math.floor(timeDifference / 29030400);
+          timeAgo = `${years} year${years > 1 ? "s" : ""} ago`;
+        }
+        const { products = {}, packs = {} } = order;
+        const productCount =
+          Object.keys(products).length + Object.keys(packs).length;
+        return {
+          order,
+          timeAgo,
+          productCount,
+        };
+      });
+    return result;
   }, [searchOrder, orders.get]);
   const hasNews = useCopyState<Biqpod.Snapbuy.Order[]>([]);
   useEffect(() => {
@@ -612,9 +623,27 @@ export const Orders = () => {
                         <div className="w-full">
                           <StatusUi status={order.status} />
                         </div>
-                        <span className="w-full text-[--biqpod-gray-opacity] text-sm truncate">
-                          {order.note || "-"}
-                        </span>
+                        <div
+                          onClick={() => {
+                            showPopup(
+                              <Card className="max-md:rounded-none max-md:w-full max-md:h-full">
+                                <CardHeaderForPopup title="Note" />
+                                <Line />
+                                <Scroll className="p-2">
+                                  <AnimatedMarkdownRenderer
+                                    content={order.note || ""}
+                                  />
+                                </Scroll>
+                              </Card>
+                            );
+                          }}
+                          onMouseLeave={() => setNoteHover(order.id, null)}
+                          className="w-full overflow-hidden"
+                        >
+                          <span className="text-[--biqpod-gray-opacity] text-sm truncate">
+                            {order.note || "-"}
+                          </span>
+                        </div>
                         <span className="flex items-center gap-1 py-2 w-full overflow-hidden">
                           <motion.span
                             whileHover={{ scale: 1.05 }}
@@ -647,9 +676,9 @@ export const Orders = () => {
                                   <EmptyComponent>
                                     {" "}
                                     /{" "}
-                                    <span className="group relative">
+                                    <span className="relative">
                                       {user?.email}
-                                      <Card className="top-[calc(100%+5px)] right-0 absolute opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                                      <Card className="top-[calc(100%+5px)] right-0 absolute opacity-0 hover:opacity-100 transition-opacity pointer-events-none hover:pointer-events-auto">
                                         <div className="flex items-center gap-2 p-2">
                                           <UserAvatar user={user} />
                                           <span>{user?.email}</span>
@@ -862,118 +891,173 @@ export const Orders = () => {
             {ordersState?.map(({ order, timeAgo, productCount }, index) => {
               return (
                 <AnimatedListItem className="p-2" key={order.id} index={index}>
-                  <HoverScale scale={1.01}>
-                    <motion.div
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
-                      <Card className="overflow-hidden">
-                        <div className="flex justify-between items-center gap-2 p-2">
-                          <div className="flex items-center gap-2">
-                            <motion.span
-                              whileHover={{ scale: 1.1, rotate: 5 }}
-                              className="inline-block w-[40px] h-[40px]"
-                            >
-                              <img
-                                className="rounded-lg w-full h-full object-cover"
-                                src={getImageByPlatform(order.platform)}
-                              />
-                            </motion.span>
-                            <OrderClientDisplay
-                              order={order}
-                              className="text-xl"
-                              showCustomerBadge={true}
+                  {/* <HoverScale scale={1.01}> */}
+                  <motion.div
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.05 }}
+                  >
+                    <Card className="overflow-hidden">
+                      <div className="flex justify-between items-center gap-2 p-2">
+                        <div className="flex items-center gap-2">
+                          <motion.span
+                            whileHover={{ scale: 1.1, rotate: 5 }}
+                            className="inline-block w-[40px] h-[40px]"
+                          >
+                            <img
+                              className="rounded-lg w-full h-full object-cover"
+                              src={getImageByPlatform(order.platform)}
                             />
-                          </div>
-                          {!!order.totalPrice && (
-                            <motion.span
-                              whileHover={{ scale: 1.05 }}
-                              className="font-bold text-green-600 max-md:text-base md:text-xl"
-                            >
-                              {order.totalPrice}DA
-                            </motion.span>
-                          )}
+                          </motion.span>
+                          <OrderClientDisplay
+                            order={order}
+                            className="text-xl"
+                            showCustomerBadge={true}
+                          />
                         </div>
-                        <Line />
-                        <div className="flex justify-end items-center p-2">
-                          <div className="flex items-center gap-2 text-[--biqpod-primary]">
-                            <span className="font-semibold">
-                              {order.deliveryPrice
-                                ? order.deliveryPrice.toString().concat("DA")
-                                : "Free"}
-                            </span>
-                            <Icon icon={allIcons.solid.faTruck} />
-                          </div>
-                        </div>
-                        <Line />
-                        <div className="flex justify-between items-center p-2">
-                          <div className="flex items-center gap-2">
-                            <motion.span
-                              whileHover={{ scale: 1.1, rotate: 10 }}
-                              whileTap={{ scale: 0.95 }}
-                              className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]"
-                            >
-                              {productCount}
-                            </motion.span>
-                            <StatusUi status={order.status} />
-                          </div>
+                        {!!order.totalPrice && (
                           <motion.span
                             whileHover={{ scale: 1.05 }}
-                            className="text-sm"
+                            className="font-bold text-green-600 max-md:text-base md:text-xl"
                           >
-                            {timeAgo}
+                            {order.totalPrice}DA
                           </motion.span>
+                        )}
+                      </div>
+                      <Line />
+                      <div className="flex justify-end items-center p-2">
+                        <div className="flex items-center gap-2 text-[--biqpod-primary]">
+                          <span className="font-semibold">
+                            {order.deliveryPrice
+                              ? order.deliveryPrice.toString().concat("DA")
+                              : "Free"}
+                          </span>
+                          <Icon icon={allIcons.solid.faTruck} />
                         </div>
-                        <Line />
-                        <div className="flex justify-between items-center p-2">
-                          <OrderClientLocation order={order} />
-                          <div className="flex items-center">
-                            {(usedBy === "owned" || usedBy === "read/edit") && (
-                              <OrderClientActions order={order} />
-                            )}
-                            {(usedBy === "owned" || usedBy === "read/edit") && (
-                              <motion.div
-                                whileHover={{ scale: 1.2 }}
-                                whileTap={{ scale: 0.9 }}
-                              >
-                                <CircleTip
-                                  icon={allIcons.solid.faEllipsisV}
-                                  onClick={async ({ clientX, clientY }) => {
-                                    openOrderMenu({
-                                      x: clientX,
-                                      y: clientY,
-                                      order,
-                                    });
-                                  }}
-                                />
-                              </motion.div>
-                            )}
-                          </div>
+                      </div>
+                      <Line />
+                      <div className="flex justify-between items-center p-2">
+                        <div className="flex items-center gap-2">
+                          <motion.span
+                            whileHover={{ scale: 1.1, rotate: 10 }}
+                            whileTap={{ scale: 0.95 }}
+                            className="px-2 py-1 rounded-full font-bold bg-[--biqpod-text-color] text-[--biqpod-primary-background]"
+                          >
+                            {productCount}
+                          </motion.span>
+                          <StatusUi status={order.status} />
                         </div>
-                        {order.note && (
-                          <EmptyComponent>
-                            <Line />
-                            <div className="flex items-start gap-2 p-2">
-                              <Icon
-                                icon={allIcons.solid.faNoteSticky}
-                                iconClassName="text-[--biqpod-primary] mt-1 flex-shrink-0"
+                        <motion.span
+                          whileHover={{ scale: 1.05 }}
+                          className="text-sm"
+                        >
+                          {timeAgo}
+                        </motion.span>
+                      </div>
+                      <Line />
+                      <div className="flex justify-between items-center p-2">
+                        <OrderClientLocation order={order} />
+                        <div className="flex items-center">
+                          {(usedBy === "owned" || usedBy === "read/edit") && (
+                            <OrderClientActions order={order} />
+                          )}
+                          {(usedBy === "owned" || usedBy === "read/edit") && (
+                            <motion.div
+                              whileHover={{ scale: 1.2 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <CircleTip
+                                icon={allIcons.solid.faEllipsisV}
+                                onClick={async ({ clientX, clientY }) => {
+                                  openOrderMenu({
+                                    x: clientX,
+                                    y: clientY,
+                                    order,
+                                  });
+                                }}
                               />
-                              <div className="flex-1">
-                                <span className="font-medium text-[--biqpod-text-color] text-sm capitalize">
-                                  <Translate content="note" />:
-                                </span>
+                            </motion.div>
+                          )}
+                        </div>
+                      </div>
+                      {order.note && (
+                        <EmptyComponent>
+                          <Line />
+                          <div className="flex items-start gap-2 p-2">
+                            <Icon
+                              icon={allIcons.solid.faNoteSticky}
+                              iconClassName="text-[--biqpod-primary] mt-1 flex-shrink-0"
+                            />
+                            <div className="flex-1">
+                              <span className="font-medium text-[--biqpod-text-color] text-sm capitalize">
+                                <Translate content="note" />:
+                              </span>
+                              <motion.div
+                                className="relative mt-1 overflow-hidden"
+                                initial={{
+                                  maxHeight: expandedNotes.get[order.id]
+                                    ? 1000
+                                    : 48,
+                                }}
+                                animate={{
+                                  maxHeight: expandedNotes.get[order.id]
+                                    ? 1000
+                                    : 48,
+                                }}
+                                transition={{
+                                  duration: 0.3,
+                                  ease: "easeInOut",
+                                }}
+                              >
                                 <AnimatedMarkdownRenderer
                                   content={order.note}
-                                  className="mt-1 text-[--biqpod-gray-opacity] text-sm break-words"
+                                  className="text-[--biqpod-gray-opacity] text-sm break-words"
                                 />
-                              </div>
+                                {order.note.length > 50 && (
+                                  <motion.div
+                                    className="right-0 bottom-0 left-0 absolute bg-gradient-to-t from-[--biqpod-secondary-background] to-transparent h-4"
+                                    initial={{
+                                      opacity: expandedNotes.get[order.id]
+                                        ? 0
+                                        : 1,
+                                    }}
+                                    animate={{
+                                      opacity: expandedNotes.get[order.id]
+                                        ? 0
+                                        : 1,
+                                    }}
+                                    transition={{ duration: 0.3 }}
+                                  />
+                                )}
+                              </motion.div>
+                              {order.note.length > 50 && (
+                                <motion.div
+                                  whileHover={{ scale: 1.05 }}
+                                  whileTap={{ scale: 0.95 }}
+                                  className="flex justify-center items-center mt-1"
+                                >
+                                  <CircleTip
+                                    icon={
+                                      expandedNotes.get[order.id]
+                                        ? allIcons.solid.faChevronUp
+                                        : allIcons.solid.faChevronDown
+                                    }
+                                    onClick={() => {
+                                      expandedNotes.set((prev) => ({
+                                        ...prev,
+                                        [order.id]: !prev[order.id],
+                                      }));
+                                    }}
+                                  />
+                                </motion.div>
+                              )}
                             </div>
-                          </EmptyComponent>
-                        )}
-                      </Card>
-                    </motion.div>
-                  </HoverScale>
+                          </div>
+                        </EmptyComponent>
+                      )}
+                    </Card>
+                  </motion.div>
+                  {/* </HoverScale> */}
                 </AnimatedListItem>
               );
             })}

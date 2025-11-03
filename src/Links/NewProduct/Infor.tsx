@@ -102,11 +102,14 @@ export const ProductInfo = () => {
       </div>
       <Line />
       <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-        <label className="w-full md:text-right capitalize" htmlFor="post-keys">
+        <label
+          className="w-full md:text-right capitalize"
+          htmlFor="product-keys"
+        >
           <Translate content="Keys" /> :
         </label>
         <div className="relative w-full h-fit">
-          <ArrayField state={keysState} config={{}} id="post-keys" />
+          <ArrayField state={keysState} config={{}} id="product-keys" />
         </div>
       </div>
     </EmptyComponent>

@@ -39,7 +39,7 @@ export const {
   get: getFormQuantity,
   set: setFormQuantity,
   use: useFormQuantity,
-} = getFns<number | undefined>("post-quantity");
+} = getFns<number | undefined>("product-quantity");
 export const getFormDescription = () => {
   return getFieldValue("product-form-description");
 };
@@ -62,7 +62,7 @@ export const {
   get: getFormKeys,
   set: setFormKeys,
   use: useFormKeys,
-} = getFns<Biqpod.System.Setting.Value["array"]>("post-keys");
+} = getFns<Biqpod.System.Setting.Value["array"]>("product-keys");
 export const {
   get: getFormAvailable,
   set: setFormAvailable,
@@ -72,7 +72,7 @@ export const {
   get: getFormType,
   set: setFormType,
   use: useFormType,
-} = getFns<"single" | "multiple">("post-type");
+} = getFns<"single" | "multiple">("product-type");
 export const {
   get: getFormPhotos,
   set: setFormPhotos,
@@ -168,7 +168,6 @@ export const useFormProduct = () => {
   return product;
 };
 export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
-  console.log("Setting form product with value:", value);
   // Always set all form fields, using the provided value or appropriate defaults
   setFormAvailable(value?.available ?? true);
   setFormKeys(value?.keys ?? []);

@@ -12,7 +12,6 @@ import { HeaderContent } from "./HeaderContent";
 import { isAndroid, isIos } from "@biqpod/app/ui/app";
 import { ProfileInside } from "./ProfileInside";
 import { useUrlSettings } from "./hooks/useUrlSettings";
-import { LinkAccount } from "./LinkAccount";
 import { Profile } from "./routes/App/Profile";
 import { ProfileView } from "@biqpod/app/ui/layouts";
 import { AuthRoute, PayoutRoute } from "@biqpod/app/ui/routes";
@@ -48,6 +47,7 @@ import { motion } from "framer-motion";
 import { Stores } from "./routes/Stores/Stores";
 import { Store } from "./routes/Stores/Store";
 import { Homepage } from "./routes/Homepage";
+import { AccountLinking } from "./AccountLinking";
 const CheckBeforeShow = () => {
   return (
     <div className="h-full overflow-hidden">
@@ -143,6 +143,11 @@ export const App = () => {
         <LeftSide />
         <Container>
           <Switch>
+            <Route path="/link">
+              <div className="flex justify-center items-center h-full">
+                <AccountLinking />
+              </div>
+            </Route>
             <Route path="/payout?">
               <PayoutRoute
                 successComponent={({ payout }) => (
@@ -151,7 +156,7 @@ export const App = () => {
                       {payout?.status === "paid" ? (
                         <EmptyComponent>
                           <div className="flex justify-center p-6">
-                            <div className="flex justify-center items-center bg-green-100 rounded-full w-24 h-24">
+                            <div className="flex justify-center items-center bg-[--biqpod-success] rounded-full w-24 h-24">
                               <img
                                 src={payChecked}
                                 className="w-16 h-16 object-contain"
@@ -161,16 +166,16 @@ export const App = () => {
                           </div>
                           <Line />
                           <div className="p-4 text-center">
-                            <h2 className="mb-2 font-bold text-green-600 text-2xl">
+                            <h2 className="mb-2 font-bold text-[--biqpod-success] text-2xl">
                               <Translate content="Congratulations!" />
                             </h2>
-                            <p className="mb-4 text-gray-600">
+                            <p className="text-[--biqpod-gray-opacity-2] mb-4">
                               <Translate content="Your payment has been processed successfully" />
                             </p>
-                            <div className="bg-gray-50 mb-4 p-4 rounded-lg">
+                            <div className="bg-[--biqpod-secondary-background] mb-4 p-4 rounded-lg">
                               <div className="space-y-2">
                                 <div className="flex justify-between">
-                                  <span className="text-gray-500">
+                                  <span className="text-[--biqpod-gray-opacity-2]">
                                     <Translate content="Amount:" />
                                   </span>
                                   <span className="font-semibold">
@@ -179,7 +184,7 @@ export const App = () => {
                                 </div>
                                 {payout?.payoutId && (
                                   <div className="flex justify-between">
-                                    <span className="text-gray-500">
+                                    <span className="text-[--biqpod-gray-opacity-2]">
                                       <Translate content="Payment ID:" />
                                     </span>
                                     <span className="font-mono text-sm">
@@ -189,7 +194,7 @@ export const App = () => {
                                 )}
                                 {payout?.createdAt && (
                                   <div className="flex justify-between">
-                                    <span className="text-gray-500">
+                                    <span className="text-[--biqpod-gray-opacity-2]">
                                       <Translate content="Date:" />
                                     </span>
                                     <span className="text-sm">
@@ -205,7 +210,7 @@ export const App = () => {
                           <Line />
                           <div className="p-4">
                             <Link className="w-full" to="/profile">
-                              <Button className="bg-green-600 hover:bg-green-700 w-full text-white">
+                              <Button className="bg-[--biqpod-success] hover:bg-[--biqpod-success-hover] w-full text-[--biqpod-primary-content]">
                                 <Translate content="Continue to Dashboard" />
                               </Button>
                             </Link>
@@ -214,7 +219,7 @@ export const App = () => {
                       ) : (
                         <EmptyComponent>
                           <div className="flex justify-center p-6">
-                            <div className="flex justify-center items-center bg-yellow-100 rounded-full w-24 h-24">
+                            <div className="flex justify-center items-center bg-[--biqpod-warning] rounded-full w-24 h-24">
                               <img
                                 src={unpaidPhoto}
                                 className="opacity-75 w-16 h-16 object-contain"
@@ -224,15 +229,15 @@ export const App = () => {
                           </div>
                           <Line />
                           <div className="p-4 text-center">
-                            <h2 className="mb-2 font-semibold text-yellow-600 text-xl">
+                            <h2 className="mb-2 font-semibold text-[--biqpod-warning] text-xl">
                               <Translate content="Payment Processing" />
                             </h2>
-                            <p className="mb-4 text-gray-600">
+                            <p className="text-[--biqpod-gray-opacity-2] mb-4">
                               <Translate content="Your payment is being processed. Please wait..." />
                             </p>
                             {payout?.status && (
-                              <div className="bg-yellow-50 mb-4 p-3 rounded-lg">
-                                <p className="text-yellow-700 text-sm">
+                              <div className="bg-[--biqpod-secondary-background] mb-4 p-3 rounded-lg">
+                                <p className="text-[--biqpod-warning] text-sm">
                                   <Translate content="Status:" />{" "}
                                   <span className="font-medium capitalize">
                                     {payout.status}
@@ -244,7 +249,7 @@ export const App = () => {
                           <Line />
                           <div className="p-4">
                             <Button
-                              className="bg-gray-600 hover:bg-gray-700 w-full text-white"
+                              className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-hover] w-full text-[--biqpod-text-color]"
                               onClick={() => window.location.reload()}
                             >
                               <Translate content="Check Status" />
@@ -281,9 +286,6 @@ export const App = () => {
                   </EmptyComponent>
                 )}
               </AnimatedPage>
-            </Route>
-            <Route path="/link">
-              <LinkAccount />
             </Route>
             <Route exact path="/home">
               <Homepage />

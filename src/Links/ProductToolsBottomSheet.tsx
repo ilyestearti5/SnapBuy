@@ -22,6 +22,7 @@ import {
   getTab,
   setTab,
   closePopup,
+  confirm,
 } from "@biqpod/app/ui/hooks";
 import { mapAsync, tw } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
@@ -34,6 +35,13 @@ import { Biqpod } from "@biqpod/app/ui/types";
 interface CopyLinkPickColorProps {
   product: Biqpod.Snapbuy.Product;
 }
+const typeIcons = {
+  string: allIcons.solid.faFont,
+  number: allIcons.solid.faHashtag,
+  boolean: allIcons.solid.faToggleOn,
+  array: allIcons.solid.faList,
+  colors: allIcons.solid.faPalette,
+};
 type Orientation = "portrait" | "landscape";
 interface PreviewWindowProps {
   title: string;
@@ -410,6 +418,92 @@ export const ProductToolsBottomSheet = ({
               );
             },
           },
+          {
+            label: "View Metadata",
+            defaultIcon: allIcons.solid.faInfoCircle,
+            click: () => {
+              closeBottomSheet();
+              showPopup(
+                <Card className="relative max-md:rounded-none max-md:w-full max-md:h-full">
+                  <CardHeaderForPopup title="Product Metadata" />
+                  <Line />
+                  <Scroll>
+                    <div className="p-4">
+                      {Object.entries(product.metaData || {}).map(
+                        ([key, meta]) => (
+                          <Card key={key} className="mb-3">
+                            <div className="flex items-center gap-2 p-3 border-[--biqpod-borders] border-b">
+                              <Icon
+                                icon={
+                                  typeIcons[
+                                    meta?.type as keyof typeof typeIcons
+                                  ] || allIcons.solid.faQuestionCircle
+                                }
+                              />
+                              <span className="font-semibold capitalize">
+                                {key.replace(/([A-Z])/g, " $1")}
+                              </span>
+                              <span className="text-[--biqpod-text-secondary] text-sm">
+                                ({meta?.type})
+                              </span>
+                            </div>
+                            <div className="p-3">
+                              {meta?.type === "string" && (
+                                <span className="text-sm">{meta.value}</span>
+                              )}
+                              {meta?.type === "number" && (
+                                <span className="font-mono text-sm">
+                                  {meta.value}
+                                </span>
+                              )}
+                              {meta?.type === "boolean" && (
+                                <div className="flex items-center gap-2">
+                                  <Icon
+                                    icon={
+                                      meta.value
+                                        ? allIcons.solid.faCheck
+                                        : allIcons.solid.faXmark
+                                    }
+                                  />
+                                  <span className="text-sm">
+                                    {meta.value ? "True" : "False"}
+                                  </span>
+                                </div>
+                              )}
+                              {meta?.type === "array" && (
+                                <div className="flex flex-wrap gap-1">
+                                  {(meta.value as any[]).map((item, i) => (
+                                    <span
+                                      key={i}
+                                      className="bg-[--biqpod-primary] px-2 py-1 rounded text-[--biqpod-text-color] text-xs"
+                                    >
+                                      {item}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                              {meta?.type === "colors" && (
+                                <div className="flex items-center gap-2">
+                                  {(meta.value as string[]).map((color) => (
+                                    <div
+                                      key={color}
+                                      className="border border-[--biqpod-borders] rounded-full w-6 h-6"
+                                      style={{ backgroundColor: color }}
+                                      title={color}
+                                    />
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </Card>
+                        )
+                      )}
+                    </div>
+                  </Scroll>
+                </Card>
+              );
+            },
+          },
           ...(usedBy !== "read"
             ? [
                 {
@@ -451,9 +545,17 @@ export const ProductToolsBottomSheet = ({
                 {
                   label: "Delete Product",
                   click: async () => {
-                    await snapbuyApi.product.delete(product.id!);
-                    execAction("fetch-products");
-                    showToast("Product Deleted");
+                    const response = await confirm({
+                      title: "Delete Product",
+                      message: `Are you sure you want to delete "${product.name}"?`,
+                      detail: "This action cannot be undone.",
+                      type: "warning",
+                    });
+                    if (response) {
+                      await snapbuyApi.product.delete(product.id!);
+                      execAction("fetch-products");
+                      showToast("Product Deleted");
+                    }
                   },
                   defaultIcon: allIcons.solid.faTrashCan,
                 },

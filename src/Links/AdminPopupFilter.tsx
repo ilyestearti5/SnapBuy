@@ -28,24 +28,13 @@ import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
+import { MetadataFieldComponent } from "../components/MetadataField";
 const filterFields = [
   {
     label: "Available",
     value: "available",
     icon: allIcons.solid.faCheck,
     description: "Is For Getting The Available Product",
-  },
-  {
-    label: "Brand",
-    value: "brand",
-    icon: allIcons.solid.faBuilding,
-    description: "Filter Products By Brand",
-  },
-  {
-    label: "Promoted",
-    value: "promoted",
-    icon: allIcons.solid.faTag,
-    description: "Is For Getting The Promoted Product",
   },
   {
     label: "Price Range",
@@ -79,15 +68,12 @@ const filterFields = [
 ];
 export interface FilterOptionsForProduct {
   available: string | null;
-  brand?: string | null;
-  promoted?: string | null;
   minPrice?: number | null;
   maxPrice?: number | null;
   brands?: string[] | null;
   keys?: string[] | null;
   productType?: string | null;
-  metadataKey?: string | null;
-  metadataValue?: string | null;
+  metadata?: Record<string, Biqpod.Snapbuy.MetadataField | undefined> | null;
 }
 interface PopupFilterProps {
   onChange?: (props: FilterOptionsForProduct | null) => void;
@@ -96,15 +82,15 @@ interface PopupFilterProps {
 export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
   const storeId = useStoreId();
   const isAvailable = useCopyState<string | Nothing>(false);
-  const brand = useCopyState<string | Nothing>("");
-  const promoted = useCopyState<string | Nothing>("");
   const minPriceState = useCopyState<number | null | undefined>(0);
   const maxPriceState = useCopyState<number | null | undefined>(0);
   const brandsState = useCopyState<string[]>([]);
   const keysState = useCopyState<string[] | Nothing>([]);
   const productTypeState = useCopyState<string | Nothing>("");
-  const metadataKeyState = useCopyState<string>("");
-  const metadataValueState = useCopyState<string>("");
+  const metadataState = useCopyState<Record<
+    string,
+    Biqpod.Snapbuy.MetadataField | undefined
+  > | null>(null);
   const [brands, setBrands] = useState<Biqpod.Snapbuy.Brand[]>([]);
   const brandSearchValue = getFieldValue("brand-search");
   const fuzzySearch = (text: string, search: string): boolean => {
@@ -138,15 +124,12 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
   useEffect(() => {
     if (value) {
       isAvailable.set(value.available);
-      brand.set(value.brand || "");
-      promoted.set(value.promoted || "");
       minPriceState.set(value.minPrice || 0);
       maxPriceState.set(value.maxPrice || 0);
       brandsState.set(value.brands || []);
       keysState.set(value.keys || []);
       productTypeState.set(value.productType || "");
-      metadataKeyState.set(value.metadataKey || "");
-      metadataValueState.set(value.metadataValue || "");
+      metadataState.set(value.metadata || null);
     }
   }, []);
   const tab = getTab("filter-view-products");
@@ -275,9 +258,9 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                     state={isAvailable}
                     config={{
                       list: [
-                        { value: "available", content: "Available" },
-                        { value: "unavailable", content: "Not Available" },
-                        { value: "alll", content: "All Products" },
+                        { value: "true", content: "Available" },
+                        { value: "false", content: "Not Available" },
+                        { value: "all", content: "All Products" },
                       ],
                       search: true,
                     }}
@@ -287,72 +270,6 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                 <Line />
                 <div className="p-2 capitalize">
                   <Translate content="is for getting the available product" />
-                </div>
-              </TabContent>
-              <TabContent
-                identifier="filter-view-products"
-                value="brand"
-                className="flex flex-col justify-center items-center gap-2 h-full"
-              >
-                <div className="p-2 text-center">
-                  <div className="p-2 text-center">
-                    <h1 className="font-bold text-2xl capitalize">
-                      <Translate content="brand" />
-                    </h1>
-                  </div>
-                  <Line />
-                  <div className="p-2 w-full">
-                    <EnumField
-                      state={brand}
-                      config={{
-                        list: [
-                          { value: "", content: "All Brands 🏷️" },
-                          ...brands
-                            .filter((b) => b.id && b.name)
-                            .map((b) => ({
-                              value: b.id!,
-                              content: `${b.name} 🏢`,
-                            })),
-                        ],
-                        search: true,
-                      }}
-                      id="brand"
-                    />
-                  </div>
-                  <Line />
-                  <div className="p-2 capitalize">
-                    <Translate content="filter products by brand" />
-                  </div>
-                </div>
-              </TabContent>
-              <TabContent
-                identifier="filter-view-products"
-                value="promoted"
-                className="flex flex-col justify-center items-center gap-2 h-full"
-              >
-                <div className="p-2 text-center">
-                  <h1 className="font-bold text-2xl capitalize">
-                    <Translate content="promoted" />
-                  </h1>
-                </div>
-                <Line />
-                <div className="p-2 w-full">
-                  <EnumField
-                    state={promoted}
-                    config={{
-                      list: ["promoted", "no promoted", "all"].map((status) => {
-                        return {
-                          value: status,
-                          content: status,
-                        };
-                      }),
-                    }}
-                    id="promoted"
-                  />
-                </div>
-                <Line />
-                <div className="p-2 capitalize">
-                  <Translate content="is for getting the promoted product" />
                 </div>
               </TabContent>
               <TabContent
@@ -563,41 +480,15 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                   </h1>
                 </div>
                 <Line />
-                <div className="flex flex-col gap-2 p-2">
-                  <div className="flex max-md:flex-col items-center gap-2 w-full">
-                    <label
-                      htmlFor="metadata-key"
-                      className="block w-full md:text-right"
-                    >
-                      <Translate content="metadata key" />
-                    </label>
-                    <div className="w-full">
-                      <Field
-                        inputName="metadata-key"
-                        value={metadataKeyState.get}
-                        onChange={(e) => metadataKeyState.set(e.target.value)}
-                        placeholder="Enter metadata key"
-                        id="metadata-key"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex max-md:flex-col items-center gap-2">
-                    <label
-                      htmlFor="metadata-value"
-                      className="block w-full md:text-right"
-                    >
-                      <Translate content="metadata value" />
-                    </label>
-                    <div className="w-full">
-                      <Field
-                        inputName="metadata-value"
-                        value={metadataValueState.get}
-                        onChange={(e) => metadataValueState.set(e.target.value)}
-                        placeholder="Enter metadata value"
-                        id="metadata-value"
-                      />
-                    </div>
-                  </div>
+                <div className="flex-1 overflow-hidden">
+                  <MetadataFieldComponent
+                    metadata={metadataState.get || undefined}
+                    onChangeMetadata={(metadata) => {
+                      metadataState.set(metadata || null);
+                    }}
+                    showAddSection={true}
+                    showFieldActions={true}
+                  />
                 </div>
               </TabContent>
             </motion.div>
@@ -643,26 +534,20 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
             onClick={() => {
               onChange?.({
                 available: isAvailable.get || null,
-                brand: brand.get || null,
-                promoted: promoted.get || null,
                 minPrice: minPriceState.get || null,
                 maxPrice: maxPriceState.get || null,
                 brands: brandsState.get || null,
                 keys: keysState.get || null,
                 productType: productTypeState.get || null,
-                metadataKey: metadataKeyState.get || null,
-                metadataValue: metadataValueState.get || null,
+                metadata: metadataState.get || null,
               });
               isAvailable.set(false);
-              brand.set("");
-              promoted.set("");
               minPriceState.set(0);
               maxPriceState.set(0);
               brandsState.set([]);
               keysState.set([]);
               productTypeState.set("");
-              metadataKeyState.set("");
-              metadataValueState.set("");
+              metadataState.set(null);
               setTab("filter-view-products", null);
               closePopup();
             }}
