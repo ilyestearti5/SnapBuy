@@ -22,7 +22,6 @@ import {
   setFieldValue,
   useCopyState,
   useTemp,
-  showPopup,
   useEffectDelay,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
@@ -30,14 +29,12 @@ import { useStoreId } from "../utils";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { useEffect, useMemo } from "react";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
-import { Coupons } from "./Coupons";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
 export interface UpsertCouponProps {
   coupon?: Biqpod.Snapbuy.Coupon;
-  back?: boolean;
 }
-export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
+export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
   const storeId = useStoreId();
   const isActiveState = useCopyState<Biqpod.System.Setting.Value["boolean"]>(
     coupon?.isActive ?? true
@@ -219,17 +216,9 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
   );
   const loading = isLoading(upsertCouponAction);
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[90vh] overflow-hidden">
+    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-2">
         <div className="flex items-center gap-4">
-          {back && (
-            <CircleTip
-              icon={allIcons.solid.faArrowLeft}
-              onClick={() => {
-                showPopup(<Coupons />);
-              }}
-            />
-          )}
           <h1 className="text-2xl capitalize">
             {coupon ? (
               <Translate content="edit coupon" />
@@ -263,13 +252,15 @@ export const UpsertCoupon = ({ coupon, back }: UpsertCouponProps) => {
                 className="flex-1"
                 required
               />
-              <Button
-                onClick={generateCode}
-                className="top-1/2 right-2 absolute px-2 py-1 rounded-lg w-fit -translate-y-1/2"
-                icon={allIcons.solid.faDice}
-              >
-                <Translate content="generate" />
-              </Button>
+              <div className="top-1/2 right-2 absolute -translate-y-1/2 transform">
+                <Button
+                  onClick={generateCode}
+                  className="px-2 py-1 rounded-lg w-fit -translate-y-1/2"
+                  icon={allIcons.solid.faRotate}
+                >
+                  <Translate content="generate" />
+                </Button>
+              </div>
             </div>
           </div>
           {/* Coupon Name */}

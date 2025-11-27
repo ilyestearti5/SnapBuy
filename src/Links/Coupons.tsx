@@ -19,46 +19,42 @@ import {
   isIdle,
   isLoading,
   isSuccess,
+  openMenu,
   showPopup,
   showToast,
   useAction,
   useCopyState,
+  useEffectDelay,
   useMemoDelay,
-  useResolution,
   useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { useMemo, useRef, useCallback, memo, useEffect } from "react";
+import { useMemo, useRef, useCallback, memo } from "react";
 import { FixedSizeList as List } from "react-window";
-import { getDocs } from "../server";
+import { getDocs, setDoc } from "../server";
 import { motion } from "framer-motion";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { useStoreId } from "../utils";
 import { UpsertCoupon } from "./UpsertCoupon";
 import { SlidingFilter, FilterOption } from "../components/SlidingFilter";
 import { Biqpod } from "@biqpod/app/ui/types";
-const PAGE_SIZE = 20;
-
+const PAGE_SIZE = 100;
 // Highlight component for search terms
 function highlightMatch(
   text: string,
   search: string | undefined
 ): React.ReactNode {
   if (!search || search.trim() === "") return text;
-
   const searchLower = search.toLowerCase().trim();
   const textLower = text.toLowerCase();
-
   // Find all matches for highlighting
   const matches: { start: number; end: number }[] = [];
-
   // Exact substring matches
   let index = textLower.indexOf(searchLower);
   while (index !== -1) {
     matches.push({ start: index, end: index + searchLower.length });
     index = textLower.indexOf(searchLower, index + 1);
   }
-
   // If no exact matches, try fuzzy matching
   if (matches.length === 0) {
     let searchIdx = 0;
@@ -69,12 +65,9 @@ function highlightMatch(
       }
     }
   }
-
   if (matches.length === 0) return text;
-
   // Sort matches by start position
   matches.sort((a, b) => a.start - b.start);
-
   // Merge overlapping matches
   const mergedMatches: { start: number; end: number }[] = [];
   for (const match of matches) {
@@ -89,11 +82,9 @@ function highlightMatch(
       }
     }
   }
-
   // Build the highlighted text
   const result: React.ReactNode[] = [];
   let lastEnd = 0;
-
   mergedMatches.forEach((match, index) => {
     // Add text before the match
     if (match.start > lastEnd) {
@@ -107,15 +98,12 @@ function highlightMatch(
     );
     lastEnd = match.end;
   });
-
   // Add remaining text
   if (lastEnd < text.length) {
     result.push(text.substring(lastEnd));
   }
-
   return result;
 }
-
 interface FilterOptionsForCoupon {
   isActive?: string | null;
   type?: string | null;
@@ -135,7 +123,6 @@ const SlidingCouponFilter = ({
   const activeFilter = useCopyState<string | null>(value?.isActive || null);
   const typeFilter = useCopyState<string | null>(value?.type || null);
   const expiredFilter = useCopyState<string | null>(value?.expired || null);
-
   const filterOptions: FilterOption[] = [
     {
       key: "isActive",
@@ -217,7 +204,6 @@ const SlidingCouponFilter = ({
       ),
     },
   ];
-
   return (
     <SlidingFilter
       isOpen={isOpen}
@@ -287,7 +273,7 @@ const CouponRender = memo(
           onClick={
             usedBy === "owned" || usedBy === "read/edit"
               ? () => {
-                  showPopup(<UpsertCoupon back coupon={coupon} />);
+                  showPopup(<UpsertCoupon coupon={coupon} />);
                 }
               : undefined
           }
@@ -382,7 +368,7 @@ const CouponRender = memo(
                   navigator.clipboard.writeText(coupon.code);
                   showToast("coupon code copied", "success");
                 }}
-                className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-2] px-2 py-1 text-[--biqpod-text-color] text-xs"
+                className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-2] text-[--biqpod-text-color] text-xs"
               >
                 <Icon
                   icon={allIcons.solid.faCopy}
@@ -390,6 +376,34 @@ const CouponRender = memo(
                 />
                 <Translate content="copy" />
               </Button>
+              {usedBy === "owned" || usedBy === "read/edit" ? (
+                <div>
+                  <CircleTip
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openMenu({
+                        x: e.clientX,
+                        y: e.clientY,
+                        menu: [
+                          {
+                            click() {
+                              execAction("update-coupon", {
+                                id: coupon.id,
+                                isActive: !coupon.isActive,
+                              });
+                            },
+                            label: coupon.isActive ? "desactive" : "active",
+                            defaultIcon: coupon.isActive
+                              ? allIcons.solid.faXmark
+                              : allIcons.solid.faCheck,
+                          },
+                        ],
+                      });
+                    }}
+                    icon={allIcons.solid.faEllipsisH}
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
           {/* Decorative corner ribbon for active coupons */}
@@ -427,6 +441,7 @@ export const Coupons = () => {
           startAt: next && lastDoc.get?.id && mergeArray(lastDoc.get?.id),
         }
       );
+      console.log("Fetched coupons:", newCoupons);
       if (!newCoupons) return;
       const list = newCoupons.map((coupon) => ({
         ...coupon.data,
@@ -439,17 +454,32 @@ export const Coupons = () => {
     },
     [storeId]
   );
+  useAction(
+    "update-coupon",
+    async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      await setDoc(
+        ["projects", import.meta.env.VITE_PROJECT_ID, "coupons", id],
+        { isActive }
+      );
+      execAction("fetch-coupons");
+    },
+    []
+  );
   const success = isSuccess(action);
   const loading = isLoading(action);
   const idle = isIdle(action);
-  useEffect(() => {
-    execAction("fetch-coupons");
-  }, [user]);
+  useEffectDelay(
+    () => {
+      if (storeId && user) execAction("fetch-coupons");
+    },
+    [user, storeId],
+    200
+  );
   const options = useTemp<FilterOptionsForCoupon>("filter-coupons-options");
   const search = getFieldValue("coupon-search");
   const [_, filterCoupons] = useMemoDelay(
     () => {
-      let filteredCoupons = coupons.get?.filter((coupon) => {
+      const filteredCoupons = coupons.get?.filter((coupon) => {
         if (options.get) {
           // Filter by active status
           if (
@@ -477,12 +507,9 @@ export const Coupons = () => {
         }
         return true;
       });
-
       if (!search) return filteredCoupons;
-
       // Custom fuzzy search for multiple fields
       const searchTerm = search.trim().toLowerCase();
-
       return filteredCoupons
         ?.filter((coupon) => {
           const nameScore = coupon.name
@@ -508,19 +535,15 @@ export const Coupons = () => {
     [search, coupons.get, options.get],
     500
   );
-
   // Helper function for search scoring
   function getSearchScore(text: string, search: string): number {
     if (!search) return 1000;
     const textLower = text.toLowerCase();
     const searchLower = search.toLowerCase();
-
     if (textLower === searchLower) return 1000; // exact match
     if (textLower.startsWith(searchLower)) return 900; // prefix match
-
     const idx = textLower.indexOf(searchLower);
     if (idx !== -1) return 800 - idx; // substring match, earlier is better
-
     // Fuzzy: count matching chars in order
     let sIdx = 0,
       match = 0;
@@ -534,13 +557,11 @@ export const Coupons = () => {
     return match === searchLower.length ? 700 - textLower.length : 0;
   }
   const listRef = useRef<any>(null);
-  const position = getPosition("coupon-searching");
-  const { height } = useResolution();
+  const position = getPosition("coupon-list");
   const listHeight = useMemo(() => {
     const posHeight = position?.height || 0;
-    const posTop = position?.top || 0;
-    return height - posHeight - posTop - 200;
-  }, [position, height]);
+    return posHeight;
+  }, [position?.height]);
   const RenderItem = useCallback(
     ({ index, style }: { index: number; style: React.CSSProperties }) => {
       const coupon = filterCoupons?.at(index);
@@ -607,7 +628,10 @@ export const Coupons = () => {
           })}
         </motion.div>
       ) : success && filterCoupons?.length ? (
-        <div className="flex flex-col h-full">
+        <PositionView
+          positionId="coupon-list"
+          className="flex flex-col h-full overflow-hidden"
+        >
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -638,7 +662,7 @@ export const Coupons = () => {
               </Button>
             </div>
           ) : null}
-        </div>
+        </PositionView>
       ) : (
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}

@@ -20,7 +20,6 @@ import {
   isLoading,
   setFieldValue,
   setTab,
-  showPopup,
   showToast,
   useAction,
   useAsyncEffect,
@@ -33,7 +32,6 @@ import { useEffect, useMemo, useState } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { getPrice } from "../utils";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
-import { Collections } from "./Collections";
 import { compressImage } from "../utils/utilities";
 interface ProductRenderProps {
   product: Biqpod.Snapbuy.Product;
@@ -97,12 +95,8 @@ export const ProductRender = ({
 };
 interface UpsertCollectionProps {
   collection?: Biqpod.Snapbuy.Collection;
-  back?: boolean;
 }
-export const UpsertCollection = ({
-  collection,
-  back,
-}: UpsertCollectionProps) => {
+export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
   useEffect(() => {
     photoState.set(collection?.photo || "");
     setFieldValue("collection-name", collection?.name || "");
@@ -317,7 +311,7 @@ export const UpsertCollection = ({
         showToast("Collection name is required");
         throw new Error("Collection name is required");
       }
-      const id = collection?.id || crypto.randomUUID();
+      const id = collection?.id;
       const options: Biqpod.Snapbuy.Collection = {
         id,
         ...collection,
@@ -336,24 +330,13 @@ export const UpsertCollection = ({
       );
       execAction("fetch-collections");
     },
-    [collection, photoState.get, selectedProducts.get]
+    [collection, storeId, photoState.get, selectedProducts.get]
   );
   const loading = isLoading(upsertCollection);
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-4">
         <div className="flex items-center gap-2">
-          {back && (
-            <div>
-              <CircleTip
-                onClick={() => {
-                  closePopup();
-                  showPopup(<Collections />);
-                }}
-                icon={allIcons.solid.faChevronLeft}
-              />
-            </div>
-          )}
           <h1 className="text-2xl">
             <Translate
               content={collection ? "Update Collection" : "Create Collection"}

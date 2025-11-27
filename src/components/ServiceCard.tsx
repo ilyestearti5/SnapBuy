@@ -3,7 +3,6 @@ import { Card, ClickedView, Line, Translate } from "@biqpod/app/ui/components";
 import { Link } from "react-router-dom";
 import { tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
-
 interface ServiceCardProps {
   link: string;
   name: string;
@@ -11,7 +10,6 @@ interface ServiceCardProps {
   index: number;
   isExternal?: boolean;
 }
-
 export const ServiceCard = React.memo<ServiceCardProps>(
   ({ link, name, photo, index, isExternal = false }) => {
     const animationProps = React.useMemo(
@@ -24,7 +22,6 @@ export const ServiceCard = React.memo<ServiceCardProps>(
       }),
       [index]
     );
-
     const content = React.useMemo(
       () => (
         <Card className={tw("overflow-hidden")}>
@@ -41,7 +38,6 @@ export const ServiceCard = React.memo<ServiceCardProps>(
       ),
       [photo, name]
     );
-
     if (isExternal) {
       return (
         <motion.div {...animationProps}>
@@ -51,7 +47,6 @@ export const ServiceCard = React.memo<ServiceCardProps>(
         </motion.div>
       );
     }
-
     return (
       <motion.div {...animationProps}>
         <Link to={link}>{content}</Link>

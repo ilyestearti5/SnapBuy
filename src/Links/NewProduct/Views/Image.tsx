@@ -22,6 +22,7 @@ import {
   MediaFile,
   isGLTFFile,
   createMediaFileFromURL,
+  getFileType,
 } from "../../../utils/utilities";
 import { snapbuyApi } from "../../../apis/index";
 import { MediaRenderer } from "../../../components/MediaRenderer";
@@ -47,6 +48,7 @@ export const ProductImages = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const [loadingPhotos, setLoadingPhotos] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isDragOver, setIsDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -63,8 +65,9 @@ export const ProductImages = () => {
   }, [mediaFiles]);
   const addMediaFile = async (file: File) => {
     try {
+      const fileType = getFileType(file);
       let mediaFile: MediaFile;
-      if (file.type.startsWith("image/")) {
+      if (fileType === "image") {
         // For images, compress and create object URL
         const objectURL = URL.createObjectURL(file);
         const compressedDataURL = await compressImage(objectURL, 0.3);
@@ -78,10 +81,7 @@ export const ProductImages = () => {
           size: file.size,
           isObjectURL: false,
         };
-      } else if (
-        file.name.toLowerCase().endsWith(".gltf") ||
-        file.name.toLowerCase().endsWith(".glb")
-      ) {
+      } else if (fileType === "gltf") {
         // For GLTF files, use object URL directly for better performance
         mediaFile = createMediaFile(file);
       } else {
@@ -94,37 +94,24 @@ export const ProductImages = () => {
     }
   };
   const addUrlMedia = async (urlString: string) => {
+    var mainUrl: string;
     try {
       // For URLs, we still use the original approach
       const compressedSrc = await compressImage(urlString, 0.3);
-      const mediaFile: MediaFile = {
-        url: compressedSrc,
-        type:
-          urlString.toLowerCase().includes(".gltf") ||
-          urlString.toLowerCase().includes(".glb")
-            ? "gltf"
-            : "image",
-        name: urlString.split("/").pop() || "unknown",
-        size: 0,
-        isObjectURL: false,
-      };
-      setMediaFiles((prev) => [...prev, mediaFile]);
+      mainUrl = compressedSrc;
     } catch (error) {
       console.error("Failed to add URL media:", error);
       // Fallback to original URL
-      const mediaFile: MediaFile = {
-        url: urlString,
-        type:
-          urlString.toLowerCase().includes(".gltf") ||
-          urlString.toLowerCase().includes(".glb")
-            ? "gltf"
-            : "image",
-        name: urlString.split("/").pop() || "unknown",
-        size: 0,
-        isObjectURL: false,
-      };
-      setMediaFiles((prev) => [...prev, mediaFile]);
+      mainUrl = url.get;
     }
+    const mediaFile: MediaFile = {
+      type: isGLTFFile(urlString) ? "gltf" : "image",
+      name: urlString.split("/").pop() || "unknown",
+      size: 0,
+      isObjectURL: false,
+      url: mainUrl,
+    };
+    setMediaFiles((prev) => [...prev, mediaFile]);
   };
   const removeMediaFile = (indexToRemove: number) => {
     setMediaFiles((prev) => {
@@ -196,7 +183,6 @@ export const ProductImages = () => {
       document.removeEventListener("paste", handlePaste);
     };
   }, []);
-
   // Get filtered photos for keyboard navigation
   const getFilteredPhotos = () => {
     const filteredProducts = productPhotos.filter(
@@ -209,25 +195,19 @@ export const ProductImages = () => {
         );
       }
     );
-
     const filteredDrive = drivePhotos.filter(({ name, link }) => {
       if (!url.get) return true;
       return fuzzySearch(name, url.get) || fuzzySearch(link, url.get);
     });
-
     return { filteredProducts, filteredDrive };
   };
-
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!showDropdown) return;
-
       const { filteredProducts, filteredDrive } = getFilteredPhotos();
       const totalItems = filteredProducts.length + filteredDrive.length;
-
       if (totalItems === 0) return;
-
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
@@ -246,7 +226,6 @@ export const ProductImages = () => {
             } else {
               photo = filteredDrive[selectedIndex - filteredProducts.length];
             }
-
             if (photo && !mediaFiles.some((file) => file.url === photo.link)) {
               addUrlMedia(photo.link);
             }
@@ -260,11 +239,9 @@ export const ProductImages = () => {
           break;
       }
     };
-
     if (showDropdown) {
       document.addEventListener("keydown", handleKeyDown);
     }
-
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
@@ -276,7 +253,6 @@ export const ProductImages = () => {
     url.get,
     mediaFiles,
   ]);
-
   // Reset selected index when dropdown opens or search changes
   useEffect(() => {
     if (showDropdown) {
@@ -284,7 +260,6 @@ export const ProductImages = () => {
       itemRefs.current = [];
     }
   }, [showDropdown, url.get]);
-
   // Auto-scroll selected item into view
   useEffect(() => {
     if (selectedIndex >= 0 && itemRefs.current[selectedIndex]) {
@@ -295,7 +270,6 @@ export const ProductImages = () => {
       });
     }
   }, [selectedIndex]);
-
   // Update itemRefs array size when filtered photos change
   useEffect(() => {
     const { filteredProducts, filteredDrive } = getFilteredPhotos();
@@ -516,7 +490,36 @@ export const ProductImages = () => {
         </Button>
       </div>
       <Line />
-      <Scroll className="p-1">
+      <Scroll
+        className={`p-1 ${
+          isDragOver
+            ? "bg-[--biqpod-accent] bg-opacity-20 border-2 border-dashed border-[--biqpod-accent]"
+            : ""
+        }`}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        }}
+        onDragEnter={(e) => {
+          e.preventDefault();
+          setIsDragOver(true);
+        }}
+        onDragLeave={(e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+        }}
+        onDrop={async (e) => {
+          e.preventDefault();
+          setIsDragOver(false);
+          const files = Array.from(e.dataTransfer.files);
+          for (const file of files) {
+            const fileType = getFileType(file);
+            if (fileType !== "unknown") {
+              await addMediaFile(file);
+            }
+          }
+        }}
+      >
         <div className="flex flex-wrap">
           {mediaFiles.length <= 5 && (
             <CircleTip

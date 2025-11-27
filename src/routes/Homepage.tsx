@@ -2,6 +2,13 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button, Icon, Translate, Card, Line } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
+import snapbuy from "../assets/snapbuy.png"
+import store from "../assets/store.png"
+import delivery from "../assets/delivery.png"
+import paymentChecked from "../assets/payment-checked.png"
+import products from "../assets/products.png"
+import shopping from "../assets/shopping.png"
+import overview from "../assets/overview.png"
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -215,7 +222,7 @@ export const Homepage = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.6 }}
-                  src="/src/assets/snapbuy.png"
+                  src={snapbuy}
                   alt="SnapBuy Platform"
                   className="mx-auto max-w-full h-auto max-h-[400px] object-contain"
                 />
@@ -230,7 +237,7 @@ export const Homepage = () => {
                 >
                   <div className="mb-3">
                     <img
-                      src="/src/assets/store.png"
+                      src={store}
                       alt="Store Management"
                       className="mx-auto w-16 h-16 object-contain"
                     />
@@ -247,7 +254,7 @@ export const Homepage = () => {
                 >
                   <div className="mb-3">
                     <img
-                      src="/src/assets/delivery.png"
+                      src={delivery}
                       alt="Delivery Network"
                       className="mx-auto w-16 h-16 object-contain"
                     />
@@ -264,7 +271,7 @@ export const Homepage = () => {
                 >
                   <div className="mb-3">
                     <img
-                      src="/src/assets/payment-checked.png"
+                      src={paymentChecked}
                       alt="Payment Processing"
                       className="mx-auto w-16 h-16 object-contain"
                     />
@@ -409,7 +416,7 @@ export const Homepage = () => {
               >
                 <Card className="shadow-xl p-4 overflow-hidden">
                   <img
-                    src="/src/assets/products.png"
+                    src={products}
                     alt="Products Management"
                     className="rounded-lg w-full h-auto max-h-[300px] object-contain"
                   />
@@ -426,7 +433,7 @@ export const Homepage = () => {
               >
                 <Card className="shadow-xl p-4 overflow-hidden">
                   <img
-                    src="/src/assets/shopping.png"
+                    src={shopping}
                     alt="Shopping Experience"
                     className="rounded-lg w-full h-auto max-h-[300px] object-contain"
                   />
@@ -519,7 +526,7 @@ export const Homepage = () => {
               >
                 <Card className="shadow-xl p-4 overflow-hidden">
                   <img
-                    src="/src/assets/overview.png"
+                    src={overview}
                     alt="Overview Dashboard"
                     className="rounded-lg w-full h-auto max-h-[300px] object-contain"
                   />

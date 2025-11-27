@@ -194,7 +194,7 @@ export const translations = [
   {
     en: "No key there is",
     fr: "Pas de clé disponible",
-    ar: "لا يوجد مفتاح هناك",
+    ar: "لا يوجد مفتاح",
     word: "no%20key%20ther%20is",
   },
   {
@@ -974,7 +974,7 @@ export const translations = [
   {
     en: "be public",
     fr: "être public",
-    ar: "كن عامًا",
+    ar: "يكون عامًا",
     word: "be%20public",
   },
   {
@@ -986,7 +986,7 @@ export const translations = [
   {
     en: "no products ther is",
     fr: "aucun produit disponible",
-    ar: "لا توجد منتجات هناك",
+    ar: "لا توجد منتجات",
     word: "no%20products%20ther%20is",
   },
   {
@@ -2016,19 +2016,19 @@ export const translations = [
   {
     en: "getting-started",
     fr: "commencer",
-    ar: "البداية",
+    ar: "البدء",
     word: "getting-started",
   },
   {
     en: "ai-setup",
     fr: "configuration-ia",
-    ar: "إعداد-الذكي",
+    ar: "إعداد-الذكاء-الاصطناعي",
     word: "ai-setup",
   },
   {
     en: "product-management",
     fr: "gestion-produits",
-    ar: "إدارة-المنتجات",
+    ar: "إدارة المنتجات",
     word: "product-management",
   },
   {

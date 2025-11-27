@@ -766,10 +766,10 @@ export const Plans = () => {
                                         }
                                       />
                                     </span>
-                                    {(payment.payedAt || payment.createdAt) && (
+                                    {(payment.paidAt || payment.createdAt) && (
                                       <p className="opacity-70 mt-1 text-[--biqpod-text-color] text-xs">
                                         {new Date(
-                                          payment.payedAt || payment.createdAt!
+                                          payment.paidAt || payment.createdAt!
                                         ).toLocaleDateString()}
                                       </p>
                                     )}
@@ -825,18 +825,16 @@ export const Plans = () => {
                                         </p>
                                       )}
                                       {/* Full Date and Time */}
-                                      {(payment.payedAt ||
+                                      {(payment.paidAt ||
                                         payment.createdAt) && (
                                         <p className="opacity-70 mb-2 text-[--biqpod-text-color] text-xs">
                                           <Translate content="Date:" />{" "}
                                           {new Date(
-                                            payment.payedAt ||
-                                              payment.createdAt!
+                                            payment.paidAt || payment.createdAt!
                                           ).toLocaleDateString()}{" "}
                                           -{" "}
                                           {new Date(
-                                            payment.payedAt ||
-                                              payment.createdAt!
+                                            payment.paidAt || payment.createdAt!
                                           ).toLocaleTimeString()}
                                         </p>
                                       )}

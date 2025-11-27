@@ -494,21 +494,23 @@ export const Orders = () => {
           animate={isFocused.get ? { scale: 1.02 } : { scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          <Field
-            propositions={["@status"]}
-            onFocus={() => {
-              isFocused.set(true);
-            }}
-            onBlur={() => {
-              isFocused.set(false);
-            }}
-            inputName="search-order"
-            placeholder="Search Order"
-            className="rounded-xl"
-          />
+          <div>
+            <Field
+              propositions={["@status"]}
+              onFocus={() => {
+                isFocused.set(true);
+              }}
+              onBlur={() => {
+                isFocused.set(false);
+              }}
+              inputName="search-order"
+              placeholder="Search Order"
+              className="rounded-xl"
+            />
+          </div>
           {ordersState && (
             <motion.span
-              className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 transform"
+              className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none"
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}

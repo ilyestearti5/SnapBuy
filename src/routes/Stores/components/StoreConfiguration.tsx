@@ -2,6 +2,7 @@ import { TabsView } from "../../../components/TabsView";
 import { Stores } from "../Stores";
 import { NotificationSettings } from "../../../components/NotificationSettings";
 import { Vars } from "../../../components";
+import { Plugins } from "./Plugins";
 import { allIcons } from "@biqpod/app/ui/apis";
 export const StoreConfiguration = () => {
   const tabs = [
@@ -22,6 +23,12 @@ export const StoreConfiguration = () => {
       label: "Notifications",
       icon: allIcons.solid.faBell,
       content: <NotificationSettings />,
+    },
+    {
+      id: "plugins" as const,
+      label: "Plugins",
+      icon: allIcons.solid.faPlug,
+      content: <Plugins />,
     },
   ];
   return (

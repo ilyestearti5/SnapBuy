@@ -145,222 +145,224 @@ export const Collections = () => {
         </div>
         <Line />
       </PositionView>
-      <Scroll>
-        {filteredCollections && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-          >
-            <EmptyComponent>
-              <AnimatePresence>
-                {filteredCollections.map((collection, index) => {
-                  return (
-                    <motion.div
-                      key={collection.id}
-                      initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                      animate={{ opacity: 1, y: 0, scale: 1 }}
-                      exit={{ opacity: 0, y: -10, scale: 0.95 }}
-                      transition={{
-                        duration: 0.4,
-                        delay: index * 0.1,
-                        ease: [0.4, 0, 0.2, 1],
-                      }}
-                      whileHover={{
-                        scale: 1.02,
-                        transition: { duration: 0.2 },
-                      }}
-                      whileTap={{ scale: 0.98 }}
-                      className="flex justify-between items-center gap-2 hover:bg-[--biqpod-primary-background] p-2 rounded-lg cursor-pointer"
-                    >
-                      <div className="flex items-center gap-2">
-                        <div className="relative">
-                          <img
-                            src={collection.photo}
-                            className="border border-[--biqpod-borders] border-solid rounded-xl w-16 h-16 object-cover"
-                          />
-                          <span className="inline-flex top-0 right-0 z-[1000] absolute justify-center items-center bg-red-500 rounded-full w-[18px] h-[18px] font-bold text-white text-xs -translate-y-1/2 translate-x-1/2 pointer-events-none transform">
-                            {collection.products?.length}
+      {collections.get && !!collections.get.length && (
+        <Scroll>
+          {filteredCollections && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+            >
+              <EmptyComponent>
+                <AnimatePresence>
+                  {filteredCollections.map((collection, index) => {
+                    return (
+                      <motion.div
+                        key={collection.id}
+                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        animate={{ opacity: 1, y: 0, scale: 1 }}
+                        exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                        transition={{
+                          duration: 0.4,
+                          delay: index * 0.1,
+                          ease: [0.4, 0, 0.2, 1],
+                        }}
+                        whileHover={{
+                          scale: 1.02,
+                          transition: { duration: 0.2 },
+                        }}
+                        whileTap={{ scale: 0.98 }}
+                        className="flex justify-between items-center gap-2 hover:bg-[--biqpod-primary-background] p-2 rounded-lg cursor-pointer"
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className="relative">
+                            <img
+                              src={collection.photo}
+                              className="border border-[--biqpod-borders] border-solid rounded-xl w-16 h-16 object-cover"
+                            />
+                            <span className="inline-flex top-0 right-0 z-[1000] absolute justify-center items-center bg-red-500 rounded-full w-[18px] h-[18px] font-bold text-white text-xs -translate-y-1/2 translate-x-1/2 pointer-events-none transform">
+                              {collection.products?.length}
+                            </span>
+                          </div>
+                          <span>
+                            {highlightMatch(collection.name || "", search)}
                           </span>
                         </div>
-                        <span>
-                          {highlightMatch(collection.name || "", search)}
-                        </span>
-                      </div>
-                      <div className="flex">
-                        {usedBy === "owned" || usedBy === "read/edit" ? (
-                          <EmptyComponent>
-                            <div>
-                              <CircleTip
-                                onClick={({ clientX, clientY }) => {
-                                  openMenu({
-                                    x: clientX,
-                                    y: clientY,
-                                    menu: [
-                                      {
-                                        label: "Copy",
-                                        defaultIcon: allIcons.regular.faCopy,
-                                        click: async () => {
-                                          const baseUrl =
-                                            window.location.origin;
-                                          const collectionUrl = `${baseUrl}/collection/${collection.id}`;
-                                          await navigator.clipboard.writeText(
-                                            collectionUrl
-                                          );
-                                          showToast(
-                                            "Collection URL copied to clipboard!"
-                                          );
+                        <div className="flex">
+                          {usedBy === "owned" || usedBy === "read/edit" ? (
+                            <EmptyComponent>
+                              <div>
+                                <CircleTip
+                                  onClick={({ clientX, clientY }) => {
+                                    openMenu({
+                                      x: clientX,
+                                      y: clientY,
+                                      menu: [
+                                        {
+                                          label: "Copy",
+                                          defaultIcon: allIcons.regular.faCopy,
+                                          click: async () => {
+                                            const baseUrl =
+                                              window.location.origin;
+                                            const collectionUrl = `${baseUrl}/collection/${collection.id}`;
+                                            await navigator.clipboard.writeText(
+                                              collectionUrl
+                                            );
+                                            showToast(
+                                              "Collection URL copied to clipboard!"
+                                            );
+                                          },
                                         },
-                                      },
-                                      {
-                                        label: "Preview",
-                                        defaultIcon: allIcons.solid.faEye,
-                                        click: () => {
-                                          const baseUrl =
-                                            window.location.origin;
-                                          const collectionUrl = `${baseUrl}/collection/${collection.id}`;
-                                          const a = document.createElement("a");
-                                          a.href = collectionUrl;
-                                          a.target = "_blank";
-                                          a.click();
+                                        {
+                                          label: "Preview",
+                                          defaultIcon: allIcons.solid.faEye,
+                                          click: () => {
+                                            const baseUrl =
+                                              window.location.origin;
+                                            const collectionUrl = `${baseUrl}/collection/${collection.id}`;
+                                            const a =
+                                              document.createElement("a");
+                                            a.href = collectionUrl;
+                                            a.target = "_blank";
+                                            a.click();
+                                          },
                                         },
-                                      },
-                                      {
-                                        type: "separator",
-                                      },
-                                      {
-                                        label: "Delete",
-                                        click: async () => {
-                                          const response = await confirm({
-                                            title: "Delete Collection",
-                                            message: `Are you sure you want to delete the collection "${collection.name}"? This action cannot be undone.`,
-                                          });
-                                          if (!response) return;
-                                          await snapbuyApi.collections.delete(
-                                            collection.id!
-                                          );
-                                          showToast(
-                                            "Collection deleted successfully",
-                                            "success"
-                                          );
-                                          execAction("fetch-collections");
+                                        {
+                                          type: "separator",
                                         },
-                                        defaultIcon: allIcons.solid.faTrash,
-                                      },
-                                    ],
-                                  });
-                                }}
-                                icon={allIcons.solid.faEllipsisVertical}
-                              />
-                            </div>
-                            <div>
-                              <CircleTip
-                                onClick={() => {
-                                  showPopup(
-                                    <UpsertCollection
-                                      back
-                                      collection={collection}
-                                    />
-                                  );
-                                }}
-                                icon={allIcons.solid.faChevronRight}
-                              />
-                            </div>
-                          </EmptyComponent>
-                        ) : null}
-                      </div>
-                    </motion.div>
-                  );
-                })}
-              </AnimatePresence>
-              {filteredCollections &&
-                filteredCollections.length === 0 &&
-                collections &&
-                collections.get.length > 0 && (
-                  <motion.div
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ duration: 0.5 }}
-                    className="flex justify-center items-center h-full"
-                  >
-                    <div className="flex flex-col items-center gap-4 p-8">
-                      <motion.img
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 0.5 }}
-                        transition={{ duration: 0.6, delay: 0.2 }}
-                        draggable={false}
-                        src="https://cdn3d.iconscout.com/3d/premium/thumb/search-not-found-3d-icon-download-in-png-blend-fbx-gltf-formats--no-results-empty-state-pack-miscellaneous-icons-5980397.png"
-                        className="w-32 h-32"
-                      />
-                      <motion.div
-                        initial={{ y: 20, opacity: 0 }}
-                        animate={{ y: 0, opacity: 1 }}
-                        transition={{ duration: 0.6, delay: 0.4 }}
-                        className="text-center"
-                      >
-                        <h3 className="font-semibold text-[--biqpod-text] text-lg">
-                          <Translate content="no collections found" />
-                        </h3>
-                        <p className="text-[--biqpod-text-secondary] text-sm">
-                          <Translate content="try adjusting your search terms" />
-                        </p>
+                                        {
+                                          label: "Delete",
+                                          click: async () => {
+                                            const response = await confirm({
+                                              title: "Delete Collection",
+                                              message: `Are you sure you want to delete the collection "${collection.name}"? This action cannot be undone.`,
+                                            });
+                                            if (!response) return;
+                                            await snapbuyApi.collections.delete(
+                                              collection.id!
+                                            );
+                                            showToast(
+                                              "Collection deleted successfully",
+                                              "success"
+                                            );
+                                            execAction("fetch-collections");
+                                          },
+                                          defaultIcon: allIcons.solid.faTrash,
+                                        },
+                                      ],
+                                    });
+                                  }}
+                                  icon={allIcons.solid.faEllipsisVertical}
+                                />
+                              </div>
+                              <div>
+                                <CircleTip
+                                  onClick={() => {
+                                    showPopup(
+                                      <UpsertCollection
+                                        collection={collection}
+                                      />
+                                    );
+                                  }}
+                                  icon={allIcons.solid.faChevronRight}
+                                />
+                              </div>
+                            </EmptyComponent>
+                          ) : null}
+                        </div>
                       </motion.div>
-                    </div>
-                  </motion.div>
-                )}
-              {collections && collections.get.length === 0 && (
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5 }}
-                  className="flex justify-center items-center h-full"
-                >
-                  <div className="flex flex-col items-center gap-6 p-8">
-                    <motion.img
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 0.6 }}
-                      transition={{ duration: 0.6, delay: 0.2 }}
-                      draggable={false}
-                      src="https://cdn3d.iconscout.com/3d/premium/thumb/file-not-found-3d-icon-png-download-7980703.png?f=webp"
-                      className="w-40 h-40"
-                    />
+                    );
+                  })}
+                </AnimatePresence>
+                {filteredCollections &&
+                  filteredCollections.length === 0 &&
+                  collections &&
+                  collections.get.length > 0 && (
                     <motion.div
-                      initial={{ y: 20, opacity: 0 }}
-                      animate={{ y: 0, opacity: 1 }}
-                      transition={{ duration: 0.6, delay: 0.4 }}
-                      className="text-center"
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ duration: 0.5 }}
+                      className="flex justify-center items-center h-full"
                     >
-                      <h3 className="mb-2 font-semibold text-[--biqpod-text] text-xl">
-                        <Translate content="no collections yet" />
-                      </h3>
-                      <p className="mb-4 max-w-sm text-[--biqpod-text-secondary] text-sm">
-                        <Translate content="collections help organize your products into groups. Create your first collection to get started!" />
-                      </p>
-                      {(usedBy === "owned" || usedBy === "read/edit") && (
+                      <div className="flex flex-col items-center gap-4 p-8">
+                        <motion.img
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 0.5 }}
+                          transition={{ duration: 0.6, delay: 0.2 }}
+                          draggable={false}
+                          src="https://cdn3d.iconscout.com/3d/premium/thumb/search-not-found-3d-icon-download-in-png-blend-fbx-gltf-formats--no-results-empty-state-pack-miscellaneous-icons-5980397.png"
+                          className="w-32 h-32"
+                        />
                         <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.4, delay: 0.6 }}
+                          initial={{ y: 20, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          transition={{ duration: 0.6, delay: 0.4 }}
+                          className="text-center"
                         >
-                          <Button
-                            onClick={() => {
-                              showPopup(<UpsertCollection back />);
-                            }}
-                            icon={allIcons.solid.faPlus}
-                            className="px-6 py-2 rounded-full"
-                          >
-                            <Translate content="create your first collection" />
-                          </Button>
+                          <h3 className="font-semibold text-[--biqpod-text] text-lg">
+                            <Translate content="no collections found" />
+                          </h3>
+                          <p className="text-[--biqpod-text-secondary] text-sm">
+                            <Translate content="try adjusting your search terms" />
+                          </p>
                         </motion.div>
-                      )}
+                      </div>
                     </motion.div>
-                  </div>
+                  )}
+              </EmptyComponent>
+            </motion.div>
+          )}
+        </Scroll>
+      )}
+      {collections && collections.get.length === 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+          className="flex justify-center items-center h-full overflow-hidden"
+        >
+          <div className="flex flex-col items-center gap-6 p-8">
+            <motion.img
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 0.6 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              draggable={false}
+              src="https://cdn3d.iconscout.com/3d/premium/thumb/file-not-found-3d-icon-png-download-7980703.png?f=webp"
+              className="w-40 h-40"
+            />
+            <motion.div
+              initial={{ y: 20, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-center"
+            >
+              <h3 className="mb-2 font-semibold text-[--biqpod-text] text-xl">
+                <Translate content="no collections yet" />
+              </h3>
+              <p className="mb-4 max-w-sm text-[--biqpod-text-secondary] text-sm">
+                <Translate content="collections help organize your products into groups. Create your first collection to get started!" />
+              </p>
+              {(usedBy === "owned" || usedBy === "read/edit") && (
+                <motion.div
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.6 }}
+                >
+                  <Button
+                    onClick={() => {
+                      showPopup(<UpsertCollection />);
+                    }}
+                    icon={allIcons.solid.faPlus}
+                    className="px-6 py-2 rounded-full"
+                  >
+                    <Translate content="create your first collection" />
+                  </Button>
                 </motion.div>
               )}
-            </EmptyComponent>
-          </motion.div>
-        )}
-      </Scroll>
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
       <Line />
       {usedBy === "owned" || usedBy === "read/edit" ? (
         <motion.div
@@ -376,7 +378,7 @@ export const Collections = () => {
           >
             <Button
               onClick={() => {
-                showPopup(<UpsertCollection back />);
+                showPopup(<UpsertCollection />);
               }}
               icon={allIcons.solid.faPlus}
               className="rounded-full"

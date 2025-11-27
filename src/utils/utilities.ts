@@ -34,7 +34,6 @@ export async function compressImage(
       const canvas = document.createElement("canvas");
       const ctx = canvas.getContext("2d");
       if (!ctx) return reject("No canvas context");
-
       // Calculate new dimensions while maintaining aspect ratio
       let { width, height } = img;
       if (width > maxWidth || height > maxHeight) {
@@ -42,10 +41,8 @@ export async function compressImage(
         width *= ratio;
         height *= ratio;
       }
-
       canvas.width = width;
       canvas.height = height;
-
       ctx.drawImage(img, 0, 0, width, height);
       // Export as JPEG with given quality
       const compressedDataUrl = canvas.toDataURL("image/jpeg", quality);
@@ -203,62 +200,6 @@ export const useStoreId = () => {
 export const getStoreId = () => {
   return getTempFromStore<string>("storeId");
 };
-// Generate random metadata for customers
-export const generateRandomCustomerMetadata = (): Record<string, any> => {
-  const preferences = [
-    "electronic",
-    "fashion",
-    "home",
-    "sports",
-    "books",
-    "beauty",
-    "automotive",
-  ];
-  const sources = [
-    "google",
-    "facebook",
-    "instagram",
-    "referral",
-    "direct",
-    "email",
-    "tiktok",
-  ];
-  const devices = ["mobile", "desktop", "tablet"];
-  const browsers = ["chrome", "safari", "firefox", "edge"];
-  const locations = [
-    "Algiers",
-    "Oran",
-    "Constantine",
-    "Setif",
-    "Batna",
-    "Djelfa",
-    "Sidi Bel Abbes",
-  ];
-  return {
-    age: Math.floor(Math.random() * 50) + 18, // 18-67 years old
-    gender: Math.random() > 0.5 ? "male" : "female",
-    preferences: preferences
-      .sort(() => 0.5 - Math.random())
-      .slice(0, Math.floor(Math.random() * 3) + 1), // 1-3 preferences
-    source: sources[Math.floor(Math.random() * sources.length)],
-    device: devices[Math.floor(Math.random() * devices.length)],
-    browser: browsers[Math.floor(Math.random() * browsers.length)],
-    location: locations[Math.floor(Math.random() * locations.length)],
-    loyaltyScore: Math.floor(Math.random() * 100), // 0-99
-    totalOrders: Math.floor(Math.random() * 20), // 0-19 previous orders
-    averageOrderValue: Math.floor(Math.random() * 5000) + 500, // 500-5500 DA
-    lastActivity:
-      Date.now() - Math.floor(Math.random() * 30 * 24 * 60 * 60 * 1000), // Within last 30 days
-    newsletter: Math.random() > 0.3, // 70% subscribed to newsletter
-    language:
-      Math.random() > 0.7
-        ? "french"
-        : Math.random() > 0.5
-        ? "arabic"
-        : "english",
-  };
-};
-
 /**
  * Check if a file URL or data URL represents a GLTF file
  * @param url string - URL or data URL of the file
@@ -266,24 +207,20 @@ export const generateRandomCustomerMetadata = (): Record<string, any> => {
  */
 export const isGLTFFile = (url: string): boolean => {
   if (!url) return false;
-
   // For object URLs (blob:), we can't determine type from URL alone
   // This will be handled by the file metadata stored alongside the URL
   if (url.startsWith("blob:")) {
     return false; // Let the metadata handle this
   }
-
   // Check file extension in URL (more precise matching)
   const lowerUrl = url.toLowerCase();
   if (lowerUrl.endsWith(".gltf") || lowerUrl.endsWith(".glb")) {
     return true;
   }
-
   // Also check for extensions anywhere in the URL (for filenames with query params)
   if (lowerUrl.includes(".gltf") || lowerUrl.includes(".glb")) {
     return true;
   }
-
   // Check data URL MIME type or file extension
   if (url.startsWith("data:")) {
     const isGltfData =
@@ -304,7 +241,6 @@ export const isGLTFFile = (url: string): boolean => {
 export const createObjectURL = (file: File): string => {
   return URL.createObjectURL(file);
 };
-
 /**
  * Revoke an object URL to free up memory
  * @param url string - The object URL to revoke
@@ -314,7 +250,6 @@ export const revokeObjectURL = (url: string): void => {
     URL.revokeObjectURL(url);
   }
 };
-
 /**
  * Check if a URL is an object URL (blob:)
  * @param url string - URL to check
@@ -323,7 +258,6 @@ export const revokeObjectURL = (url: string): void => {
 export const isObjectURL = (url: string): boolean => {
   return url.startsWith("blob:");
 };
-
 /**
  * Get file type from File object or URL
  * @param fileOrUrl File | string - File object or URL string
@@ -352,7 +286,6 @@ export const getFileType = (
     return "unknown";
   }
 };
-
 /**
  * Interface for media file with metadata
  */
@@ -365,7 +298,6 @@ export interface MediaFile {
   originalFile?: File;
   compressed?: boolean; // For images that have been compressed
 }
-
 /**
  * Create a MediaFile object from a File
  * @param file File - The file to create MediaFile from
@@ -378,7 +310,6 @@ export const createMediaFile = (
 ): MediaFile => {
   const url = createObjectURL(file);
   const type = getFileType(file);
-
   return {
     url,
     type,
@@ -389,7 +320,6 @@ export const createMediaFile = (
     compressed,
   };
 };
-
 /**
  * Create a MediaFile object from a URL (for existing images/URLs)
  * @param url string - The URL
@@ -401,7 +331,6 @@ export const createMediaFileFromURL = (
   name?: string
 ): MediaFile => {
   const type = getFileType(url);
-
   return {
     url,
     type,
@@ -411,7 +340,6 @@ export const createMediaFileFromURL = (
     compressed: false,
   };
 };
-
 /**
  * Clean up MediaFile by revoking object URL if needed
  * @param mediaFile MediaFile - The media file to clean up
@@ -421,7 +349,6 @@ export const cleanupMediaFile = (mediaFile: MediaFile): void => {
     revokeObjectURL(mediaFile.url);
   }
 };
-
 /**
  * Clean up multiple MediaFiles
  * @param mediaFiles MediaFile[] - Array of media files to clean up

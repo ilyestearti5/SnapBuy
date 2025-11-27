@@ -236,7 +236,7 @@ const CouponRender = memo(({ coupon }: { coupon: Biqpod.Snapbuy.Coupon }) => {
           isActive ? "border-l-green-500" : "border-l-red-500 opacity-70"
         )}
         onClick={() => {
-          showPopup(<UpsertCoupon back coupon={coupon} />);
+          showPopup(<UpsertCoupon coupon={coupon} />);
         }}
       >
         <div className="flex justify-between items-center p-4">

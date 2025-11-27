@@ -48,6 +48,7 @@ import { Stores } from "./routes/Stores/Stores";
 import { Store } from "./routes/Stores/Store";
 import { Homepage } from "./routes/Homepage";
 import { AccountLinking } from "./AccountLinking";
+import { useProfileContent } from "@biqpod/app/ui/hooks";
 const CheckBeforeShow = () => {
   return (
     <div className="h-full overflow-hidden">
@@ -88,6 +89,7 @@ const TestGrid = memo(() => {
 });
 export const App = () => {
   useUrlSettings();
+  useProfileContent(<ProfileInside />);
   const serviceCards = useMemo(
     () =>
       tabServices.map(({ link, name, photo }, index) => (
@@ -451,7 +453,7 @@ export const App = () => {
         </Container>
         <RightSide />
       </Window>
-      <Layoutes profileContent={<ProfileInside />} />
+      <Layoutes />
     </div>
   );
 };
