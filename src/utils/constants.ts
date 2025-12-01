@@ -28,6 +28,7 @@ import productsPhoto from "../assets/products.png";
 import shoppingPhoto from "../assets/shopping.png";
 import overviewPhoto from "../assets/overview.png";
 import settingsPhoto from "../assets/settings.png";
+import { mergeArray } from "@biqpod/app/ui/shared";
 export const platformsPhotos: Partial<Record<Biqpod.Snapbuy.Platform, string>> =
   {
     discord,
@@ -89,7 +90,7 @@ export const roleColors: Record<Biqpod.Snapbuy.DeliveryCompanyRole, string> = {
   merchant: "#FFEB3B",
 };
 export const DAYS_LEFT = 15;
-export const tabServices = [
+export const tabServices = mergeArray(
   {
     name: "Stores",
     link: "/store",
@@ -105,7 +106,13 @@ export const tabServices = [
     link: "/deliveries",
     photo: deliveryPhoto,
   },
-];
+  import.meta.env.DEV && {
+    name: "Development",
+    link: "/test",
+    photo:
+      "https://cdn1.iconfinder.com/data/icons/3d-web-design/512/11._Developer.png",
+  }
+);
 export const extraTabs = [
   {
     name: "offers",

@@ -1,4 +1,4 @@
-import { memo, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Container,
   Header,
@@ -42,13 +42,12 @@ import { Tracking } from "./Tracking";
 import { Client } from "./routes/Clients/Client";
 import { PackRoute } from "./Links/PackRoute";
 import { ProductRoute } from "./Links/ProductRoute";
-import { range, tw } from "@biqpod/app/ui/utils";
-import { motion } from "framer-motion";
 import { Stores } from "./routes/Stores/Stores";
 import { Store } from "./routes/Stores/Store";
 import { Homepage } from "./routes/Homepage";
 import { AccountLinking } from "./AccountLinking";
 import { useProfileContent } from "@biqpod/app/ui/hooks";
+import { TestGrid } from "./Test";
 const CheckBeforeShow = () => {
   return (
     <div className="h-full overflow-hidden">
@@ -58,35 +57,7 @@ const CheckBeforeShow = () => {
     </div>
   );
 };
-const TestGrid = memo(() => {
-  const testItems = useMemo(
-    () =>
-      range(9).map((i) => {
-        const colorClasses = [
-          "bg-[--biqpod-primary] text-white",
-          "bg-[--biqpod-secondary] text-white",
-        ];
-        return (
-          <motion.div
-            key={i}
-            className={tw(
-              "flex justify-center active:scale-110 active:z-30 cursor-pointer transition-transform scale-100 duration-200 items-center w-full h-full font-extrabold text-5xl",
-              colorClasses[i % colorClasses.length]
-            )}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: i * 0.1, duration: 0.3 }}
-            whileHover={{ scale: 1.1, zIndex: 30 }}
-            whileTap={{ scale: 0.9 }}
-          >
-            {9 - i + 1}
-          </motion.div>
-        );
-      }),
-    []
-  );
-  return <EmptyComponent>{testItems}</EmptyComponent>;
-});
+
 export const App = () => {
   useUrlSettings();
   useProfileContent(<ProfileInside />);
@@ -437,7 +408,7 @@ export const App = () => {
               </AnimatedPage>
             </Route>
             <Route path="/test">
-              <AnimatedPage className="grid grid-cols-3 grid-rows-3 w-full h-full">
+              <AnimatedPage>
                 <TestGrid />
               </AnimatedPage>
             </Route>
