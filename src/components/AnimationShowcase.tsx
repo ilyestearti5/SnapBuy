@@ -153,10 +153,7 @@ export const AnimationShowcase = () => {
                   stiffness: 300,
                 }}
               >
-                <Icon
-                  icon={item.icon}
-                  iconClassName={`text-2xl ${item.color}`}
-                />
+                <Icon icon={item.icon} className={`text-2xl ${item.color}`} />
               </motion.div>
               <span className="font-medium text-lg">{item.label}</span>
             </AnimatedCard>
@@ -214,7 +211,7 @@ export const AnimationShowcase = () => {
                     >
                       <Icon
                         icon={allIcons.solid.faCheckCircle}
-                        iconClassName="text-6xl text-green-500 mb-4"
+                        className="mb-4 text-green-500 text-6xl"
                       />
                     </motion.div>
                     <h3 className="mb-4 font-bold text-2xl">

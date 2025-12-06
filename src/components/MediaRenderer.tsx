@@ -39,7 +39,7 @@ export const MediaRenderer: React.FC<MediaRendererProps> = ({
       >
         <Icon
           icon={allIcons.solid.faExclamationTriangle}
-          iconClassName="text-2xl text-gray-400 mb-2"
+          className="mb-2 text-gray-400 text-2xl"
         />
         <span className="px-2 text-gray-500 text-xs text-center">
           No media source
@@ -69,7 +69,7 @@ export const MediaRenderer: React.FC<MediaRendererProps> = ({
     >
       <Icon
         icon={allIcons.solid.faFile}
-        iconClassName="text-4xl text-gray-400 mb-2"
+        className="mb-2 text-gray-400 text-4xl"
       />
       <span className="px-2 text-gray-500 text-sm text-center">
         {alt || mediaFile?.name || "Unsupported file type"}

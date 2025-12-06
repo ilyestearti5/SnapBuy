@@ -8,6 +8,7 @@ import {
   Translate,
   Button,
   CircleTip,
+  Image,
 } from "@biqpod/app/ui/components";
 import {
   useCopyState,
@@ -18,20 +19,22 @@ import {
   execAction,
   showPopup,
   isLoading,
+  getFieldValue,
+  openMenu,
 } from "@biqpod/app/ui/hooks";
 import { Biqpod } from "@biqpod/app/ui/types";
-import { useMemo } from "react";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { AddProductPopup } from "./AddProductPopup";
-
+import { AddProductInformation } from "./AddProductInformation";
+import { Icon } from "@biqpod/app/ui/shared";
 export const CreateInvoicePopup = () => {
   const storeId = useStoreId();
-  const customerName = useCopyState("");
-  const customerEmail = useCopyState("");
-  const products = useCopyState<
-    Record<string, { count: number; price: number }>
-  >({});
+  const customerName = getFieldValue("customerName");
+  const customerEmail = getFieldValue("customerEmail");
+  const products = useTemp<Record<string, { count: number; price: number }>>(
+    "selected-products-for-invoice"
+  );
   const tax = useCopyState(0);
   const discount = useCopyState(0);
   const notes = useCopyState("");
@@ -73,19 +76,11 @@ export const CreateInvoicePopup = () => {
       });
     }
   }, [storeId]);
-  const total = useMemo(() => {
-    const subtotal = Object.values(products.get).reduce(
-      (sum: number, product: { count: number; price: number }) =>
-        sum + product.count * product.price,
-      0
-    );
-    return subtotal + tax.get - discount.get;
-  }, [products.get, tax.get, discount.get]);
   const createInvoice = async () => {
     if (
       !storeId ||
-      !customerName.get ||
-      Object.keys(products.get).length === 0
+      !customerName ||
+      Object.keys(products.get || {}).length === 0
     ) {
       showToast(
         "please fill in required fields and add at least one product",
@@ -95,13 +90,13 @@ export const CreateInvoicePopup = () => {
     }
     await snapbuyApi.invoice.create({
       storeId,
-      customerName: customerName.get,
-      customerEmail: customerEmail.get,
-      products: products.get,
+      customerName,
+      customerEmail,
+      products: products.get || {},
       tax: tax.get,
       discount: discount.get,
       status: "draft",
-      notes: notes.get,
+      notes: notes.get || "",
     });
     showToast("invoice created successfully", "success");
     closePopup();
@@ -113,77 +108,119 @@ export const CreateInvoicePopup = () => {
       <CardHeaderForPopup title="create invoice" />
       <Line />
       <Scroll className="flex-1">
-        <div className="flex flex-col gap-4 p-4">
-          <Field
-            inputName="customerName"
-            placeholder="customer name"
-            value={customerName.get}
-            onChange={(e) => customerName.set(e.target.value)}
-          />
-          <Field
-            inputName="customerEmail"
-            placeholder="customer email"
-            value={customerEmail.get}
-            onChange={(e) => customerEmail.set(e.target.value)}
-          />
+        <div className="flex flex-col">
+          <div className="flex flex-col gap-2 p-2">
+            <Field
+              className="rounded-xl"
+              inputName="customerName"
+              placeholder="Customer Name"
+            />
+            <Field
+              className="rounded-xl"
+              inputName="customerEmail"
+              placeholder="Customer Email"
+            />
+          </div>
+          <Line />
+          <div className="flex justify-between items-center p-2">
+            <h3 className="font-medium">
+              <Translate content="products" />
+            </h3>
+            <Button
+              icon={allIcons.solid.faPlus}
+              className="rounded-full w-fit"
+              disabled={!productsList.get || productsList.get.length === 0}
+              onClick={() => {
+                showPopup(<AddProductPopup />, {
+                  id: "add-product-popup",
+                });
+              }}
+            >
+              <Translate content="add product" />
+            </Button>
+          </div>
+          <Line />
           {/* Products Section */}
-          <div className="p-3 border border-[--biqpod-borders] rounded-lg">
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="font-medium">
-                <Translate content="products" />
-              </h3>
-              <Button
-                icon={allIcons.solid.faPlus}
-                className="w-fit"
-                disabled={!productsList.get || productsList.get.length === 0}
-                onClick={() => {
-                  showPopup(<AddProductPopup />);
-                }}
-              >
-                <Translate content="add product" />
-              </Button>
-            </div>
-            {Object.keys(products.get).length === 0 ? (
-              <div className="py-4 text-[--biqpod-gray-opacity] text-center">
+          <div>
+            {Object.keys(products.get || {}).length === 0 ? (
+              <div className="text-[--biqpod-gray-opacity-2] py-4 text-center">
                 <Translate content="no products added yet" />
               </div>
             ) : (
               <div className="space-y-2">
-                {Object.entries(products.get).map(([prodId, product]) => {
+                {Object.entries(products.get || {}).map(([prodId, product]) => {
                   const productInfo = productsList.get?.find(
                     (p) => p.id === prodId
                   );
                   return (
                     <div
                       key={prodId}
-                      className="flex justify-between items-center bg-[--biqpod-secondary-background] p-2 rounded"
+                      className="flex justify-between items-center bg-[--biqpod-primary-background] p-3"
                     >
-                      <div>
-                        <div className="font-medium">
-                          {productInfo?.name || `Product ${prodId}`}
-                        </div>
-                        {productInfo?.brandId &&
-                          brands.get &&
-                          brands.get[productInfo.brandId] && (
-                            <div className="text-[--biqpod-gray-opacity] text-sm">
-                              {brands.get[productInfo.brandId]}
-                            </div>
-                          )}
-                        <div className="text-[--biqpod-gray-opacity] text-sm">
-                          {product.count} × {product.price}DA ={" "}
-                          {product.count * product.price}DA
+                      <div className="flex items-center gap-2">
+                        <Image
+                          src={productInfo?.photos?.at(0)}
+                          alt={
+                            <Icon
+                              icon={allIcons.solid.faBoxOpen}
+                              className="text-[--biqpod-gray-opacity-2] text-2xl"
+                            />
+                          }
+                          className="bg-[--biqpod-gray-opacity] rounded-lg w-12 h-12"
+                        />
+                        <div>
+                          <div className="font-medium">
+                            {productInfo?.name || `Product ${prodId}`}
+                          </div>
+                          {productInfo?.brandId &&
+                            brands.get &&
+                            brands.get[productInfo.brandId] && (
+                              <div className="text-[--biqpod-gray-opacity-2] text-sm">
+                                {brands.get[productInfo.brandId]}
+                              </div>
+                            )}
+                          <div className="text-[--biqpod-gray-opacity-2] text-sm">
+                            {product.count} × {product.price}DA ={" "}
+                            {product.count * product.price}DA
+                          </div>
                         </div>
                       </div>
                       <CircleTip
-                        icon={allIcons.solid.faTrash}
-                        onClick={() => {
-                          products.set((prev) => {
-                            const newProducts = { ...prev };
-                            delete newProducts[prodId];
-                            return newProducts;
+                        icon={allIcons.solid.faEllipsisV}
+                        onClick={({ clientY, clientX }) => {
+                          openMenu({
+                            x: clientX,
+                            y: clientY,
+                            menu: [
+                              {
+                                label: "edit",
+                                defaultIcon: allIcons.solid.faEdit,
+                                async click() {
+                                  if (productInfo)
+                                    showPopup(({ id }) => {
+                                      return (
+                                        <AddProductInformation
+                                          product={productInfo}
+                                          id={id}
+                                        />
+                                      );
+                                    });
+                                },
+                              },
+                              {
+                                label: "delete",
+                                defaultIcon: allIcons.solid.faTrash,
+                                click: () => {
+                                  products.set((prev) => {
+                                    const newProducts = { ...prev };
+                                    delete newProducts[prodId];
+                                    return newProducts;
+                                  });
+                                },
+                              },
+                            ],
                           });
                         }}
-                        className="text-red-500"
                       />
                     </div>
                   );
@@ -191,38 +228,14 @@ export const CreateInvoicePopup = () => {
               </div>
             )}
           </div>
-          <Field
-            inputName="tax"
-            placeholder="tax"
-            value={tax.get.toString()}
-            onChange={(e) => tax.set(parseFloat(e.target.value) || 0)}
-          />
-          <Field
-            inputName="discount"
-            placeholder="discount"
-            value={discount.get.toString()}
-            onChange={(e) => discount.set(parseFloat(e.target.value) || 0)}
-          />
-          <Field
-            inputName="total"
-            placeholder="total"
-            value={total.toString()}
-            disabled
-          />
-          <Field
-            inputName="notes"
-            placeholder="notes"
-            value={notes.get}
-            onChange={(e) => notes.set(e.target.value)}
-          />
         </div>
       </Scroll>
       <Line />
-      <div className="p-4">
+      <div className="p-2">
         <Button
           onClick={createInvoice}
           disabled={isLoading("create-invoice")}
-          rightIcon={allIcons.solid.faSave}
+          icon={allIcons.solid.faPlus}
         >
           <Translate content="create" />
         </Button>

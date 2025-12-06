@@ -23,6 +23,7 @@ import {
   useCopyState,
   useTemp,
   useEffectDelay,
+  useAsyncMemo,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
@@ -45,21 +46,25 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
   const applicableProducts = useCopyState<string[]>(
     coupon?.applicableProducts || []
   );
-  const products = useTemp<Biqpod.Snapbuy.Product[]>("fetched-products");
+  const products = useAsyncMemo(async () => {
+    if (!storeId) return [];
+    return await snapbuyApi.product.getProductsOf(storeId);
+  }, [storeId]);
   const productSearch = getFieldValue("coupon-product-search");
+  const ignoreApplied = useMemo(() => {
+    return products?.filter((p) => !applicableProducts.get.includes(p.id!));
+  }, [products, applicableProducts.get]);
   // Filter products based on search
   const filteredProducts = useMemo(() => {
-    if (!productSearch || !products?.get) return [];
-    return filterFuzzySearch(products.get, productSearch.trim(), "name");
-  }, [products?.get, productSearch]);
-
+    if (!productSearch || !ignoreApplied) return [];
+    return filterFuzzySearch(ignoreApplied, productSearch.trim(), "name");
+  }, [ignoreApplied, productSearch]);
   // Fetch products when component mounts
   useEffectDelay(() => {
-    if (storeId && !products?.get?.length) {
+    if (storeId && !products?.length) {
       execAction("fetch-products");
     }
   }, [storeId]);
-
   // Set field values when editing a coupon
   useEffect(() => {
     if (coupon) {
@@ -117,11 +122,7 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
   const code = getFieldValue("coupon-code");
   const name = getFieldValue("coupon-name");
   const description = getFieldValue("coupon-description");
-  const type = couponType.get as
-    | "percentage"
-    | "fixed"
-    | "freeShipping"
-    | Nothing;
+  const type = couponType.get as Biqpod.Snapbuy.Coupon["type"] | Nothing;
   const value = getFieldValue("coupon-value");
   const minAmount = getFieldValue("coupon-min-amount");
   const maxDiscount = getFieldValue("coupon-max-discount");
@@ -185,8 +186,6 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
         endDate: new Date(endDate).toISOString(),
         isActive: Boolean(isActiveState.get),
         storeId,
-        applicableProducts:
-          applicableProducts.get.length > 0 ? applicableProducts.get : null,
       };
       await snapbuyApi.coupon.upsert(couponData);
       showToast(
@@ -211,7 +210,7 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
       startDate,
       endDate,
       isActiveState.get,
-      applicableProducts.get,
+      products,
     ]
   );
   const loading = isLoading(upsertCouponAction);
@@ -430,7 +429,6 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
             <Translate content="active" />
           </label>
         </div>
-
         {/* Applicable Products */}
         <div className="flex flex-col gap-2">
           <label className="font-semibold capitalize">
@@ -439,9 +437,8 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
               (<Translate content="optional - leave empty for all products" />)
             </span>
           </label>
-
           {/* Selected Products Display */}
-          {applicableProducts.get.length > 0 && (
+          {applicableProducts.get && applicableProducts.get.length > 0 && (
             <div className="bg-[--biqpod-primary-background] p-3 border border-[--biqpod-borders] border-solid rounded-lg">
               <div className="flex justify-between items-center mb-2">
                 <span className="font-medium text-sm">
@@ -456,21 +453,19 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
                 </Button>
               </div>
               <div className="flex flex-wrap gap-2">
-                {applicableProducts.get.map((productId) => {
-                  const product = products?.get?.find(
-                    (p) => p.id === productId
-                  );
+                {applicableProducts.get.map((productId, index) => {
+                  const product = products?.find((p) => p.id === productId);
                   return (
                     <motion.div
-                      key={productId}
+                      key={index}
                       initial={{ scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
-                      className="flex items-center gap-2 bg-white p-2 border border-[--biqpod-borders] border-solid rounded-2xl"
+                      className="flex items-center gap-2 bg-[--biqpod-primary-background] p-2 border border-[--biqpod-borders] border-solid rounded-2xl"
                     >
                       <Image
-                        src={product?.photos?.[0]}
+                        src={product?.photos?.at(0)}
                         alt={<Icon icon={allIcons.solid.faBox} />}
-                        className="bg-[--biqpod-gray-opacity] rounded w-8 h-8"
+                        className="bg-[--biqpod-gray-opacity] rounded-lg w-8 h-8"
                       />
                       <span className="text-sm">
                         {product?.name || "Unknown Product"}
@@ -491,7 +486,6 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
               </div>
             </div>
           )}
-
           {/* Product Search with Dropdown */}
           <div className="relative">
             {/* Product Search Results - Above the search field */}
@@ -499,57 +493,47 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
               <div className="right-0 bottom-full left-0 z-50 absolute mb-1">
                 {filteredProducts.length > 0 ? (
                   <div className="bg-[--biqpod-primary-background] shadow-lg border border-[--biqpod-borders] border-solid rounded-lg max-h-60 overflow-y-auto">
-                    {filteredProducts
-                      .filter(
-                        (product) =>
-                          !applicableProducts.get.includes(product.id!)
-                      )
-                      .map((product, index) => (
-                        <motion.div
-                          key={product.id}
-                          initial={{ x: -20, opacity: 0 }}
-                          animate={{ x: 0, opacity: 1 }}
-                          transition={{ delay: index * 0.05 }}
-                          className="flex items-center gap-3 hover:bg-[--biqpod-gray-opacity] p-3 border-b last:border-b-0 cursor-pointer"
-                          onClick={() => {
-                            if (
-                              product.id &&
-                              !applicableProducts.get.includes(product.id)
-                            ) {
-                              applicableProducts.set((prev) => [
-                                ...prev,
-                                product.id!,
-                              ]);
-                              setFieldValue("coupon-product-search", "");
-                            }
-                          }}
-                        >
-                          <Image
-                            src={product.photos?.[0]}
-                            alt={<Icon icon={allIcons.solid.faBox} />}
-                            className="bg-[--biqpod-gray-opacity] rounded w-12 h-12"
-                          />
-                          <div className="flex-1">
-                            <div className="font-medium">{product.name}</div>
-                            <div className="text-[--biqpod-text-secondary] text-sm">
-                              {product.type === "single"
-                                ? `${product.single?.client || 0} DA`
-                                : `From ${Math.min(
-                                    ...(product.multiple?.prices?.map(
-                                      (p) => p.price
-                                    ) || [0])
-                                  )} DA`}
-                            </div>
+                    {filteredProducts.map((product, index) => (
+                      <motion.div
+                        key={product.id}
+                        initial={{ x: -20, opacity: 0 }}
+                        animate={{ x: 0, opacity: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="flex items-center gap-3 hover:bg-[--biqpod-gray-opacity] p-2 border-b last:border-b-0 cursor-pointer"
+                        onClick={() => {
+                          applicableProducts.set((prev) => [
+                            ...prev,
+                            product.id!,
+                          ]);
+                          setFieldValue("coupon-product-search", "");
+                        }}
+                      >
+                        <Image
+                          src={product.photos?.at(0)}
+                          alt={<Icon icon={allIcons.solid.faBox} />}
+                          className="bg-[--biqpod-gray-opacity] rounded-xl w-8 h-8"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium">{product.name}</div>
+                          <div className="text-[--biqpod-text-secondary] text-sm">
+                            {product.type === "single"
+                              ? `${product.single?.client || 0} DA`
+                              : `From ${Math.min(
+                                  ...(product.multiple?.prices?.map(
+                                    (p) => p.price
+                                  ) || [0])
+                                )} DA`}
                           </div>
-                          <Icon
-                            icon={allIcons.solid.faPlus}
-                            iconClassName="text-[--biqpod-primary]"
-                          />
-                        </motion.div>
-                      ))}
+                        </div>
+                        <Icon
+                          icon={allIcons.solid.faPlus}
+                          className="text-[--biqpod-primary]"
+                        />
+                      </motion.div>
+                    ))}
                     {filteredProducts.length > 0 &&
                       filteredProducts.every((product) =>
-                        applicableProducts.get.includes(product.id!)
+                        products?.includes(product)
                       ) && (
                         <div className="p-3 text-[--biqpod-text-secondary] text-center">
                           <Translate content="All matching products are already selected" />
@@ -557,13 +541,12 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
                       )}
                   </div>
                 ) : (
-                  <div className="bg-white shadow-lg p-3 border rounded-lg text-[--biqpod-text-secondary] text-center">
+                  <div className="bg-[--biqpod-primary-background] shadow-lg p-3 border rounded-lg text-[--biqpod-text-secondary] text-center">
                     <Translate content="No products found matching your search" />
                   </div>
                 )}
               </div>
             )}
-
             {/* Product Search Field */}
             <Field
               inputName="coupon-product-search"
@@ -572,7 +555,6 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
             />
           </div>
         </div>
-
         {/* Usage Stats (for existing coupon) */}
         {coupon && (
           <div className="bg-[--biqpod-gray-opacity] p-4 rounded-lg">

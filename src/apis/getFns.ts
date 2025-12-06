@@ -59,11 +59,6 @@ export const useFormName = () => {
   return useFieldValue("product-form-name");
 };
 export const {
-  get: getFormKeys,
-  set: setFormKeys,
-  use: useFormKeys,
-} = getFns<Biqpod.System.Setting.Value["array"]>("product-keys");
-export const {
   get: getFormAvailable,
   set: setFormAvailable,
   use: useFormAvailable,
@@ -105,6 +100,11 @@ export const {
 } = getFns<Partial<Record<string, Biqpod.Snapbuy.MetadataField>>>(
   "product-metadata"
 );
+export const {
+  get: getHiddenPhotos,
+  set: setHiddenPhotos,
+  use: useHiddenPhotos,
+} = getFns<Biqpod.Snapbuy.Product["hiddenPhotos"]>("product-hidden-photos");
 export const useFormProduct = () => {
   const photos = getFormPhotos();
   const clientPrice = getFormClientPrice();
@@ -114,11 +114,11 @@ export const useFormProduct = () => {
   const quantity = getFormQuantity();
   const description = getFormDescription();
   const name = getFormName();
-  const keys = getFormKeys();
   const isAvailable = getFormAvailable();
   const type = getFormType();
   const brandId = getFormBrand();
   const metadata = getFormMetadata();
+  const hiddenPhotos = getHiddenPhotos();
   const product = useMemo(() => {
     // Convert metadata array to object format
     const result: Partial<Biqpod.Snapbuy.Product> = {
@@ -126,11 +126,11 @@ export const useFormProduct = () => {
       type: type || "single",
       name: name || "",
       available: isAvailable ?? true,
-      keys: keys || [],
       quantity: quantity || 0,
       description: description || "",
       limited: limited || false,
       metaData: metadata || {},
+      hiddenPhotos: hiddenPhotos || [],
     };
     if (type === "multiple") {
       result.multiple = {
@@ -159,18 +159,17 @@ export const useFormProduct = () => {
     quantity,
     description,
     name,
-    keys,
     isAvailable,
     type,
     brandId,
     metadata,
+    hiddenPhotos,
   ]);
   return product;
 };
 export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
   // Always set all form fields, using the provided value or appropriate defaults
   setFormAvailable(value?.available ?? true);
-  setFormKeys(value?.keys ?? []);
   setFormQuantity(value?.quantity ?? 0);
   setFormDescription(value?.description ?? "");
   setFormName(value?.name ?? "");
@@ -180,6 +179,7 @@ export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
   setFormLimited(value?.limited ?? false);
   setFormBrand(value?.brandId ?? "");
   setFormType(value?.type ?? "single");
+  setHiddenPhotos(value?.hiddenPhotos || []);
   // Handle multiple prices
   if (value?.type === "multiple" && value?.multiple?.prices) {
     setFormPrices(value.multiple.prices);
@@ -197,7 +197,6 @@ export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
 // Function to clear all form data (useful for creating new products)
 export const clearFormProduct = () => {
   setFormAvailable(true); // Default to available for new products
-  setFormKeys([]);
   setFormQuantity(0);
   setFormDescription("");
   setFormName("");

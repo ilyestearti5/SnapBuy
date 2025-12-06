@@ -357,7 +357,7 @@ export const DeveloperRoute = () => {
                   >
                     <Icon
                       icon={allIcons.solid.faCode}
-                      iconClassName="text-5xl text-[--biqpod-gray-opacity-2]"
+                      className="text-[--biqpod-gray-opacity-2] text-5xl"
                     />
                   </motion.div>
                   <motion.div
@@ -465,13 +465,13 @@ export const DeveloperRoute = () => {
                             {template.status === "accepted" && (
                               <Icon
                                 icon={allIcons.solid.faCheckCircle}
-                                iconClassName="text-[--biqpod-success] text-sm"
+                                className="text-[--biqpod-success] text-sm"
                               />
                             )}
                             {!template.status && (
                               <Icon
                                 icon={allIcons.solid.faClock}
-                                iconClassName="text-[--biqpod-warning] text-sm"
+                                className="text-[--biqpod-warning] text-sm"
                               />
                             )}
                           </motion.div>

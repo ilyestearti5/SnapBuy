@@ -507,7 +507,7 @@ export const DeliveriesPricing = () => {
             onClick={() => {
               modeSelect.set(!modeSelect.get);
             }}
-            iconClassName={tw(
+            className={tw(
               "transition-transform duration-300",
               modeSelect.get && "rotate-90"
             )}

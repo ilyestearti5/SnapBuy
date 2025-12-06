@@ -16,12 +16,10 @@ import { useStoreId } from "../utils";
 import { motion } from "framer-motion";
 import { TabsView } from "./TabsView";
 import { Biqpod } from "@biqpod/app/ui/types";
-
 interface OrderEditPopupProps {
   order: Biqpod.Snapbuy.Order;
   onSave?: () => void;
 }
-
 export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
   order,
   onSave,
@@ -41,11 +39,9 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
   const [packSearch, setPackSearch] = useState("");
   const [editedProductSearch, setEditedProductSearch] = useState("");
   const [editedPackSearch, setEditedPackSearch] = useState("");
-
   // Store original order data for change tracking
   const originalProducts = useMemo(() => order.products || {}, []);
   const originalPacks = useMemo(() => order.packs || {}, []);
-
   const filteredProducts = useMemo(() => {
     if (!productSearch)
       return products.filter((product) => !editedProducts[product.id!]);
@@ -55,7 +51,6 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
         product.name?.toLowerCase().includes(productSearch.toLowerCase())
     );
   }, [products, editedProducts, productSearch]);
-
   const filteredPacks = useMemo(() => {
     if (!packSearch) return packs.filter((pack) => !editedPacks[pack.id!]);
     return packs.filter(
@@ -64,18 +59,15 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
         pack.name?.toLowerCase().includes(packSearch.toLowerCase())
     );
   }, [packs, editedPacks, packSearch]);
-
   const filteredEditedProducts = useMemo(() => {
     const editedEntries = Object.entries(editedProducts);
     const removedEntries = Object.entries(originalProducts).filter(
       ([productId]) => !editedProducts[productId]
     );
-
     const allEntries = [
       ...editedEntries,
       ...removedEntries.map(([id, data]) => [id, data] as const),
     ];
-
     if (allEntries.length <= 5 || !editedProductSearch) {
       return allEntries;
     }
@@ -86,18 +78,15 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
         .includes(editedProductSearch.toLowerCase());
     });
   }, [editedProducts, originalProducts, products, editedProductSearch]);
-
   const filteredEditedPacks = useMemo(() => {
     const editedEntries = Object.entries(editedPacks);
     const removedEntries = Object.entries(originalPacks).filter(
       ([packId]) => !editedPacks[packId]
     );
-
     const allEntries = [
       ...editedEntries,
       ...removedEntries.map(([id, data]) => [id, data] as const),
     ];
-
     if (allEntries.length <= 5 || !editedPackSearch) {
       return allEntries;
     }
@@ -106,7 +95,6 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
       return pack?.name?.toLowerCase().includes(editedPackSearch.toLowerCase());
     });
   }, [editedPacks, originalPacks, packs, editedPackSearch]);
-
   useEffect(() => {
     const fetchData = async () => {
       if (!storeId) return;
@@ -125,7 +113,6 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
     };
     fetchData();
   }, [storeId]);
-
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -142,23 +129,19 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
       setSaving(false);
     }
   };
-
   const addProduct = (productId: string) => {
     const product = products.find((p) => p.id === productId);
     let defaultPrice = 0;
-
     if (product?.type === "single") {
       defaultPrice = product.single?.client || 0;
     } else if (product?.type === "multiple" && product.multiple?.prices) {
       defaultPrice = Math.min(...product.multiple.prices.map((p) => p.price));
     }
-
     setEditedProducts((prev) => ({
       ...prev,
       [productId]: { count: 1, price: defaultPrice },
     }));
   };
-
   const removeProduct = (productId: string) => {
     setEditedProducts((prev) => {
       const newProducts = { ...prev };
@@ -166,7 +149,6 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
       return newProducts;
     });
   };
-
   const updateProduct = (
     productId: string,
     field: "count" | "price",
@@ -180,14 +162,12 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
       },
     }));
   };
-
   const addPack = (packId: string) => {
     setEditedPacks((prev) => ({
       ...prev,
       [packId]: { count: 1, price: 0 },
     }));
   };
-
   const removePack = (packId: string) => {
     setEditedPacks((prev) => {
       const newPacks = { ...prev };
@@ -195,7 +175,6 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
       return newPacks;
     });
   };
-
   const updatePack = (
     packId: string,
     field: "count" | "price",
@@ -209,20 +188,15 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
       },
     }));
   };
-
   if (loading) {
     return (
       <Card className="w-full max-w-2xl max-h-[80vh]">
         <div className="flex justify-center items-center p-8">
-          <Icon
-            icon={allIcons.solid.faCircleNotch}
-            iconClassName="animate-spin"
-          />
+          <Icon icon={allIcons.solid.faCircleNotch} className="animate-spin" />
         </div>
       </Card>
     );
   }
-
   return (
     <Card className="max-md:rounded-none w-full md:max-w-2xl h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-3">
@@ -264,14 +238,12 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
                 const isAdded = !originalData && !!editedProducts[productId];
                 const isModified =
                   !!originalData && !!editedProducts[productId];
-
                 const countChanged =
                   isModified &&
                   (data?.count || 0) !== (originalData?.count || 0);
                 const priceChanged =
                   isModified &&
                   (data?.price || 0) !== (originalData?.price || 0);
-
                 return (
                   <motion.div
                     key={productId}
@@ -436,14 +408,12 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
                 const isRemoved = !editedPacks[packId] && !!originalData;
                 const isAdded = !originalData && !!editedPacks[packId];
                 const isModified = !!originalData && !!editedPacks[packId];
-
                 const countChanged =
                   isModified &&
                   (data?.count || 0) !== (originalData?.count || 0);
                 const priceChanged =
                   isModified &&
                   (data?.price || 0) !== (originalData?.price || 0);
-
                 return (
                   <motion.div
                     key={packId}
@@ -676,7 +646,7 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
               ),
             },
           ]}
-          positionId="order-edit-tabs"
+          id="order-edit-tabs"
         />
       </Scroll>
       <Line />
@@ -685,7 +655,7 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
           {saving ? (
             <Icon
               icon={allIcons.solid.faCircleNotch}
-              iconClassName="animate-spin"
+              className="animate-spin"
             />
           ) : (
             <Translate content="Save" />

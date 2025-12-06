@@ -255,9 +255,7 @@ export const NotificationTester: React.FC = () => {
                   >
                     <Icon
                       icon={getStatusIcon(diagnostic.status)}
-                      iconClassName={`text-xl ${getStatusColor(
-                        diagnostic.status
-                      )}`}
+                      className={`text-xl ${getStatusColor(diagnostic.status)}`}
                     />
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
@@ -277,7 +275,7 @@ export const NotificationTester: React.FC = () => {
                         <div className="flex items-start gap-2 bg-blue-50 dark:bg-blue-900/20 mt-2 p-2 rounded">
                           <Icon
                             icon={allIcons.solid.faLightbulb}
-                            iconClassName="text-blue-600 text-sm mt-0.5"
+                            className="mt-0.5 text-blue-600 text-sm"
                           />
                           <p className="text-blue-800 dark:text-blue-200 text-xs">
                             {diagnostic.recommendation}

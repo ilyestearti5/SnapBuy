@@ -35,7 +35,7 @@ export const ProductsAndBrands = () => {
 
   return (
     <TabsView
-      positionId="products-and-brands"
+      id="products-and-brands"
       tabs={tabs}
       defaultTab="products"
       position="bottom"

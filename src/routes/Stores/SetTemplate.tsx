@@ -338,7 +338,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                         <div className="flex items-center gap-2">
                           <Icon
                             icon={allIcons.solid.faCheck}
-                            iconClassName="text-green-500"
+                            className="text-green-500"
                           />
                           <AsyncComponent
                             render={async () => {
@@ -398,7 +398,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                       <div className="ml-auto">
                         <Icon
                           icon={allIcons.solid.faCheck}
-                          iconClassName="text-green-500"
+                          className="text-green-500"
                         />
                       </div>
                     )}
@@ -424,7 +424,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                   >
                     <Icon
                       icon={allIcons.solid.faFileCode}
-                      iconClassName="text-4xl text-[--biqpod-gray-opacity-2] mb-4"
+                      className="text-[--biqpod-gray-opacity-2] mb-4 text-4xl"
                     />
                     <h3 className="mb-2 font-semibold text-lg">
                       <Translate content="no templates found" />
@@ -515,7 +515,7 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
                                 <div className="flex-shrink-0">
                                   <Icon
                                     icon={allIcons.solid.faCheck}
-                                    iconClassName="text-green-500"
+                                    className="text-green-500"
                                   />
                                 </div>
                               )}

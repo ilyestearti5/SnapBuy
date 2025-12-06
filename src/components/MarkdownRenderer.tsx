@@ -1,11 +1,9 @@
 import React from "react";
 import ReactMarkdown from "react-markdown";
-
 interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
-
 export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
   content,
   className = "",
@@ -27,14 +25,14 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           p: ({ children }) => <p className="mb-2">{children}</p>,
           code: ({ inline, children }: any) =>
             inline ? (
-              <code className="bg-[--biqpod-gray-opacity] px-2 py-1 rounded font-mono text-sm">
+              <code className="px-2 py-1 rounded font-mono text-sm">
                 {children}
               </code>
             ) : (
               <code className="font-mono text-sm">{children}</code>
             ),
           pre: ({ children }) => (
-            <pre className="bg-[--biqpod-gray-opacity] mt-2 mb-2 p-3 rounded-lg overflow-x-auto">
+            <pre className="mt-2 mb-2 p-3 rounded-lg overflow-x-auto">
               {children}
             </pre>
           ),
@@ -46,7 +44,7 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
           ),
           li: ({ children }) => <li className="mb-1">{children}</li>,
           blockquote: ({ children }) => (
-            <blockquote className="bg-[--biqpod-gray-opacity] mb-2 py-2 pl-4 border-[--biqpod-primary] border-l-4 rounded-r">
+            <blockquote className="mb-2 py-2 pl-4 border-[--biqpod-primary] border-l-4 rounded-r">
               {children}
             </blockquote>
           ),
@@ -64,6 +62,13 @@ export const MarkdownRenderer: React.FC<MarkdownRendererProps> = ({
             <strong className="font-semibold">{children}</strong>
           ),
           em: ({ children }) => <em className="italic">{children}</em>,
+          img: ({ src, alt }) => (
+            <img
+              src={src || ""}
+              alt={alt || ""}
+              className="my-2 rounded max-h-[200px]"
+            />
+          ),
         }}
       >
         {content}

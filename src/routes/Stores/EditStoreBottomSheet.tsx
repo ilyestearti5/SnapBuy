@@ -135,10 +135,7 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
               </div>
             ) : (
               <div className="py-4 text-gray-500 text-center">
-                <Icon
-                  icon={allIcons.solid.faGlobe}
-                  iconClassName="text-2xl mb-1"
-                />
+                <Icon icon={allIcons.solid.faGlobe} className="mb-1 text-2xl" />
                 <div className="text-sm">
                   <Translate content="no platforms configured" />
                 </div>

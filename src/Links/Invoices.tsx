@@ -46,7 +46,7 @@ const NoInvoicesFound = ({ usedBy }: { usedBy: string | null }) => {
               >
                 <Icon
                   icon={allIcons.solid.faFileInvoice}
-                  iconClassName="text-8xl text-[--biqpod-gray-opacity]"
+                  className="text-[--biqpod-gray-opacity] text-8xl"
                 />
               </motion.div>
             </motion.div>
@@ -92,6 +92,7 @@ const NoInvoicesFound = ({ usedBy }: { usedBy: string | null }) => {
             >
               {(usedBy === "owned" || usedBy === "read/edit") && (
                 <Button
+                  className="rounded-full"
                   icon={allIcons.solid.faPlus}
                   onClick={() => showPopup(<CreateInvoicePopup />)}
                 >
@@ -241,12 +242,13 @@ export const Invoices = () => {
           </AnimatedList>
         </Scroll>
       )}
-      <div className="p-4 border-[--biqpod-borders] border-t">
+      <Line />
+      <div className="p-3">
         {(usedBy === "owned" || usedBy === "read/edit") && (
           <Button
             icon={allIcons.solid.faPlus}
             onClick={() => showPopup(<CreateInvoicePopup />)}
-            className="w-full"
+            className="rounded-full"
           >
             <Translate content="create invoice" />
           </Button>

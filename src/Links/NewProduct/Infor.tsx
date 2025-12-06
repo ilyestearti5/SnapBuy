@@ -1,17 +1,14 @@
 import {
-  ArrayField,
   BooleanField,
   EmptyComponent,
   EnumField,
   Field,
-  Line,
   Translate,
 } from "@biqpod/app/ui/components";
 import { snapbuyApi } from "../../apis";
 import {
   useFormAvailable,
   useFormBrand,
-  useFormKeys,
   useFormLimited,
 } from "../../apis/getFns";
 import { useAsyncMemo } from "@biqpod/app/ui/hooks";
@@ -19,7 +16,6 @@ import { useStoreId } from "../../utils";
 export const ProductInfo = () => {
   const limited = useFormLimited();
   const isAvailable = useFormAvailable();
-  const keysState = useFormKeys();
   const brand = useFormBrand();
   const storeId = useStoreId();
   const brands = useAsyncMemo(async () => {
@@ -98,18 +94,6 @@ export const ProductInfo = () => {
         </label>
         <div className="w-full">
           <BooleanField id="product-form-available" state={isAvailable} />
-        </div>
-      </div>
-      <Line />
-      <div className="flex max-md:flex-col justify-between items-center gap-2 p-2">
-        <label
-          className="w-full md:text-right capitalize"
-          htmlFor="product-keys"
-        >
-          <Translate content="Keys" /> :
-        </label>
-        <div className="relative w-full h-fit">
-          <ArrayField state={keysState} config={{}} id="product-keys" />
         </div>
       </div>
     </EmptyComponent>

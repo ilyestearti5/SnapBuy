@@ -258,7 +258,7 @@ export const ClientProducts = () => {
                   <div className="flex justify-center items-center p-2 h-full">
                     <Icon
                       icon={allIcons.solid.faBoxOpen}
-                      iconClassName="text-9xl text-[--biqpod-primary]"
+                      className="text-[--biqpod-primary] text-9xl"
                     />
                   </div>
                   <Line />

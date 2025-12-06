@@ -90,7 +90,7 @@ const NoOrdersFound = () => {
               >
                 <Icon
                   icon={allIcons.solid.faShoppingCart}
-                  iconClassName="text-8xl text-[--biqpod-gray-opacity]"
+                  className="text-[--biqpod-gray-opacity] text-8xl"
                 />
               </motion.div>
               {/* Floating particles animation */}
@@ -491,31 +491,28 @@ export const Orders = () => {
       <div className="flex justify-between items-center gap-2 p-2">
         <motion.div
           className="relative w-full"
-          animate={isFocused.get ? { scale: 1.02 } : { scale: 1 }}
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
-          <div>
-            <Field
-              propositions={["@status"]}
-              onFocus={() => {
-                isFocused.set(true);
-              }}
-              onBlur={() => {
-                isFocused.set(false);
-              }}
-              inputName="search-order"
-              placeholder="Search Order"
-              className="rounded-xl"
-            />
-          </div>
+          <Field
+            propositions={["@status"]}
+            onFocus={() => {
+              isFocused.set(true);
+            }}
+            onBlur={() => {
+              isFocused.set(false);
+            }}
+            inputName="search-order"
+            placeholder="Search Order"
+            className="rounded-xl"
+          />
           {ordersState && (
             <motion.span
-              className="top-1/2 right-3 absolute text-[--biqpod-primary] -translate-y-1/2 pointer-events-none"
+              className="top-1/2 right-3 absolute text-[--biqpod-primary] capitalize -translate-y-1/2 pointer-events-none"
               initial={{ opacity: 0, x: 10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
             >
-              / {ordersState?.length || "NO Orders"}
+              / {ordersState?.length || <Translate content="no orders" />}
             </motion.span>
           )}
         </motion.div>
@@ -988,7 +985,7 @@ export const Orders = () => {
                           <div className="flex items-start gap-2 p-2">
                             <Icon
                               icon={allIcons.solid.faNoteSticky}
-                              iconClassName="text-[--biqpod-primary] mt-1 flex-shrink-0"
+                              className="flex-shrink-0 mt-1 text-[--biqpod-primary]"
                             />
                             <div className="flex-1">
                               <span className="font-medium text-[--biqpod-text-color] text-sm capitalize">
@@ -1013,7 +1010,7 @@ export const Orders = () => {
                               >
                                 <AnimatedMarkdownRenderer
                                   content={order.note}
-                                  className="text-[--biqpod-gray-opacity] text-sm break-words"
+                                  className="text-sm break-words"
                                 />
                                 {order.note.length > 50 && (
                                   <motion.div
@@ -1087,7 +1084,7 @@ export const Orders = () => {
                         ? allIcons.solid.faCircleNotch
                         : allIcons.solid.faChevronRight
                     }
-                    iconClassName={tw(isLoading && "animate-spin")}
+                    className={tw(isLoading && "animate-spin")}
                     onClick={() => {
                       execAction("fetch-orders", { next: true });
                     }}

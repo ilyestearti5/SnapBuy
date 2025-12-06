@@ -203,7 +203,7 @@ export const GLTFRenderer: React.FC<GLTFRendererProps> = ({
       >
         <Icon
           icon={allIcons.solid.faCube}
-          iconClassName="text-4xl text-gray-400 mb-2"
+          className="mb-2 text-gray-400 text-4xl"
         />
         <span className="px-2 text-gray-500 text-sm text-center">{error}</span>
       </div>
@@ -219,7 +219,7 @@ export const GLTFRenderer: React.FC<GLTFRendererProps> = ({
       >
         <Icon
           icon={allIcons.solid.faSpinner}
-          iconClassName="text-4xl text-gray-400 mb-2 animate-spin"
+          className="mb-2 text-gray-400 text-4xl animate-spin"
         />
         <span className="text-gray-500 text-sm">Loading 3D Model...</span>
       </div>

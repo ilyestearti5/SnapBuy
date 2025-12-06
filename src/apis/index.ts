@@ -16,6 +16,7 @@ import {
   ClientCloud,
   updateDoc,
   CloudSelection,
+  onCollectionSnapshot,
 } from "@biqpod/app/ui/apis";
 import { delay, mapAsync, mergeArray } from "@biqpod/app/ui/utils";
 import { cloud, functions } from "../server";
@@ -136,6 +137,10 @@ export const createApi = (cloud: ClientCloud) => {
     return photos;
   };
   const snapbuyApi = {
+    async deleteToken(storeId: string, token: string) {
+      const fn = await getUserFunction("delete-store-api-token");
+      await fn?.({ storeId, token });
+    },
     async generateStoreApiToken(storeId: string) {
       const fn = await getUserFunction<{ token: string }>(
         "generate-store-api-token"
@@ -153,11 +158,11 @@ export const createApi = (cloud: ClientCloud) => {
       return result?.permissions;
     },
     async getPartOfToken(storeId: string) {
-      const fn = await getUserFunction<{ token: string }>(
-        "get-part-store-api-token"
+      const fn = await getUserFunction<{ tokens: string[] }>(
+        "get-store-api-tokens"
       );
       const result = await fn?.({ storeId });
-      return result?.token;
+      return result?.tokens;
     },
     async getZone(zoneId: string) {
       return getDoc<Biqpod.Snapbuy.Zone>([mainRef, "zones", zoneId]);
@@ -1293,6 +1298,22 @@ export const createApi = (cloud: ClientCloud) => {
       });
     },
     coupon: {
+      async getOrders(
+        couponId: string,
+        startAtCreatedAt?: number,
+        limit: number = 20
+      ) {
+        const orders = await getDocs<Biqpod.Snapbuy.Order>(
+          [mainRef, "orders"],
+          {
+            where: and(where("couponId", "==", couponId)),
+            orders: [orderBy("createdAt", "desc")],
+            limit,
+            startAt: startAtCreatedAt ? [startAtCreatedAt] : undefined,
+          }
+        );
+        return orders?.map((order) => order.data);
+      },
       async upsert(coupon: Biqpod.Snapbuy.Coupon) {
         const upsertCoupon = await getUserFunction<string>("create-coupon");
         const couponId = await upsertCoupon?.(coupon);
@@ -1933,6 +1954,100 @@ export const createApi = (cloud: ClientCloud) => {
           setTemp(ref, response);
         }
         return response;
+      },
+    },
+    notifications: {
+      async list(options: {
+        storeId?: string;
+        limit?: number;
+        startAt?: number;
+        type?: Biqpod.Snapbuy.Notification["type"];
+      }) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        const selection: CloudSelection<Biqpod.Snapbuy.Notification> = {
+          where: and(
+            where("uid", "==", uid),
+            options.storeId && where("meta.storeId", "==", options.storeId)
+          ),
+          orders: [orderBy("createdAt", "desc")],
+          limit: options.limit,
+          startAt: options.startAt ? [options.startAt] : undefined,
+        };
+        const notifications = await cloud.app.nosql.getDocs(
+          [mainRef, "notifications"],
+          selection
+        );
+        return notifications?.map((notif) => notif.data);
+      },
+      markAsRead(notificationId: string) {
+        return cloud.app.nosql.updateDoc(
+          [mainRef, "notifications", notificationId],
+          {
+            readed: true,
+          }
+        );
+      },
+      on(
+        callback?: (notification: Biqpod.Snapbuy.Notification) => void,
+        options?: {
+          storeId?: string;
+          type?: Biqpod.Snapbuy.Notification["type"];
+        }
+      ) {
+        var unOnCollections: (() => void)[] = [];
+        const rucc = (startAt?: number) => {
+          const unner = onCollectionSnapshot<Biqpod.Snapbuy.Notification>(
+            [mainRef, "notifications"],
+            (changes) => {
+              const not = changes.at(0)?.data;
+              if (not) {
+                callback?.(not);
+                unner?.();
+                if (not.createdAt) {
+                  rucc(not.createdAt);
+                }
+              }
+            },
+            {
+              orders: [orderBy("createdAt", "desc")],
+              startAt: startAt ? [startAt] : undefined,
+              where: and(
+                options?.storeId &&
+                  where("meta.storeId", "==", options.storeId),
+                options?.type && where("type", "==", options.type)
+              ),
+              limit: 1,
+            }
+          );
+          if (unner) {
+            unOnCollections.push(unner);
+          }
+          return unner;
+        };
+        this.first(options?.storeId).then((notif) => {
+          rucc(notif?.createdAt);
+        });
+        return () => {
+          unOnCollections.forEach((un) => un());
+        };
+      },
+      async first(storeId?: string) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        const notifications =
+          await cloud.app.nosql.getDocs<Biqpod.Snapbuy.Notification>(
+            [mainRef, "notifications"],
+            {
+              where: and(
+                where("uid", "==", uid),
+                storeId && where("meta.storeId", "==", storeId)
+              ),
+              orders: [orderBy("createdAt", "desc")],
+              limit: 1,
+            }
+          );
+        return notifications?.[0]?.data || null;
       },
     },
   };

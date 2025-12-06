@@ -84,7 +84,7 @@ export const ClientProductRender = React.memo(
                   <div className="flex flex-col justify-center items-center text-[--biqpod-gray-opacity-2] w-full h-full">
                     <Icon
                       icon={allIcons.solid.faPhotoFilm}
-                      iconClassName="text-5xl"
+                      className="text-5xl"
                     />
                     <span className="mt-2 text-sm">
                       <Translate content="no image available" />
@@ -221,7 +221,7 @@ export const ClientProductRender = React.memo(
                               <div className="p-4 text-center">
                                 <Icon
                                   icon={allIcons.solid.faHeart}
-                                  iconClassName="mb-2 text-red-500 text-3xl"
+                                  className="mb-2 text-red-500 text-3xl"
                                 />
                                 <div>
                                   <Translate content="Product added to your favorites!" />
@@ -270,7 +270,7 @@ export const ClientProductRender = React.memo(
                                       item.defaultIcon ||
                                       allIcons.solid.faQuestion
                                     }
-                                    iconClassName={tw(
+                                    className={tw(
                                       "invisible",
                                       item.defaultIcon && "visible"
                                     )}

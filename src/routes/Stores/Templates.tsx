@@ -96,7 +96,9 @@ export const Templates = () => {
         );
         if (newTemplates && newTemplates.length > 0) {
           // Filter for accepted templates
-          const acceptedTemplates = newTemplates.filter(template => template.status === "accepted");
+          const acceptedTemplates = newTemplates.filter(
+            (template) => template.status === "accepted"
+          );
           // Filter templates based on search query if there's one
           const query = searchQuery?.toLowerCase();
           const filteredTemplates = query
@@ -114,7 +116,10 @@ export const Templates = () => {
             templates.set(filteredTemplates);
           }
           // Update pagination state
-          const lastTemplate = acceptedTemplates.length > 0 ? acceptedTemplates[acceptedTemplates.length - 1] : newTemplates[newTemplates.length - 1];
+          const lastTemplate =
+            acceptedTemplates.length > 0
+              ? acceptedTemplates[acceptedTemplates.length - 1]
+              : newTemplates[newTemplates.length - 1];
           lastDocId.set(lastTemplate?.id || null);
           // Check if we have more templates to load
           hasMore.set(newTemplates.length === limit);
@@ -240,7 +245,7 @@ export const Templates = () => {
                 <div className="top-1/2 right-3 absolute -translate-y-1/2 pointer-events-none">
                   <Icon
                     icon={allIcons.solid.faSearch}
-                    iconClassName="text-[--biqpod-gray-opacity-2]"
+                    className="text-[--biqpod-gray-opacity-2]"
                   />
                 </div>
                 <Field
@@ -279,7 +284,7 @@ export const Templates = () => {
               <div className="flex flex-col justify-center items-center py-12 text-center">
                 <Icon
                   icon={allIcons.solid.faFileCode}
-                  iconClassName="text-6xl text-[--biqpod-gray-opacity-2] mb-4"
+                  className="text-[--biqpod-gray-opacity-2] mb-4 text-6xl"
                 />
                 <h3 className="mb-2 font-semibold text-xl">
                   <Translate content="No templates available" />
@@ -321,7 +326,7 @@ export const Templates = () => {
                                 <div className="flex justify-center items-center w-full h-full">
                                   <Icon
                                     icon={allIcons.solid.faFileCode}
-                                    iconClassName="text-4xl text-[--biqpod-gray-opacity-2]"
+                                    className="text-[--biqpod-gray-opacity-2] text-4xl"
                                   />
                                 </div>
                               }
@@ -330,7 +335,7 @@ export const Templates = () => {
                             <div className="flex justify-center items-center w-full h-full">
                               <Icon
                                 icon={allIcons.solid.faFileCode}
-                                iconClassName="text-4xl text-[--biqpod-gray-opacity-2]"
+                                className="text-[--biqpod-gray-opacity-2] text-4xl"
                               />
                             </div>
                           )}
@@ -344,7 +349,7 @@ export const Templates = () => {
                             >
                               <Icon
                                 icon={allIcons.solid.faCheck}
-                                iconClassName="text-xs"
+                                className="text-xs"
                               />
                               <Translate content="Purchased" />
                             </motion.div>
@@ -361,7 +366,7 @@ export const Templates = () => {
                               >
                                 <Icon
                                   icon={allIcons.solid.faExternalLinkAlt}
-                                  iconClassName="text-sm"
+                                  className="text-sm"
                                 />
                               </a>
                             </div>
@@ -375,8 +380,13 @@ export const Templates = () => {
                             </h3>
                             <div className="ml-2 font-bold text-[--biqpod-primary] text-lg">
                               {(() => {
-                                const price = template.multiPrice || template.singlePrice || 0;
-                                return price > 0 ? price.toFixed(2).concat("$") : "Free";
+                                const price =
+                                  template.multiPrice ||
+                                  template.singlePrice ||
+                                  0;
+                                return price > 0
+                                  ? price.toFixed(2).concat("$")
+                                  : "Free";
                               })()}
                             </div>
                           </div>
@@ -393,7 +403,7 @@ export const Templates = () => {
                                   ? allIcons.solid.faUsers
                                   : allIcons.solid.faUser
                               }
-                              iconClassName="text-[--biqpod-gray-opacity-2] text-xs"
+                              className="text-[--biqpod-gray-opacity-2] text-xs"
                             />
                             <span className="text-[--biqpod-gray-opacity-2] font-medium text-xs">
                               {!!template.multiPrice
@@ -460,8 +470,13 @@ export const Templates = () => {
                                   {" "}
                                   - $
                                   {(() => {
-                                    const price = template.multiPrice || template.singlePrice || 0;
-                                    return price > 0 ? price.toFixed(2) : "0.00";
+                                    const price =
+                                      template.multiPrice ||
+                                      template.singlePrice ||
+                                      0;
+                                    return price > 0
+                                      ? price.toFixed(2)
+                                      : "0.00";
                                   })()}
                                 </span>
                               </span>

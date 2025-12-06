@@ -8,6 +8,7 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { tw } from "@biqpod/app/ui/utils";
+import { useLocation } from "react-router";
 export interface TabItem<T extends string = string> {
   id: T;
   label: string;
@@ -21,14 +22,14 @@ interface TabsViewProps<T extends string = string> {
   defaultTab?: T;
   onTabChange?: (tabId: T) => void;
   position?: "top" | "bottom";
-  positionId: string;
+  id: string;
 }
 export function TabsView<T extends string = string>({
   tabs,
   defaultTab,
   onTabChange,
   position = "top",
-  positionId,
+  id,
 }: TabsViewProps<T>) {
   const [activeTab, setActiveTab] = useState<T>(defaultTab || tabs[0]?.id);
   // Update active tab if defaultTab changes
@@ -44,11 +45,19 @@ export function TabsView<T extends string = string>({
     onTabChange?.(tabId);
   };
   const currentTab = tabs.find((tab) => tab.id === activeTab);
+  const location = useLocation();
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const tabParam = searchParams.get("tab") as T | null;
+    if (tabParam && tabs.some((tab) => tab.id === tabParam)) {
+      handleTabChange(tabParam);
+    }
+  }, [location.search]);
   return (
-    <div className={tw("flex flex-col h-full")}>
+    <div className={tw("flex flex-col h-full overflow-hidden")}>
       {/* Tab Navigation */}
       {position === "top" && (
-        <PositionView positionId={positionId}>
+        <PositionView positionId={id}>
           <div
             className={tw(
               "flex gap-1 justify-center bg-[--biqpod-secondary-background] p-2"
@@ -97,13 +106,12 @@ export function TabsView<T extends string = string>({
         </PositionView>
       )}
       {/* Tab Content */}
-      <div className={tw("flex-1 overflow-hidden w-full")}>
+      <div className={tw("flex flex-col overflow-hidden h-full")}>
         {currentTab?.content}
       </div>
       {position === "bottom" && (
-        <PositionView positionId={positionId}>
+        <PositionView positionId={id}>
           <Line />
-
           <div
             className={tw(
               "flex gap-1 justify-center bg-[--biqpod-secondary-background] p-2"

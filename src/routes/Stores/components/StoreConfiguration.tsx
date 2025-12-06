@@ -33,7 +33,7 @@ export const StoreConfiguration = () => {
   ];
   return (
     <TabsView
-      positionId="store-configuration"
+      id="store-configuration"
       tabs={tabs}
       defaultTab="stores"
       position="bottom"

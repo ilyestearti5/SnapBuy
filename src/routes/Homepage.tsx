@@ -2,13 +2,13 @@ import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { Button, Icon, Translate, Card, Line } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
-import snapbuy from "../assets/snapbuy.png"
-import store from "../assets/store.png"
-import delivery from "../assets/delivery.png"
-import paymentChecked from "../assets/payment-checked.png"
-import products from "../assets/products.png"
-import shopping from "../assets/shopping.png"
-import overview from "../assets/overview.png"
+import snapbuy from "../assets/snapbuy.png";
+import store from "../assets/store.png";
+import delivery from "../assets/delivery.png";
+import paymentChecked from "../assets/payment-checked.png";
+import products from "../assets/products.png";
+import shopping from "../assets/shopping.png";
+import overview from "../assets/overview.png";
 // Animation variants
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
@@ -114,7 +114,7 @@ export const Homepage = () => {
             <div className="flex items-center space-x-2">
               <Icon
                 icon={allIcons.solid.faBolt}
-                iconClassName="text-[--biqpod-primary] text-2xl"
+                className="text-[--biqpod-primary] text-2xl"
               />
               <span className="font-bold text-[--biqpod-primary] text-2xl">
                 SnapBuy
@@ -202,7 +202,7 @@ export const Homepage = () => {
               </Link>
               <Button className="bg-[--biqpod-secondary-background] px-8 py-4 border-[--biqpod-primary] border-2 border-solid w-fit text-[--biqpod-primary] text-lg">
                 <a href="#video" className="flex items-center">
-                  <Icon icon={allIcons.solid.faPlay} iconClassName="mr-2" />
+                  <Icon icon={allIcons.solid.faPlay} className="mr-2" />
                   <Translate content="Watch Demo" />
                 </a>
               </Button>
@@ -383,7 +383,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Bulk product uploads and editing" />
@@ -392,7 +392,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Real-time inventory tracking" />
@@ -401,7 +401,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Advanced categorization and filters" />
@@ -453,7 +453,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Mobile-optimized shopping interface" />
@@ -462,7 +462,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Quick checkout process" />
@@ -471,7 +471,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Personalized recommendations" />
@@ -493,7 +493,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Real-time sales analytics" />
@@ -502,7 +502,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Customer insights and behavior" />
@@ -511,7 +511,7 @@ export const Homepage = () => {
                   <li className="flex items-start">
                     <Icon
                       icon={allIcons.solid.faCheck}
-                      iconClassName="text-[--biqpod-primary] mt-1 mr-3"
+                      className="mt-1 mr-3 text-[--biqpod-primary]"
                     />
                     <span className="text-[--biqpod-text-color]">
                       <Translate content="Performance reports and trends" />
@@ -588,7 +588,7 @@ export const Homepage = () => {
                       <div className="relative flex justify-center items-center w-full h-full text-[--biqpod-primary]">
                         <Icon
                           icon={feature.icon}
-                          iconClassName="text-4xl group-hover:scale-110 transition-transform duration-300"
+                          className="text-4xl group-hover:scale-110 transition-transform duration-300"
                         />
                       </div>
                     </div>
@@ -648,7 +648,7 @@ export const Homepage = () => {
                   <div className="mt-6">
                     <Icon
                       icon={step.icon}
-                      iconClassName="text-[--biqpod-primary] text-4xl mb-4"
+                      className="mb-4 text-[--biqpod-primary] text-4xl"
                     />
                     <h3 className="mb-3 font-semibold text-[--biqpod-text-color] text-xl">
                       <Translate content={step.title} />
@@ -663,7 +663,7 @@ export const Homepage = () => {
                   <div className="hidden md:block top-1/2 -right-4 absolute -translate-y-1/2 transform">
                     <Icon
                       icon={allIcons.solid.faArrowRight}
-                      iconClassName="text-[--biqpod-primary] text-2xl"
+                      className="text-[--biqpod-primary] text-2xl"
                     />
                   </div>
                 )}
@@ -727,7 +727,7 @@ export const Homepage = () => {
                   <div className="top-4 right-4 absolute opacity-10">
                     <Icon
                       icon={allIcons.solid.faQuoteRight}
-                      iconClassName="text-[--biqpod-primary] text-5xl"
+                      className="text-[--biqpod-primary] text-5xl"
                     />
                   </div>
                   <div className="flex items-center mb-4">
@@ -740,7 +740,7 @@ export const Homepage = () => {
                       >
                         <Icon
                           icon={allIcons.solid.faStar}
-                          iconClassName="text-[--biqpod-primary] text-sm"
+                          className="text-[--biqpod-primary] text-sm"
                         />
                       </motion.div>
                     ))}
@@ -807,7 +807,7 @@ export const Homepage = () => {
                     <div className="relative flex justify-center items-center h-full">
                       <Icon
                         icon={allIcons.solid.faRocket}
-                        iconClassName="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                        className="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
                   </div>
@@ -836,7 +836,7 @@ export const Homepage = () => {
                     <div className="relative flex justify-center items-center h-full">
                       <Icon
                         icon={allIcons.solid.faBook}
-                        iconClassName="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                        className="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
                   </div>
@@ -865,7 +865,7 @@ export const Homepage = () => {
                     <div className="relative flex justify-center items-center h-full">
                       <Icon
                         icon={allIcons.solid.faQuestionCircle}
-                        iconClassName="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                        className="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
                       />
                     </div>
                   </div>
@@ -899,19 +899,13 @@ export const Homepage = () => {
                 <div className="flex gap-4">
                   <Link to="/documentation">
                     <Button className="px-6 py-3">
-                      <Icon
-                        icon={allIcons.solid.faFileText}
-                        iconClassName="mr-2"
-                      />
+                      <Icon icon={allIcons.solid.faFileText} className="mr-2" />
                       <Translate content="View Full Docs" />
                     </Button>
                   </Link>
                   <Link to="/feedbacks">
                     <Button className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-primary] px-6 py-3 border-[--biqpod-primary] border-2 border-solid text-[--biqpod-primary] hover:text-white">
-                      <Icon
-                        icon={allIcons.solid.faLifeRing}
-                        iconClassName="mr-2"
-                      />
+                      <Icon icon={allIcons.solid.faLifeRing} className="mr-2" />
                       <Translate content="Contact Support" />
                     </Button>
                   </Link>
@@ -949,12 +943,12 @@ export const Homepage = () => {
             >
               <Link to="/profile">
                 <Button className="px-8 py-4 text-lg">
-                  <Icon icon={allIcons.solid.faRocket} iconClassName="mr-2" />
+                  <Icon icon={allIcons.solid.faRocket} className="mr-2" />
                   <Translate content="Start Free Trial" />
                 </Button>
               </Link>
               <Button className="bg-[--biqpod-secondary-background] px-8 py-4 border-[--biqpod-primary] border-2 border-solid w-fit text-[--biqpod-primary] text-lg">
-                <Icon icon={allIcons.solid.faCalendar} iconClassName="mr-2" />
+                <Icon icon={allIcons.solid.faCalendar} className="mr-2" />
                 <Translate content="Schedule Demo" />
               </Button>
             </motion.div>
@@ -971,7 +965,7 @@ export const Homepage = () => {
               <div className="flex items-center space-x-2 mb-4">
                 <Icon
                   icon={allIcons.solid.faBolt}
-                  iconClassName="text-[--biqpod-primary] text-2xl"
+                  className="text-[--biqpod-primary] text-2xl"
                 />
                 <span className="font-bold text-2xl">SnapBuy</span>
               </div>
@@ -983,19 +977,13 @@ export const Homepage = () => {
                   href="#"
                   className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
                 >
-                  <Icon
-                    icon={allIcons.brands.faFacebook}
-                    iconClassName="text-xl"
-                  />
+                  <Icon icon={allIcons.brands.faFacebook} className="text-xl" />
                 </a>
                 <a
                   href="#"
                   className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
                 >
-                  <Icon
-                    icon={allIcons.brands.faTwitter}
-                    iconClassName="text-xl"
-                  />
+                  <Icon icon={allIcons.brands.faTwitter} className="text-xl" />
                 </a>
                 <a
                   href="#"
@@ -1003,17 +991,14 @@ export const Homepage = () => {
                 >
                   <Icon
                     icon={allIcons.brands.faInstagram}
-                    iconClassName="text-xl"
+                    className="text-xl"
                   />
                 </a>
                 <a
                   href="#"
                   className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
                 >
-                  <Icon
-                    icon={allIcons.brands.faLinkedin}
-                    iconClassName="text-xl"
-                  />
+                  <Icon icon={allIcons.brands.faLinkedin} className="text-xl" />
                 </a>
               </div>
             </div>

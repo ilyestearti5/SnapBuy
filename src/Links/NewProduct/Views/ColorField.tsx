@@ -104,7 +104,7 @@ export const ColorField: React.FC<ColorFieldProps> = ({
                   className="ml-1 text-gray-400 hover:text-red-500 transition-colors"
                   title="Remove color"
                 >
-                  <Icon icon={allIcons.solid.faTimes} iconClassName="text-xs" />
+                  <Icon icon={allIcons.solid.faTimes} className="text-xs" />
                 </button>
               </div>
             );

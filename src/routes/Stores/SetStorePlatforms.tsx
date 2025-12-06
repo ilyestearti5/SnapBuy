@@ -224,7 +224,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
             >
               <Icon
                 icon={allIcons.solid.faSearch}
-                iconClassName="text-[--biqpod-text-secondary] text-sm"
+                className="text-[--biqpod-text-secondary] text-sm"
               />
             </motion.div>
             {search && (
@@ -345,7 +345,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                                                   ? allIcons.solid.faSpinner
                                                   : allIcons.solid.faCheck
                                               }
-                                              iconClassName={
+                                              className={
                                                 isLoading.get
                                                   ? "animate-spin"
                                                   : ""
@@ -541,7 +541,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                                                   ? allIcons.solid.faSpinner
                                                   : allIcons.solid.faCheck
                                               }
-                                              iconClassName={
+                                              className={
                                                 isLoading.get
                                                   ? "animate-spin"
                                                   : ""
@@ -613,7 +613,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                             ? allIcons.solid.faSearch
                             : allIcons.solid.faGlobe
                         }
-                        iconClassName="text-4xl mb-2"
+                        className="mb-2 text-4xl"
                       />
                     </motion.div>
                     <motion.div

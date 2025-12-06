@@ -89,7 +89,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
           {photos.length == 0 && (
             <div className="flex justify-center items-center w-full h-full">
               <Icon
-                iconClassName="text-8xl text-[--biqpod-gray-opacity]"
+                className="text-[--biqpod-gray-opacity] text-8xl"
                 icon={allIcons.solid.faBoxOpen}
               />
             </div>

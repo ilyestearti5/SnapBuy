@@ -679,7 +679,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
                                       >
                                         <Icon
                                           icon={allIcons.solid.faCodeBranch}
-                                          iconClassName="mr-2"
+                                          className="mr-2"
                                         />
                                         <span>{item.highlighted}</span>
                                       </div>
@@ -726,7 +726,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
                                       >
                                         <Icon
                                           icon={allIcons.solid.faBox}
-                                          iconClassName="mr-2"
+                                          className="mr-2"
                                         />
                                         <span>{item.highlighted}</span>
                                       </div>

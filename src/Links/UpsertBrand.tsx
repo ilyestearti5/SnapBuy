@@ -213,7 +213,7 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
             <Translate content="brand photo" />
           </label>
           <div className="flex items-center gap-2 mb-2 text-sm">
-            <Icon icon={allIcons.solid.faInfoCircle} iconClassName="text-xs" />
+            <Icon icon={allIcons.solid.faInfoCircle} className="text-xs" />
             <span>
               <span className="text-[--biqpod-gray-opacity-2]">
                 <Translate content="upload drag drop paste image or use url" />
@@ -265,18 +265,15 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
                   {isPasting ? (
                     <Icon
                       icon={allIcons.solid.faSpinner}
-                      iconClassName="text-2xl animate-spin text-[--biqpod-primary]"
+                      className="text-[--biqpod-primary] text-2xl animate-spin"
                     />
                   ) : isDragging ? (
                     <Icon
                       icon={allIcons.solid.faCloudArrowUp}
-                      iconClassName="text-2xl text-[--biqpod-primary]"
+                      className="text-[--biqpod-primary] text-2xl"
                     />
                   ) : (
-                    <Icon
-                      icon={allIcons.solid.faImage}
-                      iconClassName="text-2xl"
-                    />
+                    <Icon icon={allIcons.solid.faImage} className="text-2xl" />
                   )}
                 </div>
               )}

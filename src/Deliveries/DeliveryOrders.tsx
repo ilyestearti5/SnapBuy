@@ -235,7 +235,7 @@ export const DeliveryOrders = ({}: DeliveryOrdersProps) => {
               <Card>
                 <div className="flex justify-center items-center">
                   <Icon
-                    iconClassName="text-red-600 text-7xl"
+                    className="text-red-600 text-7xl"
                     icon={allIcons.solid.faXmark}
                   />
                 </div>

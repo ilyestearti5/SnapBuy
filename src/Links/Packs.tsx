@@ -36,27 +36,22 @@ import { useMemo } from "react";
 import { range, filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion, AnimatePresence } from "framer-motion";
 import { Biqpod } from "@biqpod/app/ui/types";
-
 // Highlight component for search terms
 function highlightMatch(
   text: string,
   search: string | undefined
 ): React.ReactNode {
   if (!search || search.trim() === "") return text;
-
   const searchLower = search.toLowerCase().trim();
   const textLower = text.toLowerCase();
-
   // Find all matches for highlighting
   const matches: { start: number; end: number }[] = [];
-
   // Exact substring matches
   let index = textLower.indexOf(searchLower);
   while (index !== -1) {
     matches.push({ start: index, end: index + searchLower.length });
     index = textLower.indexOf(searchLower, index + 1);
   }
-
   // If no exact matches, try fuzzy matching
   if (matches.length === 0) {
     let searchIdx = 0;
@@ -67,12 +62,9 @@ function highlightMatch(
       }
     }
   }
-
   if (matches.length === 0) return text;
-
   // Sort matches by start position
   matches.sort((a, b) => a.start - b.start);
-
   // Merge overlapping matches
   const mergedMatches: { start: number; end: number }[] = [];
   for (const match of matches) {
@@ -87,11 +79,9 @@ function highlightMatch(
       }
     }
   }
-
   // Build the highlighted text
   const result: React.ReactNode[] = [];
   let lastEnd = 0;
-
   mergedMatches.forEach((match, index) => {
     // Add text before the match
     if (match.start > lastEnd) {
@@ -105,12 +95,10 @@ function highlightMatch(
     );
     lastEnd = match.end;
   });
-
   // Add remaining text
   if (lastEnd < text.length) {
     result.push(text.substring(lastEnd));
   }
-
   return result;
 }
 export const Packs = () => {

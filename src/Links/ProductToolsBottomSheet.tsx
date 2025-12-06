@@ -576,7 +576,7 @@ export const ProductToolsBottomSheet = ({
             >
               <Icon
                 icon={defaultIcon || allIcons.solid.faHiking}
-                iconClassName={tw(!defaultIcon && "invisible")}
+                className={tw(!defaultIcon && "invisible")}
               />
               <span>
                 <Translate content={label || ""} />

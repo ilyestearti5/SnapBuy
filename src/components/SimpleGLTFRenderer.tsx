@@ -108,7 +108,7 @@ export const SimpleGLTFRenderer: React.FC<SimpleGLTFRendererProps> = ({
       >
         <Icon
           icon={allIcons.solid.faExclamationTriangle}
-          iconClassName="text-2xl text-red-500 mb-2"
+          className="mb-2 text-red-500 text-2xl"
         />
         <span className="text-red-700 text-xs text-center">{error.get}</span>
       </div>
@@ -123,7 +123,7 @@ export const SimpleGLTFRenderer: React.FC<SimpleGLTFRendererProps> = ({
       >
         <Icon
           icon={allIcons.solid.faSpinner}
-          iconClassName="text-2xl text-blue-500 mb-2 animate-spin"
+          className="mb-2 text-blue-500 text-2xl animate-spin"
         />
         <span className="text-blue-700 text-xs">Loading 3D Model...</span>
       </div>

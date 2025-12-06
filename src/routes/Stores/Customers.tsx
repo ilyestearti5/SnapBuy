@@ -9,6 +9,7 @@ import {
   Scroll,
   Translate,
   Button,
+  Field,
 } from "@biqpod/app/ui/components";
 import {
   confirm,
@@ -20,6 +21,8 @@ import {
   showToast,
   useAction,
   useCopyState,
+  getFieldValue,
+  useMemoDelay,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useState } from "react";
 import { snapbuyApi } from "../../apis";
@@ -29,7 +32,71 @@ import { useStoreId } from "../../utils";
 import { useUsedBy } from "../Stores/Stores";
 import { motion, AnimatePresence } from "framer-motion";
 import { Biqpod } from "@biqpod/app/ui/types";
-
+// Highlight component for search terms
+function highlightMatch(
+  text: string,
+  search: string | undefined
+): React.ReactNode {
+  if (!search || search.trim() === "") return text;
+  const searchLower = search.toLowerCase().trim();
+  const textLower = text.toLowerCase();
+  // Find all matches for highlighting
+  const matches: { start: number; end: number }[] = [];
+  // Exact substring matches
+  let index = textLower.indexOf(searchLower);
+  while (index !== -1) {
+    matches.push({ start: index, end: index + searchLower.length });
+    index = textLower.indexOf(searchLower, index + 1);
+  }
+  // If no exact matches, try fuzzy matching
+  if (matches.length === 0) {
+    let searchIdx = 0;
+    for (let i = 0; i < text.length && searchIdx < searchLower.length; i++) {
+      if (textLower[i] === searchLower[searchIdx]) {
+        matches.push({ start: i, end: i + 1 });
+        searchIdx++;
+      }
+    }
+  }
+  if (matches.length === 0) return text;
+  // Sort matches by start position
+  matches.sort((a, b) => a.start - b.start);
+  // Merge overlapping matches
+  const mergedMatches: { start: number; end: number }[] = [];
+  for (const match of matches) {
+    if (mergedMatches.length === 0) {
+      mergedMatches.push(match);
+    } else {
+      const last = mergedMatches[mergedMatches.length - 1];
+      if (match.start <= last.end) {
+        last.end = Math.max(last.end, match.end);
+      } else {
+        mergedMatches.push(match);
+      }
+    }
+  }
+  // Build the highlighted text
+  const result: React.ReactNode[] = [];
+  let lastEnd = 0;
+  mergedMatches.forEach((match, index) => {
+    // Add text before the match
+    if (match.start > lastEnd) {
+      result.push(text.substring(lastEnd, match.start));
+    }
+    // Add highlighted match
+    result.push(
+      <span key={index} className="font-bold text-[--biqpod-primary] underline">
+        {text.substring(match.start, match.end)}
+      </span>
+    );
+    lastEnd = match.end;
+  });
+  // Add remaining text
+  if (lastEnd < text.length) {
+    result.push(text.substring(lastEnd));
+  }
+  return result;
+}
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -41,7 +108,6 @@ const containerVariants = {
     },
   },
 };
-
 const cardVariants = {
   hidden: {
     opacity: 0,
@@ -67,27 +133,6 @@ const cardVariants = {
     },
   },
 };
-
-const statsCardVariants = {
-  hidden: {
-    opacity: 0,
-    y: 30,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-    },
-  },
-  hover: {
-    y: -5,
-    transition: {
-      duration: 0.2,
-    },
-  },
-};
-
 const metadataVariants = {
   hidden: {
     opacity: 0,
@@ -112,7 +157,6 @@ const metadataVariants = {
     },
   },
 };
-
 const metadataItemVariants = {
   hidden: {
     opacity: 0,
@@ -132,7 +176,6 @@ const metadataItemVariants = {
     },
   },
 };
-
 const iconVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -149,7 +192,6 @@ const iconVariants = {
     },
   },
 };
-
 const loadingSpinVariants = {
   hidden: { rotate: 0 },
   visible: {
@@ -160,13 +202,10 @@ const loadingSpinVariants = {
     },
   },
 };
-
 export const Customers = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const customersState = useCopyState<
-    (Biqpod.Snapbuy.Customer & { id: string })[]
-  >([]);
+  const customersState = useCopyState<Biqpod.Snapbuy.Customer[]>([]);
   const action = useAction(
     "load-customers",
     async () => {
@@ -236,8 +275,8 @@ export const Customers = () => {
       try {
         // Delete all rejected customers
         await Promise.all(
-          rejectedCustomers.map((customer) =>
-            snapbuyApi.customer.delete(customer.id)
+          rejectedCustomers.map(
+            (customer) => customer.id && snapbuyApi.customer.delete(customer.id)
           )
         );
         showToast(
@@ -253,7 +292,10 @@ export const Customers = () => {
     },
     [filteredCustomers.rejected]
   );
-  const renderCustomer = (customer: Biqpod.Snapbuy.Customer) => {
+  const renderCustomer = (
+    customer: Biqpod.Snapbuy.Customer,
+    searchTerm?: string
+  ) => {
     const isUpdating = updatingCustomer === customer.id;
     const isDeleting = deletingCustomer === customer.id;
     const isProcessing = isUpdating || isDeleting;
@@ -268,7 +310,6 @@ export const Customers = () => {
       ? metadataEntries
       : metadataEntries.slice(0, 4);
     const hiddenCount = metadataEntries.length - 4;
-
     return (
       <motion.div
         key={customer.id}
@@ -301,7 +342,10 @@ export const Customers = () => {
                   whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.2 }}
                 >
-                  {customer.firstname} {customer.lastname}
+                  {highlightMatch(
+                    `${customer.firstname} ${customer.lastname}`,
+                    searchTerm
+                  )}
                 </motion.p>
                 <motion.p
                   className="text-[--biqpod-gray-opacity-2] text-sm"
@@ -309,7 +353,7 @@ export const Customers = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
                 >
-                  @{customer.username}
+                  @{highlightMatch(customer.username, searchTerm)}
                 </motion.p>
                 <motion.p
                   className="text-[--biqpod-gray-opacity-2] text-sm"
@@ -317,7 +361,7 @@ export const Customers = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.4 }}
                 >
-                  {customer.email}
+                  {highlightMatch(customer.email, searchTerm)}
                 </motion.p>
                 <motion.p
                   className="text-[--biqpod-gray-opacity-2] text-sm"
@@ -347,8 +391,8 @@ export const Customers = () => {
               >
                 <Translate content={customer.status} />
               </motion.div>
-              {(!isProcessing && usedBy === "owned") ||
-                (usedBy === "read/edit" && (
+              {!isProcessing &&
+                (usedBy === "owned" || usedBy === "read/edit") && (
                   <motion.div
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
@@ -445,7 +489,7 @@ export const Customers = () => {
                       }}
                     />
                   </motion.div>
-                ))}
+                )}
             </div>
           </motion.div>
           {/* Metadata Section */}
@@ -471,10 +515,7 @@ export const Customers = () => {
                       animate="visible"
                       whileHover="hover"
                     >
-                      <Icon
-                        icon={allIcons.solid.faInfo}
-                        iconClassName="text-xs"
-                      />
+                      <Icon icon={allIcons.solid.faInfo} className="text-xs" />
                     </motion.div>
                     <Translate content="customer insights" />
                   </h4>
@@ -637,7 +678,7 @@ export const Customers = () => {
           >
             <Icon
               icon={allIcons.solid.faExclamationTriangle}
-              iconClassName="text-4xl text-[--biqpod-warning] mb-4"
+              className="mb-4 text-[--biqpod-warning] text-4xl"
             />
           </motion.div>
           <motion.p
@@ -652,9 +693,114 @@ export const Customers = () => {
       </motion.div>
     );
   }
+  // Helper function for search scoring
+  function getSearchScore(text: string, search: string): number {
+    if (!search) return 1000;
+    const textLower = text.toLowerCase();
+    const searchLower = search.toLowerCase();
+    if (textLower === searchLower) return 1000; // exact match
+    if (textLower.startsWith(searchLower)) return 900; // prefix match
+    const idx = textLower.indexOf(searchLower);
+    if (idx !== -1) return 800 - idx; // substring match, earlier is better
+    // Fuzzy: count matching chars in order
+    let sIdx = 0,
+      match = 0;
+    for (let c of textLower) {
+      if (c === searchLower[sIdx]) {
+        match++;
+        sIdx++;
+        if (sIdx === searchLower.length) break;
+      }
+    }
+    return match === searchLower.length ? 700 - textLower.length : 0;
+  }
+  const search = getFieldValue("customer-search");
+  const [_, filteredAndSearchedCustomers] = useMemoDelay(
+    () => {
+      if (!search) return null;
+      const searchTerm = search.trim().toLowerCase();
+      const allCustomers = [
+        ...filteredCustomers.pending,
+        ...filteredCustomers.accepted,
+        ...filteredCustomers.rejected,
+      ];
+      return allCustomers
+        .filter((customer) => {
+          const nameScore = getSearchScore(
+            `${customer.firstname} ${customer.lastname}`,
+            searchTerm
+          );
+          const usernameScore = getSearchScore(customer.username, searchTerm);
+          const emailScore = getSearchScore(customer.email, searchTerm);
+          const phoneScore = getSearchScore(customer.phone, searchTerm);
+          return (
+            nameScore > 0 ||
+            usernameScore > 0 ||
+            emailScore > 0 ||
+            phoneScore > 0
+          );
+        })
+        .sort((a, b) => {
+          const aScore = Math.max(
+            getSearchScore(`${a.firstname} ${a.lastname}`, searchTerm),
+            getSearchScore(a.username, searchTerm),
+            getSearchScore(a.email, searchTerm),
+            getSearchScore(a.phone, searchTerm)
+          );
+          const bScore = Math.max(
+            getSearchScore(`${b.firstname} ${b.lastname}`, searchTerm),
+            getSearchScore(b.username, searchTerm),
+            getSearchScore(b.email, searchTerm),
+            getSearchScore(b.phone, searchTerm)
+          );
+          return bScore - aScore;
+        });
+    },
+    [search, filteredCustomers],
+    500
+  );
+  // Organize searched customers by status
+  const searchedCustomers =
+    search && filteredAndSearchedCustomers
+      ? {
+          pending: filteredAndSearchedCustomers.filter(
+            (c: Biqpod.Snapbuy.Customer) => c.status === "pending"
+          ),
+          accepted: filteredAndSearchedCustomers.filter(
+            (c: Biqpod.Snapbuy.Customer) => c.status === "accepted"
+          ),
+          rejected: filteredAndSearchedCustomers.filter(
+            (c: Biqpod.Snapbuy.Customer) => c.status === "rejected"
+          ),
+        }
+      : filteredCustomers;
+  const displayCustomers = search ? searchedCustomers : filteredCustomers;
+  const totalDisplayed =
+    search && filteredAndSearchedCustomers
+      ? filteredAndSearchedCustomers.length
+      : customersState.get.length;
   return (
-    <Scroll>
-      <div className="p-4">
+    <EmptyComponent>
+      <motion.div
+        className="relative p-2"
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        <Field
+          inputName="customer-search"
+          placeholder="search customers by name, username, email or phone"
+          className="rounded-xl"
+        />
+        {search && (
+          <span className="top-1/2 right-3 absolute font-bold text-[--biqpod-primary] -translate-y-1/2">
+            / {filteredAndSearchedCustomers?.length || 0}
+          </span>
+        )}
+      </motion.div>
+      <Line />
+      <Scroll className="p-4">
+        {/* Search Field */}
         {/* Header */}
         <motion.div
           className="flex justify-between items-center mb-6"
@@ -684,165 +830,14 @@ export const Customers = () => {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <Translate content="total" />: {customersState.get.length}
+              <Translate content="total" />: {totalDisplayed}
             </motion.div>
           </motion.div>
         </motion.div>
-        {/* Statistics Cards */}
-        {!actionLoading && (
-          <motion.div
-            className="gap-4 grid md:grid-cols-3 mb-6"
-            variants={containerVariants}
-            initial="hidden"
-            animate="visible"
-          >
-            <motion.div variants={statsCardVariants} whileHover="hover">
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="flex justify-center items-center bg-amber-400/10 rounded-full w-12 h-12"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <motion.div
-                      variants={iconVariants}
-                      initial="hidden"
-                      animate="visible"
-                      whileHover="hover"
-                    >
-                      <Icon
-                        icon={allIcons.solid.faClock}
-                        iconClassName="text-xl text-amber-400"
-                      />
-                    </motion.div>
-                  </motion.div>
-                  <div>
-                    <motion.p
-                      className="font-bold text-2xl"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{
-                        duration: 0.3,
-                        delay: 0.3,
-                      }}
-                    >
-                      {filteredCustomers.pending.length}
-                    </motion.p>
-                    <motion.p
-                      className="text-[--biqpod-gray-opacity-2] text-sm"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                    >
-                      <Translate content="pending" />
-                    </motion.p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-            <motion.div variants={statsCardVariants} whileHover="hover">
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="flex justify-center items-center bg-emerald-400/10 rounded-full w-12 h-12"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <motion.div
-                      variants={iconVariants}
-                      initial="hidden"
-                      animate="visible"
-                      whileHover="hover"
-                    >
-                      <Icon
-                        icon={allIcons.solid.faCheck}
-                        iconClassName="text-xl text-emerald-400"
-                      />
-                    </motion.div>
-                  </motion.div>
-                  <div>
-                    <motion.p
-                      className="font-bold text-2xl"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{
-                        duration: 0.3,
-                        delay: 0.3,
-                      }}
-                    >
-                      {filteredCustomers.accepted.length}
-                    </motion.p>
-                    <motion.p
-                      className="text-[--biqpod-gray-opacity-2] text-sm"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                    >
-                      <Translate content="accepted" />
-                    </motion.p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-            <motion.div variants={statsCardVariants} whileHover="hover">
-              <Card className="p-4">
-                <div className="flex items-center gap-3">
-                  <motion.div
-                    className="flex justify-center items-center bg-red-400/10 rounded-full w-12 h-12"
-                    whileHover={{ scale: 1.1 }}
-                    transition={{ duration: 0.5 }}
-                  >
-                    <motion.div
-                      variants={iconVariants}
-                      initial="hidden"
-                      animate="visible"
-                      whileHover="hover"
-                    >
-                      <Icon
-                        icon={allIcons.solid.faXmark}
-                        iconClassName="text-xl text-red-400"
-                      />
-                    </motion.div>
-                  </motion.div>
-                  <div>
-                    <motion.p
-                      className="font-bold text-2xl"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{
-                        duration: 0.3,
-                        delay: 0.3,
-                      }}
-                    >
-                      {filteredCustomers.rejected.length}
-                    </motion.p>
-                    <motion.p
-                      className="text-[--biqpod-gray-opacity-2] text-sm"
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.4 }}
-                    >
-                      <Translate content="rejected" />
-                    </motion.p>
-                  </div>
-                </div>
-              </Card>
-            </motion.div>
-          </motion.div>
-        )}
-        {actionLoading && (
-          <div className="gap-4 grid md:grid-cols-3 mb-6">
-            {range(3).map((index) => {
-              return (
-                <CardWait className="rounded-2xl w-full h-[80px]" key={index} />
-              );
-            })}
-          </div>
-        )}
         {/* Customers List */}
         {!actionLoading && (
           <EmptyComponent>
-            {customersState.get.length > 0 ? (
+            {totalDisplayed > 0 ? (
               <motion.div
                 className="flex flex-col gap-3"
                 variants={containerVariants}
@@ -850,7 +845,7 @@ export const Customers = () => {
                 animate="visible"
               >
                 {/* Pending Customers */}
-                {filteredCustomers.pending.length > 0 && (
+                {displayCustomers.pending.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -870,11 +865,11 @@ export const Customers = () => {
                       >
                         <Icon
                           icon={allIcons.solid.faClock}
-                          iconClassName="text-amber-600"
+                          className="text-amber-600"
                         />
                       </motion.div>
                       <Translate content="pending customers" /> (
-                      {filteredCustomers.pending.length})
+                      {displayCustomers.pending.length})
                     </motion.h2>
                     <motion.div
                       className="flex flex-col gap-2"
@@ -882,12 +877,15 @@ export const Customers = () => {
                       initial="hidden"
                       animate="visible"
                     >
-                      {filteredCustomers.pending.map(renderCustomer)}
+                      {displayCustomers.pending.map(
+                        (customer: Biqpod.Snapbuy.Customer) =>
+                          renderCustomer(customer, search)
+                      )}
                     </motion.div>
                   </motion.div>
                 )}
                 {/* Accepted Customers */}
-                {filteredCustomers.accepted.length > 0 && (
+                {displayCustomers.accepted.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -907,11 +905,11 @@ export const Customers = () => {
                       >
                         <Icon
                           icon={allIcons.solid.faCheck}
-                          iconClassName="text-emerald-600"
+                          className="text-emerald-600"
                         />
                       </motion.div>
                       <Translate content="accepted customers" /> (
-                      {filteredCustomers.accepted.length})
+                      {displayCustomers.accepted.length})
                     </motion.h2>
                     <motion.div
                       className="flex flex-col gap-2"
@@ -919,12 +917,15 @@ export const Customers = () => {
                       initial="hidden"
                       animate="visible"
                     >
-                      {filteredCustomers.accepted.map(renderCustomer)}
+                      {displayCustomers.accepted.map(
+                        (customer: Biqpod.Snapbuy.Customer) =>
+                          renderCustomer(customer, search)
+                      )}
                     </motion.div>
                   </motion.div>
                 )}
                 {/* Rejected Customers */}
-                {filteredCustomers.rejected.length > 0 && (
+                {displayCustomers.rejected.length > 0 && (
                   <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -950,21 +951,21 @@ export const Customers = () => {
                         >
                           <Icon
                             icon={allIcons.solid.faXmark}
-                            iconClassName="text-red-600"
+                            className="text-red-600"
                           />
                         </motion.div>
                         <Translate content="rejected customers" /> (
-                        {filteredCustomers.rejected.length})
+                        {displayCustomers.rejected.length})
                       </motion.h2>
-                      <motion.div
-                        initial={{ opacity: 0, scale: 0.8 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        transition={{ delay: 0.8 }}
-                      >
-                        {usedBy === "owned" ||
-                          (usedBy === "read/edit" && (
+                      {!search && (
+                        <motion.div
+                          initial={{ opacity: 0, scale: 0.8 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          transition={{ delay: 0.8 }}
+                        >
+                          {(usedBy === "owned" || usedBy === "read/edit") && (
                             <Button
                               className="bg-red-500 hover:bg-red-600 px-3 py-1 rounded w-fit text-white text-sm"
                               icon={allIcons.solid.faTrash}
@@ -988,8 +989,9 @@ export const Customers = () => {
                                 <Translate content="delete all" />
                               )}
                             </Button>
-                          ))}
-                      </motion.div>
+                          )}
+                        </motion.div>
+                      )}
                     </motion.div>
                     <motion.div
                       className="flex flex-col gap-2"
@@ -997,7 +999,10 @@ export const Customers = () => {
                       initial="hidden"
                       animate="visible"
                     >
-                      {filteredCustomers.rejected.map(renderCustomer)}
+                      {displayCustomers.rejected.map(
+                        (customer: Biqpod.Snapbuy.Customer) =>
+                          renderCustomer(customer, search)
+                      )}
                     </motion.div>
                   </motion.div>
                 )}
@@ -1189,7 +1194,7 @@ export const Customers = () => {
             ))}
           </motion.div>
         )}
-      </div>
-    </Scroll>
+      </Scroll>
+    </EmptyComponent>
   );
 };

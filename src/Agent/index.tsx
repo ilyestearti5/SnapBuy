@@ -949,7 +949,7 @@ export const AgentAi = () => {
           >
             <CircleTip
               icon={allIcons.solid.faPaperPlane}
-              iconClassName={tw(
+              className={tw(
                 !inputValue.trim().length && "text-[--biqpod-gray-opacity-2]"
               )}
               onClick={async () => {

@@ -376,7 +376,7 @@ const SelectProductPopup = ({ onSelectProduct }: SelectProductPopupProps) => {
                               ? allIcons.solid.faPalette
                               : allIcons.solid.faTextHeight
                           }
-                          iconClassName="text-sm"
+                          className="text-sm"
                         />
                         <span className="text-[--biqpod-gray-opacity-2] text-sm capitalize">
                           {field.type}
@@ -609,10 +609,7 @@ export const MetadataFieldComponent = ({
       <div className="flex-1 overflow-y-auto">
         {!metadataInArray || metadataInArray.length === 0 ? (
           <div className="flex flex-col justify-center items-center h-full text-[--biqpod-gray-opacity]">
-            <Icon
-              icon={allIcons.solid.faBoxOpen}
-              iconClassName="text-6xl mb-4"
-            />
+            <Icon icon={allIcons.solid.faBoxOpen} className="mb-4 text-6xl" />
             <p className="text-lg capitalize">
               <Translate content="no metadata fields added" />
             </p>

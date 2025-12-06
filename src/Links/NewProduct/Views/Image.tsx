@@ -12,7 +12,11 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
-import { getFormPhotos, useFormPhotos } from "../../../apis/getFns";
+import {
+  getFormPhotos,
+  useFormPhotos,
+  useHiddenPhotos,
+} from "../../../apis/getFns";
 import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
@@ -36,6 +40,7 @@ export const ProductImages = () => {
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const storeId = useStoreId();
   const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
+  const hiddenPhotos = useHiddenPhotos() || [];
   useEffect(() => {
     setMediaFiles(photos?.map((url) => createMediaFileFromURL(url)) || []);
   }, [photos]);
@@ -118,9 +123,29 @@ export const ProductImages = () => {
       const fileToRemove = prev[indexToRemove];
       if (fileToRemove) {
         cleanupMediaFile(fileToRemove);
+        // Remove from hidden photos if it was hidden
+        hiddenPhotos.set((hidden) =>
+          hidden?.filter((url) => url !== fileToRemove.url)
+        );
       }
       return prev.filter((_, index) => index !== indexToRemove);
     });
+  };
+  const togglePhotoHidden = (mediaFileUrl: string) => {
+    hiddenPhotos.set((prev) => {
+      if (prev?.includes(mediaFileUrl)) {
+        // Unhide the photo
+        return prev.filter((url) => url !== mediaFileUrl);
+      } else {
+        // Hide the photo
+        return [...(prev || []), mediaFileUrl];
+      }
+    });
+    // Update stored hidden photos
+    const newHidden = hiddenPhotos.get?.includes(mediaFileUrl)
+      ? hiddenPhotos.get?.filter((url) => url !== mediaFileUrl)
+      : [...(hiddenPhotos.get || []), mediaFileUrl];
+    hiddenPhotos.set(newHidden);
   };
   const fetchDrivePhotos = async () => {
     setLoadingPhotos(true);
@@ -550,10 +575,15 @@ export const ProductImages = () => {
             />
           )}
           {mediaFiles.map((mediaFile, index) => {
+            const isHidden = hiddenPhotos.get?.includes(mediaFile.url);
             return (
               <div
                 key={index}
-                className="relative border border-[--biqpod-borders] border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden cursor-pointer"
+                className={`relative border border-solid rounded-3xl w-[100px] h-[100px] overflow-hidden cursor-pointer ${
+                  isHidden
+                    ? "border-[--biqpod-gray-opacity] opacity-50"
+                    : "border-[--biqpod-borders]"
+                }`}
                 onClick={() => setSelectedMedia(mediaFile)}
               >
                 {isGLTFFile(mediaFile.url) ? (
@@ -567,16 +597,40 @@ export const ProductImages = () => {
                     src={mediaFile.url}
                   />
                 )}
-                <TitleView title="remove" className="right-1 bottom-1 absolute">
-                  <Tip
-                    onClick={(e) => {
-                      e.stopPropagation(); // Prevent triggering the image click
-                      removeMediaFile(index);
-                    }}
-                    className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-secondary-background] rounded-full"
-                    icon={allIcons.regular.faXmarkCircle}
-                  />
-                </TitleView>
+                {isHidden && (
+                  <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-30">
+                    <Icon
+                      icon={allIcons.solid.faEyeSlash}
+                      className="text-white text-lg"
+                    />
+                  </div>
+                )}
+                <div className="right-1 bottom-1 absolute flex gap-1">
+                  <TitleView title={isHidden ? "unhide" : "hide"} className="">
+                    <Tip
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        togglePhotoHidden(mediaFile.url);
+                      }}
+                      className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-secondary-background] rounded-full"
+                      icon={
+                        isHidden
+                          ? allIcons.regular.faEyeSlash
+                          : allIcons.regular.faEye
+                      }
+                    />
+                  </TitleView>
+                  <TitleView title="remove" className="">
+                    <Tip
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent triggering the image click
+                        removeMediaFile(index);
+                      }}
+                      className="bg-[--biqpod-secondary-background] hover:bg-[--biqpod-secondary-background] rounded-full"
+                      icon={allIcons.regular.faXmarkCircle}
+                    />
+                  </TitleView>
+                </div>
               </div>
             );
           })}

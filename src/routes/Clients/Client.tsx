@@ -44,7 +44,7 @@ export const Client = () => {
                     "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
                 )}
                 icon={item.icon}
-                iconClassName="text-xl"
+                className="text-xl"
               >
                 <span className="max-md:hidden">
                   <Translate content={item.name} />

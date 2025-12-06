@@ -727,7 +727,7 @@ export const NotificationSettings: React.FC = () => {
               >
                 <Icon
                   icon={allIcons.solid.faSearch}
-                  iconClassName="text-[--biqpod-text-secondary] text-sm opacity-60"
+                  className="opacity-60 text-[--biqpod-text-secondary] text-sm"
                 />
               </motion.div>
             </motion.div>
@@ -816,7 +816,7 @@ export const NotificationSettings: React.FC = () => {
                   >
                     <Icon
                       icon={allIcons.solid.faSearch}
-                      iconClassName="text-4xl text-[--biqpod-text-secondary]"
+                      className="text-[--biqpod-text-secondary] text-4xl"
                     />
                   </motion.div>
                   <motion.div
@@ -953,7 +953,7 @@ export const NotificationSettings: React.FC = () => {
                           >
                             <Icon
                               icon={allIcons.solid.faSpinner}
-                              iconClassName="text-white"
+                              className="text-white"
                             />
                           </motion.div>
                         </motion.div>
@@ -996,7 +996,7 @@ export const NotificationSettings: React.FC = () => {
                   >
                     <Icon
                       icon={allIcons.solid.faSpinner}
-                      iconClassName="text-[--biqpod-primary]"
+                      className="text-[--biqpod-primary]"
                     />
                   </motion.div>
                   <motion.span

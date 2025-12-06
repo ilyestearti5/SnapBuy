@@ -280,7 +280,7 @@ const ImportExportPopup = ({ mode }: ImportExportPopupProps) => {
         {/* Big Merchants Section */}
         <div>
           <h2 className="mb-4 font-semibold text-xl capitalize">
-            <Icon icon={allIcons.solid.faStore} iconClassName="mr-2" />
+            <Icon icon={allIcons.solid.faStore} className="mr-2" />
             <Translate content="big merchants" />
           </h2>
           <div className="gap-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -290,7 +290,7 @@ const ImportExportPopup = ({ mode }: ImportExportPopupProps) => {
         {/* File Systems Section */}
         <div>
           <h2 className="mb-4 font-semibold text-xl capitalize">
-            <Icon icon={allIcons.solid.faFile} iconClassName="mr-2" />
+            <Icon icon={allIcons.solid.faFile} className="mr-2" />
             <Translate content="file systems" />
           </h2>
           <div className="gap-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
@@ -367,7 +367,7 @@ export const ExportExcelPopupProducts = () => {
           icon={
             loading ? allIcons.solid.faCircleNotch : allIcons.solid.faFileExcel
           }
-          iconClassName={tw(loading && "animate-spin")}
+          className={tw(loading && "animate-spin")}
         >
           <Translate content="export products" />
         </Button>
@@ -722,7 +722,7 @@ export const ExportJsonPopup = () => {
                   ? allIcons.solid.faCircleNotch
                   : allIcons.solid.faDownload
               }
-              iconClassName={tw(loading && "animate-spin")}
+              className={tw(loading && "animate-spin")}
             >
               <Translate content="export all data to json" />
             </Button>
@@ -913,7 +913,7 @@ const ToolsCard = memo(
           <CircleTip
             onClick={onToggleTools}
             icon={allIcons.solid.faPlus}
-            iconClassName={tw(
+            className={tw(
               "transition-transform duration-300 ease-in-out",
               showTools ? "rotate-45" : "rotate-0"
             )}
@@ -1324,7 +1324,7 @@ export const Products = () => {
             >
               <Icon
                 icon={allIcons.solid.faBoxOpen}
-                iconClassName="text-9xl text-[--biqpod-primary]"
+                className="text-[--biqpod-primary] text-9xl"
               />
             </motion.div>
             <Line />
@@ -1430,10 +1430,7 @@ export const Products = () => {
                 }}
                 className="bg-[--biqpod-primary-content] hover:bg-[--biqpod-primary-content] w-fit text-[--biqpod-primary]"
               >
-                <Icon
-                  icon={allIcons.solid.faCheckSquare}
-                  iconClassName="mr-2"
-                />
+                <Icon icon={allIcons.solid.faCheckSquare} className="mr-2" />
                 Select All Filtered ({filterProducts?.length || 0})
               </Button>
               <Button
@@ -1586,7 +1583,7 @@ export const Products = () => {
                       ? allIcons.solid.faCircleNotch
                       : allIcons.solid.faBolt
                   }
-                  iconClassName={tw(
+                  className={tw(
                     (bulkDeleteLoading || bulkToggleLoading) && "animate-spin",
                     "mr-2"
                   )}

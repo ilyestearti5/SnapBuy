@@ -82,7 +82,7 @@ export const DriveTransform = ({ text }: DriveTransformProps) => {
               >
                 <Icon
                   icon={allIcons.solid.faBox}
-                  iconClassName="text-lg text-blue-500"
+                  className="text-blue-500 text-lg"
                 />
               </motion.div>
               <motion.div
@@ -99,7 +99,7 @@ export const DriveTransform = ({ text }: DriveTransformProps) => {
               >
                 <Icon
                   icon={allIcons.solid.faTag}
-                  iconClassName="text-lg text-green-500"
+                  className="text-green-500 text-lg"
                 />
               </motion.div>
               <motion.div
@@ -116,7 +116,7 @@ export const DriveTransform = ({ text }: DriveTransformProps) => {
               >
                 <Icon
                   icon={allIcons.solid.faFolder}
-                  iconClassName="text-lg text-purple-500"
+                  className="text-purple-500 text-lg"
                 />
               </motion.div>
             </motion.div>

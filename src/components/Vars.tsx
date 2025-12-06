@@ -294,19 +294,19 @@ const ExportTypeDefinition = () => {
       for (const [key, value] of Object.entries(obj)) {
         const type = getTypeFromValue(value);
         if (type === "object" && value !== null) {
-          result += `${spaces}${key}?: ${generateTS(value, indent + 2)};\n`;
+          result += `${spaces}"${key}"?: ${generateTS(value, indent + 2)};\n`;
         } else if (type === "array") {
           const arrValue = value as any[];
           if (arrValue.length > 0) {
             const elemType = getTypeFromValue(arrValue[0]);
-            result += `${spaces}${key}?: ${
+            result += `${spaces}"${key}"?: ${
               elemType === "object" ? "any" : elemType
             }[];\n`;
           } else {
-            result += `${spaces}${key}?: any[];\n`;
+            result += `${spaces}"${key}"?: any[];\n`;
           }
         } else {
-          result += `${spaces}${key}?: ${type};\n`;
+          result += `${spaces}"${key}"?: ${type};\n`;
         }
       }
       result += " ".repeat(indent - 2) + "}";
@@ -518,7 +518,7 @@ const ExportTypeDefinition = () => {
                 onClick={() => selectedLang.set(lang.value)}
               >
                 <div className="flex flex-col items-center gap-2 text-center">
-                  <Icon icon={lang.icon} iconClassName="text-2xl" />
+                  <Icon icon={lang.icon} className="text-2xl" />
                   <span className="font-medium text-sm">{lang.label}</span>
                 </div>
               </Card>
@@ -654,31 +654,31 @@ export const Vars = () => {
                           {variable.type === "string" && (
                             <Icon
                               icon={allIcons.solid.faQuoteLeft}
-                              iconClassName="text-xs"
+                              className="text-xs"
                             />
                           )}
                           {variable.type === "number" && (
                             <Icon
                               icon={allIcons.solid.faHashtag}
-                              iconClassName="text-xs"
+                              className="text-xs"
                             />
                           )}
                           {variable.type === "boolean" && (
                             <Icon
                               icon={allIcons.solid.faCheck}
-                              iconClassName="text-xs"
+                              className="text-xs"
                             />
                           )}
                           {variable.type === "array" && (
                             <Icon
                               icon={allIcons.solid.faList}
-                              iconClassName="text-xs"
+                              className="text-xs"
                             />
                           )}
                           {variable.type === "date" && (
                             <Icon
                               icon={allIcons.solid.faCalendar}
-                              iconClassName="text-xs"
+                              className="text-xs"
                             />
                           )}
                           <span className="capitalize">
@@ -692,7 +692,7 @@ export const Vars = () => {
                           <div className="flex items-center gap-1 mt-1">
                             <Icon
                               icon={allIcons.solid.faClock}
-                              iconClassName="text-xs text-[--biqpod-gray-opacity-2]"
+                              className="text-[--biqpod-gray-opacity-2] text-xs"
                             />
                             <span className="text-[--biqpod-gray-opacity-2] text-xs">
                               {new Date(
@@ -796,7 +796,7 @@ export const Vars = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="flex flex-col justify-center items-center gap-4 p-8 w-full h-full"
           >
-            <Icon icon={allIcons.solid.faCodeBranch} iconClassName="text-6xl" />
+            <Icon icon={allIcons.solid.faCodeBranch} className="text-6xl" />
             <div className="text-center">
               <h3 className="mb-2 font-semibold text-xl">
                 <Translate content="No Variables" />

@@ -123,7 +123,7 @@ export const OrderView = ({ order }: OrderView) => {
                   <div className="flex justify-center items-center bg-[--biqpod-gray-opacity] rounded-2xl w-[60px] h-[60px]">
                     <Icon
                       icon={allIcons.solid.faBoxOpen}
-                      iconClassName="text-2xl"
+                      className="text-2xl"
                     />
                   </div>
                 </div>
@@ -151,7 +151,7 @@ export const OrderView = ({ order }: OrderView) => {
         })}
         {productsList?.length === 0 && packsList?.length === 0 && (
           <div className="flex flex-col justify-center items-center gap-3 p-5 h-full">
-            <Icon iconClassName="text-8xl" icon={allIcons.solid.faStore} />
+            <Icon className="text-8xl" icon={allIcons.solid.faStore} />
             <span>
               <Translate content="Empty Order !" />
             </span>

@@ -306,10 +306,7 @@ export const CartPopup = ({
           </div>
           {fullCart.length === 0 && (
             <div className="flex flex-col justify-center items-center gap-y-5 text-[--biqpod-gray-opacity-2] p-3 h-full">
-              <Icon
-                icon={allIcons.solid.faCartShopping}
-                iconClassName="text-7xl"
-              />
+              <Icon icon={allIcons.solid.faCartShopping} className="text-7xl" />
               <div>
                 <h1 className="text-4xl capitalize">
                   <Translate content="empty cart" />

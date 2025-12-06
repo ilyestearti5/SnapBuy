@@ -74,10 +74,7 @@ const CartItem: React.FC<CartItemProps> = ({
             />
           ) : (
             <div className="flex justify-center items-center bg-gray-200 w-full h-full">
-              <Icon
-                icon={allIcons.solid.faImage}
-                iconClassName="text-gray-400"
-              />
+              <Icon icon={allIcons.solid.faImage} className="text-gray-400" />
             </div>
           )}
         </div>
@@ -112,7 +109,7 @@ const CartItem: React.FC<CartItemProps> = ({
                 onClick={() => handleQuantityChange(count - 1)}
                 className="flex justify-center items-center bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 transition-colors"
               >
-                <Icon icon={allIcons.solid.faMinus} iconClassName="text-sm" />
+                <Icon icon={allIcons.solid.faMinus} className="text-sm" />
               </button>
 
               <span className="min-w-[40px] font-semibold text-lg text-center">
@@ -123,7 +120,7 @@ const CartItem: React.FC<CartItemProps> = ({
                 onClick={() => handleQuantityChange(count + 1)}
                 className="flex justify-center items-center bg-gray-100 hover:bg-gray-200 rounded-full w-8 h-8 transition-colors"
               >
-                <Icon icon={allIcons.solid.faPlus} iconClassName="text-sm" />
+                <Icon icon={allIcons.solid.faPlus} className="text-sm" />
               </button>
             </div>
 
@@ -132,7 +129,7 @@ const CartItem: React.FC<CartItemProps> = ({
               onClick={onRemove}
               className="flex items-center gap-2 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg text-red-600 transition-colors"
             >
-              <Icon icon={allIcons.solid.faTrash} iconClassName="text-sm" />
+              <Icon icon={allIcons.solid.faTrash} className="text-sm" />
               <span className="text-sm">
                 <Translate content="Remove" />
               </span>
@@ -224,7 +221,7 @@ export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
         <div className="text-center">
           <Icon
             icon={allIcons.solid.faShoppingCart}
-            iconClassName="text-8xl text-gray-300 mb-4"
+            className="mb-4 text-gray-300 text-8xl"
           />
           <h2 className="mb-2 font-bold text-gray-500 text-2xl">
             <Translate content="Your cart is empty" />
@@ -236,7 +233,7 @@ export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
             className="px-6 py-3 rounded-lg font-semibold text-white"
             style={{ backgroundColor: "#89CFF0" }}
           >
-            <Icon icon={allIcons.solid.faArrowLeft} iconClassName="mr-2" />
+            <Icon icon={allIcons.solid.faArrowLeft} className="mr-2" />
             <Translate content="Continue Shopping" />
           </Button>
         </div>
@@ -303,7 +300,7 @@ export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
             }}
             className="hover:bg-gray-50 px-4 py-3 border border-gray-300 rounded-lg font-semibold text-gray-700 transition-colors"
           >
-            <Icon icon={allIcons.solid.faArrowLeft} iconClassName="mr-2" />
+            <Icon icon={allIcons.solid.faArrowLeft} className="mr-2" />
             <Translate content="Continue Shopping" />
           </Button>
 
@@ -312,7 +309,7 @@ export const CartView: React.FC<CartViewProps> = ({ storeId }) => {
             className="px-4 py-3 rounded-lg font-semibold text-white transition-colors"
             style={{ backgroundColor: "#89CFF0" }}
           >
-            <Icon icon={allIcons.solid.faCreditCard} iconClassName="mr-2" />
+            <Icon icon={allIcons.solid.faCreditCard} className="mr-2" />
             <Translate content="Checkout" />
           </Button>
         </div>

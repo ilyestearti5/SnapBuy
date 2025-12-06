@@ -206,9 +206,7 @@ export const UserLine = ({ user }: UserLineProps) => {
             <Image
               className="border-none outline-none w-[50px] h-[50px]"
               src={photo ?? undefined}
-              alt={
-                <Icon iconClassName="text-5xl" icon={allIcons.solid.faBox} />
-              }
+              alt={<Icon className="text-5xl" icon={allIcons.solid.faBox} />}
             />
             <div>{nickname}</div>
           </div>
@@ -256,7 +254,7 @@ export const UserLine = ({ user }: UserLineProps) => {
                         : allIcons.solid.faMinus
                       : allIcons.solid.faCircleNotch
                   }
-                  iconClassName={tw(isFollow.get === null && "animate-spin")}
+                  className={tw(isFollow.get === null && "animate-spin")}
                 />
                 <span
                   className={tw(
@@ -305,9 +303,7 @@ export const StoreRecord = ({ store }: StoreRecordProps) => {
             <Image
               className="border-none rounded-xl outline-none w-[48px] h-[48px] object-cover"
               src={photo ?? undefined}
-              alt={
-                <Icon iconClassName="text-5xl" icon={allIcons.solid.faStore} />
-              }
+              alt={<Icon className="text-5xl" icon={allIcons.solid.faStore} />}
             />
             <div className="flex flex-col justify-center">
               <span className="mb-1 font-semibold text-base">{name}</span>
@@ -316,7 +312,7 @@ export const StoreRecord = ({ store }: StoreRecordProps) => {
                 <Icon
                   key={i}
                   icon={allIcons.solid.faStar}
-                  iconClassName="text-yellow-400 text-lg mr-0.5 drop-shadow"
+                  className="drop-shadow mr-0.5 text-yellow-400 text-lg"
                 />
               ))}
             </div> */}
@@ -417,10 +413,7 @@ export const Carts = () => {
               className="flex justify-center items-center p-4"
             >
               <div className="flex flex-col items-center gap-2 text-[--biqpod-gray-opacity-2]">
-                <Icon
-                  icon={allIcons.solid.faCartPlus}
-                  iconClassName="text-5xl"
-                />
+                <Icon icon={allIcons.solid.faCartPlus} className="text-5xl" />
                 <p className="text-lg text-center">
                   <Translate content="no carts found" />
                 </p>
@@ -514,7 +507,7 @@ export const ExploreStores = () => {
                       ? allIcons.solid.faCircleNotch
                       : allIcons.solid.faPaperPlane
                   }
-                  iconClassName={tw(loading && "animate-spin")}
+                  className={tw(loading && "animate-spin")}
                 />
                 <motion.span
                   className={tw(

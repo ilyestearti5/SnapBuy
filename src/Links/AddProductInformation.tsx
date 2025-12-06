@@ -7,6 +7,7 @@ import {
   Translate,
   NumberField,
   Button,
+  Image,
 } from "@biqpod/app/ui/components";
 import {
   useCopyState,
@@ -24,42 +25,42 @@ export function AddProductInformation({
   product: Biqpod.Snapbuy.Product;
   id: string;
 }) {
-  const count = useCopyState<number | null | undefined>(1);
-  const price = useCopyState<number | null | undefined>(
-    product.single?.customer || 0
-  );
   const selectedProducts = useTemp<
     Record<string, { count: number; price: number }>
   >("selected-products-for-invoice");
+  const count = useCopyState<number | null | undefined>(
+    selectedProducts.get?.[product.id || ""]?.count || 1
+  );
+  const price = useCopyState<number | null | undefined>(
+    selectedProducts.get?.[product.id || ""]?.price || product.single?.customer
+  );
   const photo = product.photos?.at(0);
+  const total = (count.get || 0) * (price.get || 0);
   return (
-    <Card>
+    <Card className="w-2/3">
       <CardHeaderForPopup popupId={id} title="add price / count" />
       <Line />
       <div className="flex flex-col justify-center items-center gap-2 p-3">
-        <div className="rounded-2xl w-[150px] h-[150px] overflow-hidden">
-          {photo ? (
-            <img
-              src={photo}
-              alt={product.name}
-              className="w-full h-full object-cover"
+        <Image
+          src={photo}
+          alt={
+            <Icon
+              icon={allIcons.solid.faBoxOpen}
+              className="text-[--biqpod-gray-opacity-2] text-2xl"
             />
-          ) : (
-            <div className="flex justify-center items-center w-full h-full">
-              <Icon
-                icon={allIcons.solid.faBoxOpen}
-                iconClassName="text-2xl text-[--biqpod-gray-opacity-2]"
-              />
-            </div>
-          )}
-        </div>
+          }
+          className="bg-[--biqpod-gray-opacity] rounded-2xl w-[150px] h-[150px]"
+        />
         <span>{product.name}</span>
         <BrandInfo brandId={product?.brandId} />
       </div>
       <Line />
       <div className="flex flex-col gap-2 p-2">
         <div className="flex max-md:flex-col md:items-center gap-2">
-          <label className="w-full md:text-right" htmlFor="count-updater">
+          <label
+            className="w-full md:text-right capitalize"
+            htmlFor="count-updater"
+          >
             <Translate content="count" /> :
           </label>
           <NumberField
@@ -67,13 +68,15 @@ export function AddProductInformation({
             config={{
               placeholder: "Enter Count",
               autoChange: true,
-              size: 20,
             }}
             state={count}
           />
         </div>
         <div className="flex max-md:flex-col md:items-center gap-2">
-          <label className="w-full md:text-right" htmlFor="price-updater">
+          <label
+            className="w-full md:text-right capitalize"
+            htmlFor="price-updater"
+          >
             <Translate content="price" /> :
           </label>
           <NumberField
@@ -81,11 +84,19 @@ export function AddProductInformation({
             config={{
               placeholder: "Enter Price",
               autoChange: true,
-              size: 20,
             }}
             state={price}
           />
         </div>
+      </div>
+      <Line />
+      <div className="p-3 font-bold text-[--biqpod-success] text-xl text-center">
+        {/* change format to dzd pricing */}
+        {total.toLocaleString("fr-DZ", {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}{" "}
+        DA
       </div>
       <Line />
       <div className="p-3">

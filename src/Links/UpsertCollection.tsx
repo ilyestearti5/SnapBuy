@@ -1,10 +1,13 @@
 import {
+  AsyncComponent,
   Button,
   Card,
   CardWait,
   CircleTip,
+  EmptyComponent,
   Field,
   Icon,
+  Image,
   KeyPanding,
   Line,
   Scroll,
@@ -72,21 +75,35 @@ export const ProductRender = ({
       <div className="flex items-center gap-2">
         {isSelected && (
           <Icon
-            iconClassName="text-green-500"
+            className="text-green-500"
             icon={allIcons.solid.faCircleCheck}
           />
         )}
         <div>
           <div className="w-16 h-16">
-            <img
+            <Image
               src={photo}
               alt={product.name}
-              className="rounded-full w-full h-full object-cover"
+              className="bg-[--biqpod-gray-opacity] rounded-xl w-full h-full object-cover"
             />
           </div>
         </div>
         <div className="flex flex-col gap-2">
-          <span className="font-bold">{product.name}</span>
+          <span className="font-bold">
+            <span>{product.name}</span>
+            <sub className="ml-2">
+              <AsyncComponent
+                render={async () => {
+                  const brandId = product.brandId;
+                  if (!brandId) {
+                    return <EmptyComponent />;
+                  }
+                  const brand = await snapbuyApi.brands.get(brandId);
+                  return <span>{brand?.name || ""}</span>;
+                }}
+              />
+            </sub>
+          </span>
           <span className="text-green-500">{price.total}DA</span>
         </div>
       </div>
@@ -427,10 +444,7 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
               <Translate content="collection photo" />
             </label>
             <div className="flex items-center gap-2 mb-2 text-sm">
-              <Icon
-                icon={allIcons.solid.faInfoCircle}
-                iconClassName="text-xs"
-              />
+              <Icon icon={allIcons.solid.faInfoCircle} className="text-xs" />
               <span>
                 <span className="text-[--biqpod-gray-opacity-2]">
                   <Translate content="upload drag drop or paste image" />
@@ -441,9 +455,9 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
             <div className="flex max-md:flex-col justify-between items-center gap-4">
               {photoState.get ? (
                 <div className="relative">
-                  <img
+                  <Image
                     src={photoState.get}
-                    className="border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"
+                    className="bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"
                     alt="Collection"
                   />
                 </div>
@@ -458,18 +472,15 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
                   {isPasting ? (
                     <Icon
                       icon={allIcons.solid.faSpinner}
-                      iconClassName="text-2xl animate-spin text-[--biqpod-primary]"
+                      className="text-[--biqpod-primary] text-2xl animate-spin"
                     />
                   ) : isDragging ? (
                     <Icon
                       icon={allIcons.solid.faCloudArrowUp}
-                      iconClassName="text-2xl text-[--biqpod-primary]"
+                      className="text-[--biqpod-primary] text-2xl"
                     />
                   ) : (
-                    <Icon
-                      icon={allIcons.solid.faImage}
-                      iconClassName="text-2xl"
-                    />
+                    <Icon icon={allIcons.solid.faImage} className="text-2xl" />
                   )}
                 </div>
               )}

@@ -3,6 +3,7 @@ import {
   CircleTip,
   EmptyComponent,
   Field,
+  Image,
   Line,
   PositionView,
   Scroll,
@@ -176,9 +177,14 @@ export const Collections = () => {
                       >
                         <div className="flex items-center gap-2">
                           <div className="relative">
-                            <img
+                            <Image
                               src={collection.photo}
                               className="border border-[--biqpod-borders] border-solid rounded-xl w-16 h-16 object-cover"
+                              alt={
+                                <span className="text-2xl uppercase">
+                                  {collection.name.at(0)}
+                                </span>
+                              }
                             />
                             <span className="inline-flex top-0 right-0 z-[1000] absolute justify-center items-center bg-red-500 rounded-full w-[18px] h-[18px] font-bold text-white text-xs -translate-y-1/2 translate-x-1/2 pointer-events-none transform">
                               {collection.products?.length}

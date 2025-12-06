@@ -79,10 +79,7 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
             <Translate content="exists" />
           </span>
           {exists === null && (
-            <Icon
-              icon={allIcons.solid.faSpinner}
-              iconClassName="animate-spin"
-            />
+            <Icon icon={allIcons.solid.faSpinner} className="animate-spin" />
           )}
           {exists !== null && (
             <span className="font-bold text-xl">({exists.length})</span>
@@ -94,10 +91,7 @@ export const PopupProduct = ({ products, file }: PopupProductProps) => {
             <Translate content="news" />
           </span>
           {news === null && (
-            <Icon
-              icon={allIcons.solid.faSpinner}
-              iconClassName="animate-spin"
-            />
+            <Icon icon={allIcons.solid.faSpinner} className="animate-spin" />
           )}
           {news !== null && (
             <span className="font-bold text-xl">({news.length})</span>

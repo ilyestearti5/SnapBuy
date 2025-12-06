@@ -58,7 +58,7 @@ const Checkbox = ({
         {checked && (
           <Icon
             icon={icons.check}
-            iconClassName="text-white text-sm animate-in zoom-in duration-200"
+            className="text-white text-sm animate-in duration-200 zoom-in"
           />
         )}
       </div>
@@ -183,7 +183,7 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
   if (photos.length === 0) {
     return (
       <div className="flex justify-center items-center bg-gray-200 w-full h-96">
-        <Icon icon={icons.image} iconClassName="text-6xl text-gray-400" />
+        <Icon icon={icons.image} className="text-gray-400 text-6xl" />
       </div>
     );
   }
@@ -226,7 +226,7 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
             }}
             className="top-1/2 left-4 absolute flex justify-center items-center bg-white/80 hover:bg-white shadow-lg rounded-full w-10 h-10 transition-all -translate-y-1/2 duration-200 transform"
           >
-            <Icon icon={icons.chevronLeft} iconClassName="text-gray-600" />
+            <Icon icon={icons.chevronLeft} className="text-gray-600" />
           </button>
           <button
             onClick={(e) => {
@@ -235,7 +235,7 @@ const ProductImageGallery = ({ photos }: { photos: string[] }) => {
             }}
             className="top-1/2 right-4 absolute flex justify-center items-center bg-white/80 hover:bg-white shadow-lg rounded-full w-10 h-10 transition-all -translate-y-1/2 duration-200 transform"
           >
-            <Icon icon={icons.chevronRight} iconClassName="text-gray-600" />
+            <Icon icon={icons.chevronRight} className="text-gray-600" />
           </button>
         </>
       )}
@@ -283,7 +283,7 @@ const QuantitySelector = ({
       >
         <Icon
           icon={icons.minus}
-          iconClassName="text-gray-600 group-hover:text-red-500 transition-colors text-lg"
+          className="text-gray-600 group-hover:text-red-500 text-lg transition-colors"
         />
       </button>
       <div className="flex-1 bg-white shadow-sm px-4 py-2 border-2 border-gray-200 rounded-xl text-center">
@@ -319,7 +319,7 @@ const QuantitySelector = ({
       >
         <Icon
           icon={icons.plus}
-          iconClassName="text-gray-600 group-hover:text-green-500 transition-colors text-lg"
+          className="text-gray-600 group-hover:text-green-500 text-lg transition-colors"
         />
       </button>
     </div>
@@ -578,7 +578,7 @@ export const ProductRoute = () => {
                 onClick={() => window.history.back()}
                 className="mr-4 text-gray-600 hover:text-gray-900"
               >
-                <Icon icon={icons.chevronLeft} iconClassName="text-xl" />
+                <Icon icon={icons.chevronLeft} className="text-xl" />
               </button>
               <h1
                 className="font-bold text-gray-900 text-xl"
@@ -598,16 +598,13 @@ export const ProductRoute = () => {
                       ? allIcons.solid.faHeart
                       : allIcons.regular.faHeart
                   }
-                  iconClassName={`text-xl ${
+                  className={`text-xl ${
                     isFavorite ? "text-red-500" : "text-gray-600"
                   }`}
                 />
               </button>
               <button className="hover:bg-gray-100 p-2 rounded-full transition-colors">
-                <Icon
-                  icon={icons.share}
-                  iconClassName="text-xl text-gray-600"
-                />
+                <Icon icon={icons.share} className="text-gray-600 text-xl" />
               </button>
             </div>
           </div>
@@ -658,19 +655,19 @@ export const ProductRoute = () => {
               {/* Product Features */}
               <div className="gap-4 grid grid-cols-3 mb-6">
                 <div className="flex items-center gap-2 text-green-600">
-                  <Icon icon={icons.truck} iconClassName="text-sm" />
+                  <Icon icon={icons.truck} className="text-sm" />
                   <span className="text-sm">
                     <Translate content="free delivery" />
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-blue-600">
-                  <Icon icon={icons.shield} iconClassName="text-sm" />
+                  <Icon icon={icons.shield} className="text-sm" />
                   <span className="text-sm">
                     <Translate content="secure" />
                   </span>
                 </div>
                 <div className="flex items-center gap-2 text-orange-600">
-                  <Icon icon={icons.returnIcon} iconClassName="text-sm" />
+                  <Icon icon={icons.returnIcon} className="text-sm" />
                   <span className="text-sm">
                     <Translate content="easy returns" />
                   </span>
@@ -699,7 +696,7 @@ export const ProductRoute = () => {
                 className="flex items-center gap-3 mb-8 font-bold text-gray-900 text-2xl"
                 style={{ fontFamily: "Inter, sans-serif" }}
               >
-                <Icon icon={icons.user} iconClassName="text-blue-600 text-lg" />
+                <Icon icon={icons.user} className="text-blue-600 text-lg" />
                 Order Information
               </h3>
               <div className="space-y-6">
@@ -757,7 +754,7 @@ export const ProductRoute = () => {
                             ? allIcons.solid.faCircleNotch
                             : icons.location
                         }
-                        iconClassName={tw(
+                        className={tw(
                           "text-lg",
                           loadingLocation && "animate-spin"
                         )}
@@ -776,7 +773,7 @@ export const ProductRoute = () => {
                       setAddress("");
                     }}
                   >
-                    <Icon icon={icons.times} iconClassName="text-sm" />
+                    <Icon icon={icons.times} className="text-sm" />
                     <span className="font-semibold text-sm">
                       Clear Location
                     </span>
@@ -800,9 +797,9 @@ export const ProductRoute = () => {
                   <LoadingSpinner />
                 ) : (
                   <>
-                    <Icon icon={icons.shoppingBag} iconClassName="text-xl" />
+                    <Icon icon={icons.shoppingBag} className="text-xl" />
                     <span>Create Order - {price} DA</span>
-                    <Icon icon={icons.chevronRight} iconClassName="text-lg" />
+                    <Icon icon={icons.chevronRight} className="text-lg" />
                   </>
                 )}
               </Button>

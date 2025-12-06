@@ -13,6 +13,7 @@ import {
   Translate,
 } from "@biqpod/app/ui/components";
 import {
+  confirm,
   execAction,
   getFieldValue,
   getPosition,
@@ -38,6 +39,8 @@ import { useStoreId } from "../utils";
 import { UpsertCoupon } from "./UpsertCoupon";
 import { SlidingFilter, FilterOption } from "../components/SlidingFilter";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { snapbuyApi } from "../apis";
+import { OrdersOfCoupon } from "./OrdersOfCoupon";
 const PAGE_SIZE = 100;
 // Highlight component for search terms
 function highlightMatch(
@@ -288,7 +291,7 @@ const CouponRender = memo(
                     : "bg-red-600/10 text-red-600"
                 )}
               >
-                <Icon icon={getTypeIcon()} iconClassName="text-xl" />
+                <Icon icon={getTypeIcon()} className="text-xl" />
               </div>
               <div className="flex flex-col">
                 <h3 className="font-semibold text-[--biqpod-text] text-lg">
@@ -306,7 +309,7 @@ const CouponRender = memo(
                 {coupon.applicableProducts &&
                   coupon.applicableProducts.length > 0 && (
                     <p className="mt-1 text-[--biqpod-primary] text-xs">
-                      <Icon icon={allIcons.solid.faBox} iconClassName="mr-1" />
+                      <Icon icon={allIcons.solid.faBox} className="mr-1" />
                       <Translate content="applicable to" />{" "}
                       {coupon.applicableProducts.length}{" "}
                       <Translate
@@ -361,7 +364,7 @@ const CouponRender = memo(
                 {new Date(coupon.endDate).toLocaleDateString()}
               </span>
             </div>
-            <div className="flex gap-2">
+            <div className="flex items-center gap-2">
               <Button
                 onClick={(e) => {
                   e.stopPropagation();
@@ -370,10 +373,7 @@ const CouponRender = memo(
                 }}
                 className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-2] text-[--biqpod-text-color] text-xs"
               >
-                <Icon
-                  icon={allIcons.solid.faCopy}
-                  iconClassName="text-xs mr-1"
-                />
+                <Icon icon={allIcons.regular.faCopy} className="mr-1 text-xs" />
                 <Translate content="copy" />
               </Button>
               {usedBy === "owned" || usedBy === "read/edit" ? (
@@ -386,6 +386,16 @@ const CouponRender = memo(
                         y: e.clientY,
                         menu: [
                           {
+                            label: "View Orders",
+                            click() {
+                              showPopup(<OrdersOfCoupon coupon={coupon} />);
+                            },
+                            defaultIcon: allIcons.solid.faShoppingCart,
+                          },
+                          {
+                            type: "separator",
+                          },
+                          {
                             click() {
                               execAction("update-coupon", {
                                 id: coupon.id,
@@ -393,9 +403,29 @@ const CouponRender = memo(
                               });
                             },
                             label: coupon.isActive ? "desactive" : "active",
-                            defaultIcon: coupon.isActive
-                              ? allIcons.solid.faXmark
-                              : allIcons.solid.faCheck,
+                            defaultIcon: allIcons.solid.faPowerOff,
+                          },
+                          {
+                            label: "edit",
+                            click() {
+                              showPopup(<UpsertCoupon coupon={coupon} />);
+                            },
+                            defaultIcon: allIcons.solid.faEdit,
+                          },
+                          {
+                            label: "delete",
+                            async click() {
+                              const response = await confirm({
+                                title: "delete coupon",
+                                message: `are you sure you want to delete the coupon "${coupon.name}"? this action cannot be undone.`,
+                                detail: "all associated data will be lost",
+                              });
+                              if (coupon.id && response) {
+                                await snapbuyApi.coupon.delete(coupon.id);
+                                execAction("fetch-coupons");
+                              }
+                            },
+                            defaultIcon: allIcons.solid.faTrash,
                           },
                         ],
                       });
@@ -411,7 +441,7 @@ const CouponRender = memo(
             <div className="top-0 right-0 absolute border-t-[50px] border-t-green-500 border-l-[50px] border-l-transparent w-0 h-0">
               <Icon
                 icon={allIcons.solid.faCheck}
-                iconClassName="absolute top-[-45px] right-[-15px] text-white text-xs"
+                className="top-[-45px] right-[-15px] absolute text-white text-xs"
               />
             </div>
           )}
@@ -686,7 +716,7 @@ export const Coupons = () => {
             >
               <Icon
                 icon={allIcons.solid.faTicket}
-                iconClassName="text-9xl text-[--biqpod-primary]"
+                className="text-[--biqpod-primary] text-9xl"
               />
             </motion.div>
           </motion.div>

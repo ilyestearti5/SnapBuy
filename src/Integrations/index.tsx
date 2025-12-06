@@ -2,16 +2,19 @@ import {
   ArrayField,
   Button,
   Card,
+  CardHeaderForPopup,
+  CircleTip,
   EnumField,
   Icon,
+  Line,
   Translate,
 } from "@biqpod/app/ui/components";
 import {
-  confirm,
   showToast,
   useCopyState,
   useSettingValue,
   showPopup,
+  openMenu,
 } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
 import { useEffect } from "react";
@@ -37,38 +40,45 @@ import {
   buttonVariants,
   codeBlockVariants,
 } from "../utils/constants";
-export const Integrations = () => {
-  const storeId = useStoreId();
-  const usedBy = useUsedBy();
+
+interface UsageInstructionsProps {
+  token: string;
+}
+const SettingOrigins = ({ token: _ }: UsageInstructionsProps) => {
   const origins = useCopyState<string[] | Nothing>([]);
-  const apiToken = useCopyState<string | null>(null);
-  const isGenerating = useCopyState(false);
-  const isLoading = useCopyState(false);
-  const error = useCopyState<string | null>(null);
+  return (
+    <Card>
+      <CardHeaderForPopup title="Allowed Origins" />
+      <Line />
+      <div className="p-2">
+        <div>
+          <ArrayField
+            state={origins}
+            config={{
+              controls: {
+                "^https?:": {
+                  succ: "Valid URL",
+                  err: "Must start with http:// or https://",
+                },
+              },
+            }}
+            id="allowed-origins"
+          />
+        </div>
+      </div>
+      <Line />
+      <div className="p-2">
+        <Button>
+          <Translate content="set" />
+        </Button>
+      </div>
+    </Card>
+  );
+};
+function UsageInstructions({ token }: UsageInstructionsProps) {
   const selectedLanguage = useCopyState<string | Nothing>("javascript");
   // Detect current theme mode
   const isDarkMode = useSettingValue("window/dark.boolean");
-  // Load existing token on component mount
-  useEffect(() => {
-    const loadExistingToken = async () => {
-      if (!storeId) return;
-      isLoading.set(true);
-      error.set(null);
-      try {
-        const existingToken = await snapbuyApi.getPartOfToken(storeId);
-        if (existingToken) {
-          apiToken.set(existingToken);
-        }
-      } catch (err) {
-        console.error("Failed to load existing token:", err);
-        error.set("Failed to load existing token. You can generate a new one.");
-      } finally {
-        isLoading.set(false);
-      }
-    };
-    loadExistingToken();
-  }, [storeId]);
-  // Programming language options
   const languageOptions = [
     { value: "javascript", content: "JavaScript" },
     { value: "python", content: "Python" },
@@ -185,6 +195,142 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
     };
     return examples[language as keyof typeof examples] || examples.javascript;
   };
+  return (
+    <Card>
+      <CardHeaderForPopup title="Usage Instructions" />
+      <Line />
+      <AnimatePresence>
+        <motion.div
+          className="p-4 rounded-lg"
+          variants={codeBlockVariants}
+          initial="hidden"
+          animate="visible"
+          exit="hidden"
+        >
+          <motion.h4
+            className="font-medium text-[--biqpod-text-color] text-sm"
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <Translate content="" />
+          </motion.h4>
+          {/* Programming Language Selector */}
+          <motion.div
+            className="mb-4"
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+          >
+            <motion.label
+              className="block mb-2 font-medium text-[--biqpod-text-color] text-sm"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              <Translate content="Choose Programming Language:" />
+            </motion.label>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.4 }}
+            >
+              <EnumField
+                state={selectedLanguage}
+                id="programming-language"
+                config={{
+                  list: languageOptions,
+                }}
+              />
+            </motion.div>
+          </motion.div>
+          {/* Code Example */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <motion.p
+              className="opacity-70 mb-2 text-[--biqpod-text-color] text-xs"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 0.7 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Translate content="Code example for" />{" "}
+              {
+                languageOptions.find(
+                  (lang) => lang.value === selectedLanguage.get
+                )?.content
+              }
+              :
+            </motion.p>
+            <motion.div
+              className="rounded-lg overflow-hidden"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{
+                delay: 0.7,
+                duration: 0.4,
+              }}
+            >
+              <SyntaxHighlighter
+                language={getSyntaxLanguage(
+                  selectedLanguage.get || "javascript"
+                )}
+                style={isDarkMode ? vscDarkPlus : vs}
+                showLineNumbers={true}
+                wrapLines={true}
+                customStyle={{
+                  margin: 0,
+                  fontSize: "12px",
+                  background: isDarkMode
+                    ? "rgba(0, 0, 0, 0.3)"
+                    : "rgba(255, 255, 255, 0.9)",
+                  border: isDarkMode
+                    ? "1px solid rgba(255, 255, 255, 0.1)"
+                    : "1px solid rgba(0, 0, 0, 0.1)",
+                }}
+              >
+                {getCodeExample(
+                  (selectedLanguage.get as string) || "javascript",
+                  token || ""
+                )}
+              </SyntaxHighlighter>
+            </motion.div>
+          </motion.div>
+        </motion.div>
+      </AnimatePresence>
+    </Card>
+  );
+}
+export const Integrations = () => {
+  const storeId = useStoreId();
+  const usedBy = useUsedBy();
+  const apiTokens = useCopyState<string[] | null>(null);
+  const isGenerating = useCopyState(false);
+  const isLoading = useCopyState(false);
+  const error = useCopyState<string | null>(null);
+  // Load existing token on component mount
+  useEffect(() => {
+    const loadExistingToken = async () => {
+      if (!storeId) return;
+      isLoading.set(true);
+      error.set(null);
+      try {
+        const existingToken = await snapbuyApi.getPartOfToken(storeId);
+        if (existingToken) {
+          apiTokens.set(existingToken);
+        }
+      } catch (err) {
+        console.error("Failed to load existing token:", err);
+        error.set("Failed to load existing token. You can generate a new one.");
+      } finally {
+        isLoading.set(false);
+      }
+    };
+    loadExistingToken();
+  }, [storeId]);
+  // Programming language options
   // Function to generate a real API token using snapbuyApi
   const generateToken = async () => {
     if (!storeId) {
@@ -196,7 +342,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
     try {
       const partOfToken = await snapbuyApi.generateStoreApiToken(storeId);
       if (partOfToken) {
-        apiToken.set(partOfToken);
+        apiTokens.set((s) => [...(s || []), partOfToken]);
         error.set(null);
       } else {
         throw new Error("No token received from API");
@@ -211,34 +357,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
       isGenerating.set(false);
     }
   };
-  // Function to regenerate token
-  const regenerateToken = async () => {
-    const response = await confirm({
-      title: "Regenerate API Token",
-      message: "Are you sure you want to regenerate the API token?",
-      type: "warning",
-    });
-    if (response) {
-      await generateToken();
-    }
-  };
-  // Function to add origin to the list
   // Function to copy token to clipboard
-  const copyToken = async () => {
-    if (apiToken.get) {
-      try {
-        await navigator.clipboard.writeText(apiToken.get);
-        showToast("API Token copied to clipboard", "info", {
-          id: "copy-token-success",
-        });
-        // Clear any existing errors when copy is successful
-        error.set(null);
-        // You could add a toast notification here
-      } catch (err) {
-        error.set("Failed to copy token to clipboard");
-      }
-    }
-  };
   return usedBy === "owned" ? (
     <motion.div
       className="space-y-6 p-4"
@@ -330,226 +449,126 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                   <Translate content="Store ID is required to generate API tokens. Please make sure you're accessing this from a store context." />
                 </motion.p>
               </motion.div>
-            ) : apiToken.get ? (
-              <AnimatePresence>
-                <motion.div
-                  className="space-y-3"
-                  variants={tokenContainerVariants}
-                  initial="hidden"
-                  animate="visible"
-                  exit="exit"
-                >
-                  <motion.div
-                    className="flex items-center gap-3"
-                    variants={tokenVariants}
-                  >
-                    <motion.div className="flex-1 bg-[--biqpod-gray-opacity] p-3 rounded-lg font-mono text-sm">
-                      {apiToken.get}
-                    </motion.div>
-                  </motion.div>
-                  <motion.div className="flex gap-3" variants={tokenVariants}>
-                    <motion.div
-                      variants={buttonVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                      className="w-full"
-                    >
-                      <Button
-                        onClick={copyToken}
-                        className="bg-[--biqpod-gray-opacity] px-4 py-2 text-[--biqpod-text-color]"
-                        icon={allIcons.regular.faCopy}
-                      >
-                        <Translate content="Copy" />
-                      </Button>
-                    </motion.div>
-                    <motion.div
-                      variants={buttonVariants}
-                      whileHover="hover"
-                      whileTap="tap"
-                      className="w-full"
-                    >
-                      <Button
-                        onClick={regenerateToken}
-                        disabled={isGenerating.get}
-                        className="px-4 py-2"
-                      >
-                        <Translate
-                          content={
-                            isGenerating.get
-                              ? "Regenerating..."
-                              : "Regenerate Token"
-                          }
-                        />
-                      </Button>
-                    </motion.div>
-                    {apiToken.get.startsWith("sb_demo_") && (
-                      <motion.span
-                        className="bg-yellow-100 px-3 py-2 rounded-lg text-yellow-800 text-xs"
-                        initial={{ opacity: 0 }}
-                        animate={{ opacity: 1 }}
-                        transition={{ delay: 0.2 }}
-                      >
-                        <Translate content="Demo Token" />
-                      </motion.span>
-                    )}
-                  </motion.div>
-                </motion.div>
-              </AnimatePresence>
             ) : (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.7 }}
-              >
-                <motion.div
-                  variants={buttonVariants}
-                  initial="hidden"
-                  animate="visible"
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  <Button
-                    onClick={generateToken}
-                    disabled={isGenerating.get || isLoading.get}
-                    className="px-6 py-2"
-                  >
-                    <Translate
-                      content={
-                        isGenerating.get
-                          ? "Generating..."
-                          : isLoading.get
-                          ? "Loading..."
-                          : "Generate API Token"
-                      }
-                    />
-                  </Button>
-                </motion.div>
-              </motion.div>
+              apiTokens.get && (
+                <AnimatePresence>
+                  <div className="bg-[--biqpod-gray-opacity] rounded-xl">
+                    {apiTokens.get.map((token) => {
+                      return (
+                        <motion.div
+                          className="space-y-3"
+                          variants={tokenContainerVariants}
+                          initial="hidden"
+                          animate="visible"
+                          exit="exit"
+                        >
+                          <motion.div
+                            className="flex justify-between items-center gap-3 p-2"
+                            variants={tokenVariants}
+                          >
+                            <motion.div className="flex-1rounded-lg font-mono text-sm">
+                              {token}
+                            </motion.div>
+                            <motion.div
+                              className="flex gap-3"
+                              variants={tokenVariants}
+                            >
+                              <CircleTip
+                                icon={allIcons.solid.faEllipsisV}
+                                onClick={({ clientX, clientY }) => {
+                                  openMenu({
+                                    x: clientX,
+                                    y: clientY,
+                                    menu: [
+                                      {
+                                        label: "Usage Instructions",
+                                        defaultIcon: allIcons.solid.faCode,
+                                        click() {
+                                          showPopup(
+                                            <UsageInstructions token={token} />
+                                          );
+                                        },
+                                      },
+                                      {
+                                        label: "Origins",
+                                        defaultIcon: allIcons.solid.faGlobe,
+                                        click() {
+                                          showPopup(
+                                            <SettingOrigins token={token} />
+                                          );
+                                        },
+                                      },
+                                      {
+                                        label: "Delete Token",
+                                        defaultIcon: allIcons.solid.faTrashAlt,
+                                        click: async () => {
+                                          // delete token
+                                          await snapbuyApi.deleteToken(
+                                            storeId,
+                                            token
+                                          );
+                                          showToast("Token deleted", "success");
+                                          // Remove token from state
+                                          apiTokens.set((tokens) =>
+                                            tokens
+                                              ? tokens.filter(
+                                                  (t) => t !== token
+                                                )
+                                              : []
+                                          );
+                                        },
+                                      },
+                                      {
+                                        label: "Copy Token",
+                                        defaultIcon: allIcons.regular.faCopy,
+                                        click() {
+                                          navigator.clipboard.writeText(token);
+                                          showToast(
+                                            "Api Token copied to clipboard",
+                                            "success"
+                                          );
+                                        },
+                                      },
+                                    ],
+                                  });
+                                }}
+                              />
+                            </motion.div>
+                          </motion.div>
+                        </motion.div>
+                      );
+                    })}
+                  </div>
+                </AnimatePresence>
+              )
             )}
-          </motion.div>{" "}
-          <motion.h2
-            className="mb-4 font-semibold text-[--biqpod-text-color] text-xl"
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.4 }}
-          >
-            <Translate content="Origins" />
-          </motion.h2>
-          {/* Origins Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.9 }}
-          >
-            <ArrayField
-              state={origins}
-              id="origins"
-              config={{
-                addText: "Add Origin",
-              }}
-            />
-          </motion.div>
-          {/* API Usage Instructions */}
-          <AnimatePresence>
-            {apiToken.get && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="mt-2"
+            >
               <motion.div
-                className="bg-[--biqpod-field-background] mt-6 p-4 border border-[--biqpod-borders] border-solid rounded-lg"
-                variants={codeBlockVariants}
+                variants={buttonVariants}
                 initial="hidden"
                 animate="visible"
-                exit="hidden"
+                whileHover="hover"
+                whileTap="tap"
               >
-                <motion.h4
-                  className="mb-4 font-medium text-[--biqpod-text-color] text-sm"
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.1 }}
+                <Button
+                  onClick={generateToken}
+                  disabled={isGenerating.get}
+                  className="px-6 py-2"
                 >
-                  <Translate content="Usage Instructions" />
-                </motion.h4>
-                {/* Programming Language Selector */}
-                <motion.div
-                  className="mb-4"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <motion.label
-                    className="block mb-2 font-medium text-[--biqpod-text-color] text-sm"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.3 }}
-                  >
-                    <Translate content="Choose Programming Language:" />
-                  </motion.label>
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.4 }}
-                  >
-                    <EnumField
-                      state={selectedLanguage}
-                      id="programming-language"
-                      config={{
-                        list: languageOptions,
-                      }}
-                    />
-                  </motion.div>
-                </motion.div>
-                {/* Code Example */}
-                <motion.div
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.5 }}
-                >
-                  <motion.p
-                    className="opacity-70 mb-2 text-[--biqpod-text-color] text-xs"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 0.7 }}
-                    transition={{ delay: 0.6 }}
-                  >
-                    <Translate content="Code example for" />{" "}
-                    {
-                      languageOptions.find(
-                        (lang) => lang.value === selectedLanguage.get
-                      )?.content
+                  <Translate
+                    content={
+                      isGenerating.get ? "Generating..." : "Generate API Token"
                     }
-                    :
-                  </motion.p>
-                  <motion.div
-                    className="rounded-lg overflow-hidden"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.7, duration: 0.4 }}
-                  >
-                    <SyntaxHighlighter
-                      language={getSyntaxLanguage(
-                        selectedLanguage.get || "javascript"
-                      )}
-                      style={isDarkMode ? vscDarkPlus : vs}
-                      showLineNumbers={true}
-                      wrapLines={true}
-                      customStyle={{
-                        margin: 0,
-                        fontSize: "12px",
-                        background: isDarkMode
-                          ? "rgba(0, 0, 0, 0.3)"
-                          : "rgba(255, 255, 255, 0.9)",
-                        border: isDarkMode
-                          ? "1px solid rgba(255, 255, 255, 0.1)"
-                          : "1px solid rgba(0, 0, 0, 0.1)",
-                      }}
-                    >
-                      {getCodeExample(
-                        (selectedLanguage.get as string) || "javascript",
-                        apiToken.get || ""
-                      )}
-                    </SyntaxHighlighter>
-                  </motion.div>
-                </motion.div>
+                  />
+                </Button>
               </motion.div>
-            )}
-          </AnimatePresence>
+            </motion.div>
+          </motion.div>
         </Card>
       </motion.div>
       {/* User Access Management Section */}
@@ -645,7 +664,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
         >
           <Icon
             icon={allIcons.solid.faLock}
-            iconClassName="text-4xl text-[--biqpod-gray-opacity] mb-4"
+            className="mb-4 text-[--biqpod-gray-opacity] text-4xl"
           />
         </motion.div>
         <motion.p

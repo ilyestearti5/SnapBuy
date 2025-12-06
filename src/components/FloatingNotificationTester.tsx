@@ -20,7 +20,7 @@ export const FloatingNotificationTester: React.FC = () => {
         <div className="bg-white shadow-2xl border border-gray-200 rounded-lg w-80 overflow-hidden">
           <div className="flex justify-between items-center bg-blue-600 p-3 text-white">
             <div className="flex items-center gap-2">
-              <Icon icon={allIcons.solid.faBell} iconClassName="text-sm" />
+              <Icon icon={allIcons.solid.faBell} className="text-sm" />
               <span className="font-medium text-sm">Notification Tester</span>
             </div>
             <div className="flex gap-1">
@@ -28,13 +28,13 @@ export const FloatingNotificationTester: React.FC = () => {
                 onClick={() => setIsExpanded(false)}
                 className="hover:bg-blue-700 p-1 rounded text-white"
               >
-                <Icon icon={allIcons.solid.faMinus} iconClassName="text-xs" />
+                <Icon icon={allIcons.solid.faMinus} className="text-xs" />
               </button>
               <button
                 onClick={() => setIsVisible(false)}
                 className="hover:bg-blue-700 p-1 rounded text-white"
               >
-                <Icon icon={allIcons.solid.faTimes} iconClassName="text-xs" />
+                <Icon icon={allIcons.solid.faTimes} className="text-xs" />
               </button>
             </div>
           </div>
@@ -43,7 +43,7 @@ export const FloatingNotificationTester: React.FC = () => {
               onClick={quickNotificationTest}
               className="flex items-center gap-2 bg-green-600 hover:bg-green-700 px-3 py-2 rounded w-full font-medium text-white text-sm text-left transition-colors"
             >
-              <Icon icon={allIcons.solid.faPlay} iconClassName="text-xs" />
+              <Icon icon={allIcons.solid.faPlay} className="text-xs" />
               Quick Test
             </button>
 
@@ -53,7 +53,7 @@ export const FloatingNotificationTester: React.FC = () => {
               }
               className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 px-3 py-2 rounded w-full font-medium text-white text-sm text-left transition-colors"
             >
-              <Icon icon={allIcons.solid.faWrench} iconClassName="text-xs" />
+              <Icon icon={allIcons.solid.faWrench} className="text-xs" />
               Test with Fixes
             </button>
 
@@ -61,10 +61,7 @@ export const FloatingNotificationTester: React.FC = () => {
               onClick={showNotificationDebugInfo}
               className="flex items-center gap-2 bg-yellow-600 hover:bg-yellow-700 px-3 py-2 rounded w-full font-medium text-white text-sm text-left transition-colors"
             >
-              <Icon
-                icon={allIcons.solid.faInfoCircle}
-                iconClassName="text-xs"
-              />
+              <Icon icon={allIcons.solid.faInfoCircle} className="text-xs" />
               Debug Info
             </button>
 
@@ -79,7 +76,7 @@ export const FloatingNotificationTester: React.FC = () => {
               }}
               className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700 px-3 py-2 rounded w-full font-medium text-white text-sm text-left transition-colors"
             >
-              <Icon icon={allIcons.solid.faShieldAlt} iconClassName="text-xs" />
+              <Icon icon={allIcons.solid.faShieldAlt} className="text-xs" />
               Request Permission
             </button>
 
@@ -98,7 +95,7 @@ export const FloatingNotificationTester: React.FC = () => {
           className="flex justify-center items-center bg-blue-600 hover:bg-blue-700 shadow-lg rounded-full w-12 h-12 text-white hover:scale-110 transition-all duration-200"
           title="Test Notifications"
         >
-          <Icon icon={allIcons.solid.faBell} iconClassName="text-lg" />
+          <Icon icon={allIcons.solid.faBell} className="text-lg" />
         </button>
       )}
     </div>

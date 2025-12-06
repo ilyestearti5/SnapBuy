@@ -215,7 +215,7 @@ export const Plans = () => {
                       <div className="flex items-center gap-2">
                         <Icon
                           icon={allIcons.solid.faCalendarAlt}
-                          iconClassName="text-[--biqpod-primary]"
+                          className="text-[--biqpod-primary]"
                         />
                         <span className="font-medium">
                           <Translate content="Active Subscriptions" />
@@ -352,7 +352,7 @@ export const Plans = () => {
                 <div className="py-8 text-center">
                   <Icon
                     icon={allIcons.solid.faChartBar}
-                    iconClassName="mx-auto mb-3 text-4xl text-[--biqpod-text-color] opacity-40"
+                    className="opacity-40 mx-auto mb-3 text-[--biqpod-text-color] text-4xl"
                   />
                   <p className="opacity-70 text-[--biqpod-text-color]">
                     <Translate content="No active payment plan found" />
@@ -456,7 +456,7 @@ export const Plans = () => {
             <CircleTip
               onClick={() => setIsExpanded(!isExpanded)}
               icon={allIcons.solid.faChevronDown}
-              iconClassName={tw(isExpanded && "rotate-180")}
+              className={tw(isExpanded && "rotate-180")}
             />
           </div>
           <AnimatePresence>
@@ -595,7 +595,7 @@ export const Plans = () => {
                                 >
                                   <Icon
                                     icon={allIcons.solid.faCircleInfo}
-                                    iconClassName="text-[--biqpod-text-color] text-sm opacity-60 hover:opacity-80 transition-colors"
+                                    className="opacity-60 hover:opacity-80 text-[--biqpod-text-color] text-sm transition-colors"
                                   />
                                   {tooltipVisible === price.type && (
                                     <div className="top-1/2 left-full z-10 absolute bg-[--biqpod-gray-opacity] shadow-lg backdrop-blur-md ml-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap -translate-y-1/2 transform">
@@ -691,7 +691,7 @@ export const Plans = () => {
               <CircleTip
                 onClick={() => setShowPaymentHistory(!showPaymentHistory)}
                 icon={allIcons.solid.faHistory}
-                iconClassName="text-[--biqpod-text-color] opacity-70"
+                className="opacity-70 text-[--biqpod-text-color]"
               />
             </div>
           </div>
@@ -718,7 +718,7 @@ export const Plans = () => {
                       <div className="py-8 text-center">
                         <Icon
                           icon={allIcons.solid.faReceipt}
-                          iconClassName="mx-auto mb-3 text-4xl text-[--biqpod-text-color] opacity-40"
+                          className="opacity-40 mx-auto mb-3 text-[--biqpod-text-color] text-4xl"
                         />
                         <p className="opacity-70 text-[--biqpod-text-color]">
                           <Translate content="No payment history found" />
@@ -750,7 +750,7 @@ export const Plans = () => {
                                         ? allIcons.solid.faCheckCircle
                                         : allIcons.solid.faClock
                                     }
-                                    iconClassName={
+                                    className={
                                       payment.status === "paid"
                                         ? "text-green-500 text-sm"
                                         : "text-[--biqpod-primary] text-sm"
@@ -799,7 +799,7 @@ export const Plans = () => {
                                       togglePaymentExpansion(paymentId)
                                     }
                                     icon={allIcons.solid.faChevronDown}
-                                    iconClassName={tw(
+                                    className={tw(
                                       "text-[--biqpod-text-color] text-sm opacity-60 transition-transform duration-200",
                                       isExpanded && "rotate-180"
                                     )}

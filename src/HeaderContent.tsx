@@ -18,12 +18,10 @@ import {
   WindowControls,
 } from "@biqpod/app/ui/components";
 import {
-  addNotification,
   closePopup,
   confirm,
   execAction,
   openMenu,
-  openNotificationsView,
   setSettingValue,
   setTemp,
   showPopup,
@@ -32,6 +30,7 @@ import {
   showToast,
   useAction,
   useAsyncMemo,
+  useCopyState,
   useDeviceResolution,
   useSettingValue,
   useTemp,
@@ -45,11 +44,159 @@ import { mapAsync, mergeArray, tw } from "@biqpod/app/ui/utils";
 import { Biqpod, OpenMenuProps } from "@biqpod/app/ui/types";
 import { useStoreId } from "./utils";
 import { initStoreIdSave } from "./utils";
-import { AiAssistance } from "./AiAssistance";
 import { openNotificationSettings } from "./components/NotificationSettingsExamples";
 import { HoverScale } from "./animations/components";
 import { motion } from "framer-motion";
 import { useUsedBy } from "./routes/Stores/Stores";
+import { useEffectDelay } from "@biqpod/app/ui/shared";
+const LIMIT = 20;
+const Notifications = () => {
+  const storeId = useStoreId();
+  const hasMore = useTemp<boolean>("notifications-has-more");
+  const lastNotification = useTemp<Biqpod.Snapbuy.Notification | null>(
+    "last-notifications"
+  );
+  const user = useUser();
+  const loading = useCopyState(false);
+  const data = useCopyState<Biqpod.Snapbuy.Notification[]>([]);
+  const fetchNotifications = async () => {
+    if (loading.get) return;
+    loading.set(true);
+    const list = await snapbuyApi.notifications.list({
+      storeId: storeId ?? undefined,
+      startAt: lastNotification.get?.createdAt,
+      limit: LIMIT,
+    });
+    const last = list?.at(-1) ?? null;
+    lastNotification.set(last);
+    hasMore.set(list?.length === LIMIT);
+    loading.set(false);
+    data.set((prev) => {
+      return [...prev, ...(list || [])];
+    });
+  };
+  useEffectDelay(
+    async () => {
+      await fetchNotifications();
+    },
+    [],
+    2000
+  );
+  useEffect(() => {
+    if (storeId && user) {
+      return snapbuyApi.notifications.on(
+        (notification) => {
+          data.set((prev) => [notification, ...prev]);
+        },
+        {
+          storeId,
+        }
+      );
+    }
+  }, [user]);
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrolledToBottom =
+      target.scrollHeight - target.scrollTop <= target.clientHeight + 50;
+    if (scrolledToBottom && hasMore.get && !loading.get) {
+      fetchNotifications();
+    }
+  };
+  return (
+    <Card className="max-h-[80vh]">
+      <CardHeaderForPopup title="Notifications" />
+      <Line />
+      <div className="overflow-y-auto" onScroll={handleScroll}>
+        {data.get.map((notification, index) => {
+          const notifIcon =
+            notification.type === "success"
+              ? allIcons.solid.faCheckCircle
+              : notification.type === "error"
+              ? allIcons.solid.faExclamationCircle
+              : notification.type === "warning"
+              ? allIcons.solid.faExclamationTriangle
+              : allIcons.solid.faInfoCircle;
+          const notifColor =
+            notification.type === "success"
+              ? "text-green-500"
+              : notification.type === "error"
+              ? "text-red-500"
+              : notification.type === "warning"
+              ? "text-yellow-500"
+              : "text-blue-500";
+          return (
+            <motion.div
+              key={notification.id || index}
+              className={tw(
+                "p-4 hover:bg-[--biqpod-gray-opacity] cursor-pointer border-b border-[--biqpod-border] transition-colors",
+                !notification.readed && "bg-[--biqpod-gray-opacity-half]"
+              )}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.2, delay: index * 0.05 }}
+              onClick={() => {
+                if (notification.id && !notification.readed) {
+                  snapbuyApi.notifications.markAsRead(notification.id);
+                }
+              }}
+            >
+              <div className="flex items-start gap-3">
+                <div className={tw("flex-shrink-0 mt-1", notifColor)}>
+                  <Icon icon={notifIcon} className="text-lg" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-sm break-words">
+                    {notification.message}
+                  </p>
+                  {notification.meta &&
+                    Object.keys(notification.meta).length > 0 && (
+                      <div className="space-y-1 opacity-70 mt-2 text-xs">
+                        {Object.entries(notification.meta).map(
+                          ([key, value]) => (
+                            <div key={key} className="flex gap-2">
+                              <span className="font-semibold capitalize">
+                                {key}:
+                              </span>
+                              <span className="break-all">{String(value)}</span>
+                            </div>
+                          )
+                        )}
+                      </div>
+                    )}
+                  {notification.createdAt && (
+                    <p className="opacity-50 mt-2 text-xs">
+                      {new Date(notification.createdAt).toLocaleString()}
+                    </p>
+                  )}
+                </div>
+                {!notification.readed && (
+                  <div className="flex-shrink-0">
+                    <div className="bg-blue-500 rounded-full w-2 h-2" />
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          );
+        })}
+        {loading.get && (
+          <div className="p-4 text-center">
+            <Icon icon={allIcons.solid.faSpinner} className="animate-spin" />
+          </div>
+        )}
+        {!hasMore.get && data.get.length > 0 && (
+          <div className="opacity-60 p-4 text-sm text-center">
+            <Translate content="No more notifications" />
+          </div>
+        )}
+        {data.get.length === 0 && !loading.get && (
+          <div className="opacity-60 p-4 text-sm text-center">
+            <Translate content="No notifications" />
+          </div>
+        )}
+      </div>
+    </Card>
+  );
+};
 const getId = () => {
   return location.pathname.split("/").at(-1);
 };
@@ -93,12 +240,8 @@ export const HeaderContent = () => {
         });
       }
       loadingText.set("");
-      addNotification({
-        title: "Pack Added",
-        desc: `Pack ${packInfo.name} has been added successfully.`,
-        type: "info",
-      });
-      openNotificationsView();
+      showToast("Pack saved successfully");
+      execAction("fetch-packs");
     },
     [storeId, user]
   );
@@ -294,7 +437,7 @@ export const HeaderContent = () => {
             </Route>
           </Switch>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center">
           {loadingText.get && (
             <span className="max-md:hidden md:inline-flex items-center gap-2 bg-[--biqpod-primary] p-2 rounded-lg text-[--biqpod-primary-content] text-sm text-nowrap">
               <Icon icon={allIcons.solid.faBox} />
@@ -450,25 +593,16 @@ export const HeaderContent = () => {
                 }}
                 icon={allIcons.solid.faEllipsisV}
               />
-              {!!orders?.length && (
-                <span className="inline-block top-[0] right-[0] absolute bg-[--biqpod-primary] rounded-full w-[12px] h-[12px] pointer-events-none" />
-              )}
             </div>
-            {user && (
-              <div>
-                <CircleTip
-                  icon={allIcons.solid.faClover}
-                  onClick={() => {
-                    showPopup(<AiAssistance />);
-                    // ai assitance
-                  }}
-                  iconClassName="text-violet-500"
-                />
-              </div>
-            )}
           </div>
+          <CircleTip
+            icon={allIcons.solid.faBell}
+            onClick={() => {
+              showPopup(<Notifications />);
+            }}
+          />
           {user?.uid && (
-            <div className="relative rounded-full">
+            <div className="relative">
               <UserAvatar
                 user={user}
                 subscribed={!loadingText.get && subed?.isSubscribed}
