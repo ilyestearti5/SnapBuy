@@ -390,8 +390,9 @@ export const NotificationSettings: React.FC = () => {
       setIsLoading(true);
       try {
         // Update store in database
-        await snapbuyApi.store.update(storeId, {
+        await snapbuyApi.store.upsert({
           notify: notifications,
+          id: storeId,
         });
         // Update original notifications to match current ones
         setOriginalNotifications({ ...notifications });

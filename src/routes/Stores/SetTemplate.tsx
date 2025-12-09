@@ -291,8 +291,12 @@ export const SetTemplate = ({ store }: SetTemplateProps) => {
     "set-store-template",
     async (templateId: string | null) => {
       try {
+        if (!store.id) {
+          throw "Store ID is missing";
+        }
         // Update store with new template
-        await snapbuyApi.store.update(store.id, {
+        await snapbuyApi.store.upsert({
+          id: store.id,
           template: templateId || null,
         });
         showToast(

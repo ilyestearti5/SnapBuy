@@ -150,7 +150,10 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
     platforms.set(updatedPlatforms);
     isEditing.set(null);
     try {
-      await snapbuyApi.store.update(store.id, { platforms: updatedPlatforms });
+      await snapbuyApi.store.upsert({
+        id: store.id,
+        platforms: updatedPlatforms,
+      });
       justAdded.set(platformId);
       setTimeout(() => justAdded.set(null), 1000); // Clear success state after 1 second
       showToast("Platform updated successfully", "success");
@@ -168,7 +171,10 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
     delete (updatedPlatforms as any)[platformId];
     platforms.set(updatedPlatforms);
     try {
-      await snapbuyApi.store.update(store.id, { platforms: updatedPlatforms });
+      await snapbuyApi.store.upsert({
+        id: store.id,
+        platforms: updatedPlatforms,
+      });
       showToast("Platform removed successfully", "success");
       execAction("fetch-my-stores");
     } catch (error) {

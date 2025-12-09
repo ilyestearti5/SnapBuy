@@ -184,6 +184,9 @@ export const Plans = () => {
     coupons: { min: 0, max: 1000 },
     vars: { min: 0, max: 1000 },
   };
+  const free = useAsyncMemo(async () => {
+    return snapbuyApi.getFree();
+  }, []);
   return (
     <Scroll>
       <div className="p-2">
@@ -341,30 +344,35 @@ export const Plans = () => {
             )}
           <Line />
           <div className="p-4">
-            <div className="space-y-4">
-              {!pricesData ? (
-                <div className="opacity-70 text-[--biqpod-text-color] text-center">
-                  Loading prices data...
-                </div>
-              ) : !currentPayments ||
-                !Array.isArray(currentPayments) ||
-                currentPayments.length === 0 ? (
-                <div className="py-8 text-center">
-                  <Icon
-                    icon={allIcons.solid.faChartBar}
-                    className="opacity-40 mx-auto mb-3 text-[--biqpod-text-color] text-4xl"
-                  />
-                  <p className="opacity-70 text-[--biqpod-text-color]">
-                    <Translate content="No active payment plan found" />
-                  </p>
-                  <p className="opacity-60 mt-1 text-[--biqpod-text-color] text-sm">
-                    <Translate content="Purchase a plan to see your usage statistics" />
-                  </p>
-                </div>
-              ) : (
-                pricesData.map((price, index) => {
+            {!pricesData ? (
+              <div className="opacity-70 text-[--biqpod-text-color] text-center">
+                Loading prices data...
+              </div>
+            ) : !currentPayments ||
+              !Array.isArray(currentPayments) ||
+              currentPayments.length === 0 ? (
+              <div className="py-8 text-center">
+                <Icon
+                  icon={allIcons.solid.faChartBar}
+                  className="opacity-40 mx-auto mb-3 text-[--biqpod-text-color] text-4xl"
+                />
+                <p className="opacity-70 text-[--biqpod-text-color]">
+                  <Translate content="No active payment plan found" />
+                </p>
+                <p className="opacity-60 mt-1 text-[--biqpod-text-color] text-sm">
+                  <Translate content="Purchase a plan to see your usage statistics" />
+                </p>
+              </div>
+            ) : (
+              <div className="gap-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
+                {pricesData.map((price, index) => {
                   const current = usageData?.[price.type] || 0;
                   const cost = current * (price.extraPrice || 0);
+
+                  // Get free limit for this type
+                  const freeLimit =
+                    free?.find((f) => f.type === price.type)?.count || 0;
+
                   // Get usage limits from all active payments meta data combined
                   const getUsageLimit = (type: string): number | null => {
                     let totalLimit = 0;
@@ -379,77 +387,221 @@ export const Plans = () => {
                     }
                     return hasAnyLimit ? totalLimit : null;
                   };
-                  const limit = getUsageLimit(price.type);
-                  const percentage = limit
-                    ? Math.min((current / limit) * 100, 100)
-                    : 0;
-                  // Determine progress bar color based on usage percentage
-                  const getProgressColor = (percent: number) => {
-                    if (percent >= 80) return "bg-red-500"; // High usage - red
-                    if (percent >= 50) return "bg-[--biqpod-primary]"; // Medium usage - biqpod primary
-                    return "bg-blue-500"; // Low usage - blue (keeping blue as it's not red/green)
-                  };
+
+                  const paidLimit = getUsageLimit(price.type) || 0;
+                  const totalLimit = freeLimit + paidLimit;
+
+                  // Calculate percentages for the segmented progress bar
+                  const freePercentage =
+                    totalLimit > 0 ? (freeLimit / totalLimit) * 100 : 100;
+                  const currentPercentage =
+                    totalLimit > 0
+                      ? Math.min((current / totalLimit) * 100, 100)
+                      : 0;
+
+                  const isInFreeZone = current <= freeLimit;
+                  const isNearLimit = currentPercentage >= 80;
+                  const isAtLimit = current >= totalLimit;
+
                   return (
-                    <div key={price.type} className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg capitalize">
-                          <Translate content={`${price.type} usage`} />
-                        </span>
-                        {usageData === null && (
-                          <CardWait
-                            className={tw(
-                              "h-[30px] rounded-2xl",
-                              index % 2 === 0 ? "w-[60px]" : "w-[120px]"
-                            )}
-                          />
-                        )}
-                        {usageData !== null && (
-                          <div className="text-right">
-                            <span className="opacity-70 text-[--biqpod-text-color] text-sm">
-                              {current} used x {price.extraPrice} DA
-                            </span>
-                            <div className="font-medium text-sm">
-                              {cost.toFixed(2)} DA
+                    <div
+                      key={price.type}
+                      className={tw(
+                        "bg-[--biqpod-secondary-background] p-4 border border-solid rounded-lg transition-all",
+                        isAtLimit
+                          ? "border-red-500/50"
+                          : isNearLimit
+                          ? "border-orange-500/50"
+                          : "border-[--biqpod-borders]"
+                      )}
+                    >
+                      {usageData === null ? (
+                        <CardWait
+                          className={tw(
+                            "h-[120px] rounded-lg w-full",
+                            index % 2 === 0 ? "" : ""
+                          )}
+                        />
+                      ) : (
+                        <>
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="flex-1">
+                              <h3 className="mb-1 font-medium text-base capitalize">
+                                <Translate content={`${price.type}`} />
+                              </h3>
+                              <div className="flex items-baseline gap-1">
+                                <span className="font-bold text-2xl">
+                                  {current}
+                                </span>
+                                <span className="opacity-60 text-sm">
+                                  / {totalLimit > 0 ? totalLimit : freeLimit}
+                                </span>
+                              </div>
+                              {freeLimit > 0 && paidLimit > 0 && (
+                                <div className="flex items-center gap-1 mt-1">
+                                  <span className="bg-green-500/20 px-2 py-0.5 rounded-full text-green-600 text-xs">
+                                    <Icon
+                                      icon={allIcons.solid.faGift}
+                                      className="mr-1"
+                                    />
+                                    {freeLimit}
+                                  </span>
+                                  <span className="opacity-60 text-xs">+</span>
+                                  <span className="bg-blue-500/20 px-2 py-0.5 rounded-full text-blue-600 text-xs">
+                                    <Icon
+                                      icon={allIcons.solid.faCreditCard}
+                                      className="mr-1"
+                                    />
+                                    {paidLimit}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                            <div className="text-right">
+                              <div
+                                className={tw(
+                                  "p-2 rounded-full mb-1",
+                                  paidLimit === 0
+                                    ? isAtLimit
+                                      ? "bg-red-500/20"
+                                      : isNearLimit
+                                      ? "bg-orange-500/20"
+                                      : "bg-green-500/20"
+                                    : isAtLimit
+                                    ? "bg-red-500/20"
+                                    : isNearLimit
+                                    ? "bg-orange-500/20"
+                                    : "bg-blue-500/20"
+                                )}
+                              >
+                                <Icon
+                                  icon={
+                                    isAtLimit
+                                      ? allIcons.solid.faExclamationTriangle
+                                      : isNearLimit
+                                      ? allIcons.solid.faExclamationCircle
+                                      : paidLimit === 0
+                                      ? allIcons.solid.faGift
+                                      : allIcons.solid.faCheck
+                                  }
+                                  className={tw(
+                                    "text-sm",
+                                    paidLimit === 0
+                                      ? isAtLimit
+                                        ? "text-red-500"
+                                        : isNearLimit
+                                        ? "text-orange-500"
+                                        : "text-green-500"
+                                      : isAtLimit
+                                      ? "text-red-500"
+                                      : isNearLimit
+                                      ? "text-orange-500"
+                                      : "text-blue-500"
+                                  )}
+                                />
+                              </div>
                             </div>
                           </div>
-                        )}
-                      </div>
-                      {/* Progress Bar */}
-                      {usageData !== null && limit !== null && (
-                        <div className="w-full">
-                          <div
-                            className={`w-full h-2 rounded-full bg-[--biqpod-primary-background]`}
-                          >
-                            <div
-                              className={`h-2 rounded-full transition-all duration-300 ${getProgressColor(
-                                percentage
-                              )}`}
-                              style={{ width: `${percentage}%` }}
-                            />
+
+                          {/* Cost Info */}
+                          {paidLimit > 0 && (
+                            <div className="bg-[--biqpod-primary-background] mb-3 p-2 rounded text-center">
+                              <span className="opacity-70 text-[--biqpod-text-color] text-xs">
+                                {current} × {price.extraPrice} DA
+                              </span>
+                              <div className="font-bold text-[--biqpod-primary] text-sm">
+                                {cost.toFixed(2)} DA
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Segmented Progress Bar */}
+                          <div className="w-full">
+                            <div className="relative bg-[--biqpod-primary-background] rounded-full w-full h-3 overflow-hidden">
+                              {/* Free zone background */}
+                              {freeLimit > 0 && (
+                                <div
+                                  className="top-0 left-0 absolute bg-green-500/20 h-full"
+                                  style={{ width: `${freePercentage}%` }}
+                                />
+                              )}
+                              {/* Current usage bar */}
+                              <div
+                                className={tw(
+                                  "relative h-full transition-all duration-300",
+                                  isAtLimit
+                                    ? "bg-red-500"
+                                    : isNearLimit
+                                    ? "bg-orange-500"
+                                    : isInFreeZone && freeLimit > 0
+                                    ? "bg-green-500"
+                                    : "bg-blue-500"
+                                )}
+                                style={{ width: `${currentPercentage}%` }}
+                              />
+                              {/* Free limit marker */}
+                              {freeLimit > 0 && totalLimit > freeLimit && (
+                                <div
+                                  className="top-0 bottom-0 absolute bg-green-600 w-0.5"
+                                  style={{ left: `${freePercentage}%` }}
+                                >
+                                  <div className="-top-1 left-1/2 absolute bg-green-600 rounded-full w-2 h-2 -translate-x-1/2" />
+                                  <div className="-bottom-1 left-1/2 absolute bg-green-600 rounded-full w-2 h-2 -translate-x-1/2" />
+                                </div>
+                              )}
+                            </div>
+                            <div className="flex justify-between items-center mt-2">
+                              <span className="opacity-70 text-[--biqpod-text-color] text-xs">
+                                {totalLimit - current > 0 ? (
+                                  <>
+                                    {totalLimit - current}{" "}
+                                    <Translate content="remaining" />
+                                  </>
+                                ) : (
+                                  <Translate content="Limit reached" />
+                                )}
+                              </span>
+                              <span
+                                className={tw(
+                                  "text-xs font-medium",
+                                  isAtLimit
+                                    ? "text-red-500"
+                                    : isNearLimit
+                                    ? "text-orange-500"
+                                    : isInFreeZone && freeLimit > 0
+                                    ? "text-green-500"
+                                    : "text-blue-500"
+                                )}
+                              >
+                                {currentPercentage.toFixed(0)}%
+                              </span>
+                            </div>
+                            {/* Legend */}
+                            {freeLimit > 0 && paidLimit > 0 && (
+                              <div className="flex gap-3 mt-2 text-xs">
+                                <div className="flex items-center gap-1">
+                                  <div className="bg-green-500 rounded-sm w-3 h-3" />
+                                  <span className="opacity-70">
+                                    <Translate content="Free" /> (0-{freeLimit})
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-1">
+                                  <div className="bg-blue-500 rounded-sm w-3 h-3" />
+                                  <span className="opacity-70">
+                                    <Translate content="Paid" /> (
+                                    {freeLimit + 1}-{totalLimit})
+                                  </span>
+                                </div>
+                              </div>
+                            )}
                           </div>
-                          <div className="flex justify-between items-center mt-1">
-                            <span className="opacity-70 text-[--biqpod-text-color] text-xs">
-                              {current} / {limit}
-                            </span>
-                            <span
-                              className={`text-xs font-medium ${
-                                percentage >= 80
-                                  ? "text-red-600"
-                                  : percentage >= 50
-                                  ? "text-[--biqpod-primary]"
-                                  : "text-blue-600"
-                              }`}
-                            >
-                              {percentage.toFixed(1)}%
-                            </span>
-                          </div>
-                        </div>
+                        </>
                       )}
                     </div>
                   );
-                })
-              )}
-            </div>
+                })}
+              </div>
+            )}
           </div>
           <Line />
           <div className="flex justify-center items-center p-3">
@@ -498,7 +650,6 @@ export const Plans = () => {
                             }
                           });
                         }
-
                         // Set usage states to current usage minus what's already covered by active subscriptions
                         photosUsage.set(
                           Math.max(

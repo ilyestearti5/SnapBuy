@@ -40,13 +40,11 @@ export const Store = () => {
   const loc = useLocation();
   const storeId = useParams<{ storeId: string }>().storeId;
   const user = useUser();
-
   // Get store data for tracking
   const storeData = useAsyncMemo(async () => {
     if (!storeId) return null;
     return await snapbuyApi.store.get(storeId);
   }, [storeId]);
-
   // Track store visit
   useStoreVisit(storeId, storeData, user?.uid);
   const selectedTab = userTabs.find(
@@ -98,23 +96,28 @@ export const Store = () => {
     }
     return active;
   }, [currentPayments, user]);
+  const free = useAsyncMemo(async () => {
+    return snapbuyApi.getFree();
+  }, [storeId]);
   // Calculate limits for all data types
   const limits = useMemo(() => {
     const allLimits: Partial<Record<DataTypes, number>> = {};
+    free?.forEach((item) => {
+      allLimits[item.type] = item.count;
+    });
     if (Array.isArray(currentPayments)) {
       currentPayments.forEach((payment) => {
         if (payment?.meta) {
           (Object.keys(payment.meta) as DataTypes[]).forEach((type) => {
-            if (typeof (payment.meta as any)[type] === "number") {
-              allLimits[type] =
-                (allLimits[type] || 0) + (payment.meta as any)[type];
+            if (typeof payment.meta?.[type] === "number") {
+              allLimits[type] = (allLimits[type] || 0) + payment.meta?.[type];
             }
           });
         }
       });
     }
     return allLimits;
-  }, [currentPayments]);
+  }, [currentPayments, free]);
   // Get usages for all data types
   const usages = useAsyncMemo(async () => {
     if (storeId) {
@@ -129,6 +132,11 @@ export const Store = () => {
       (Object.keys(usages) as DataTypes[]).forEach((type) => {
         const usage = usages[type];
         const limit = limits[type] || 0;
+        console.log({
+          type,
+          limit,
+          usage,
+        });
         if (usage !== undefined && usage > limit) {
           exceeded.push({ type, usage, limit });
         }
@@ -145,8 +153,14 @@ export const Store = () => {
     () => loc.pathname === createRoute("plans"),
     [createRoute, loc]
   );
-  const showLoading =
-    isWillExpired === null || usages === null || limits === null;
+  const showLoading = useMemo(() => {
+    return (
+      isWillExpired === null ||
+      usages === null ||
+      limits === null ||
+      free === null
+    );
+  }, [isWillExpired, usages, limits, free]);
   if (!usedBy) {
     return (
       <div className="flex flex-col justify-center items-center w-full h-full">

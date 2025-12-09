@@ -73,7 +73,7 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
             maxLength={10}
             inputMode="tel"
             controls={{
-              "[0-9]{10}": {
+              "(0|\\+[0-9]{1,3})[0-9]{9}": {
                 succ: "valid",
                 err: "invalid",
               },

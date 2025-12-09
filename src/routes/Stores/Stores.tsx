@@ -37,7 +37,7 @@ import { snapbuyApi } from "../../apis";
 import { delay, range } from "@biqpod/app/ui/utils";
 import notFoundPhoto from "../../assets/nothing.png";
 import { Link } from "react-router-dom";
-import { UpsertStore } from "./EditStoreBottomSheet";
+import { UpsertStore } from "./UpsertStore";
 import { useStoreId } from "../../utils";
 import { motion } from "framer-motion";
 import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";
@@ -286,7 +286,6 @@ const storeImageVariants = {
     },
   },
 };
-
 export function useUsedBy(
   user?: Biqpod.Account.User | null
 ): "owned" | "random" | "read/edit" | "read" | null {
@@ -305,7 +304,6 @@ export function useUsedBy(
   }, [currentUser, storeId]);
   return usedBy;
 }
-
 export const Stores = () => {
   const storeId = useStoreId();
   const storesState = useCopyState<Biqpod.Snapbuy.Store[]>([]);
@@ -322,6 +320,7 @@ export const Stores = () => {
   const storeName = getFieldValue("store-name");
   const storePhone = getFieldValue("store-phone");
   const storePhoto = getTemp<string>("store-photo");
+  const storeEmail = getFieldValue("store-email");
   useAction(
     "upsert-store",
     async (id?: string) => {
@@ -338,22 +337,22 @@ export const Stores = () => {
         phone: storePhone,
         id: id || Date.now().toString(),
         photo: storePhoto || undefined,
+        email: storeEmail || undefined,
       };
       if (storePhoto) {
         store.photo = storePhoto;
       }
       await delay(1000);
-      if (id) {
-        await snapbuyApi.store.update(id, store);
-        showToast("Store updated successfully", "success");
-      } else {
-        await snapbuyApi.store.add(store);
-        showToast("Store added successfully", "success");
-      }
+      await snapbuyApi.store.upsert(store);
+      showToast(
+        id ? "Store updated successfully" : "Store added successfully",
+        "success"
+      );
       closePopup();
       setFieldValue("store-name", "");
       setFieldValue("store-phone", "");
       setTemp("store-photo", null);
+      setFieldValue("store-email", "");
       execAction("fetch-my-stores");
     },
     [storeName, storePhone, storePhoto]

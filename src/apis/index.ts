@@ -137,6 +137,13 @@ export const createApi = (cloud: ClientCloud) => {
     return photos;
   };
   const snapbuyApi = {
+    async getFree() {
+      const fn = await getFunction<{ count: number; type: DataTypes }[]>(
+        "get-free-data"
+      );
+      const result = await fn?.({});
+      return result;
+    },
     async deleteToken(storeId: string, token: string) {
       const fn = await getUserFunction("delete-store-api-token");
       await fn?.({ storeId, token });
@@ -433,34 +440,21 @@ export const createApi = (cloud: ClientCloud) => {
       },
     },
     store: {
-      async add(store: Biqpod.Snapbuy.Store) {
-        const {
-          address = null,
-          name = null,
-          phone = null,
-          photo = null,
-        } = store;
+      async upsert(store: Partial<Biqpod.Snapbuy.Store>) {
+        const storeId = store.id || crypto.randomUUID();
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        var image: string | null = null;
-        const ref = [mainRef, "stores", store.id];
-        const data = await getDoc(ref);
-        if (data) {
-          throw "THIS STORE IS USED";
-        }
-        if (photo) {
-          const [file] = await uploadFiles([photo], () => {
-            return ["stores", store.id];
+        if (store.photo) {
+          const [file] = await uploadFiles([store.photo], () => {
+            return ["stores", storeId];
           });
-          image = file;
+          store.photo = file;
+        } else {
         }
-        await setDoc(ref, {
-          id: store.id,
-          address,
-          name,
-          phone,
-          photo: image,
-          uid,
+        await setDoc([mainRef, "stores", storeId], {
+          ...store,
+          id: storeId,
+          photo: store.photo || null,
         });
       },
       delete: async (id: string) => {
@@ -497,22 +491,6 @@ export const createApi = (cloud: ClientCloud) => {
           setTemp("stores." + storeId, doc);
         }
         return doc;
-      },
-      async update(storeId: string, store: Partial<Biqpod.Snapbuy.Store>) {
-        const uid = await getCurrentAuth();
-        if (!uid) throw "User not authenticated";
-        if (store.photo) {
-          const [file] = await uploadFiles([store.photo], () => {
-            return ["stores", storeId];
-          });
-          store.photo = file;
-        } else {
-        }
-        await setDoc([mainRef, "stores", storeId], {
-          id: storeId,
-          ...store,
-          photo: store.photo || null,
-        });
       },
       async getStoresOf(uid: string) {
         const stores = await getDocs<Biqpod.Snapbuy.Store>(
