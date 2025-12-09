@@ -186,10 +186,19 @@ export const createApi = (cloud: ClientCloud) => {
         if (!uid) throw "User not authenticated";
         await deleteDoc([mainRef, "collections", collectionId]);
       },
-      async upsert(props: Biqpod.Snapbuy.Collection) {
+      async upsert(collection: Biqpod.Snapbuy.Collection) {
         const createCollection =
           await getUserFunction<Biqpod.Snapbuy.Collection>("create-collection");
-        createCollection?.(props);
+        var files: File[] | undefined = undefined;
+        if (collection.photo?.includes("data:")) {
+          const response = await fetch(collection.photo).then((s) => s.blob());
+          files = [
+            new File([response], "photo.png", {
+              type: response.type,
+            }),
+          ];
+        }
+        await createCollection?.(collection, files);
       },
       async getProducts(collection: string | Biqpod.Snapbuy.Collection) {
         const collectionDoc =
@@ -724,13 +733,20 @@ export const createApi = (cloud: ClientCloud) => {
       },
     },
     brands: {
-      async create(
-        brand: Omit<Biqpod.Snapbuy.Brand, "id" | "createdAt" | "updatedAt">
-      ) {
+      async upsert(brand: Biqpod.Snapbuy.Brand) {
         const createBrand = await getUserFunction<Biqpod.Snapbuy.Brand>(
           "create-brand"
         );
-        return await createBrand?.(brand);
+        var files: File[] | undefined = undefined;
+        if (brand.photo?.includes("data:")) {
+          const response = await fetch(brand.photo).then((s) => s.blob());
+          files = [
+            new File([response], "photo.png", {
+              type: response.type,
+            }),
+          ];
+        }
+        return await createBrand?.(brand, files);
       },
       async getAll(storeId: string) {
         const brands = await getDocs<Biqpod.Snapbuy.Brand>(
@@ -763,18 +779,6 @@ export const createApi = (cloud: ClientCloud) => {
           return doc;
         }
         return brand;
-      },
-      async update(
-        brandId: string,
-        brand: Partial<Omit<Biqpod.Snapbuy.Brand, "id" | "createdAt" | "uid">>
-      ) {
-        const createBrand = await getUserFunction<Biqpod.Snapbuy.Brand>(
-          "create-brand"
-        );
-        return await createBrand?.({
-          id: brandId,
-          ...brand,
-        });
       },
       async delete(brandId: string) {
         const uid = await getCurrentAuth();

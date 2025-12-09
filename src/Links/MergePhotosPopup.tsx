@@ -97,10 +97,8 @@ export const MergePhotosPopup = ({
       URL.revokeObjectURL(objectURL);
       const mediaFile: MediaFile = {
         url: compressedDataURL,
-        type: "image",
         name: file.name,
         size: file.size,
-        isObjectURL: false,
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
     } catch (error) {
@@ -113,10 +111,8 @@ export const MergePhotosPopup = ({
       const compressedSrc = await compressImage(urlString, 0.3);
       const mediaFile: MediaFile = {
         url: compressedSrc,
-        type: "image",
         name: urlString.split("/").pop() || "unknown",
         size: 0,
-        isObjectURL: false,
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
     } catch (error) {
@@ -124,10 +120,8 @@ export const MergePhotosPopup = ({
       // Fallback to original URL
       const mediaFile: MediaFile = {
         url: urlString,
-        type: "image",
         name: urlString.split("/").pop() || "unknown",
         size: 0,
-        isObjectURL: false,
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
     }

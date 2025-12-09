@@ -21,15 +21,11 @@ import { useEffect, useState, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   compressImage,
-  createMediaFile,
   cleanupMediaFile,
   MediaFile,
-  isGLTFFile,
   createMediaFileFromURL,
-  getFileType,
 } from "../../../utils/utilities";
 import { snapbuyApi } from "../../../apis/index";
-import { MediaRenderer } from "../../../components/MediaRenderer";
 import { fuzzySearch, tw } from "@biqpod/app/ui/utils";
 import { useStoreId } from "../../../utils";
 import { Biqpod } from "@biqpod/app/ui/types";
@@ -37,6 +33,9 @@ export const ProductImages = () => {
   const images = useFormPhotos();
   const url = useCopyState("");
   const photos = getFormPhotos();
+  useEffect(() => {
+    console.log(photos);
+  }, [photos]);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const storeId = useStoreId();
   const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);
@@ -70,29 +69,18 @@ export const ProductImages = () => {
   }, [mediaFiles]);
   const addMediaFile = async (file: File) => {
     try {
-      const fileType = getFileType(file);
       let mediaFile: MediaFile;
-      if (fileType === "image") {
-        // For images, compress and create object URL
-        const objectURL = URL.createObjectURL(file);
-        const compressedDataURL = await compressImage(objectURL, 0.3);
-        // Clean up the temporary object URL
-        URL.revokeObjectURL(objectURL);
-        // Create MediaFile with compressed data URL (for now, could be optimized further)
-        mediaFile = {
-          url: compressedDataURL,
-          type: "image",
-          name: file.name,
-          size: file.size,
-          isObjectURL: false,
-        };
-      } else if (fileType === "gltf") {
-        // For GLTF files, use object URL directly for better performance
-        mediaFile = createMediaFile(file);
-      } else {
-        console.warn("Unsupported file type:", file.type);
-        return;
-      }
+      // For images, compress and create object URL
+      const objectURL = URL.createObjectURL(file);
+      const compressedDataURL = await compressImage(objectURL, 0.3);
+      // Clean up the temporary object URL
+      URL.revokeObjectURL(objectURL);
+      // Create MediaFile with compressed data URL (for now, could be optimized further)
+      mediaFile = {
+        url: compressedDataURL,
+        name: file.name,
+        size: file.size,
+      };
       setMediaFiles((prev) => [...prev, mediaFile]);
     } catch (error) {
       console.error("Failed to add media file:", error);
@@ -110,10 +98,8 @@ export const ProductImages = () => {
       mainUrl = url.get;
     }
     const mediaFile: MediaFile = {
-      type: isGLTFFile(urlString) ? "gltf" : "image",
       name: urlString.split("/").pop() || "unknown",
       size: 0,
-      isObjectURL: false,
       url: mainUrl,
     };
     setMediaFiles((prev) => [...prev, mediaFile]);
@@ -313,10 +299,7 @@ export const ProductImages = () => {
                 exit={{ opacity: 0 }}
                 className="rounded-2xl overflow-hidden"
               >
-                <MediaRenderer
-                  src={url.get}
-                  className="w-full h-full object-cover"
-                />
+                <img src={url.get} className="w-full h-full object-cover" />
               </motion.div>
             </div>
             <Line />
@@ -518,7 +501,7 @@ export const ProductImages = () => {
       <Scroll
         className={`p-1 ${
           isDragOver
-            ? "bg-[--biqpod-accent] bg-opacity-20 border-2 border-dashed border-[--biqpod-accent]"
+            ? "bg-[--biqpod-gray-opacity] bg-opacity-20 border-2 border-dashed border-[--biqpod-accent]"
             : ""
         }`}
         onDragOver={(e) => {
@@ -538,10 +521,7 @@ export const ProductImages = () => {
           setIsDragOver(false);
           const files = Array.from(e.dataTransfer.files);
           for (const file of files) {
-            const fileType = getFileType(file);
-            if (fileType !== "unknown") {
-              await addMediaFile(file);
-            }
+            await addMediaFile(file);
           }
         }}
       >
@@ -586,17 +566,10 @@ export const ProductImages = () => {
                 }`}
                 onClick={() => setSelectedMedia(mediaFile)}
               >
-                {isGLTFFile(mediaFile.url) ? (
-                  <MediaRenderer
-                    mediaFile={mediaFile}
-                    className="w-full h-full object-cover"
-                  />
-                ) : (
-                  <img
-                    className="w-full h-full object-cover"
-                    src={mediaFile.url}
-                  />
-                )}
+                <img
+                  className="w-full h-full object-cover"
+                  src={mediaFile.url}
+                />
                 {isHidden && (
                   <div className="absolute inset-0 flex justify-center items-center bg-black bg-opacity-30">
                     <Icon
@@ -659,8 +632,8 @@ export const ProductImages = () => {
                   onClick={() => setSelectedMedia(null)}
                 />
               </div>
-              <MediaRenderer
-                mediaFile={selectedMedia}
+              <img
+                src={selectedMedia.url}
                 className="rounded-lg max-w-full max-h-full object-contain"
                 alt="Product media"
               />

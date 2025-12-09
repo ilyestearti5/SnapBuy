@@ -166,7 +166,7 @@ const ImportExportPopup = ({ mode }: ImportExportPopupProps) => {
               }
               if (data.brands && Array.isArray(data.brands)) {
                 for (const brand of data.brands) {
-                  await snapbuyApi.brands.create({ ...brand, storeId });
+                  await snapbuyApi.brands.upsert({ ...brand, storeId });
                 }
               }
               if (data.packs && Array.isArray(data.packs)) {

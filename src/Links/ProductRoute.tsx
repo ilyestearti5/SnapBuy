@@ -271,11 +271,11 @@ export const ProductRoute = () => {
     <div className="relative flex flex-col w-full h-full overflow-hidden">
       {product && (
         <EmptyComponent>
-          <Scroll>
-            <div className="h-[50vh]">
+          <Scroll className="flex max-md:flex-col">
+            <div className="w-full h-[50vh]">
               <ImageSlider viewImages zoom photos={product?.photos || []} />
             </div>
-            <EmptyComponent>
+            <div className="w-full">
               <FormSection title="form : " />
               <div className="flex flex-col gap-2 p-2">
                 <label className="capitalize">
@@ -320,7 +320,6 @@ export const ProductRoute = () => {
                 </label>
                 <BooleanField config={{}} id="delivery" state={deliveryState} />
               </div>
-              <Line />
               <div className="flex flex-col gap-2 p-2">
                 <label className="capitalize">
                   <Translate content="address" /> :
@@ -387,7 +386,6 @@ export const ProductRoute = () => {
               </div>
               {!!formStructor?.length && (
                 <EmptyComponent>
-                  <Line />
                   {formStructor?.map((form) => {
                     return (
                       <div key={form.id} className="flex flex-col gap-2 p-2">
@@ -406,7 +404,6 @@ export const ProductRoute = () => {
                   })}
                 </EmptyComponent>
               )}
-              <Line />
               <div className="flex justify-center items-center gap-2 p-4">
                 <div>
                   <CircleTip
@@ -456,12 +453,12 @@ export const ProductRoute = () => {
                   />
                 </div>
               </div>
-            </EmptyComponent>
-            <FormSection title="description : " />
-            <div className="p-4">
-              <MarkDown
-                value={product?.description || "No Description Found"}
-              />
+              <FormSection title="description : " />
+              <div className="p-4">
+                <MarkDown
+                  value={product?.description || "No Description Found"}
+                />
+              </div>
             </div>
           </Scroll>
           <Line />

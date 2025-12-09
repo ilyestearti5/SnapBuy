@@ -41,6 +41,7 @@ export const {
   signInWithCustomToken,
   getCurrentAuth,
 } = cloud.app.auth;
+
 export const {
   upsertFile: uploadFile,
   deleteFile,

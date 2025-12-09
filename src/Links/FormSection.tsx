@@ -1,22 +1,13 @@
-import { Line, Translate } from "@biqpod/app/ui/components";
-import { useColorMerge } from "@biqpod/app/ui/hooks";
-
+import { Translate } from "@biqpod/app/ui/components";
 export interface FormSectionProps {
   title: string;
 }
 export const FormSection = ({ title }: FormSectionProps) => {
-  const colorMerge = useColorMerge();
   return (
-    <div
-      style={{
-        ...colorMerge("secondary.background"),
-      }}
-    >
-      <Line />
+    <div className="bg-[--biqpod-secondary-background]">
       <div className="p-3 text-3xl capitalize">
         <Translate content={title} />
       </div>
-      <Line />
     </div>
   );
 };

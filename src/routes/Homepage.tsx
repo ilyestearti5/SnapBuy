@@ -1,7 +1,19 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { Button, Icon, Translate, Card, Line } from "@biqpod/app/ui/components";
+import {
+  Button,
+  Icon,
+  Translate,
+  Card,
+  Line,
+  Image,
+  CardWait,
+} from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
+import { getIndexedDBItem } from "@biqpod/app/ui/hooks";
+import { useUser } from "@biqpod/app/ui/hooks";
+import { useEffect, useState } from "react";
+import { Biqpod } from "@biqpod/app/ui/types";
 import snapbuy from "../assets/snapbuy.png";
 import store from "../assets/store.png";
 import delivery from "../assets/delivery.png";
@@ -27,7 +39,43 @@ const scaleIn = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
 };
+
+const MAX_RECENT_STORES = 5;
+
 export const Homepage = () => {
+  const user = useUser();
+  const [recentStores, setRecentStores] = useState<Biqpod.Snapbuy.Store[]>([]);
+  const [loadingRecent, setLoadingRecent] = useState(true);
+
+  // Load recently visited stores from IndexedDB
+  useEffect(() => {
+    const loadRecentStores = async () => {
+      if (!user) {
+        setLoadingRecent(false);
+        return;
+      }
+
+      try {
+        const key = `recently-visited-${user.uid}`;
+        const data = await getIndexedDBItem<{
+          userId: string;
+          stores: Biqpod.Snapbuy.Store[];
+          lastUpdated: number;
+        }>(key);
+
+        if (data?.stores) {
+          setRecentStores(data.stores.slice(0, MAX_RECENT_STORES));
+        }
+      } catch (error) {
+        console.error("Error loading recent stores:", error);
+      } finally {
+        setLoadingRecent(false);
+      }
+    };
+
+    loadRecentStores();
+  }, [user]);
+
   const features = [
     {
       icon: allIcons.solid.faStore,
@@ -286,6 +334,92 @@ export const Homepage = () => {
         </div>
       </section>
       <Line />
+      {/* Recently Visited Stores Section */}
+      {user && (loadingRecent || recentStores.length > 0) && (
+        <>
+          <section className="py-20">
+            <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+              <motion.div
+                initial="hidden"
+                whileInView="visible"
+                viewport={{ once: true }}
+                variants={staggerContainer}
+              >
+                <motion.h2
+                  variants={fadeInUp}
+                  className="mb-4 font-bold text-[--biqpod-text-color] text-3xl md:text-4xl text-center"
+                >
+                  <Translate content="Recently Visited Stores" />
+                </motion.h2>
+                <motion.p
+                  variants={fadeInUp}
+                  className="opacity-80 mx-auto mb-12 max-w-2xl text-[--biqpod-text-color] text-xl text-center"
+                >
+                  <Translate content="Quick access to your recently visited stores" />
+                </motion.p>
+                {loadingRecent ? (
+                  <motion.div
+                    variants={staggerContainer}
+                    className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                  >
+                    {Array.from({ length: MAX_RECENT_STORES }).map(
+                      (_, index) => (
+                        <CardWait key={index} className="h-[180px]" />
+                      )
+                    )}
+                  </motion.div>
+                ) : (
+                  <motion.div
+                    variants={staggerContainer}
+                    className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5"
+                  >
+                    {recentStores.map((store) => (
+                      <motion.div
+                        key={store.id}
+                        variants={scaleIn}
+                        whileHover={{ y: -8, scale: 1.02 }}
+                        transition={{ duration: 0.3 }}
+                      >
+                        <Link to={`/store/${store.id}/dashboard`}>
+                          <Card className="shadow-lg hover:shadow-xl p-4 transition-all duration-300 cursor-pointer">
+                            <div className="flex flex-col items-center text-center">
+                              <Image
+                                className="bg-[--biqpod-gray-opacity] mb-4 rounded-xl w-20 h-20 object-cover"
+                                src={store.photo}
+                                alt={
+                                  <div className="flex justify-center items-center font-bold text-2xl">
+                                    {store.name[0]?.toUpperCase()}
+                                  </div>
+                                }
+                              />
+                              <h3 className="mb-2 font-semibold text-[--biqpod-text-color] text-lg line-clamp-1">
+                                {store.name}
+                              </h3>
+                              <p className="opacity-70 text-[--biqpod-text-color] text-sm line-clamp-1">
+                                {store.phone}
+                              </p>
+                              <div className="flex items-center gap-2 mt-3">
+                                <Icon
+                                  icon={allIcons.solid.faArrowRight}
+                                  className="text-[--biqpod-primary] text-sm"
+                                />
+                                <span className="font-medium text-[--biqpod-primary] text-sm">
+                                  <Translate content="Visit Store" />
+                                </span>
+                              </div>
+                            </div>
+                          </Card>
+                        </Link>
+                      </motion.div>
+                    ))}
+                  </motion.div>
+                )}
+              </motion.div>
+            </div>
+          </section>
+          <Line />
+        </>
+      )}
       {/* Video Section */}
       <section id="video" className="py-20">
         <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">

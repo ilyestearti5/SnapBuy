@@ -1,9 +1,8 @@
 import React from "react";
-import { Icon, Button, CircleTip } from "@biqpod/app/ui/components";
+import { Icon, Button, CircleTip, Image } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { tw } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
-import { MediaRenderer } from "./MediaRenderer";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 export interface ProductCardProps {
@@ -64,8 +63,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Product Image */}
         <div className="flex-shrink-0 bg-[--biqpod-gray-opacity] rounded-lg w-16 h-16 overflow-hidden">
           {product.photos && product.photos.length > 0 ? (
-            <MediaRenderer
-              src={product.photos[0]}
+            <Image
+              src={product.photos.at(0)}
               alt={product.name || "Product"}
               className="w-full h-full object-cover"
             />
@@ -113,8 +112,8 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Product Image */}
       <div className="relative bg-[--biqpod-gray-opacity] aspect-square overflow-hidden">
         {product.photos && product.photos.length > 0 ? (
-          <MediaRenderer
-            src={product.photos[0]}
+          <Image
+            src={product.photos.at(0)}
             alt={product.name || "Product"}
             className="w-full h-full object-cover"
           />
@@ -168,24 +167,6 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             </div>
           )}
         </div>
-        {/* Tags/Keywords */}
-        {product.keys && product.keys.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-4">
-            {product.keys.slice(0, 3).map((tag, index) => (
-              <span
-                key={index}
-                className="bg-[--biqpod-gray-opacity] px-2 py-1 rounded text-xs"
-              >
-                {tag}
-              </span>
-            ))}
-            {product.keys.length > 3 && (
-              <span className="text-[--biqpod-text-secondary] text-xs">
-                +{product.keys.length - 3} more
-              </span>
-            )}
-          </div>
-        )}
         {/* Actions */}
         <div className="flex items-center gap-2">
           {canAddToCart && (

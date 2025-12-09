@@ -35,9 +35,20 @@ import { useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../../apis";
 import { allIcons } from "@biqpod/app/ui/apis";
 import type { DataTypes } from "../../apis";
+import { useStoreVisit } from "../../hooks/useStoreVisit";
 export const Store = () => {
   const loc = useLocation();
   const storeId = useParams<{ storeId: string }>().storeId;
+  const user = useUser();
+
+  // Get store data for tracking
+  const storeData = useAsyncMemo(async () => {
+    if (!storeId) return null;
+    return await snapbuyApi.store.get(storeId);
+  }, [storeId]);
+
+  // Track store visit
+  useStoreVisit(storeId, storeData, user?.uid);
   const selectedTab = userTabs.find(
     (item) => item.link.replaceAll(`{storeId}`, storeId) === loc.pathname
   );
@@ -57,7 +68,6 @@ export const Store = () => {
     },
     [storeId]
   );
-  const user = useUser();
   const usedBy = useUsedBy(user);
   const currentPayments = useCurrentPayments();
   // Get all active subscriptions

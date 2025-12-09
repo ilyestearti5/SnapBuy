@@ -2,7 +2,6 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import {
   EmptyComponent,
   Icon,
-  Key,
   Line,
   MarkDown,
   Translate,
@@ -45,17 +44,6 @@ export const ProductDataBeforeCreate = () => {
             <p className="font-semibold capitalize">
               <Translate content="keys" />:
             </p>
-          </div>
-          <div className="flex items-center gap-1 w-full">
-            {!!product.keys?.length ? (
-              product.keys.map((info) => {
-                return <Key key={info}>{info}</Key>;
-              })
-            ) : (
-              <span className="text-[--biqpod-gray-opacity] capitalize">
-                <Translate content="no keys" />
-              </span>
-            )}
           </div>
         </div>
         <div className="flex items-center gap-2 p-2 w-full">

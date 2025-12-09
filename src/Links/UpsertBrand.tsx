@@ -37,10 +37,8 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
 
   // Set field values when editing a brand
   useEffect(() => {
-    if (brand) {
-      setFieldValue("brand-name", brand.name || "");
-      setFieldValue("brand-description", brand.description || "");
-    }
+    setFieldValue("brand-name", brand?.name || "");
+    setFieldValue("brand-description", brand?.description || "");
   }, [brand]);
   // Handle file upload (paste, drag & drop, or file input)
   const handleFileUpload = async (file: File) => {
@@ -171,15 +169,13 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
         photo: photo.get || undefined,
         storeId,
       };
-      if (brand?.id) {
-        // Update existing brand
-        await snapbuyApi.brands.update(brand.id, brandData);
-        showToast("Brand updated successfully", "success");
-      } else {
-        // Create new brand
-        await snapbuyApi.brands.create(brandData);
-        showToast("Brand created successfully", "success");
-      }
+      await snapbuyApi.brands.upsert({
+        id: brand?.id,
+        ...brandData,
+      });
+      showToast(
+        brand?.id ? "Brand updated successfully" : "Brand created successfully"
+      );
       execAction("fetch-brands");
       closePopup();
     },
@@ -190,11 +186,7 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
     <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-2">
         <h1 className="text-2xl capitalize">
-          {brand ? (
-            <Translate content="edit brand" />
-          ) : (
-            <Translate content="create brand" />
-          )}
+          <Translate content={brand ? "edit brand" : "create brand"} />
         </h1>
         <div className="flex">
           <CircleTip

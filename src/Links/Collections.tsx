@@ -348,23 +348,6 @@ export const Collections = () => {
               <p className="mb-4 max-w-sm text-[--biqpod-text-secondary] text-sm">
                 <Translate content="collections help organize your products into groups. Create your first collection to get started!" />
               </p>
-              {(usedBy === "owned" || usedBy === "read/edit") && (
-                <motion.div
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.6 }}
-                >
-                  <Button
-                    onClick={() => {
-                      showPopup(<UpsertCollection />);
-                    }}
-                    icon={allIcons.solid.faPlus}
-                    className="px-6 py-2 rounded-full"
-                  >
-                    <Translate content="create your first collection" />
-                  </Button>
-                </motion.div>
-              )}
             </motion.div>
           </div>
         </motion.div>

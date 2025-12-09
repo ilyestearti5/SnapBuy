@@ -41,7 +41,6 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const clientPrice = product.single?.client || 0;
   const customerPrice = product.single?.customer || 0;
   const isPromotion = product.type === "multiple";
-
   // Determine width class based on device type
   const getWidthClass = () => {
     if (isMobile) return "w-1/2";
@@ -94,7 +93,6 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
               />
             </div>
           )}
-
           {!!product.available && (
             <div className="inline-flex top-0 right-0 absolute items-center gap-2 bg-[--biqpod-primary] px-3 py-1 rounded-es-2xl text-[--biqpod-primary-content] capitalize">
               <Icon icon={allIcons.solid.faTag} />
