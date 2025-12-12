@@ -35,7 +35,6 @@ import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { Packs } from "./Packs";
 import { Biqpod } from "@biqpod/app/ui/types";
-
 // Helper function for fuzzy highlighting
 const highlightFuzzy = (text: string, query: string): React.ReactNode => {
   if (!query || query.trim() === "") return text;
@@ -98,7 +97,6 @@ const highlightFuzzy = (text: string, query: string): React.ReactNode => {
   }
   return result;
 };
-
 interface PackLineProductProps {
   product?: Biqpod.Snapbuy.Product | null;
   onChange?: (prod: Biqpod.Snapbuy.Product, count: number) => void;

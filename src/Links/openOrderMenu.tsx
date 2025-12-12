@@ -142,7 +142,7 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
       {
         label: "Change Status",
         async click() {
-          showPopup(<ChangeStatus order={order} />);
+          showPopup(<ChangeStatus orders={order} />);
         },
         defaultIcon: allIcons.solid.faCheck,
       },

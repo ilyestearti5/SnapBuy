@@ -1,9 +1,11 @@
 import {
   ArrayField,
+  BooleanField,
   Button,
   Card,
   CardHeaderForPopup,
   CircleTip,
+  EmptyComponent,
   EnumField,
   Icon,
   Line,
@@ -15,6 +17,7 @@ import {
   useSettingValue,
   showPopup,
   openMenu,
+  confirm,
 } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
 import { useEffect } from "react";
@@ -40,7 +43,7 @@ import {
   buttonVariants,
   codeBlockVariants,
 } from "../utils/constants";
-
+import { tw } from "@biqpod/app/ui/utils";
 interface UsageInstructionsProps {
   token: string;
 }
@@ -306,10 +309,14 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
 export const Integrations = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
-  const apiTokens = useCopyState<string[] | null>(null);
+  const apiTokens = useCopyState<
+    { role: "sdk" | "client"; token: string }[] | null
+  >(null);
   const isGenerating = useCopyState(false);
   const isLoading = useCopyState(false);
   const error = useCopyState<string | null>(null);
+  const isSelectionMode = useCopyState(false);
+  const selectedTokens = useCopyState<string[]>([]);
   // Load existing token on component mount
   useEffect(() => {
     const loadExistingToken = async () => {
@@ -317,7 +324,7 @@ export const Integrations = () => {
       isLoading.set(true);
       error.set(null);
       try {
-        const existingToken = await snapbuyApi.getPartOfToken(storeId);
+        const existingToken = await snapbuyApi.getAllTokens(storeId);
         if (existingToken) {
           apiTokens.set(existingToken);
         }
@@ -332,32 +339,120 @@ export const Integrations = () => {
   }, [storeId]);
   // Programming language options
   // Function to generate a real API token using snapbuyApi
-  const generateToken = async () => {
+  const generateToken = async (
+    e: React.MouseEvent<HTMLButtonElement, MouseEvent>
+  ) => {
     if (!storeId) {
       error.set("Store ID is required for token generation");
       return;
     }
-    isGenerating.set(true);
     error.set(null);
-    try {
-      const partOfToken = await snapbuyApi.generateStoreApiToken(storeId);
-      if (partOfToken) {
-        apiTokens.set((s) => [...(s || []), partOfToken]);
-        error.set(null);
-      } else {
-        throw new Error("No token received from API");
-      }
-    } catch (err) {
-      console.error("Failed to generate API token:", err);
-      error.set(
-        "Failed to generate API token. Please try again or contact support."
-      );
-      // Fallback to demo token if API fails
-    } finally {
-      isGenerating.set(false);
-    }
+    openMenu({
+      x: e.clientX,
+      y: e.clientY,
+      menu: [
+        {
+          label: "Client",
+          defaultIcon: allIcons.solid.faUser,
+          async click() {
+            isGenerating.set(true);
+            try {
+              const tokensList = await snapbuyApi.generateStoreApiToken(
+                storeId
+              );
+              if (tokensList) {
+                apiTokens.set((s) => [...(s || []), tokensList]);
+                error.set(null);
+              } else {
+                throw new Error("No token received from API");
+              }
+            } catch (err) {
+              console.error("Failed to generate API token:", err);
+              error.set(
+                "Failed to generate API token. Please try again or contact support."
+              );
+              // Fallback to demo token if API fails
+            } finally {
+              isGenerating.set(false);
+            }
+          },
+        },
+        {
+          label: "SDK",
+          defaultIcon: allIcons.solid.faCubes,
+          async click() {
+            isGenerating.set(true);
+            try {
+              const partOfToken = await snapbuyApi.generateStoreApiToken(
+                storeId,
+                "sdk"
+              );
+              if (partOfToken) {
+                apiTokens.set((s) => [...(s || []), partOfToken]);
+                error.set(null);
+              } else {
+                throw new Error("No token received from API");
+              }
+            } catch (err) {
+              console.error("Failed to generate API token:", err);
+              error.set(
+                "Failed to generate API token. Please try again or contact support."
+              );
+              // Fallback to demo token if API fails
+            } finally {
+              isGenerating.set(false);
+            }
+          },
+        },
+      ],
+    });
   };
   // Function to copy token to clipboard
+  const toggleSelectionMode = () => {
+    isSelectionMode.set(!isSelectionMode.get);
+    selectedTokens.set([]);
+  };
+  const selectAllTokens = () => {
+    if (apiTokens.get) {
+      selectedTokens.set(apiTokens.get.map((t) => t.token));
+    }
+  };
+  const deselectAllTokens = () => {
+    selectedTokens.set([]);
+  };
+  const bulkDeleteTokens = async () => {
+    if (selectedTokens.get.length === 0 || !storeId) return;
+    const response = await confirm({
+      title: "Delete Selected Tokens",
+      message: `Are you sure you want to delete ${selectedTokens.get.length} API token(s)? This action cannot be undone.`,
+      type: "warning",
+    });
+    if (!response) return;
+    try {
+      // Delete all selected tokens
+      await Promise.all(
+        selectedTokens.get.map((token) =>
+          snapbuyApi.deleteToken(storeId, token)
+        )
+      );
+      showToast(
+        `${selectedTokens.get.length} token(s) deleted successfully`,
+        "success"
+      );
+      // Remove deleted tokens from state
+      apiTokens.set((tokens) =>
+        tokens
+          ? tokens.filter((t) => !selectedTokens.get.includes(t.token))
+          : []
+      );
+      // Exit selection mode and clear selection
+      selectedTokens.set([]);
+      isSelectionMode.set(false);
+    } catch (err) {
+      console.error("Failed to delete tokens:", err);
+      error.set("Failed to delete some tokens. Please try again.");
+    }
+  };
   return usedBy === "owned" ? (
     <motion.div
       className="space-y-6 p-4"
@@ -452,92 +547,247 @@ export const Integrations = () => {
             ) : (
               apiTokens.get && (
                 <AnimatePresence>
-                  <div className="bg-[--biqpod-gray-opacity] rounded-xl">
-                    {apiTokens.get.map((token) => {
+                  <div className="bg-[--biqpod-primary-background] border border-[--biqpod-borders] border-solid rounded-xl">
+                    {/* Selection Mode Header */}
+                    <motion.div
+                      className="flex justify-between items-center p-3 border-[--biqpod-borders] border-b"
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <span className="text-[--biqpod-text-color] text-sm">
+                          {selectedTokens.get.length} of {apiTokens.get.length}{" "}
+                          selected
+                        </span>
+                      </div>
+                      <div className="flex gap-2">
+                        {isSelectionMode.get &&
+                          apiTokens.get.length !==
+                            selectedTokens.get.length && (
+                            <Button
+                              onClick={selectAllTokens}
+                              className="px-3 py-1 text-sm text-nowrap"
+                            >
+                              Select All
+                            </Button>
+                          )}
+                        {isSelectionMode.get &&
+                          apiTokens.get.length ===
+                            selectedTokens.get.length && (
+                            <Button
+                              onClick={deselectAllTokens}
+                              className="px-3 py-1 text-sm text-nowrap"
+                            >
+                              Deselect All
+                            </Button>
+                          )}
+                        {selectedTokens.get.length > 0 && (
+                          <div>
+                            <Button
+                              onClick={bulkDeleteTokens}
+                              className="bg-red-500 hover:bg-red-600 px-3 py-1 text-white text-sm text-nowrap"
+                            >
+                              Delete Selected ({selectedTokens.get.length})
+                            </Button>
+                          </div>
+                        )}
+                        {apiTokens.get && apiTokens.get.length > 0 && (
+                          <div>
+                            <Button
+                              onClick={toggleSelectionMode}
+                              className="bg-[--biqpod-gray-opacity-2] px-3 py-1 text-sm text-nowrap"
+                            >
+                              <Icon
+                                icon={
+                                  isSelectionMode.get
+                                    ? allIcons.solid.faTimes
+                                    : allIcons.solid.faCheckSquare
+                                }
+                                className="mr-2"
+                              />
+                              <Translate
+                                content={
+                                  isSelectionMode.get
+                                    ? "Exit Selection"
+                                    : "Select Multiple"
+                                }
+                              />
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                    <Line />
+                    {apiTokens.get.map((token, index) => {
+                      const isSelected = selectedTokens.get.includes(
+                        token.token
+                      );
                       return (
-                        <motion.div
-                          className="space-y-3"
-                          variants={tokenContainerVariants}
-                          initial="hidden"
-                          animate="visible"
-                          exit="exit"
-                        >
+                        <EmptyComponent key={token.token}>
+                          {!!index && <Line />}
                           <motion.div
-                            className="flex justify-between items-center gap-3 p-2"
-                            variants={tokenVariants}
+                            className="space-y-3 p-2"
+                            variants={tokenContainerVariants}
+                            initial="hidden"
+                            animate="visible"
+                            exit="exit"
                           >
-                            <motion.div className="flex-1rounded-lg font-mono text-sm">
-                              {token}
-                            </motion.div>
                             <motion.div
-                              className="flex gap-3"
+                              className="flex justify-between items-center gap-3"
                               variants={tokenVariants}
                             >
-                              <CircleTip
-                                icon={allIcons.solid.faEllipsisV}
-                                onClick={({ clientX, clientY }) => {
-                                  openMenu({
-                                    x: clientX,
-                                    y: clientY,
-                                    menu: [
-                                      {
-                                        label: "Usage Instructions",
-                                        defaultIcon: allIcons.solid.faCode,
-                                        click() {
-                                          showPopup(
-                                            <UsageInstructions token={token} />
+                              <motion.div className="flex items-center gap-2 font-mono text-sm">
+                                {isSelectionMode.get && (
+                                  <BooleanField
+                                    config={{
+                                      style: "checkbox",
+                                    }}
+                                    state={{
+                                      get: isSelected,
+                                      set: (val) => {
+                                        const value =
+                                          typeof val === "function"
+                                            ? val(isSelected)
+                                            : val;
+                                        if (value) {
+                                          selectedTokens.set((prev) => [
+                                            ...prev,
+                                            token.token,
+                                          ]);
+                                        } else {
+                                          selectedTokens.set((prev) =>
+                                            prev.filter(
+                                              (t) => t !== token.token
+                                            )
                                           );
-                                        },
+                                        }
                                       },
-                                      {
-                                        label: "Origins",
-                                        defaultIcon: allIcons.solid.faGlobe,
-                                        click() {
-                                          showPopup(
-                                            <SettingOrigins token={token} />
-                                          );
+                                    }}
+                                  />
+                                )}
+                                <Icon
+                                  className={tw(
+                                    token.role === "sdk"
+                                      ? "text-[--biqpod-primary]"
+                                      : "text-[--biqpod-accent]"
+                                  )}
+                                  icon={
+                                    token.role === "sdk"
+                                      ? allIcons.solid.faCubes
+                                      : allIcons.solid.faUser
+                                  }
+                                />
+                                {token.token}
+                              </motion.div>
+                              <motion.div
+                                className={tw(
+                                  "flex gap-3",
+                                  isSelectionMode.get && "invisible"
+                                )}
+                                variants={tokenVariants}
+                              >
+                                <CircleTip
+                                  icon={allIcons.solid.faEllipsisV}
+                                  onClick={({ clientX, clientY }) => {
+                                    openMenu({
+                                      x: clientX,
+                                      y: clientY,
+                                      menu: [
+                                        {
+                                          label: "Usage Instructions",
+                                          defaultIcon: allIcons.solid.faCode,
+                                          click() {
+                                            showPopup(
+                                              <UsageInstructions
+                                                token={token.token}
+                                              />
+                                            );
+                                          },
                                         },
-                                      },
-                                      {
-                                        label: "Delete Token",
-                                        defaultIcon: allIcons.solid.faTrashAlt,
-                                        click: async () => {
-                                          // delete token
-                                          await snapbuyApi.deleteToken(
-                                            storeId,
-                                            token
-                                          );
-                                          showToast("Token deleted", "success");
-                                          // Remove token from state
-                                          apiTokens.set((tokens) =>
-                                            tokens
-                                              ? tokens.filter(
-                                                  (t) => t !== token
-                                                )
-                                              : []
-                                          );
+                                        {
+                                          label: "Origins",
+                                          defaultIcon: allIcons.solid.faGlobe,
+                                          click() {
+                                            showPopup(
+                                              <SettingOrigins
+                                                token={token.token}
+                                              />
+                                            );
+                                          },
                                         },
-                                      },
-                                      {
-                                        label: "Copy Token",
-                                        defaultIcon: allIcons.regular.faCopy,
-                                        click() {
-                                          navigator.clipboard.writeText(token);
-                                          showToast(
-                                            "Api Token copied to clipboard",
-                                            "success"
-                                          );
+                                        {
+                                          label: "Delete Token",
+                                          defaultIcon:
+                                            allIcons.solid.faTrashAlt,
+                                          click: async () => {
+                                            const response = await confirm({
+                                              title: "Delete API Token",
+                                              message:
+                                                "Are you sure you want to delete this API token? This action cannot be undone.",
+                                              type: "warning",
+                                            });
+                                            if (!response) {
+                                              return;
+                                            }
+                                            // delete token
+                                            await snapbuyApi.deleteToken(
+                                              storeId,
+                                              token.token
+                                            );
+                                            showToast(
+                                              "Token deleted",
+                                              "success"
+                                            );
+                                            // Remove token from state
+                                            apiTokens.set((tokens) =>
+                                              tokens
+                                                ? tokens.filter(
+                                                    (t) => t !== token
+                                                  )
+                                                : []
+                                            );
+                                          },
                                         },
-                                      },
-                                    ],
-                                  });
-                                }}
-                              />
+                                        {
+                                          label: "Copy Token",
+                                          defaultIcon: allIcons.regular.faCopy,
+                                          click() {
+                                            navigator.clipboard.writeText(
+                                              token.token
+                                            );
+                                            showToast(
+                                              "Api Token copied to clipboard",
+                                              "success"
+                                            );
+                                          },
+                                        },
+                                      ],
+                                    });
+                                  }}
+                                />
+                              </motion.div>
                             </motion.div>
                           </motion.div>
-                        </motion.div>
+                        </EmptyComponent>
                       );
                     })}
+                    {apiTokens.get.length === 0 && (
+                      <motion.div
+                        className="p-4"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 }}
+                      >
+                        <motion.p
+                          className="opacity-70 text-[--biqpod-text-color]"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 0.7 }}
+                          transition={{ delay: 0.3 }}
+                        >
+                          <Translate content="No API tokens found. Generate a new token to get started." />
+                        </motion.p>
+                      </motion.div>
+                    )}
                   </div>
                 </AnimatePresence>
               )
@@ -546,7 +796,7 @@ export const Integrations = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.7 }}
-              className="mt-2"
+              className="flex justify-end gap-2 mt-2"
             >
               <motion.div
                 variants={buttonVariants}

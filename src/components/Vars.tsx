@@ -172,7 +172,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
     <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <CardHeaderForPopup title={variable ? "Edit Variable" : "Add Variable"} />
       <Line />
-      <div className="flex flex-col gap-4 h-full">
+      <div className="flex flex-col h-full">
         <div className="p-2">
           <Field
             inputName="var-name"
@@ -184,6 +184,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
             }}
             propositions={propositions}
             placeholder="Enter Name"
+            className="rounded-xl"
           />
         </div>
         <Line />
@@ -215,10 +216,9 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
           </EmptyComponent>
         )}
       </div>
-      <Line />
-      <div className="flex justify-end gap-2 p-4">
+      <div className="flex justify-end gap-2 p-2">
         <Button
-          className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+          className="bg-[--biqpod-gray-opacity] rounded-full text-[--biqpod-text-color]"
           onClick={() => {
             closePopup();
           }}
@@ -226,6 +226,7 @@ const UpsertVar = ({ variable }: UpsertVarProps) => {
           <Translate content="cancel" />
         </Button>
         <Button
+          className="rounded-full"
           rightIcon={
             upsertAction?.status === "loading"
               ? allIcons.solid.faSpinner

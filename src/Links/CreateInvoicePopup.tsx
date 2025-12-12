@@ -21,6 +21,7 @@ import {
   isLoading,
   getFieldValue,
   openMenu,
+  setFieldValue,
 } from "@biqpod/app/ui/hooks";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { snapbuyApi } from "../apis";
@@ -28,7 +29,16 @@ import { useStoreId } from "../utils";
 import { AddProductPopup } from "./AddProductPopup";
 import { AddProductInformation } from "./AddProductInformation";
 import { Icon } from "@biqpod/app/ui/shared";
-export const CreateInvoicePopup = () => {
+import { useEffect } from "react";
+interface UpsertInvoiceProps {
+  invoice?: Biqpod.Snapbuy.Invoice;
+}
+export const UpsertInvoice = ({ invoice }: UpsertInvoiceProps) => {
+  useEffect(() => {
+    setFieldValue("customerName", invoice?.customerName || "");
+    setFieldValue("customerEmail", invoice?.customerEmail || "");
+    setFieldValue("invoiceNotes", invoice?.notes || "");
+  }, [invoice]);
   const storeId = useStoreId();
   const customerName = getFieldValue("customerName");
   const customerEmail = getFieldValue("customerEmail");
@@ -89,6 +99,7 @@ export const CreateInvoicePopup = () => {
       return;
     }
     await snapbuyApi.invoice.create({
+      id: invoice?.id,
       storeId,
       customerName,
       customerEmail,

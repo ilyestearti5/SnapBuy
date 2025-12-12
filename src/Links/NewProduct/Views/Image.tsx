@@ -33,9 +33,6 @@ export const ProductImages = () => {
   const images = useFormPhotos();
   const url = useCopyState("");
   const photos = getFormPhotos();
-  useEffect(() => {
-    console.log(photos);
-  }, [photos]);
   const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
   const storeId = useStoreId();
   const [selectedMedia, setSelectedMedia] = useState<MediaFile | null>(null);

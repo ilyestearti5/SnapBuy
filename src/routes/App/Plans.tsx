@@ -295,7 +295,7 @@ export const Plans = () => {
                                 className={`w-full h-2 rounded-full ${bgColor}`}
                               >
                                 <div
-                                  className={`h-2 rounded-full transition-all duration-300 ${barColor}`}
+                                  className={`h-2 rounded-full  duration-300 ${barColor}`}
                                   style={{
                                     width: `${Math.min(
                                       progressPercentage,
@@ -407,7 +407,7 @@ export const Plans = () => {
                     <div
                       key={price.type}
                       className={tw(
-                        "bg-[--biqpod-secondary-background] p-4 border border-solid rounded-lg transition-all",
+                        "bg-[--biqpod-secondary-background] p-4 border border-solid rounded-lg ",
                         isAtLimit
                           ? "border-red-500/50"
                           : isNearLimit
@@ -528,7 +528,7 @@ export const Plans = () => {
                               {/* Current usage bar */}
                               <div
                                 className={tw(
-                                  "relative h-full transition-all duration-300",
+                                  "relative h-full duration-300",
                                   isAtLimit
                                     ? "bg-red-500"
                                     : isNearLimit
@@ -746,7 +746,7 @@ export const Plans = () => {
                                 >
                                   <Icon
                                     icon={allIcons.solid.faCircleInfo}
-                                    className="opacity-60 hover:opacity-80 text-[--biqpod-text-color] text-sm transition-colors"
+                                    className="opacity-60 hover:opacity-80 text-[--biqpod-text-color] text-sm"
                                   />
                                   {tooltipVisible === price.type && (
                                     <div className="top-1/2 left-full z-10 absolute bg-[--biqpod-gray-opacity] shadow-lg backdrop-blur-md ml-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap -translate-y-1/2 transform">

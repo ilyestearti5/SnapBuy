@@ -58,7 +58,7 @@ export const ClientProductRender = React.memo(
     const storeId = product.storeId!;
     const cartCount = useCartCount(storeId, product.id!);
     const hasCart = cartCount > 0;
-    const photos = Array.isArray(product.photos) ? product.photos : [];
+    const photos = Array.isArray(product.photos) ? [...product.photos] : [];
     // pour promostion
     const isPromotion = product.type === "multiple";
     const prices = product.multiple?.prices || [];

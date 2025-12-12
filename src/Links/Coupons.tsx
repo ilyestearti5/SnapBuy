@@ -1,4 +1,4 @@
-import { allIcons, and, orderBy, where } from "@biqpod/app/ui/apis";
+import { allIcons, and, where } from "@biqpod/app/ui/apis";
 import { mergeArray, range, tw } from "@biqpod/app/ui/utils";
 import {
   Button,
@@ -416,9 +416,10 @@ const CouponRender = memo(
                             label: "delete",
                             async click() {
                               const response = await confirm({
-                                title: "delete coupon",
+                                title: "Delete Coupon",
                                 message: `are you sure you want to delete the coupon "${coupon.name}"? this action cannot be undone.`,
                                 detail: "all associated data will be lost",
+                                type: "warning",
                               });
                               if (coupon.id && response) {
                                 await snapbuyApi.coupon.delete(coupon.id);
@@ -466,7 +467,7 @@ export const Coupons = () => {
         ["projects", import.meta.env.VITE_PROJECT_ID, "coupons"],
         {
           where: and(where("storeId", "==", storeId)),
-          orders: mergeArray(orderBy("createdAt", "desc")),
+          // orders: mergeArray(orderBy("createdAt", "desc")),
           limit: PAGE_SIZE,
           startAt: next && lastDoc.get?.id && mergeArray(lastDoc.get?.id),
         }
@@ -672,14 +673,14 @@ export const Coupons = () => {
               ref={listRef}
               height={listHeight}
               itemCount={filterCoupons.length}
-              itemSize={200}
+              itemSize={180}
               width="100%"
             >
               {RenderItem}
             </List>
           </motion.div>
           <Line />
-          {usedBy === "owned" || usedBy === "read/edit" ? (
+          {(usedBy === "owned" || usedBy === "read/edit") && (
             <div className="p-2">
               <Button
                 onClick={() => {
@@ -691,7 +692,7 @@ export const Coupons = () => {
                 <Translate content="create" />
               </Button>
             </div>
-          ) : null}
+          )}
         </PositionView>
       ) : (
         <motion.div

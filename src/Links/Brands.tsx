@@ -6,6 +6,7 @@ import {
   CircleTip,
   EmptyComponent,
   Field,
+  Image,
   Line,
   Scroll,
   Translate,
@@ -223,24 +224,17 @@ export const Brands = () => {
                     delay: index * 0.05,
                     ease: "easeOut",
                   }}
-                  className="flex justify-between items-center gap-2 hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-secondary-background] p-3 cursor-pointer"
+                  className="flex justify-between items-center gap-2 hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-secondary-background] p-2 cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
                     <div className="relative">
-                      {brand.photo ? (
-                        <img
-                          src={brand.photo}
-                          className="h-[50px]"
-                          alt={brand.name}
-                        />
-                      ) : (
-                        <div className="flex justify-center items-center bg-[--biqpod-gray-opacity] shadow-md border border-[--biqpod-borders] border-solid rounded-xl w-16 h-16">
-                          <span className="font-bold text-[--biqpod-text-color] text-xs">
-                            {brand.name?.charAt(0)?.toUpperCase()}
-                          </span>
-                        </div>
-                      )}
+                      <Image
+                        src={brand.photo}
+                        alt={brand.name}
+                        className="bg-[--biqpod-gray-opacity] rounded-xl w-[60px] h-[60px] object-cover"
+                      />
                     </div>
+                    <span>{brand.name || <i>No name</i>}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     {usedBy === "owned" || usedBy === "read/edit" ? (

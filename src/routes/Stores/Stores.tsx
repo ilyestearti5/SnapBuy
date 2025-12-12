@@ -32,7 +32,6 @@ import {
   useCopyState,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { useEffect } from "react";
 import { snapbuyApi } from "../../apis";
 import { delay, range } from "@biqpod/app/ui/utils";
 import notFoundPhoto from "../../assets/nothing.png";
@@ -46,6 +45,7 @@ import { SetTemplate } from "./SetTemplate";
 import { platformsPhoto } from "../../utils/platforms";
 import { SetStorePlatforms } from "./SetStorePlatforms";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { useEffectDelay } from "@biqpod/app/ui/shared";
 // Enhanced Animation variants
 const containerVariants = {
   hidden: {
@@ -313,6 +313,7 @@ export const Stores = () => {
     "fetch-my-stores",
     async () => {
       const stores = await snapbuyApi.store.getAll();
+      console.log(stores);
       storesState.set(stores);
     },
     []
@@ -368,12 +369,16 @@ export const Stores = () => {
     },
     [user]
   );
-  useEffect(() => {
-    if (user) {
-      execAction("fetch-my-stores");
-      execAction("load-invited-stores");
-    }
-  }, [user]);
+  useEffectDelay(
+    () => {
+      if (user) {
+        execAction("fetch-my-stores");
+        execAction("load-invited-stores");
+      }
+    },
+    [user],
+    200
+  );
   useAction(
     "delete-store",
     async (storeId: string) => {

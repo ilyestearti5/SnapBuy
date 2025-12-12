@@ -1,6 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  BooleanField,
   Button,
   Card,
   CircleLoading,
@@ -82,9 +81,6 @@ export const CartPopup = ({
   const phone = getFieldValue("client-phone");
   const address = getFieldValue("client-address");
   const wilaya = getFieldValue("client-wilaya");
-  const key = getFieldValue("client-key");
-  const deliveryState =
-    useCopyState<Biqpod.System.Setting.Value["boolean"]>(false);
   const store = useAsyncMemo(() => {
     return snapbuyApi.store.get(storeId);
   }, []);
@@ -171,7 +167,6 @@ export const CartPopup = ({
           id: crypto.randomUUID(),
         },
         place,
-        delivery: deliveryState.get || false,
         metaData: magicForms,
       };
       await snapbuyApi.order.create(options);
@@ -180,17 +175,7 @@ export const CartPopup = ({
       visibilityTemp.setTemp("client-form", false);
       deleteCart(storeId);
     },
-    [
-      phone,
-      address,
-      latitude.get,
-      longitude.get,
-      wilaya,
-      firstname,
-      deliveryState.get,
-      key,
-      storeId,
-    ]
+    [phone, address, latitude.get, longitude.get, wilaya, firstname, storeId]
   );
   const action = useAction(
     "auto-detect-location",
@@ -381,22 +366,6 @@ export const CartPopup = ({
               inputName="client-phone"
               placeholder="Enter Your Phone Number"
             />
-          </div>
-          <div className="flex flex-col gap-2 p-2">
-            <label className="capitalize">
-              <Translate content="key (optinal)" /> :
-            </label>
-            <Field
-              inputName="client-key"
-              maxLength={30}
-              placeholder="Enter Your Key"
-            />
-          </div>
-          <div className="flex justify-center items-center gap-2 p-2">
-            <label className="capitalize">
-              <Translate content="delivery" /> :
-            </label>
-            <BooleanField config={{}} id="delivery" state={deliveryState} />
           </div>
           <Line />
           <div className="flex flex-col gap-2 p-2">

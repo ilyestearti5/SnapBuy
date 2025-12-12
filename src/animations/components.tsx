@@ -251,12 +251,11 @@ interface HoverScaleProps extends HTMLMotionProps<"div"> {
   scale?: number;
 }
 export const HoverScale = forwardRef<HTMLDivElement, HoverScaleProps>(
-  ({ children, scale = 1.05, ...props }, ref) => {
+  ({ children, scale, ...props }, ref) => {
     return (
       <motion.div
         ref={ref}
         whileHover={{ scale }}
-        whileTap={{ scale: scale * 0.95 }}
         transition={{ duration: 0.2 }}
         {...props}
       >

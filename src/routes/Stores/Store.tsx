@@ -10,6 +10,7 @@ import {
 } from "@biqpod/app/ui/components";
 import { Link } from "react-router-dom";
 import { StoreOverview } from "./StoreOverview";
+import photoStore3d from "../../assets/3d-store-icon.png";
 import {
   Route,
   Switch,
@@ -42,11 +43,12 @@ export const Store = () => {
   const user = useUser();
   // Get store data for tracking
   const storeData = useAsyncMemo(async () => {
-    if (!storeId) return null;
-    return await snapbuyApi.store.get(storeId);
+    if (!storeId) return false;
+    const data = await snapbuyApi.store.get(storeId);
+    return data || false;
   }, [storeId]);
   // Track store visit
-  useStoreVisit(storeId, storeData, user?.uid);
+  useStoreVisit(storeId, storeData || null, user?.uid);
   const selectedTab = userTabs.find(
     (item) => item.link.replaceAll(`{storeId}`, storeId) === loc.pathname
   );
@@ -132,11 +134,6 @@ export const Store = () => {
       (Object.keys(usages) as DataTypes[]).forEach((type) => {
         const usage = usages[type];
         const limit = limits[type] || 0;
-        console.log({
-          type,
-          limit,
-          usage,
-        });
         if (usage !== undefined && usage > limit) {
           exceeded.push({ type, usage, limit });
         }
@@ -161,6 +158,61 @@ export const Store = () => {
       free === null
     );
   }, [isWillExpired, usages, limits, free]);
+
+  if (storeData === false) {
+    return (
+      <motion.div
+        className="flex flex-col justify-center items-center gap-6 p-8 w-full h-full"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
+        <motion.div
+          initial={{ y: -20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <Card className="max-w-md text-center">
+            <motion.div
+              animate={{
+                rotate: [0, -10, 10, -10, 0],
+                scale: [1, 1.1, 1],
+              }}
+              transition={{
+                duration: 0.6,
+                delay: 0.3,
+                ease: "easeInOut",
+              }}
+            >
+              <img src={photoStore3d} />
+            </motion.div>
+            <Line />
+            <div className="flex flex-col gap-2 p-3">
+              <h1 className="font-bold text-3xl capitalize">
+                <Translate content="store not found" />
+              </h1>
+              <p className="text-[--biqpod-gray-opacity-2]">
+                <Translate content="the store you're looking for doesn't exist or has been removed" />
+              </p>
+            </div>
+            <Line />
+            <div className="p-3">
+              <Button
+                onClick={() => {
+                  hist.push("/store");
+                }}
+                icon={allIcons.solid.faArrowLeft}
+                className="rounded-full w-full"
+              >
+                <Translate content="back to stores" />
+              </Button>
+            </div>
+          </Card>
+        </motion.div>
+      </motion.div>
+    );
+  }
+
   if (!usedBy) {
     return (
       <div className="flex flex-col justify-center items-center w-full h-full">

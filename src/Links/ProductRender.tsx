@@ -8,6 +8,7 @@ import {
   Key,
   EmptyComponent,
   Button,
+  Image,
 } from "@biqpod/app/ui/components";
 import {
   showBottomSheet,
@@ -109,11 +110,11 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
               </span>
             </div>
           )}
-          {brand && brand.photo && (
-            <div className="right-1 bottom-1 absolute w-1/4 overflow-hidden">
-              <img
+          {brand && (
+            <div className="right-1 bottom-1 absolute opacity-70 w-1/4 overflow-hidden pointer-events-none">
+              <Image
                 src={brand.photo}
-                alt={brand.name}
+                alt={<span>{brand.name}</span>}
                 className="w-full h-full object-contain"
                 title={brand.name}
               />

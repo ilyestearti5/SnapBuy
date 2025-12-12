@@ -1,6 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  ArrayField,
   Button,
   Card,
   CircleTip,
@@ -48,12 +47,6 @@ const filterFields = [
     icon: allIcons.solid.faBuilding,
   },
   {
-    label: "Keys",
-    value: "keys",
-    icon: allIcons.solid.faKey,
-    description: "Filter Products By Keys",
-  },
-  {
     label: "Product Type",
     value: "product-type",
     icon: allIcons.solid.faBox,
@@ -85,7 +78,6 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
   const minPriceState = useCopyState<number | null | undefined>(0);
   const maxPriceState = useCopyState<number | null | undefined>(0);
   const brandsState = useCopyState<string[]>([]);
-  const keysState = useCopyState<string[] | Nothing>([]);
   const productTypeState = useCopyState<string | Nothing>("");
   const metadataState = useCopyState<Record<
     string,
@@ -127,7 +119,6 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
       minPriceState.set(value.minPrice || 0);
       maxPriceState.set(value.maxPrice || 0);
       brandsState.set(value.brands || []);
-      keysState.set(value.keys || []);
       productTypeState.set(value.productType || "");
       metadataState.set(value.metadata || null);
     }
@@ -425,22 +416,6 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
               </TabContent>
               <TabContent
                 identifier="filter-view-products"
-                value="keys"
-                className="flex flex-col justify-center items-center gap-2 h-full"
-              >
-                <div className="p-2 text-center">
-                  <h1 className="font-bold text-2xl capitalize">
-                    <Translate content="keys" />
-                  </h1>
-                </div>
-                <Line />
-                <div className="flex justify-center items-center p-2">
-                  <ArrayField state={keysState} id="product-keys" />
-                </div>
-                <Line />
-              </TabContent>
-              <TabContent
-                identifier="filter-view-products"
                 value="product-type"
                 className="flex flex-col gap-2 h-full"
               >
@@ -537,7 +512,6 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                 minPrice: minPriceState.get || null,
                 maxPrice: maxPriceState.get || null,
                 brands: brandsState.get || null,
-                keys: keysState.get || null,
                 productType: productTypeState.get || null,
                 metadata: metadataState.get || null,
               });
@@ -545,7 +519,6 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
               minPriceState.set(0);
               maxPriceState.set(0);
               brandsState.set([]);
-              keysState.set([]);
               productTypeState.set("");
               metadataState.set(null);
               setTab("filter-view-products", null);

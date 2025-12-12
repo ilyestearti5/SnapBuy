@@ -6,6 +6,7 @@ import {
   EnumField,
   Field,
   Icon,
+  Image,
   Key,
   Line,
   MagicField,
@@ -251,7 +252,7 @@ const SelectProductPopup = ({ onSelectProduct }: SelectProductPopupProps) => {
       <div style={style}>
         <div
           className={tw(
-            "flex items-center gap-2 p-2 rounded-xl cursor-pointer",
+            "flex items-center gap-2 p-2 cursor-pointer",
             selectedProduct.get?.id === product.id
               ? "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
               : "hover:bg-[--biqpod-primary-background]"
@@ -260,13 +261,11 @@ const SelectProductPopup = ({ onSelectProduct }: SelectProductPopupProps) => {
             selectedProduct.set(product);
           }}
         >
-          {product.photos?.[0] && (
-            <img
-              src={product.photos[0]}
-              alt={product.name}
-              className="rounded w-6 h-6 object-cover"
-            />
-          )}
+          <Image
+            src={product.photos?.at(0)}
+            alt={product.name?.at(0)}
+            className="bg-[--biqpod-gray-opacity-2] rounded w-8 h-8 object-cover"
+          />
           <div className="flex-1 font-medium text-sm truncate">
             {product.name}
           </div>
@@ -707,7 +706,7 @@ export const MetadataFieldComponent = ({
                       </Key>
                     </div>
                     {showFieldActions && (
-                      <>
+                      <EmptyComponent>
                         <div className="max-md:hidden md:flex">
                           {menu.map((item, menuIndex) => {
                             return (
@@ -743,7 +742,7 @@ export const MetadataFieldComponent = ({
                             />
                           </motion.div>
                         </div>
-                      </>
+                      </EmptyComponent>
                     )}
                   </div>
                 </motion.div>

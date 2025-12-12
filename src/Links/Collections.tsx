@@ -179,7 +179,7 @@ export const Collections = () => {
                           <div className="relative">
                             <Image
                               src={collection.photo}
-                              className="border border-[--biqpod-borders] border-solid rounded-xl w-16 h-16 object-cover"
+                              className="bg-[--biqpod-gray-opacity] rounded-xl w-16 h-16 object-cover"
                               alt={
                                 <span className="text-2xl uppercase">
                                   {collection.name.at(0)}
@@ -242,6 +242,7 @@ export const Collections = () => {
                                             const response = await confirm({
                                               title: "Delete Collection",
                                               message: `Are you sure you want to delete the collection "${collection.name}"? This action cannot be undone.`,
+                                              type: "warning",
                                             });
                                             if (!response) return;
                                             await snapbuyApi.collections.delete(

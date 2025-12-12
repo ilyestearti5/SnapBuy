@@ -590,6 +590,7 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
                 title: "Delete Coupon",
                 message: `Are you sure you want to delete "${coupon.name}"?`,
                 detail: "This action cannot be undone.",
+                type: "warning",
               });
               if (response) {
                 await snapbuyApi.coupon.delete(coupon.id!);

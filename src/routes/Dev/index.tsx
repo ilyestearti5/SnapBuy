@@ -7,6 +7,7 @@ import {
   Icon,
   Image,
   Line,
+  MarkDown,
   Scroll,
   Translate,
 } from "@biqpod/app/ui/components";
@@ -428,24 +429,13 @@ export const DeveloperRoute = () => {
                     layout
                   >
                     <Card className="overflow-hidden">
-                      <div className="flex justify-between items-start p-4">
+                      <div className="flex justify-between items-start gap-2 p-4">
                         {template.photo && (
-                          <motion.div
-                            className="flex-shrink-0 mr-4"
-                            initial={{ opacity: 0, scale: 0.8, rotateY: -20 }}
-                            animate={{ opacity: 1, scale: 1, rotateY: 0 }}
-                            transition={{
-                              delay: 0.2,
-                              duration: 0.5,
-                              type: "spring",
-                            }}
-                          >
-                            <Image
-                              src={template.photo}
-                              alt={template.name || "Template"}
-                              className="rounded-lg w-[120px] h-[80px] object-cover"
-                            />
-                          </motion.div>
+                          <Image
+                            src={template.photo}
+                            alt={template.name || "Template"}
+                            className="w-[120px] h-[120px]"
+                          />
                         )}
                         <motion.div
                           className="flex-1"
@@ -454,7 +444,7 @@ export const DeveloperRoute = () => {
                           transition={{ delay: 0.3, duration: 0.5 }}
                         >
                           <motion.div
-                            className="flex items-center gap-2 mb-2"
+                            className="flex items-center gap-2"
                             initial={{ opacity: 0, y: -10 }}
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ delay: 0.4, duration: 0.4 }}
@@ -475,22 +465,14 @@ export const DeveloperRoute = () => {
                               />
                             )}
                           </motion.div>
-                          <p className="text-[--biqpod-gray-opacity-2] mb-2">
-                            {template.description || "No description provided"}
-                          </p>
-                          {template.url && (
-                            <div className="flex items-center gap-2 text-sm">
-                              <Icon icon={allIcons.solid.faLink} />
-                              <a
-                                href={template.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[--biqpod-primary] hover:underline truncate"
-                              >
-                                {template.url}
-                              </a>
-                            </div>
-                          )}
+                          <div className="p-2 max-h-[200px] overflow-hidden">
+                            <MarkDown
+                              value={
+                                template.description ||
+                                "No description provided"
+                              }
+                            />
+                          </div>
                           {template.createdAt && (
                             <p className="text-[--biqpod-gray-opacity-2] mt-2 text-xs">
                               <Translate content="created" />:{" "}
@@ -529,11 +511,16 @@ export const DeveloperRoute = () => {
                           <Button
                             icon={allIcons.solid.faTrash}
                             onClick={async () => {
+                              if (!template.id) {
+                                showToast("Template ID is missing", "error");
+                                return;
+                              }
                               const response = await confirm({
                                 title: "Delete Template",
                                 message: `Are you sure you want to delete "${
                                   template.name || "this template"
                                 }"?`,
+                                type: "warning",
                               });
                               if (response) {
                                 execAction("delete-template", template.id!);

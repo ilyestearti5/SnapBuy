@@ -7,6 +7,7 @@ import {
   Translate,
   Icon,
   KeyPanding,
+  CircleLoading,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
@@ -34,6 +35,7 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
   const [isPasting, setIsPasting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadMode, setUploadMode] = useState<"upload" | "url">("upload");
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Set field values when editing a brand
   useEffect(() => {
@@ -183,7 +185,7 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
   );
   const loading = isLoading(createBrandAction);
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
+    <Card className="relative max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-2">
         <h1 className="text-2xl capitalize">
           <Translate content={brand ? "edit brand" : "create brand"} />
@@ -381,9 +383,12 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
                 detail: "This action cannot be undone.",
               });
               if (response) {
+                setIsDeleting(true);
                 await snapbuyApi.brands.delete(brand.id!);
+                execAction("fetch-brands");
                 showToast("Brand deleted successfully", "success");
                 closePopup();
+                setIsDeleting(false);
               }
             }}
             className="bg-[--biqpod-error] rounded-full"
@@ -403,6 +408,11 @@ export const UpsertBrand = ({ brand }: UpsertBrandProps) => {
           <Translate content={brand ? "update" : "create"} />
         </Button>
       </div>
+      {(isDeleting || loading) && (
+        <div className="z-10 absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity]">
+          <CircleLoading />
+        </div>
+      )}
     </Card>
   );
 };

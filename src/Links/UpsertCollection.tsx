@@ -3,6 +3,7 @@ import {
   Button,
   Card,
   CardWait,
+  CircleLoading,
   CircleTip,
   EmptyComponent,
   Field,
@@ -121,7 +122,7 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
   const storeId = useStoreId();
   const [isPasting, setIsPasting] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  // Handle file upload (paste, drag & drop, or file input)
+  const [isDeleting, setIsDeleting] = useState(false);
   const handleFileUpload = async (file: File) => {
     if (file && file.type.startsWith("image/")) {
       try {
@@ -351,7 +352,7 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
   );
   const loading = isLoading(upsertCollection);
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
+    <Card className="relative max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-4">
         <div className="flex items-center gap-2">
           <h1 className="text-2xl">
@@ -411,9 +412,15 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
                   title: "Delete Collection",
                   message: `Are you sure you want to delete \`${collection.name}\`?`,
                   detail: "This action cannot be undone.",
+                  type: "warning",
                 });
                 if (response) {
-                  snapbuyApi.collections.delete(collection.id!);
+                  setIsDeleting(true);
+                  await snapbuyApi.collections.delete(collection.id!);
+                  execAction("fetch-collections");
+                  showToast("Collection deleted successfully", "success");
+                  closePopup();
+                  setIsDeleting(false);
                 }
               }}
               className="bg-[--biqpod-error] rounded-full"
@@ -576,6 +583,11 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
           </Button>
         </div>
       </TabContent>
+      {(isDeleting || loading) && (
+        <div className="z-10 absolute inset-0 flex justify-center items-center bg-opacity-50 bg-[--biqpod-gray-opacity-2]">
+          <CircleLoading />
+        </div>
+      )}
     </Card>
   );
 };

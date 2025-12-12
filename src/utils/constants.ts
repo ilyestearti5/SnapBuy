@@ -58,7 +58,7 @@ export const colors: Record<string, string> = {
   cancelled: "#EF4444", // Red
   delivery: "#129999",
 };
-export const icons: Record<string, IconProps["icon"]> = {
+export const orderStatusIcons: Record<string, IconProps["icon"]> = {
   pending: allIcons.solid.faClock,
   completed: allIcons.solid.faCheckCircle,
   processing: allIcons.solid.faCog,

@@ -1,6 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  BooleanField,
   Button,
   CardWait,
   CircleLoading,
@@ -137,8 +136,6 @@ export const ProductRoute = () => {
     const phoneNumber = user?.phone || localStorage.getItem("phone") || "";
     setFieldValue("client-phone", phoneNumber);
   }, [user]);
-  const deliveryState =
-    useCopyState<Biqpod.System.Setting.Value["boolean"]>(false);
   const firstname = getFieldValue("client-firstname");
   const lastname = getFieldValue("client-lastname");
   const phone = getFieldValue("client-phone");
@@ -222,6 +219,7 @@ export const ProductRoute = () => {
         metaData[formId.id] = magic?.[formId.id];
       });
       const options: CreateOrderOptions = {
+        storeId: product.storeId,
         products,
         client: {
           firstname,
@@ -230,7 +228,6 @@ export const ProductRoute = () => {
           id: crypto.randomUUID(),
         },
         place,
-        delivery: deliveryState.get || false,
         metaData,
         note,
       };
@@ -252,7 +249,6 @@ export const ProductRoute = () => {
       address,
       wilaya,
       note,
-      deliveryState.get,
       latitude.get,
       longitude.get,
       formStructor,
@@ -272,9 +268,11 @@ export const ProductRoute = () => {
       {product && (
         <EmptyComponent>
           <Scroll className="flex max-md:flex-col">
-            <div className="w-full h-[50vh]">
-              <ImageSlider viewImages zoom photos={product?.photos || []} />
-            </div>
+            {!!product.photos?.length && (
+              <div className="w-full h-[50vh]">
+                <ImageSlider viewImages zoom photos={product?.photos || []} />
+              </div>
+            )}
             <div className="w-full">
               <FormSection title="form : " />
               <div className="flex flex-col gap-2 p-2">
@@ -313,12 +311,6 @@ export const ProductRoute = () => {
                   inputName="client-phone"
                   placeholder="Enter Your Phone Number"
                 />
-              </div>
-              <div className="flex justify-center items-center gap-2 p-2">
-                <label className="capitalize">
-                  <Translate content="delivery" /> :
-                </label>
-                <BooleanField config={{}} id="delivery" state={deliveryState} />
               </div>
               <div className="flex flex-col gap-2 p-2">
                 <label className="capitalize">

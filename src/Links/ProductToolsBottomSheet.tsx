@@ -10,7 +10,9 @@ import {
   CardHeaderForPopup,
   TabContent,
   Field,
-  CircleTip,
+  Tabs,
+  AsyncComponent,
+  CircleLoading,
 } from "@biqpod/app/ui/components";
 import {
   useCopyState,
@@ -19,12 +21,10 @@ import {
   showPopup,
   execAction,
   closeBottomSheet,
-  getTab,
-  setTab,
   closePopup,
   confirm,
 } from "@biqpod/app/ui/hooks";
-import { mapAsync, tw } from "@biqpod/app/ui/utils";
+import { delay, mapAsync, tw } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
 import { ChromePicker as ColorPicker } from "react-color";
 import { snapbuyApi } from "../apis";
@@ -138,8 +138,6 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
       return normalizedColor.includes(colorSearchQuery.get.toLowerCase());
     });
   }, [colorSearchQuery.get]);
-  const selectedTab = getTab("preview");
-  const showRightPart = useCopyState(false);
   return (
     <EmptyComponent>
       <Line />
@@ -152,7 +150,7 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
                 placeholder="Search colors..."
                 value={colorSearchQuery.get}
                 onChange={(e) => colorSearchQuery.set(e.target.value)}
-                className="w-full text-sm"
+                className="rounded-xl w-full text-sm"
               />
             </div>
             <Line />
@@ -191,56 +189,45 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
           </div>
         </div>
         <div className="flex flex-col justify-between items-center w-full overflow-hidden">
-          <div className="relative flex justify-center items-stretch gap-2 w-full h-[60px]">
-            {[
-              {
-                name: "mobile",
-                icon: allIcons.solid.faMobile,
-              },
-              {
-                name: "desktop",
-                icon: allIcons.solid.faDesktop,
-              },
-            ].map((tab) => {
-              return (
-                <div
-                  key={tab.name}
-                  className={tw(
-                    "flex justify-center items-center w-1/5 gap-2 p-2 cursor-pointer",
-                    tab.name === selectedTab && "bg-[--biqpod-gray-opacity]"
-                  )}
-                  onClick={() => {
-                    setTab("preview", tab.name);
-                  }}
-                >
-                  <Icon icon={tab.icon} />
-                  <span className="max-md:hidden">
-                    <Translate content={tab.name} />
-                  </span>
-                </div>
-              );
-            })}
-            <div className="top-1/2 right-4 absolute -translate-y-1/2">
-              <CircleTip
-                icon={allIcons.solid.faEllipsisV}
-                onClick={() => {
-                  showRightPart.set((s) => !s);
-                }}
-              />
-            </div>
+          <div className="relative flex justify-center items-stretch gap-2 p-1 w-full">
+            <Tabs
+              tabs={[
+                {
+                  value: "mobile",
+                  label: "Mobile",
+                  icon: allIcons.solid.faMobile,
+                },
+                {
+                  value: "desktop",
+                  label: "Desktop",
+                  icon: allIcons.solid.faDesktop,
+                },
+              ]}
+              identifier="preview"
+              defaultValue="mobile"
+            />
           </div>
           <Line />
-          <div className="justify-center items-center bg-white w-full h-full">
+          <div className="justify-center items-center bg-white w-full h-full overflow-hidden">
             <TabContent
               identifier="preview"
               className="flex justify-center items-center p-2 h-full"
               value="mobile"
             >
-              <PreviewWindow
-                title={"Mobile"}
-                zoom={0.45}
-                url={uri.href}
-                orientation="portrait"
+              <AsyncComponent
+                loading={<CircleLoading />}
+                deps={[uri.href]}
+                render={async () => {
+                  await delay(500);
+                  return (
+                    <PreviewWindow
+                      title={"Mobile"}
+                      zoom={0.45}
+                      url={uri.href}
+                      orientation="portrait"
+                    />
+                  );
+                }}
               />
             </TabContent>
             <TabContent
@@ -248,11 +235,20 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
               className="flex justify-center items-center p-2 h-full overflow-auto"
               value="desktop"
             >
-              <PreviewWindow
-                title={"Desktop"}
-                zoom={0.2}
-                url={uri.href}
-                orientation="landscape"
+              <AsyncComponent
+                loading={<CircleLoading />}
+                deps={[uri.href]}
+                render={async () => {
+                  await delay(500);
+                  return (
+                    <PreviewWindow
+                      title={"Desktop"}
+                      zoom={0.2}
+                      url={uri.href}
+                      orientation="landscape"
+                    />
+                  );
+                }}
               />
             </TabContent>
           </div>
@@ -423,80 +419,88 @@ export const ProductToolsBottomSheet = ({
             defaultIcon: allIcons.solid.faInfoCircle,
             click: () => {
               closeBottomSheet();
+              const fields = Object.entries(product.metaData || {});
               showPopup(
                 <Card className="relative max-md:rounded-none max-md:w-full max-md:h-full">
                   <CardHeaderForPopup title="Product Metadata" />
                   <Line />
                   <Scroll>
-                    <div className="p-4">
-                      {Object.entries(product.metaData || {}).map(
-                        ([key, meta]) => (
-                          <Card key={key} className="mb-3">
-                            <div className="flex items-center gap-2 p-3 border-[--biqpod-borders] border-b">
-                              <Icon
-                                icon={
-                                  typeIcons[
-                                    meta?.type as keyof typeof typeIcons
-                                  ] || allIcons.solid.faQuestionCircle
-                                }
-                              />
-                              <span className="font-semibold capitalize">
-                                {key.replace(/([A-Z])/g, " $1")}
+                    <div className="p-2">
+                      {fields.map(([key, meta]) => (
+                        <Card key={key} className="mb-3">
+                          <div className="flex items-center gap-2 p-3 border-[--biqpod-borders] border-b">
+                            <Icon
+                              icon={
+                                typeIcons[
+                                  meta?.type as keyof typeof typeIcons
+                                ] || allIcons.solid.faQuestionCircle
+                              }
+                            />
+                            <span className="font-semibold capitalize">
+                              {key.replace(/([A-Z])/g, " $1")}
+                            </span>
+                            <span className="text-[--biqpod-text-secondary] text-sm">
+                              ({meta?.type})
+                            </span>
+                          </div>
+                          <div className="p-3">
+                            {meta?.type === "string" && (
+                              <span className="text-sm">{meta.value}</span>
+                            )}
+                            {meta?.type === "number" && (
+                              <span className="font-mono text-sm">
+                                {meta.value}
                               </span>
-                              <span className="text-[--biqpod-text-secondary] text-sm">
-                                ({meta?.type})
-                              </span>
-                            </div>
-                            <div className="p-3">
-                              {meta?.type === "string" && (
-                                <span className="text-sm">{meta.value}</span>
-                              )}
-                              {meta?.type === "number" && (
-                                <span className="font-mono text-sm">
-                                  {meta.value}
+                            )}
+                            {meta?.type === "boolean" && (
+                              <div className="flex items-center gap-2">
+                                <Icon
+                                  icon={
+                                    meta.value
+                                      ? allIcons.solid.faCheck
+                                      : allIcons.solid.faXmark
+                                  }
+                                />
+                                <span className="text-sm">
+                                  {meta.value ? "True" : "False"}
                                 </span>
-                              )}
-                              {meta?.type === "boolean" && (
-                                <div className="flex items-center gap-2">
-                                  <Icon
-                                    icon={
-                                      meta.value
-                                        ? allIcons.solid.faCheck
-                                        : allIcons.solid.faXmark
-                                    }
-                                  />
-                                  <span className="text-sm">
-                                    {meta.value ? "True" : "False"}
+                              </div>
+                            )}
+                            {meta?.type === "array" && (
+                              <div className="flex flex-wrap gap-1">
+                                {(meta.value as any[]).map((item, i) => (
+                                  <span
+                                    key={i}
+                                    className="bg-[--biqpod-primary] px-2 py-1 rounded text-[--biqpod-text-color] text-xs"
+                                  >
+                                    {item}
                                   </span>
-                                </div>
-                              )}
-                              {meta?.type === "array" && (
-                                <div className="flex flex-wrap gap-1">
-                                  {(meta.value as any[]).map((item, i) => (
-                                    <span
-                                      key={i}
-                                      className="bg-[--biqpod-primary] px-2 py-1 rounded text-[--biqpod-text-color] text-xs"
-                                    >
-                                      {item}
-                                    </span>
-                                  ))}
-                                </div>
-                              )}
-                              {meta?.type === "colors" && (
-                                <div className="flex items-center gap-2">
-                                  {(meta.value as string[]).map((color) => (
-                                    <div
-                                      key={color}
-                                      className="border border-[--biqpod-borders] rounded-full w-6 h-6"
-                                      style={{ backgroundColor: color }}
-                                      title={color}
-                                    />
-                                  ))}
-                                </div>
-                              )}
-                            </div>
-                          </Card>
-                        )
+                                ))}
+                              </div>
+                            )}
+                            {meta?.type === "colors" && (
+                              <div className="flex items-center gap-2">
+                                {(meta.value as string[]).map((color) => (
+                                  <div
+                                    key={color}
+                                    className="border border-[--biqpod-borders] rounded-full w-6 h-6"
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                  />
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                      {fields.length === 0 && (
+                        <div className="flex flex-col justify-center items-center gap-2 p-2 text-[--biqpod-text-secondary] text-sm text-center capitalize">
+                          <Icon
+                            className="text-4xl"
+                            icon={allIcons.solid.faInfoCircle}
+                          />
+                          <Translate content="no meta data available" />
+                        </div>
                       )}
                     </div>
                   </Scroll>

@@ -1,6 +1,7 @@
 import { allIcons, and, getDoc, where } from "@biqpod/app/ui/apis";
 import {
   AsyncComponent,
+  BooleanField,
   Button,
   Card,
   CardHeaderForPopup,
@@ -17,6 +18,7 @@ import {
   confirm,
   execAction,
   getFieldValue,
+  openMenu,
   showPopup,
   showToast,
   useAction,
@@ -39,7 +41,7 @@ import {
 } from "./FilterOrders";
 import { openOrderMenu } from "./openOrderMenu";
 import { useStoreId } from "../utils";
-import { colors, getImageByPlatform, icons } from "../utils";
+import { colors, getImageByPlatform, orderStatusIcons } from "../utils";
 import { motion } from "framer-motion";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { OrderView } from "../routes/Clients/OrderView";
@@ -59,6 +61,7 @@ import {
 } from "../animations";
 import { AnimatedMarkdownRenderer } from "../components/AnimatedMarkdownRenderer";
 import { useUsedBy } from "../routes/Stores/Stores";
+import { ChangeStatus } from "../routes/Stores/ChangeStatus";
 const NoOrdersFound = () => {
   return (
     <motion.div className="flex justify-center items-center h-full min-h-[400px]">
@@ -154,7 +157,7 @@ const NoOrdersFound = () => {
               animate={{ opacity: 1 }}
               transition={{ duration: 0.6, delay: 0.9 }}
             >
-              <HoverScale scale={1.05}>
+              <HoverScale>
                 <motion.div
                   whileTap={{ scale: 0.95 }}
                   transition={{ type: "spring", stiffness: 400 }}
@@ -303,7 +306,7 @@ export const StatusUi = ({ status }: StatusUiProps) => {
         transition={{ duration: 0.5 }}
         className="z-10 relative"
       >
-        <Icon icon={icons[status]} />
+        <Icon icon={orderStatusIcons[status]} />
       </motion.div>
       <span className="z-10 relative">
         <Translate content={status} />
@@ -323,6 +326,8 @@ export const Orders = () => {
     Record<string, { top: number; left: number } | null>
   >({});
   const expandedNotes = useCopyState<Record<string, boolean>>({});
+  const isSelectionMode = useCopyState(false);
+  const selectedOrders = useCopyState<Biqpod.Snapbuy.Order[]>([]);
   const setNoteHover = (
     orderId: string,
     position: { top: number; left: number } | null
@@ -339,48 +344,51 @@ export const Orders = () => {
   const lastDoc = useCopyState<Biqpod.Snapbuy.Order | null>(null);
   const hasMore = useCopyState(true);
   const loc = useLocation();
-  useAsyncEffect(async () => {
-    const searcher = new URLSearchParams(loc.search);
-    const orderId = searcher.get("order");
-    if (orderId) {
-      const order = await snapbuyApi.order.get(orderId);
-      if (order) {
-        showPopup(<OrderView order={order} />);
-      } else {
-        showToast("Order not found", "error");
-      }
-      return;
-    }
-    const status = searcher.get("status");
-    const clientPhone = searcher.get("phone");
-    const time = searcher.get("time");
-    var options: FilterOrdersProps = {};
-    if (status) {
-      if (status === "all") {
-        options.status = undefined;
-      } else {
-        options.status = status;
-      }
-    }
-    if (time) {
-      if (time === "all") {
-        options.time = undefined;
-      } else {
-        options.time = time;
-      }
-    }
-    if (clientPhone) {
-      if (clientPhone === "none") {
-        options.phone = undefined;
-      } else {
-        options.phone = clientPhone;
-      }
-    }
-    setFilterState(options);
-    execAction("fetch-orders", {});
-  }, [loc.search]);
-  const filterState = useFilterState();
   const selectedStoreId = useStoreId();
+  useAsyncEffect(async () => {
+    if (selectedStoreId && user) {
+      const searcher = new URLSearchParams(loc.search);
+      const orderId = searcher.get("id");
+      if (orderId) {
+        const order = await snapbuyApi.order.get(orderId);
+        console.log(order);
+        if (order) {
+          showPopup(<OrderView order={order} />);
+        } else {
+          showToast("Order not found", "error");
+        }
+        return;
+      }
+      const status = searcher.get("status");
+      const clientPhone = searcher.get("phone");
+      const time = searcher.get("time");
+      var options: FilterOrdersProps = {};
+      if (status) {
+        if (status === "all") {
+          options.status = undefined;
+        } else {
+          options.status = status;
+        }
+      }
+      if (time) {
+        if (time === "all") {
+          options.time = undefined;
+        } else {
+          options.time = time;
+        }
+      }
+      if (clientPhone) {
+        if (clientPhone === "none") {
+          options.phone = undefined;
+        } else {
+          options.phone = clientPhone;
+        }
+      }
+      setFilterState(options);
+      execAction("fetch-orders", {});
+    }
+  }, [loc.search, selectedStoreId, user]);
+  const filterState = useFilterState();
   const action = useAction(
     "fetch-orders",
     async ({ next = false }) => {
@@ -482,6 +490,40 @@ export const Orders = () => {
       );
     }
   }, [user?.uid]);
+  const toggleSelectionMode = () => {
+    isSelectionMode.set(!isSelectionMode.get);
+    selectedOrders.set([]);
+  };
+  const bulkDeleteOrders = async () => {
+    if (selectedOrders.get.length === 0 || !selectedStoreId) return;
+    const response = await confirm({
+      title: "Delete Selected Orders",
+      message: `Are you sure you want to delete ${selectedOrders.get.length} order(s)? This action cannot be undone.`,
+      type: "warning",
+    });
+    if (!response) return;
+    try {
+      await Promise.all(
+        selectedOrders.get.map((order) => snapbuyApi.order.delete(order.id))
+      );
+      showToast(
+        `${selectedOrders.get.length} order(s) deleted successfully`,
+        "success"
+      );
+      orders.set((allOrders) =>
+        allOrders
+          ? allOrders.filter(
+              (o) => !selectedOrders.get.map((s) => s.id).includes(o.id)
+            )
+          : []
+      );
+      selectedOrders.set([]);
+      isSelectionMode.set(false);
+    } catch (err) {
+      console.error("Failed to delete orders:", err);
+      showToast("Failed to delete some orders. Please try again.", "error");
+    }
+  };
   return (
     <motion.div
       ref={containerRef}
@@ -517,7 +559,7 @@ export const Orders = () => {
           )}
         </motion.div>
         <div>
-          <HoverScale scale={1.1}>
+          <HoverScale>
             <motion.div
               whileTap={{ scale: 0.9 }}
               transition={{ type: "spring", stiffness: 400 }}
@@ -533,8 +575,90 @@ export const Orders = () => {
         </div>
       </div>
       <Line />
+      <motion.div
+        className="flex justify-end gap-2 p-2 w-full"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.1 }}
+      >
+        {isSelectionMode.get && selectedOrders.get.length > 0 && (
+          <Button
+            onClick={({ clientX, clientY }) => {
+              openMenu({
+                x: clientX,
+                y: clientY,
+                menu: [
+                  {
+                    label: "Delete Selected",
+                    defaultIcon: allIcons.solid.faTrash,
+                    click: () => {
+                      bulkDeleteOrders();
+                    },
+                  },
+                  {
+                    label: "Change Status",
+                    defaultIcon: allIcons.solid.faTag,
+                    click() {
+                      showPopup(<ChangeStatus orders={selectedOrders.get} />);
+                    },
+                  },
+                ],
+              });
+            }}
+            className="px-3 py-1 w-fit text-sm"
+          >
+            Execute ({selectedOrders.get.length})
+          </Button>
+        )}
+        {isSelectionMode.get &&
+          !!selectedOrders.get.length &&
+          selectedOrders.get.length === ordersState?.length && (
+            <Button
+              onClick={() => {
+                selectedOrders.set([]);
+              }}
+              className="px-3 py-1 w-fit text-sm"
+            >
+              Deselect ({selectedOrders.get.length})
+            </Button>
+          )}
+        {isSelectionMode.get &&
+          selectedOrders.get.length !== ordersState?.length && (
+            <Button
+              onClick={() => {
+                selectedOrders.set(
+                  ordersState?.map(({ order }) => order) || []
+                );
+              }}
+              className="px-3 py-1 w-fit text-sm"
+            >
+              Select ({selectedOrders.get.length})
+            </Button>
+          )}
+        {ordersState && ordersState.length > 0 && (
+          <Button
+            onClick={toggleSelectionMode}
+            className="bg-[--biqpod-gray-opacity-2] px-3 py-1 w-fit text-[--biqpod-text-color]"
+          >
+            <Icon
+              icon={
+                isSelectionMode.get
+                  ? allIcons.solid.faTimes
+                  : allIcons.solid.faCheck
+              }
+            />
+            <Translate
+              content={
+                isSelectionMode.get ? "cancel selection" : "select orders"
+              }
+            />
+          </Button>
+        )}
+      </motion.div>
+      <Line />
       {!isSmallView && (
         <EmptyComponent>
+          <Line />
           <div className="flex justify-between items-center gap-2 p-2">
             <span className="inline-flex items-center gap-2 w-full capitalize">
               <Icon icon={allIcons.solid.faUser} />
@@ -577,7 +701,7 @@ export const Orders = () => {
                 transition={springTransition}
                 className="top-0 z-[10] absolute inset-x-0 flex justify-center items-center gap-2 p-3"
               >
-                <HoverScale scale={1.05}>
+                <HoverScale>
                   <Button
                     icon={allIcons.solid.faArrowUp}
                     className="rounded-full w-fit"
@@ -598,11 +722,52 @@ export const Orders = () => {
             )}
             <AnimatedList staggerDelay={0.05}>
               {ordersState?.map(({ order, timeAgo, productCount }, index) => {
+                const isSelected = selectedOrders.get
+                  .map((s) => s.id)
+                  .includes(order.id);
                 return (
                   <AnimatedListItem key={order.id} index={index}>
-                    <HoverScale scale={1.01}>
-                      <div className="flex justify-between items-center gap-2 odd:bg-[--biqpod-secondary-background] p-2 rounded-lg transition-colors duration-200">
-                        <div className="w-full">
+                    <HoverScale>
+                      <motion.div
+                        className={tw(
+                          "flex justify-between items-center gap-2 odd:bg-[--biqpod-secondary-background] p-2"
+                        )}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <div className="flex items-center gap-1 w-full">
+                          {isSelectionMode.get && (
+                            <motion.div
+                              className="flex justify-center items-center w-10"
+                              initial={{ opacity: 0, width: 0 }}
+                              animate={{ opacity: 1, width: 40 }}
+                              exit={{ opacity: 0, width: 0 }}
+                            >
+                              <BooleanField
+                                config={{
+                                  style: "checkbox",
+                                }}
+                                state={{
+                                  get: isSelected,
+                                  set: (value) => {
+                                    const val =
+                                      typeof value === "function"
+                                        ? value(isSelected)
+                                        : value;
+                                    if (val) {
+                                      selectedOrders.set((prev) => [
+                                        ...prev,
+                                        order,
+                                      ]);
+                                    } else {
+                                      selectedOrders.set((prev) =>
+                                        prev.filter((o) => o.id !== order.id)
+                                      );
+                                    }
+                                  },
+                                }}
+                              />
+                            </motion.div>
+                          )}
                           <OrderClientDisplay
                             order={order}
                             showPhone={true}
@@ -770,7 +935,7 @@ export const Orders = () => {
                             </motion.div>
                           )}
                         </div>
-                      </div>
+                      </motion.div>
                     </HoverScale>
                   </AnimatedListItem>
                 );
@@ -888,9 +1053,11 @@ export const Orders = () => {
           )}
           <AnimatedList className="flex flex-col gap-4 p-2" staggerDelay={0.05}>
             {ordersState?.map(({ order, timeAgo, productCount }, index) => {
+              const isSelected = selectedOrders.get
+                .map((s) => s.id)
+                .includes(order.id);
               return (
                 <AnimatedListItem className="p-2" key={order.id} index={index}>
-                  {/* <HoverScale scale={1.01}> */}
                   <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -898,7 +1065,32 @@ export const Orders = () => {
                   >
                     <Card className="overflow-hidden">
                       <div className="flex justify-between items-center gap-2 p-2">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1">
+                          {isSelectionMode.get && (
+                            <BooleanField
+                              config={{
+                                style: "checkbox",
+                              }}
+                              state={{
+                                get: isSelected,
+                                set: (value) => {
+                                  const val =
+                                    typeof value === "function"
+                                      ? value(isSelected)
+                                      : isSelected;
+                                  selectedOrders.set((prev) => {
+                                    if (val) {
+                                      return [...prev, order];
+                                    } else {
+                                      return prev.filter(
+                                        (o) => o.id !== order.id
+                                      );
+                                    }
+                                  });
+                                },
+                              }}
+                            />
+                          )}
                           <motion.span
                             whileHover={{ scale: 1.1, rotate: 5 }}
                             className="inline-block w-[40px] h-[40px]"

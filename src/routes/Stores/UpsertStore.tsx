@@ -66,20 +66,25 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
       <Line />
       <div className="h-full">
         <div className="flex flex-col gap-2 p-2">
-          <Field inputName="store-name" placeholder="Enter Store Name" />
           <Field
+            className="rounded-xl"
+            inputName="store-name"
+            placeholder="Enter Store Name"
+          />
+          <Field
+            className="rounded-xl"
             inputName="store-phone"
             placeholder="Enter Store Phone"
-            maxLength={10}
             inputMode="tel"
             controls={{
-              "(0|\\+[0-9]{1,3})[0-9]{9}": {
+              "^(0|\\+[0-9]{1,3})[0-9]{9}$": {
                 succ: "valid",
                 err: "invalid",
               },
             }}
           />
           <Field
+            className="rounded-xl"
             inputName="store-email"
             placeholder="Enter Store Email"
             inputMode="email"
@@ -103,7 +108,10 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
               </h3>
               <Button
                 onClick={() => {
-                  showPopup(<SetStorePlatforms store={store} />);
+                  const id = crypto.randomUUID();
+                  showPopup(<SetStorePlatforms store={store} popupId={id} />, {
+                    id,
+                  });
                 }}
                 className="px-3 py-1 w-fit text-sm"
                 icon={allIcons.solid.faGlobe}
@@ -134,7 +142,7 @@ export const UpsertStore = ({ store }: UpsertStoreProps) => {
                 })}
               </div>
             ) : (
-              <div className="py-4 text-gray-500 text-center">
+              <div className="text-[--biqpod-gray-opacity-2] py-4 text-center">
                 <Icon icon={allIcons.solid.faGlobe} className="mb-1 text-2xl" />
                 <div className="text-sm">
                   <Translate content="no platforms configured" />

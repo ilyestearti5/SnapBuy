@@ -101,9 +101,9 @@ export const SetPixels = ({ store }: SetPixelsProps) => {
           <div className="p-2">
             <div
               key={item.id}
-              className="flex items-center gap-4 p-4 border border-solid rounded-xl"
+              className="flex items-center gap-4 p-2 border border-solid rounded-xl"
               style={{
-                borderColor: item.color,
+                borderColor: item.color + "77",
               }}
             >
               <img
@@ -112,14 +112,14 @@ export const SetPixels = ({ store }: SetPixelsProps) => {
                 className="rounded-full w-12 h-12"
               />
               <div className="flex flex-col gap-2 w-full">
-                <span className="font-bold text-xl capitalize">
+                <span className="font-bold text-md capitalize">
                   {item.id} :
                 </span>
                 <div className="relative w-full">
                   <Field
                     className="rounded-xl"
                     style={{
-                      borderColor: item.color,
+                      borderColor: item.color + "77",
                     }}
                     placeholder="Enter Pixel ID"
                     inputName={`pixel-${item.id}`}

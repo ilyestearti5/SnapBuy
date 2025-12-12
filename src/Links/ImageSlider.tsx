@@ -4,6 +4,7 @@ import {
   CircleTip,
   Line,
   Image,
+  Icon,
 } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
@@ -207,7 +208,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
     display: "flex",
   };
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col w-full h-full">
       <div
         className={tw(
           "relative flex justify-center items-center w-full h-full overflow-hidden",
@@ -237,9 +238,15 @@ export const ImageSlider: React.FC<SliderProps> = ({
                     draggable="false"
                     src={photo}
                     className={tw(
-                      "absolute top-1/2 object-contain left-1/2 h-full rounded-none",
+                      "absolute top-1/2 rounded-none object-contain left-1/2 h-full w-full",
                       zoom && "transition-transform duration-200 ease-out"
                     )}
+                    alt={
+                      <Icon
+                        icon={allIcons.solid.faImage}
+                        className="text-[--biqpod-gray-opacity] text-6xl"
+                      />
+                    }
                     style={
                       zoom && index === current.get && isZooming.get
                         ? {

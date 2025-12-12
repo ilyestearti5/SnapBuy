@@ -40,14 +40,6 @@ export const ProductDataBeforeCreate = () => {
         </div>
         <div className="flex items-center gap-2 p-2 w-full">
           <div className="flex items-center gap-2 w-full">
-            <Icon icon={allIcons.solid.faKey} />
-            <p className="font-semibold capitalize">
-              <Translate content="keys" />:
-            </p>
-          </div>
-        </div>
-        <div className="flex items-center gap-2 p-2 w-full">
-          <div className="flex items-center gap-2 w-full">
             <Icon icon={allIcons.solid.faListNumeric} />
             <p className="font-semibold capitalize">
               <Translate content="limited" />:

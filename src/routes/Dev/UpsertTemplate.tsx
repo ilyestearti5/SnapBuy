@@ -13,6 +13,9 @@ import {
   Icon,
   EmptyComponent,
   Input,
+  Image,
+  MarkDown,
+  BooleanField,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
@@ -26,10 +29,12 @@ import {
   useCopyState,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { tw } from "@biqpod/app/ui/utils";
-import { useEffect, useRef, useState } from "react";
+import { setFocused, tw } from "@biqpod/app/ui/utils";
+import { useEffect, useRef, useState, useMemo } from "react";
 import { isAccountLinked, snapbuyApi } from "../../apis";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
+import { isAndroidWeb } from "../../utils";
+import { isIosWeb } from "@biqpod/app/ui/app";
 const fuzzySearch = (
   query: string,
   target: string
@@ -54,7 +59,10 @@ const fuzzySearch = (
         matches: true,
         highlighted: [
           target.slice(0, index),
-          <span key="highlight" className="bg-[--biqpod-primary]">
+          <span
+            key="highlight"
+            className="bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+          >
             {target.slice(index, index + query.length)}
           </span>,
           target.slice(index + query.length),
@@ -109,8 +117,11 @@ interface GithubRepo {
 interface NpmPackage {
   name: string;
 }
+interface GitlabRepo {
+  name?: string;
+}
 interface SelectedItem {
-  provider: "github" | "npm";
+  provider: string;
   name: string;
 }
 export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
@@ -121,50 +132,56 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [githubRepos, setGithubRepos] = useState<GithubRepo[]>([]);
   const [npmPackages, setNpmPackages] = useState<NpmPackage[]>([]);
+  const [gitlabRepos, setGitlabRepos] = useState<GitlabRepo[]>([]);
   const [loadingRepos, setLoadingRepos] = useState(false);
-  const [selectedRepo, setSelectedRepo] = useState<GithubRepo | null>(null);
-  const [selectedPackage, setSelectedPackage] = useState<NpmPackage | null>(
-    null
-  );
-  const [selectedType, setSelectedType] = useState<"github" | "npm" | null>(
-    null
-  );
-  const [selectedItem, setSelectedItem] = useState<SelectedItem | null>(null);
+  const [selected, setSelected] = useState<{
+    repo: GithubRepo | null;
+    pkg: NpmPackage | null;
+    gitlab: GitlabRepo | null;
+    type: string | null;
+    item: SelectedItem | null;
+  }>({
+    repo: null,
+    pkg: null,
+    gitlab: null,
+    type: null,
+    item: null,
+  });
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
-  const [linkingProvider, setLinkingProvider] = useState<
-    "github" | "npm" | null
-  >(null);
-
+  const [linkingProvider, setLinkingProvider] = useState<string | null>(null);
+  const useReadmeDescription = useCopyState<boolean | null | undefined>(false);
   const isGithubLinked = useAsyncMemo(async () => {
     return await isAccountLinked("github");
   }, [user]);
-
   const isNpmLinked = useAsyncMemo(async () => {
     return await isAccountLinked("npm");
   }, [user]);
-
+  const isGitlabLinked = useAsyncMemo(async () => {
+    return await isAccountLinked("gitlab");
+  }, [user]);
   // Provider images configuration
-  const providerConfig = {
+  const providerConfig: Record<string, { image: string; label: string }> = {
     github: {
       image:
         "https://upload.wikimedia.org/wikipedia/commons/thumb/a/ae/Github-desktop-logo-symbol.svg/2048px-Github-desktop-logo-symbol.svg.png",
       label: "link github",
-      placeholder: "Search GitHub repositories...",
     },
     npm: {
       image:
         "https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Npm-logo.svg/1200px-Npm-logo.svg.png",
       label: "link npm",
-      placeholder: "Search NPM packages...",
+    },
+    gitlab: {
+      image:
+        "https://about.gitlab.com/images/press/logo/png/gitlab-logo-500.png",
+      label: "link gitlab",
     },
   };
-
   // Render link button for a provider
-  const renderLinkButton = (provider: "github" | "npm") => {
+  const renderLinkButton = (provider: "github" | "npm" | "gitlab") => {
     const isLinking = linkingProvider === provider;
-
     return (
       <div
         key={provider}
@@ -197,82 +214,146 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
       </div>
     );
   };
-
-  // Get dynamic placeholder text
-  const getPlaceholder = () => {
-    if (isGithubLinked && isNpmLinked) {
-      return "Search GitHub repositories or NPM packages...";
-    }
-    return isGithubLinked
-      ? providerConfig.github.placeholder
-      : providerConfig.npm.placeholder;
-  };
-
-  // Handle item selection
+  // Handle item selection from dropdown
   const handleItemSelection = (
-    provider: "github" | "npm",
-    item: { repo: GithubRepo; name: string } | { pkg: NpmPackage; name: string }
+    provider: "github" | "npm" | "gitlab",
+    item: any
   ) => {
-    if (provider === "github" && "repo" in item) {
-      setSelectedRepo(item.repo);
-      setSelectedPackage(null);
-    } else if (provider === "npm" && "pkg" in item) {
-      setSelectedPackage(item.pkg);
-      setSelectedRepo(null);
+    if (provider === "github") {
+      setSelected({
+        repo: item.repo,
+        pkg: null,
+        gitlab: null,
+        type: "github",
+        item: { provider: "github", name: item.name },
+      });
+    } else if (provider === "npm") {
+      setSelected({
+        repo: null,
+        pkg: item.pkg,
+        gitlab: null,
+        type: "npm",
+        item: { provider: "npm", name: item.name },
+      });
+    } else if (provider === "gitlab") {
+      setSelected({
+        repo: null,
+        pkg: null,
+        gitlab: item.repo,
+        type: "gitlab",
+        item: { provider: "gitlab", name: item.name },
+      });
     }
-    setSelectedType(provider);
-    searchQuery.set(item.name);
-    setSelectedItem({ provider, name: item.name });
     setShowDropdown(false);
-  };
-
-  // Clear selection
-  const clearSelection = () => {
-    setSelectedItem(null);
-    setSelectedRepo(null);
-    setSelectedPackage(null);
-    setSelectedType(null);
     searchQuery.set("");
   };
-
-  // Fetch GitHub repositories
-  const fetchGithubRepos = async () => {
-    setLoadingRepos(true);
-    try {
-      const repos = await snapbuyApi.templates.getGithubRepository();
-      setGithubRepos(repos || []);
-    } catch (error) {
-      console.error("Failed to fetch GitHub repositories:", error);
-      setGithubRepos([]);
-    } finally {
-      setLoadingRepos(false);
-    }
+  // Helper function to render provider sections
+  const renderProviderSection = (
+    provider: "github" | "npm" | "gitlab",
+    items: any[],
+    filteredItems: any[],
+    startIndex: number,
+    isLinked: boolean
+  ) => {
+    if (!isLinked || !items.length) return null;
+    return (
+      <div>
+        <div className="top-0 sticky bg-[--biqpod-secondary-background] font-semibold text-sm capitalize">
+          <div className="flex items-center gap-2 hover:bg-[--biqpod-gray-opacity] mx-2 my-1 px-4 py-1 rounded-xl w-fit cursor-pointer">
+            <Image
+              src={providerConfig[provider].image}
+              className="w-[30px] h-[30px]"
+            />
+            <span>
+              <Translate content={provider} />
+            </span>
+            <Icon icon={allIcons.solid.faChevronRight} />
+          </div>
+          <Line />
+        </div>
+        {filteredItems.map((item: any, index: number) => {
+          const itemIndex = startIndex + index;
+          const isSelected = selectedIndex === itemIndex;
+          return (
+            <div
+              key={`${provider}-${index}`}
+              ref={(el) => (itemRefs.current[itemIndex] = el)}
+              className={tw(
+                "flex items-center p-2 cursor-pointer",
+                !isSelected && "hover:bg-[--biqpod-gray-opacity]",
+                isSelected &&
+                  "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+              )}
+              onClick={() => handleItemSelection(provider, item)}
+            >
+              <Icon
+                icon={
+                  provider === "npm"
+                    ? allIcons.solid.faBox
+                    : allIcons.solid.faCodeBranch
+                }
+                className="mr-2"
+              />
+              <span>{item.highlighted}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
   };
-  // Fetch NPM packages
-  const fetchNpmPackages = async () => {
+  // Clear selection
+  const clearSelection = () => {
+    setSelected({
+      repo: null,
+      pkg: null,
+      gitlab: null,
+      type: null,
+      item: null,
+    });
+    searchQuery.set("");
+  };
+  // Fetch items from provider
+  const fetchItems = async (provider: "github" | "npm" | "gitlab") => {
     setLoadingRepos(true);
     try {
-      const packages = await snapbuyApi.templates.getNpmPackage();
-      setNpmPackages(packages || []);
+      if (provider === "github") {
+        const repos = await snapbuyApi.templates.getGithubRepository();
+        setGithubRepos(repos || []);
+      } else if (provider === "npm") {
+        const packages = await snapbuyApi.templates.getNpmPackage();
+        setNpmPackages(packages || []);
+      } else if (provider === "gitlab") {
+        const repos = await snapbuyApi.templates.getGitlabRepository();
+        setGitlabRepos(repos || []);
+      }
     } catch (error) {
-      console.error("Failed to fetch NPM packages:", error);
-      setNpmPackages([]);
+      console.error(`Failed to fetch ${provider} items:`, error);
+      if (provider === "github") {
+        setGithubRepos([]);
+      } else if (provider === "npm") {
+        setNpmPackages([]);
+      } else if (provider === "gitlab") {
+        setGitlabRepos([]);
+      }
     } finally {
       setLoadingRepos(false);
     }
   };
   // Helper function to generate template URL
   const generateTemplateUrl = (): string => {
-    if (selectedType === "github" && selectedRepo) {
-      const repoName = selectedRepo.name || "";
+    if (selected.type === "github" && selected.repo) {
+      const repoName = selected.repo.name || "";
       return `https://github.com/${repoName}`;
-    } else if (selectedType === "npm" && selectedPackage) {
-      return `https://www.npmjs.com/package/${selectedPackage.name}`;
+    } else if (selected.type === "npm" && selected.pkg) {
+      return `https://www.npmjs.com/package/${selected.pkg.name}`;
+    } else if (selected.type === "gitlab" && selected.gitlab) {
+      const repoName = selected.gitlab.name || "";
+      return `https://gitlab.com/${repoName}`;
     }
     return "";
   };
   // Get filtered items with highlighting
-  const getFilteredItems = () => {
+  const filteredItems = useMemo(() => {
     const query = searchQuery.get;
     const filteredRepos = githubRepos
       .map((repo) => {
@@ -297,14 +378,28 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         };
       })
       .filter((item) => !query || item.matches);
-    return { filteredRepos, filteredPackages };
-  };
+    const filteredGitlab = gitlabRepos
+      .map((repo) => {
+        const name = repo.name || "";
+        const searchResult = fuzzySearch(query, name);
+        return {
+          repo,
+          name,
+          matches: searchResult.matches,
+          highlighted: searchResult.highlighted,
+        };
+      })
+      .filter((item) => !query || item.matches);
+    return { filteredRepos, filteredPackages, filteredGitlab };
+  }, [searchQuery.get, githubRepos, npmPackages, gitlabRepos]);
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!showDropdown) return;
-      const { filteredRepos, filteredPackages } = getFilteredItems();
-      const totalItems = filteredRepos.length + filteredPackages.length;
+      const totalItems =
+        filteredItems.filteredRepos.length +
+        filteredItems.filteredPackages.length +
+        filteredItems.filteredGitlab.length;
       if (totalItems === 0) return;
       switch (e.key) {
         case "ArrowDown":
@@ -318,16 +413,32 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         case "Enter":
           e.preventDefault();
           if (selectedIndex >= 0 && selectedIndex < totalItems) {
-            if (selectedIndex < filteredRepos.length) {
-              const item = filteredRepos[selectedIndex];
+            if (selectedIndex < filteredItems.filteredRepos.length) {
+              const item = filteredItems.filteredRepos[selectedIndex];
               if (item) {
                 handleItemSelection("github", item);
               }
-            } else {
+            } else if (
+              selectedIndex <
+              filteredItems.filteredRepos.length +
+                filteredItems.filteredPackages.length
+            ) {
               const item =
-                filteredPackages[selectedIndex - filteredRepos.length];
+                filteredItems.filteredPackages[
+                  selectedIndex - filteredItems.filteredRepos.length
+                ];
               if (item) {
                 handleItemSelection("npm", item);
+              }
+            } else {
+              const item =
+                filteredItems.filteredGitlab[
+                  selectedIndex -
+                    filteredItems.filteredRepos.length -
+                    filteredItems.filteredPackages.length
+                ];
+              if (item) {
+                handleItemSelection("gitlab", item);
               }
             }
             setSelectedIndex(-1);
@@ -345,7 +456,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
     return () => {
       document.removeEventListener("keydown", handleKeyDown);
     };
-  }, [showDropdown, selectedIndex, githubRepos, npmPackages, searchQuery.get]);
+  }, [showDropdown, selectedIndex, filteredItems]);
   // Reset selected index when dropdown opens or search changes
   useEffect(() => {
     if (showDropdown) {
@@ -378,18 +489,38 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
       // Try to detect the source type from existing URL
       const url = template.url || "";
       if (url.includes("github.com")) {
-        setSelectedType("github");
         const repoName = url.split("/").pop() || "";
         searchQuery.set(repoName);
-        setSelectedItem({ provider: "github", name: repoName });
+        setSelected({
+          repo: { name: repoName },
+          pkg: null,
+          gitlab: null,
+          type: "github",
+          item: { provider: "github", name: repoName },
+        });
       } else if (url.includes("npmjs.com")) {
-        setSelectedType("npm");
         const npmMatch = url.match(/npmjs\.com\/package\/([^\/]+)/);
         if (npmMatch) {
           const pkgName = npmMatch[1];
           searchQuery.set(pkgName);
-          setSelectedItem({ provider: "npm", name: pkgName });
+          setSelected({
+            repo: null,
+            pkg: { name: pkgName },
+            gitlab: null,
+            type: "npm",
+            item: { provider: "npm", name: pkgName },
+          });
         }
+      } else if (url.includes("gitlab.com")) {
+        const repoName = url.split("/").pop() || "";
+        searchQuery.set(repoName);
+        setSelected({
+          repo: null,
+          pkg: null,
+          gitlab: { name: repoName },
+          type: "gitlab",
+          item: { provider: "gitlab", name: repoName },
+        });
       }
       photoState.set(template.photo || null);
     } else {
@@ -410,8 +541,14 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   const saveAction = useAction(
     "save-template",
     async () => {
+      const focusInput = (fieldId: string | null = null) => {
+        if (!isAndroidWeb && !isIosWeb) {
+          setFocused(fieldId);
+        }
+      };
       if (!templateName?.trim()) {
         showToast("Please enter a template name", "error");
+        focusInput("template-name");
         return;
       }
       // Validate prices
@@ -422,6 +559,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           "Please enter a valid single use price (0 or greater)",
           "error"
         );
+        focusInput("template-single-price");
         return;
       }
       if (isNaN(multiPriceValue) || multiPriceValue < 0) {
@@ -429,17 +567,21 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           "Please enter a valid multiple use price (0 or greater)",
           "error"
         );
+        focusInput("template-multi-price");
         return;
       }
       // Validate based on source type
-      if (selectedType === "github" && !selectedRepo) {
+      if (selected.type === "github" && !selected.repo) {
         showToast("Please select a GitHub repository", "error");
         return;
-      } else if (selectedType === "npm" && !selectedPackage) {
+      } else if (selected.type === "npm" && !selected.pkg) {
         showToast("Please select an NPM package", "error");
         return;
+      } else if (selected.type === "gitlab" && !selected.gitlab) {
+        showToast("Please select a GitLab repository", "error");
+        return;
       }
-      if (!selectedType) {
+      if (!selected.type) {
         showToast("Please select a repository or package", "error");
         return;
       }
@@ -468,35 +610,15 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
       templateDescription,
       templateSinglePrice,
       templateMultiPrice,
-      selectedType,
-      selectedRepo,
-      selectedPackage,
+      selected,
       photoState.get,
       template,
       templateUrl,
     ]
   );
   const loading = isLoading(saveAction);
-
-  if (loading) {
-    return (
-      <Card className="flex justify-center items-center min-w-[400px] min-h-[300px]">
-        <CircleLoading className="flex justify-center items-center" />
-      </Card>
-    );
-  }
   return (
-    <Card className="max-md:rounded-none max-md:w-full md:w-2/3 min-w-[400px] max-md:h-full md:max-h-[80vh]">
-      <style>
-        {`
-          .dropdown-highlight {
-            background-color: var(--biqpod-primary);
-            color: var(--biqpod-primary-content);
-            padding: 0 2px;
-            border-radius: 2px;
-          }
-        `}
-      </style>
+    <Card className="relative max-md:rounded-none max-md:w-full md:w-2/3 min-w-[400px] max-md:h-full md:max-h-[80vh] overflow-hidden">
       <CardHeaderForPopup
         title={template ? "Edit Template" : "Create Template"}
       />
@@ -527,18 +649,43 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           />
         </div>
         <div className="flex flex-col gap-2 p-3">
-          <label className="font-semibold capitalize">
-            <Translate content="description" />
+          <label className="flex items-center gap-2">
+            <BooleanField
+              state={useReadmeDescription}
+              config={{
+                style: "switch",
+              }}
+            />
+            <span className="font-semibold capitalize">
+              <Translate content="use readme.md as description" />
+            </span>
           </label>
-          <Field
-            inputName="template-description"
-            placeholder="Enter template description"
-            multiLines
-            rows={3}
-            maxRows={5}
-            maxLength={500}
-          />
+          {!useReadmeDescription.get && (
+            <div className="bg-blue-500/20 p-3 border border-[--biqpod-primary] border-solid rounded-2xl text-sm">
+              README.md file will come from the selected repo
+            </div>
+          )}
         </div>
+        {useReadmeDescription.get && (
+          <div className="flex flex-col gap-2 p-3">
+            <label className="font-semibold capitalize">
+              <Translate content="description" />
+            </label>
+            {templateDescription && (
+              <div className="bg-[--biqpod-primary-background] shadow-lg mb-2 p-2 border border-[--biqpod-borders] border-solid rounded-lg">
+                <MarkDown value={templateDescription} />
+              </div>
+            )}
+            <Field
+              inputName="template-description"
+              placeholder="Enter template description"
+              multiLines
+              rows={3}
+              maxRows={5}
+              maxLength={500}
+            />
+          </div>
+        )}
         <div className="flex flex-col gap-2 p-3">
           <label className="font-semibold capitalize">
             <Translate content="single use price" /> ($)
@@ -564,9 +711,8 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           <label className="font-semibold capitalize">
             <Translate content="search repositories or packages" />*
           </label>
-
           {/* Show link buttons if neither is linked */}
-          {!isGithubLinked && !isNpmLinked ? (
+          {!isGithubLinked && !isNpmLinked && !isGitlabLinked ? (
             <div className="flex flex-col gap-3">
               <div className="text-[--biqpod-gray-opacity-2] text-sm">
                 <Translate content="please link at least one account to continue" />
@@ -574,189 +720,139 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
               <div className="flex justify-evenly gap-2">
                 {renderLinkButton("github")}
                 {renderLinkButton("npm")}
+                {renderLinkButton("gitlab")}
               </div>
             </div>
           ) : (
             <div className="flex flex-col gap-2">
               {/* Show link buttons for unlinked accounts */}
-              <div className="flex justify-evenly gap-2">
-                {!isGithubLinked && renderLinkButton("github")}
-                {!isNpmLinked && renderLinkButton("npm")}
-              </div>
-              {/* Show search field */}
-              <div className="relative w-full">
-                {selectedItem ? (
-                  <div className="flex items-center gap-2 bg-[--biqpod-secondary-background] p-2 border border-[--biqpod-borders] rounded-2xl">
-                    <img
-                      src={
-                        selectedItem.provider === "github"
-                          ? "https://cdn3d.iconscout.com/3d/free/thumb/free-github-2950150-2447911.png"
-                          : "https://cdn3d.iconscout.com/3d/free/thumb/free-npm-3d-icon-download-in-png-blend-fbx-gltf-file-formats--node-package-manager-javascript-coding-lang-pack-logos-icons-7578025.png?f=webp"
-                      }
-                      className="w-8 h-8 object-contain"
-                      alt={selectedItem.provider}
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-sm">
-                        {selectedItem.name}
-                      </div>
-                      <div className="text-[--biqpod-gray-opacity-2] text-xs capitalize">
-                        {selectedItem.provider}
-                      </div>
-                    </div>
-                    <CircleTip
-                      icon={allIcons.solid.faXmark}
-                      onClick={clearSelection}
-                      className="text-[--biqpod-gray-opacity-2] hover:text-[--biqpod-danger]"
-                    />
-                  </div>
-                ) : (
-                  <EmptyComponent>
-                    <Input
-                      ref={inputRef}
-                      type="text"
-                      value={searchQuery.get}
-                      onChange={(e) => searchQuery.set(e.target.value)}
-                      onFocus={() => {
-                        if (isGithubLinked && !githubRepos.length) {
-                          fetchGithubRepos();
-                        }
-                        if (isNpmLinked && !npmPackages.length) {
-                          fetchNpmPackages();
-                        }
-                        setShowDropdown(true);
-                        setSelectedIndex(-1);
-                      }}
-                      onBlur={() =>
-                        setTimeout(() => {
-                          setShowDropdown(false);
-                          setSelectedIndex(-1);
-                        }, 200)
-                      }
-                      placeholder={getPlaceholder()}
-                    />
-                    {showDropdown && (
-                      <div
-                        ref={dropdownRef}
-                        className="right-0 bottom-full left-0 z-10 absolute flex flex-col bg-[--biqpod-primary-background] shadow-lg border border-[--biqpod-borders] border-solid rounded-lg max-h-60 overflow-y-auto"
-                      >
-                        {loadingRepos ? (
-                          <div className="p-2 text-center">
-                            <Translate content="loading" />
-                            ...
-                          </div>
-                        ) : (
-                          <EmptyComponent>
-                            {/* GitHub Repos Section - Only show if GitHub is linked */}
-                            {isGithubLinked && !!githubRepos.length && (
-                              <div>
-                                <div className="top-0 sticky bg-[--biqpod-secondary-background] font-semibold text-sm capitalize">
-                                  <div className="hover:bg-[--biqpod-gray-opacity] mx-2 my-1 px-4 py-2 rounded-2xl w-fit cursor-pointer">
-                                    <Translate content="github" />{" "}
-                                    <Icon
-                                      icon={allIcons.solid.faChevronRight}
-                                    />
-                                  </div>
-                                  <Line />
-                                </div>
-                                {getFilteredItems().filteredRepos.map(
-                                  (item, index) => {
-                                    const isSelected = selectedIndex === index;
-                                    return (
-                                      <div
-                                        key={`github-${index}`}
-                                        ref={(el) =>
-                                          (itemRefs.current[index] = el)
-                                        }
-                                        className={tw(
-                                          "flex items-center p-2 cursor-pointer",
-                                          isSelected &&
-                                            "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
-                                        )}
-                                        onClick={() =>
-                                          handleItemSelection("github", item)
-                                        }
-                                      >
-                                        <Icon
-                                          icon={allIcons.solid.faCodeBranch}
-                                          className="mr-2"
-                                        />
-                                        <span>{item.highlighted}</span>
-                                      </div>
-                                    );
-                                  }
-                                )}
-                              </div>
-                            )}
-                            {/* NPM Packages Section - Only show if NPM is linked */}
-                            {isNpmLinked && !!npmPackages.length && (
-                              <div>
-                                <div className="top-0 sticky bg-[--biqpod-secondary-background] font-semibold text-sm capitalize">
-                                  <div className="hover:bg-[--biqpod-gray-opacity] mx-2 my-1 px-4 py-2 rounded-2xl w-fit cursor-pointer">
-                                    <Translate content="npm" />{" "}
-                                    <Icon
-                                      icon={allIcons.solid.faChevronRight}
-                                    />
-                                  </div>
-                                  <Line />
-                                </div>
-                                {getFilteredItems().filteredPackages.map(
-                                  (item, index) => {
-                                    const filteredRepos =
-                                      getFilteredItems().filteredRepos;
-                                    const itemIndex = isGithubLinked
-                                      ? filteredRepos.length + index
-                                      : index;
-                                    const isSelected =
-                                      selectedIndex === itemIndex;
-                                    return (
-                                      <div
-                                        key={`npm-${index}`}
-                                        ref={(el) =>
-                                          (itemRefs.current[itemIndex] = el)
-                                        }
-                                        className={tw(
-                                          "flex items-center p-2 cursor-pointer",
-                                          isSelected &&
-                                            "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
-                                        )}
-                                        onClick={() =>
-                                          handleItemSelection("npm", item)
-                                        }
-                                      >
-                                        <Icon
-                                          icon={allIcons.solid.faBox}
-                                          className="mr-2"
-                                        />
-                                        <span>{item.highlighted}</span>
-                                      </div>
-                                    );
-                                  }
-                                )}
-                              </div>
-                            )}
-                            {/* No results message */}
-                            {((isGithubLinked && githubRepos.length === 0) ||
-                              (isNpmLinked && npmPackages.length === 0)) &&
-                              !(isGithubLinked && githubRepos.length > 0) &&
-                              !(isNpmLinked && npmPackages.length > 0) && (
-                                <div className="text-[--biqpod-gray-opacity-2] p-2 text-center">
-                                  <Translate content="no results found" />
-                                </div>
-                              )}
-                          </EmptyComponent>
-                        )}
-                      </div>
-                    )}
-                  </EmptyComponent>
-                )}
+              <div className="flex justify-evenly gap-2 p-2">
+                {isGithubLinked === false && renderLinkButton("github")}
+                {isNpmLinked === false && renderLinkButton("npm")}
+                {isGitlabLinked === false && renderLinkButton("gitlab")}
               </div>
             </div>
+          )}
+        </div>
+        <Line />
+        <div className="relative p-2 w-full">
+          {selected.item ? (
+            <div className="flex items-center gap-2 bg-[--biqpod-secondary-background] p-2 border border-[--biqpod-borders] rounded-2xl">
+              <img
+                src={providerConfig[selected.item.provider].image}
+                className="w-8 h-8 object-contain"
+                alt={selected.item.provider}
+              />
+              <div className="flex-1">
+                <div className="font-medium text-sm">{selected.item.name}</div>
+                <div className="text-[--biqpod-gray-opacity-2] text-xs capitalize">
+                  {selected.item.provider}
+                </div>
+              </div>
+              <CircleTip
+                icon={allIcons.solid.faXmark}
+                onClick={clearSelection}
+                className="text-[--biqpod-gray-opacity-2] hover:text-[--biqpod-danger]"
+              />
+            </div>
+          ) : (
+            <EmptyComponent>
+              <Input
+                ref={inputRef}
+                type="text"
+                value={searchQuery.get}
+                onChange={(e) => searchQuery.set(e.target.value)}
+                onFocus={() => {
+                  if (isGithubLinked && !githubRepos.length) {
+                    fetchItems("github");
+                  }
+                  if (isNpmLinked && !npmPackages.length) {
+                    fetchItems("npm");
+                  }
+                  if (isGitlabLinked && !gitlabRepos.length) {
+                    fetchItems("gitlab");
+                  }
+                  setShowDropdown(true);
+                  setSelectedIndex(-1);
+                }}
+                onBlur={() =>
+                  setTimeout(() => {
+                    setShowDropdown(false);
+                    setSelectedIndex(-1);
+                  }, 200)
+                }
+                placeholder={"Search repositories or packages..."}
+              />
+              {showDropdown && (
+                <div
+                  ref={dropdownRef}
+                  className="right-0 bottom-full left-0 z-10 absolute flex flex-col bg-[--biqpod-primary-background] shadow-lg border border-[--biqpod-borders] border-solid rounded-lg max-h-60 overflow-y-auto"
+                >
+                  {loadingRepos ? (
+                    <div className="p-2 text-center">
+                      <Translate content="loading" />
+                      ...
+                    </div>
+                  ) : (
+                    <EmptyComponent>
+                      {/* GitHub Repos Section */}
+                      {renderProviderSection(
+                        "github",
+                        githubRepos,
+                        filteredItems.filteredRepos,
+                        0,
+                        !!isGithubLinked
+                      )}
+                      {/* NPM Packages Section */}
+                      {renderProviderSection(
+                        "npm",
+                        npmPackages,
+                        filteredItems.filteredPackages,
+                        filteredItems.filteredRepos.length,
+                        !!isNpmLinked
+                      )}
+                      {/* GitLab Repos Section */}
+                      {renderProviderSection(
+                        "gitlab",
+                        gitlabRepos,
+                        filteredItems.filteredGitlab,
+                        filteredItems.filteredRepos.length +
+                          filteredItems.filteredPackages.length,
+                        !!isGitlabLinked
+                      )}
+                      {/* No results message */}
+                      {!filteredItems.filteredRepos.length &&
+                        !filteredItems.filteredPackages.length &&
+                        !filteredItems.filteredGitlab.length &&
+                        (isGithubLinked || isNpmLinked || isGitlabLinked) && (
+                          <div className="text-[--biqpod-gray-opacity-2] p-2 text-center">
+                            <Translate content="no results found" />
+                          </div>
+                        )}
+                    </EmptyComponent>
+                  )}
+                </div>
+              )}
+            </EmptyComponent>
           )}
         </div>
       </Scroll>
       <Line />
       <div className="flex justify-end gap-2 p-4">
+        {template?.id && (
+          <Button
+            icon={template ? allIcons.solid.faPen : allIcons.solid.faPlus}
+            className={tw(
+              "rounded-full bg-[--biqpod-error] text-[--biqpod-error-content]",
+              loading && "pointer-events-none opacity-50"
+            )}
+            onClick={() => {
+              execAction("delete-template", template.id);
+            }}
+          >
+            <Translate content={"delete"} />
+          </Button>
+        )}
         <Button
           icon={template ? allIcons.solid.faPen : allIcons.solid.faPlus}
           className={tw(
@@ -770,6 +866,11 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
           <Translate content={template ? "update" : "create"} />
         </Button>
       </div>
+      {loading && (
+        <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity]">
+          <CircleLoading />
+        </div>
+      )}
     </Card>
   );
 };

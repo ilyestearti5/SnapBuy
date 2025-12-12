@@ -12,15 +12,15 @@ import {
   closePopup,
   confirm,
   getTemp,
-  getTempFromStore,
   setTemp,
+  showToast,
 } from "@biqpod/app/ui/hooks";
-import { colors, icons } from "../../utils";
-import { deleteDoc, setDoc } from "../../server";
-import { mergeArray, tw } from "@biqpod/app/ui/utils";
+import { colors, orderStatusIcons } from "../../utils";
+import { tw } from "@biqpod/app/ui/utils";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { snapbuyApi } from "../../apis";
 export interface ChangeStatusProps {
-  order: Biqpod.Snapbuy.Order;
+  orders: Biqpod.Snapbuy.Order[];
 }
 export const allStatus: Biqpod.Snapbuy.OrderStatus[] = [
   "pending",
@@ -30,7 +30,7 @@ export const allStatus: Biqpod.Snapbuy.OrderStatus[] = [
   "delivery",
   "done",
 ];
-export const ChangeStatus = ({ order }: ChangeStatusProps) => {
+export const ChangeStatus = ({ orders }: ChangeStatusProps) => {
   const selectOne = getTemp<Biqpod.Snapbuy.OrderStatus>("selected-status");
   return (
     <Card className="max-md:w-11/12 md:w-2/3">
@@ -64,12 +64,12 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
               }}
               key={singleStatus}
               className={tw(
-                "px-3 py-2 transition-[padding] duration-300 cursor-pointer",
-                isSelected && "px-8 capitalize"
+                "px-3 py-2 capitalize transition-[padding] duration-300 cursor-pointer",
+                isSelected && "px-8 "
               )}
             >
               <span className="inline-flex items-center gap-2 p-2 rounded-2xl">
-                <Icon icon={icons[singleStatus]} />
+                <Icon icon={orderStatusIcons[singleStatus]} />
                 <span>{singleStatus}</span>
               </span>
             </div>
@@ -84,48 +84,22 @@ export const ChangeStatus = ({ order }: ChangeStatusProps) => {
             if (!selectOne) {
               return;
             }
-            if (selectOne === "done") {
-              const response = await confirm({
-                title: "Are you sure?",
-                message: "This will delete the order",
-                type: "warning",
-              });
-              if (response) {
-                await deleteDoc([
-                  "projects",
-                  import.meta.env.VITE_PROJECT_ID,
-                  "orders",
-                  order.id,
-                ]);
-              }
+
+            const result = await confirm({
+              title: "confirm status change",
+              message: `are you sure you want to change the status of ${orders.length} order(s) to "${selectOne}"?`,
+              type: "warning",
+            });
+
+            if (!result) {
               return;
             }
-            await setDoc(
-              ["projects", import.meta.env.VITE_PROJECT_ID, "orders", order.id],
-              {
-                status: selectOne,
-              }
-            );
-            const allOredrs =
-              getTempFromStore<Biqpod.Snapbuy.Order[]>("orders-list");
-            const findedIndex = allOredrs?.findIndex(
-              (item) => item.id === order.id
-            );
-            const finded =
-              findedIndex !== undefined && allOredrs?.[findedIndex];
-            if (finded && findedIndex !== undefined) {
-              var props = {
-                ...finded,
-                status: selectOne,
-              };
-              const result = mergeArray(
-                allOredrs?.slice(0, findedIndex),
-                [props],
-                allOredrs?.slice(findedIndex + 1, allOredrs.length)
-              ).flat();
-              setTemp("orders-list", result);
-            }
             closePopup();
+            const allPromiseds = orders.map(async (order) => {
+              return snapbuyApi.order.updateStatus(order.id, selectOne!);
+            });
+            await Promise.all(allPromiseds);
+            showToast("status updated successfully", "success");
           }}
         >
           <Translate content={`change to ${selectOne}`} />

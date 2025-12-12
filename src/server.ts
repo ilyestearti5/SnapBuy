@@ -11,6 +11,10 @@ export const cloud = initMyCloud({
   messagingSenderId: "911813185967",
   appId: "1:911813185967:web:4447a361eeaddd00315f5a",
   measurementId: "G-8GB7LZPHVX",
+  supbase: {
+    endpoint: "https://hfwztxhzyqomogtgkgjs.supabase.co",
+    apiKey: "sb_secret_O77ZR1TX5qouFKj2ZGGuNA_1gyn_if4",
+  },
   functions: {
     devUri: (fnId) => LOCAL_ENDPOINT + `/invoke/${fnId}`,
     prodUri: (fnId) => {

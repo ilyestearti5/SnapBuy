@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useHistory } from "react-router-dom";
 import {
   Button,
   Icon,
@@ -8,9 +8,14 @@ import {
   Line,
   Image,
   CardWait,
+  EmptyComponent,
 } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { getIndexedDBItem } from "@biqpod/app/ui/hooks";
+import {
+  confirm,
+  getIndexedDBItem,
+  setIndexedDBItem,
+} from "@biqpod/app/ui/hooks";
 import { useUser } from "@biqpod/app/ui/hooks";
 import { useEffect, useState } from "react";
 import { Biqpod } from "@biqpod/app/ui/types";
@@ -39,14 +44,11 @@ const scaleIn = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: { opacity: 1, scale: 1, transition: { duration: 0.5 } },
 };
-
 const MAX_RECENT_STORES = 5;
-
 export const Homepage = () => {
   const user = useUser();
   const [recentStores, setRecentStores] = useState<Biqpod.Snapbuy.Store[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
-
   // Load recently visited stores from IndexedDB
   useEffect(() => {
     const loadRecentStores = async () => {
@@ -54,7 +56,6 @@ export const Homepage = () => {
         setLoadingRecent(false);
         return;
       }
-
       try {
         const key = `recently-visited-${user.uid}`;
         const data = await getIndexedDBItem<{
@@ -62,7 +63,6 @@ export const Homepage = () => {
           stores: Biqpod.Snapbuy.Store[];
           lastUpdated: number;
         }>(key);
-
         if (data?.stores) {
           setRecentStores(data.stores.slice(0, MAX_RECENT_STORES));
         }
@@ -72,10 +72,8 @@ export const Homepage = () => {
         setLoadingRecent(false);
       }
     };
-
     loadRecentStores();
   }, [user]);
-
   const features = [
     {
       icon: allIcons.solid.faStore,
@@ -108,20 +106,20 @@ export const Homepage = () => {
       title: "Register Your Store",
       description:
         "Create your account and set up your store profile in minutes.",
-      step: "01",
+      step: "1",
     },
     {
       icon: allIcons.solid.faHandshake,
       title: "Connect Delivery Partner",
       description: "Choose from our network of trusted delivery partners.",
-      step: "02",
+      step: "2",
     },
     {
       icon: allIcons.solid.faRocket,
       title: "Start Selling",
       description:
         "Manage everything from one dashboard and grow your business.",
-      step: "03",
+      step: "3",
     },
   ];
   const testimonials = [
@@ -147,6 +145,7 @@ export const Homepage = () => {
       rating: 5,
     },
   ];
+  const hist = useHistory();
   return (
     <div className="bg-[--biqpod-primary-background] min-h-screen">
       {/* Header */}
@@ -336,7 +335,7 @@ export const Homepage = () => {
       <Line />
       {/* Recently Visited Stores Section */}
       {user && (loadingRecent || recentStores.length > 0) && (
-        <>
+        <EmptyComponent>
           <section className="py-20">
             <div className="mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
               <motion.div
@@ -380,36 +379,66 @@ export const Homepage = () => {
                         whileHover={{ y: -8, scale: 1.02 }}
                         transition={{ duration: 0.3 }}
                       >
-                        <Link to={`/store/${store.id}/dashboard`}>
-                          <Card className="shadow-lg hover:shadow-xl p-4 transition-all duration-300 cursor-pointer">
-                            <div className="flex flex-col items-center text-center">
-                              <Image
-                                className="bg-[--biqpod-gray-opacity] mb-4 rounded-xl w-20 h-20 object-cover"
-                                src={store.photo}
-                                alt={
-                                  <div className="flex justify-center items-center font-bold text-2xl">
-                                    {store.name[0]?.toUpperCase()}
-                                  </div>
-                                }
-                              />
-                              <h3 className="mb-2 font-semibold text-[--biqpod-text-color] text-lg line-clamp-1">
+                        <Card className="cursor-pointer">
+                          <div className="flex items-center gap-2 p-2 text-center">
+                            <Image
+                              className="bg-[--biqpod-gray-opacity] rounded-xl w-20 h-20 object-cover"
+                              src={store.photo}
+                              alt={
+                                <div className="flex justify-center items-center font-bold text-2xl">
+                                  {store.name[0]?.toUpperCase()}
+                                </div>
+                              }
+                            />
+                            <div className="flex flex-col">
+                              <h3 className="font-semibold text-[--biqpod-text-color] text-lg line-clamp-1">
                                 {store.name}
                               </h3>
                               <p className="opacity-70 text-[--biqpod-text-color] text-sm line-clamp-1">
                                 {store.phone}
                               </p>
-                              <div className="flex items-center gap-2 mt-3">
-                                <Icon
-                                  icon={allIcons.solid.faArrowRight}
-                                  className="text-[--biqpod-primary] text-sm"
-                                />
-                                <span className="font-medium text-[--biqpod-primary] text-sm">
-                                  <Translate content="Visit Store" />
-                                </span>
-                              </div>
                             </div>
-                          </Card>
-                        </Link>
+                          </div>
+                          <Line />
+                          <div className="flex justify-end items-center gap-2 p-2 w-full">
+                            <Button
+                              className="bg-[--biqpod-gray-opacity] rounded-full w-fit text-[--biqpod-text-color]"
+                              icon={allIcons.solid.faTrash}
+                              onClick={async () => {
+                                const response = await confirm({
+                                  title: "Remove Store",
+                                  message: `Are you sure you want to remove "${store.name}" from your recently visited stores?`,
+                                  type: "warning",
+                                });
+                                if (response) {
+                                  const updatedStores = recentStores.filter(
+                                    (s) => s.id !== store.id
+                                  );
+                                  setRecentStores(updatedStores);
+                                  setIndexedDBItem(
+                                    `recently-visited-${user.uid}`,
+                                    {
+                                      userId: user.uid,
+                                      stores: updatedStores,
+                                      lastUpdated: Date.now(),
+                                    }
+                                  );
+                                }
+                              }}
+                            >
+                              <Translate content="Remove" />
+                            </Button>
+                            <Button
+                              onClick={() => {
+                                hist.push(`/store/${store.id}/dashboard`);
+                              }}
+                              className="rounded-full w-fit"
+                              rightIcon={allIcons.solid.faArrowRight}
+                            >
+                              <Translate content="Visit Store" />
+                            </Button>
+                          </div>
+                        </Card>
                       </motion.div>
                     ))}
                   </motion.div>
@@ -418,7 +447,7 @@ export const Homepage = () => {
             </div>
           </section>
           <Line />
-        </>
+        </EmptyComponent>
       )}
       {/* Video Section */}
       <section id="video" className="py-20">
@@ -775,7 +804,7 @@ export const Homepage = () => {
                 <Card className="p-8 h-full text-center">
                   {/* Step Number */}
                   <div className="-top-4 left-1/2 absolute -translate-x-1/2 transform">
-                    <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 font-bold">
+                    <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 font-bold text-[--biqpod-primary-content]">
                       {step.step}
                     </div>
                   </div>

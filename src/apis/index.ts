@@ -21,6 +21,7 @@ import {
 import { delay, mapAsync, mergeArray } from "@biqpod/app/ui/utils";
 import { cloud, functions } from "../server";
 import { FilterOrdersProps } from "../Links/FilterOrders";
+import { getStoreId } from "../utils";
 export const appProjectId: string = import.meta.env.VITE_PROJECT_ID!;
 const mainRef = ["projects", appProjectId];
 export interface OverviewProps {
@@ -50,9 +51,9 @@ export interface Plan {
   company: PlanRecord;
 }
 export interface CreateOrderOptions {
+  storeId?: string;
   products: Biqpod.Snapbuy.Order["products"];
   client: Biqpod.Snapbuy.Client;
-  delivery: boolean;
   metaData?: Record<string, SettingValueType>;
   place: Biqpod.Snapbuy.Order["place"];
   note?: string;
@@ -148,12 +149,16 @@ export const createApi = (cloud: ClientCloud) => {
       const fn = await getUserFunction("delete-store-api-token");
       await fn?.({ storeId, token });
     },
-    async generateStoreApiToken(storeId: string) {
-      const fn = await getUserFunction<{ token: string }>(
-        "generate-store-api-token"
-      );
-      const result = await fn?.({ storeId });
-      return result?.token;
+    async generateStoreApiToken(
+      storeId: string,
+      role: "sdk" | "client" = "client"
+    ) {
+      const fn = await getUserFunction<{
+        token: string;
+        role: "sdk" | "client";
+      }>("generate-store-api-token");
+      const result = await fn?.({ storeId, role });
+      return result;
     },
     async hasAccessToStore(storeId: string) {
       const uid = await getCurrentAuth();
@@ -164,10 +169,10 @@ export const createApi = (cloud: ClientCloud) => {
       const result = await fn?.({ storeId, uid });
       return result?.permissions;
     },
-    async getPartOfToken(storeId: string) {
-      const fn = await getUserFunction<{ tokens: string[] }>(
-        "get-store-api-tokens"
-      );
+    async getAllTokens(storeId: string) {
+      const fn = await getUserFunction<{
+        tokens: { role: "sdk" | "client"; token: string }[];
+      }>("get-store-api-tokens");
       const result = await fn?.({ storeId });
       return result?.tokens;
     },
@@ -191,7 +196,10 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(collectionId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        await deleteDoc([mainRef, "collections", collectionId]);
+        const deleteCollection = await getUserFunction("delete-collection");
+        await deleteCollection?.({
+          id: collectionId,
+        });
       },
       async upsert(collection: Biqpod.Snapbuy.Collection) {
         const createCollection =
@@ -449,12 +457,12 @@ export const createApi = (cloud: ClientCloud) => {
             return ["stores", storeId];
           });
           store.photo = file;
-        } else {
         }
         await setDoc([mainRef, "stores", storeId], {
           ...store,
           id: storeId,
           photo: store.photo || null,
+          uid,
         });
       },
       delete: async (id: string) => {
@@ -634,12 +642,30 @@ export const createApi = (cloud: ClientCloud) => {
         return repos;
       },
       async getNpmPackage() {
-        return [
-          { name: "Functions" },
+        var getPackages = await getUserFunction<
           {
-            name: "Core",
-          },
-        ];
+            name: string;
+            fullName: string;
+            private: boolean;
+            url: string;
+            description: string | null;
+          }[]
+        >("get-private-npm-packages");
+        const packages = await getPackages?.({});
+        return packages;
+      },
+      async getGitlabRepository() {
+        var getRepos = await getUserFunction<
+          {
+            name: string;
+            fullName: string;
+            private: boolean;
+            url: string;
+            description: string | null;
+          }[]
+        >("get-private-gitlab-repos");
+        const repos = await getRepos?.({});
+        return repos;
       },
     },
     account: {
@@ -761,7 +787,10 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(brandId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        await deleteDoc([mainRef, "brands", brandId]);
+        const deleteBrand = await getUserFunction("delete-brand");
+        await deleteBrand?.({
+          id: brandId,
+        });
         setTemp("brands." + brandId, null);
       },
     },
@@ -1334,7 +1363,8 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(couponId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        await deleteDoc([mainRef, "coupons", couponId]);
+        const deleteCoupon = await getUserFunction("delete-coupon");
+        deleteCoupon?.({ id: couponId });
         setTemp("coupons." + couponId, null);
       },
       async validate(code: string, storeId: string, orderAmount: number) {
@@ -1403,7 +1433,8 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(varId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        await deleteDoc([mainRef, "vars", varId]);
+        const deleteVar = await getUserFunction("delete-var");
+        await deleteVar?.({ id: varId });
         setTemp("vars." + varId, null);
       },
     },
@@ -1590,28 +1621,17 @@ export const createApi = (cloud: ClientCloud) => {
     },
     // Invoice Management Functions
     invoice: {
-      async create(
-        invoice: Pick<
-          Biqpod.Snapbuy.Invoice,
-          | "storeId"
-          | "orderId"
-          | "customerId"
-          | "customerName"
-          | "customerEmail"
-          | "products"
-          | "tax"
-          | "discount"
-          | "status"
-          | "dueDate"
-          | "notes"
-        >
-      ) {
+      async create(invoice: Partial<Biqpod.Snapbuy.Invoice>) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const id = crypto.randomUUID();
+        const currentStore = getStoreId();
+        if (!currentStore) {
+          throw "NO STORE SELECTED";
+        }
+        const id = invoice.id || crypto.randomUUID();
         const now = Date.now();
         // Calculate total from products
-        const subtotal = Object.values(invoice.products).reduce(
+        const subtotal = Object.values(invoice.products || {}).reduce(
           (sum: number, product: { count: number; price: number }) =>
             sum + product.count * product.price,
           0
@@ -1621,11 +1641,14 @@ export const createApi = (cloud: ClientCloud) => {
         const total = subtotal + tax - discount;
         const invoiceData: Biqpod.Snapbuy.Invoice = {
           ...invoice,
+          storeId: currentStore,
           id,
           uid,
           total,
           createdAt: now,
           updatedAt: now,
+          products: invoice.products || {},
+          status: invoice.status || "draft",
         };
         await setDoc([mainRef, "invoices", id], invoiceData);
         setTemp("invoices." + id, invoiceData);
@@ -1665,31 +1688,6 @@ export const createApi = (cloud: ClientCloud) => {
         }
         return doc;
       },
-      async update(
-        invoiceId: string,
-        invoice: Partial<
-          Omit<Biqpod.Snapbuy.Invoice, "id" | "createdAt" | "uid">
-        >
-      ) {
-        const uid = await getCurrentAuth();
-        if (!uid) throw "User not authenticated";
-        const now = Date.now();
-        const existingInvoice = await getDoc<Biqpod.Snapbuy.Invoice>([
-          "projects",
-          appProjectId,
-          "invoices",
-          invoiceId,
-        ]);
-        if (!existingInvoice) throw "Invoice not found";
-        const updatedInvoice: Biqpod.Snapbuy.Invoice = {
-          ...existingInvoice,
-          ...invoice,
-          updatedAt: now,
-        };
-        await setDoc([mainRef, "invoices", invoiceId], updatedInvoice);
-        setTemp("invoices." + invoiceId, updatedInvoice);
-        return updatedInvoice;
-      },
       async delete(invoiceId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
@@ -1706,9 +1704,11 @@ export const createApi = (cloud: ClientCloud) => {
         }
         const fn = await getUserFunction<Biqpod.Snapbuy.Order>("get-order");
         const order = await fn?.({
-          orderId,
+          id: orderId,
         });
-        setTemp(ref, order);
+        if (order) {
+          setTemp(ref, order);
+        }
         return order;
       },
       async getList(
@@ -1827,7 +1827,7 @@ export const createApi = (cloud: ClientCloud) => {
         return list;
       },
       async create(order: CreateOrderOptions) {
-        const createOrder = await getFunction<
+        const createOrder = await getUserFunction<
           { id: string },
           CreateOrderOptions
         >("create-order");
@@ -1868,6 +1868,18 @@ export const createApi = (cloud: ClientCloud) => {
         await setDoc([mainRef, "orders", orderId], {
           ...existingOrder,
           edit,
+        });
+      },
+      async updateStatus(
+        orderId: string,
+        status: Biqpod.Snapbuy.Order["status"]
+      ) {
+        const uid = await getCurrentAuth();
+        if (!uid) throw "User not authenticated";
+        const fn = await getUserFunction("update-order-status");
+        await fn?.({
+          id: orderId,
+          status,
         });
       },
     },
@@ -1929,7 +1941,7 @@ export const createApi = (cloud: ClientCloud) => {
           return savedPays;
         }
         const fn = await getUserFunction<Biqpod.Account.Payout[]>(
-          "current-payment"
+          "current-payments"
         );
         const response = await fn?.({ storeId });
         if (response) {

@@ -103,29 +103,34 @@ export const OrderClientDisplay = ({
                 onClick={() => {
                   showPopup(
                     <AnimatedCard className="w-2/3 overflow-hidden">
-                      <CardHeaderForPopup title="Client Location" />
-                      <Line />
-                      <div className="relative w-full h-[400px]">
-                        <MapContainer
-                          center={[clientInfo.latitude!, clientInfo.longitude!]}
-                          zoom={13}
-                          style={{ height: "100%", width: "100%" }}
-                        >
-                          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                          <Marker
-                            position={[
+                      <Card className="overflow-hidden">
+                        <CardHeaderForPopup title="Client Location" />
+                        <Line />
+                        <div className="relative w-full h-[400px]">
+                          <MapContainer
+                            center={[
                               clientInfo.latitude!,
                               clientInfo.longitude!,
                             ]}
+                            zoom={13}
+                            style={{ height: "100%", width: "100%" }}
                           >
-                            <Popup>
-                              {displayName}
-                              <br />
-                              {clientInfo.wilaya}
-                            </Popup>
-                          </Marker>
-                        </MapContainer>
-                      </div>
+                            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                            <Marker
+                              position={[
+                                clientInfo.latitude!,
+                                clientInfo.longitude!,
+                              ]}
+                            >
+                              <Popup>
+                                {displayName}
+                                <br />
+                                {clientInfo.wilaya}
+                              </Popup>
+                            </Marker>
+                          </MapContainer>
+                        </div>
+                      </Card>
                     </AnimatedCard>
                   );
                 }}
@@ -186,26 +191,31 @@ export const OrderClientActions = ({
             onClick={() => {
               showPopup(
                 <AnimatedCard className="w-2/3 overflow-hidden">
-                  <CardHeaderForPopup title="Client Location" />
-                  <Line />
-                  <div className="relative w-full h-[400px]">
-                    <MapContainer
-                      center={[clientInfo.latitude!, clientInfo.longitude!]}
-                      zoom={13}
-                      style={{ height: "100%", width: "100%" }}
-                    >
-                      <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-                      <Marker
-                        position={[clientInfo.latitude!, clientInfo.longitude!]}
+                  <Card className="overflow-hidden">
+                    <CardHeaderForPopup title="Client Location" />
+                    <Line />
+                    <div className="relative w-full h-[400px]">
+                      <MapContainer
+                        center={[clientInfo.latitude!, clientInfo.longitude!]}
+                        zoom={13}
+                        style={{ height: "100%", width: "100%" }}
                       >
-                        <Popup>
-                          {getOrderClientDisplayName(clientInfo)}
-                          <br />
-                          {clientInfo.wilaya}
-                        </Popup>
-                      </Marker>
-                    </MapContainer>
-                  </div>
+                        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                        <Marker
+                          position={[
+                            clientInfo.latitude!,
+                            clientInfo.longitude!,
+                          ]}
+                        >
+                          <Popup>
+                            {getOrderClientDisplayName(clientInfo)}
+                            <br />
+                            {clientInfo.wilaya}
+                          </Popup>
+                        </Marker>
+                      </MapContainer>
+                    </div>
+                  </Card>
                 </AnimatedCard>
               );
             }}

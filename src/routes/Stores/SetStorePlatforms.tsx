@@ -89,8 +89,12 @@ function highlightMatch(
 }
 interface SetStorePlatformsProps {
   store: Biqpod.Snapbuy.Store;
+  popupId?: string;
 }
-export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
+export const SetStorePlatforms = ({
+  store,
+  popupId,
+}: SetStorePlatformsProps) => {
   const platforms = useCopyState<Biqpod.Snapbuy.Store["platforms"]>(
     store.platforms || {}
   );
@@ -167,8 +171,8 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
   };
   const handleRemovePlatform = async (platformId: string) => {
     isLoading.set(true);
-    const updatedPlatforms = { ...platforms.get };
-    delete (updatedPlatforms as any)[platformId];
+    const updatedPlatforms: Record<string, string> = { ...platforms.get };
+    delete updatedPlatforms?.[platformId];
     platforms.set(updatedPlatforms);
     try {
       await snapbuyApi.store.upsert({
@@ -204,7 +208,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
           <motion.div whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
             <CircleTip
               icon={allIcons.solid.faXmark}
-              onClick={() => closePopup()}
+              onClick={() => closePopup(popupId)}
             />
           </motion.div>
         </motion.div>
@@ -258,7 +262,6 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                     animate={{ opacity: 1, x: 0 }}
                     exit={{ opacity: 0, x: -20 }}
                     transition={{ duration: 0.3 }}
-                    className="mb-6"
                   >
                     <motion.h3
                       initial={{ opacity: 0 }}
@@ -273,7 +276,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                         </span>
                       )}
                     </motion.h3>
-                    <div className="flex flex-col gap-2">
+                    <div className="flex flex-col gap-3">
                       {filteredActivePlatforms.map(([platformId, url]) => {
                         const platformInfo = getPlatformInfo(platformId as any);
                         if (!platformInfo) return null;
@@ -315,12 +318,13 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                                         animate={{ opacity: 1, height: "auto" }}
                                         exit={{ opacity: 0, height: 0 }}
                                         transition={{ duration: 0.3 }}
-                                        className="flex flex-col items-center gap-2 mt-2"
+                                        className="flex flex-col items-center gap-2"
                                       >
                                         <Field
                                           defaultValue={url}
                                           placeholder={platformInfo.placeholder}
                                           inputName={`platform-${platformId}`}
+                                          className="rounded-xl"
                                         />
                                         <motion.div
                                           initial={{ opacity: 0, y: 10 }}
@@ -457,7 +461,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                   >
-                    <div className="gap-2 grid grid-cols-1 sm:grid-cols-2">
+                    <div className="flex flex-col">
                       {filteredAvailablePlatforms.map((platformInfo, index) => {
                         const isCurrentlyEditing =
                           isEditing.get === platformInfo.id;
@@ -468,7 +472,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                             animate={{ opacity: 1, y: 0 }}
                             transition={{ duration: 0.3, delay: index * 0.1 }}
                           >
-                            <Card className="hover:shadow-md p-3 transition-shadow duration-200">
+                            <Card className="p-3">
                               <div className="flex items-center gap-3">
                                 <motion.img
                                   src={platformInfo.icon}
@@ -496,20 +500,20 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                                         }}
                                         exit={{ opacity: 0, height: 0, y: -10 }}
                                         transition={{ duration: 0.3 }}
-                                        className="flex flex-col items-center gap-2 mt-2"
+                                        className="flex items-center gap-2 mt-2"
                                       >
                                         <motion.div
                                           initial={{ scale: 0.95 }}
                                           animate={{ scale: 1 }}
                                           transition={{ duration: 0.2 }}
-                                          className="flex-1"
+                                          className="flex-1 w-full"
                                         >
                                           <Field
                                             placeholder={
                                               platformInfo.placeholder
                                             }
                                             inputName={`new-platform-${platformInfo.id}`}
-                                            className="flex-1"
+                                            className="flex-1 rounded-xl"
                                           />
                                         </motion.div>
                                         <motion.div
@@ -519,7 +523,7 @@ export const SetStorePlatforms = ({ store }: SetStorePlatformsProps) => {
                                             delay: 0.1,
                                             duration: 0.2,
                                           }}
-                                          className="flex justify-evenly gap-1 w-full"
+                                          className="flex justify-evenly gap-1"
                                         >
                                           <motion.div
                                             whileHover={{
