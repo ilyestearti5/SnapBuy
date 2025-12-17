@@ -1,13 +1,16 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Button,
+  Card,
   CardWait,
   CircleLoading,
   CircleTip,
   EmptyComponent,
+  EnumField,
   Field,
+  Icon,
+  IconProps,
   Line,
-  MagicField,
   MarkDown,
   Scroll,
   Translate,
@@ -17,11 +20,13 @@ import {
   execAction,
   getFieldValue,
   getTemp,
+  getTempFromStore,
   isLoading,
   setDarkColor,
   setDefaultColor,
   setFieldValue,
   setLightColor,
+  setTemp,
   showToast,
   useAction,
   useAsyncMemo,
@@ -42,12 +47,15 @@ import { getAddressFromCoords } from "../getAddressFromCoords";
 import { Geolocation, PermissionStatus } from "@capacitor/geolocation";
 import { getPrice } from "../utils";
 import { initPixels } from "./pixles";
+import { motion } from "framer-motion";
+import { useHistory } from "react-router";
 export const ProductRoute = () => {
   const prodId = useParams<{ prodId: string }>().prodId;
   const product = useAsyncMemo(async () => {
     return await snapbuyApi.product.get(prodId);
   }, [prodId]);
   const { getColor } = useSearchParams();
+  const hist = useHistory();
   useEffect(() => {
     for (const colorItem of colorsInListWithNames) {
       const colorId = colorItem.colorId;
@@ -69,6 +77,50 @@ export const ProductRoute = () => {
     return getPrice(product, 1).total;
   }, [product]);
   const pixels = initPixels(store);
+  const deliveryOptions = useAsyncMemo(async () => {
+    if (product?.storeId) {
+      const options = await snapbuyApi.deliveryPrice.options.getAll(
+        product.storeId
+      );
+      return options;
+    }
+  }, [product]);
+
+  const selectDeliveryOption = useCopyState<
+    Nothing | Biqpod.Snapbuy.DeliveryOptions
+  >(null);
+
+  const deliveryPlaces = useAsyncMemo(async () => {
+    if (!selectDeliveryOption.get) {
+      return;
+    }
+    const prices = getTempFromStore<Biqpod.Snapbuy.DeliveryPrice[]>(
+      "client-delivery-prices." + selectDeliveryOption.get.id
+    );
+    if (prices) {
+      return prices.filter(
+        (price) =>
+          selectDeliveryOption.get &&
+          price.deliveryOptionId === selectDeliveryOption.get.id
+      );
+    }
+    const fetchedPrices = await snapbuyApi.deliveryPrice.getAll(
+      selectDeliveryOption.get.storeId
+    );
+    const places = fetchedPrices.filter(
+      (price) =>
+        selectDeliveryOption.get &&
+        price.deliveryOptionId === selectDeliveryOption.get.id
+    );
+    if (places) {
+      setTemp(
+        "client-delivery-prices." + selectDeliveryOption.get.id,
+        fetchedPrices
+      );
+    }
+    return places;
+  }, [selectDeliveryOption.get]);
+  const selectDeliveryPriceId = useCopyState<Nothing | string>(null);
   const action = useAction(
     "auto-detect-location-in-product",
     () => {
@@ -78,14 +130,15 @@ export const ProductRoute = () => {
             navigator.geolocation.getCurrentPosition(
               async (position) => {
                 const { latitude: lat, longitude: lon } = position.coords;
-                const { fullAddress, wilaya } = await getAddressFromCoords(
-                  lat,
-                  lon
-                );
+                const { wilaya } = await getAddressFromCoords(lat, lon);
                 latitude.set(lat);
                 longitude.set(lon);
-                setFieldValue("client-wilaya", wilaya);
-                setFieldValue("client-address", fullAddress);
+                const id = deliveryPlaces?.find(
+                  (option) => option.name.toLowerCase() === wilaya.toLowerCase()
+                )?.id;
+                if (id) {
+                  selectDeliveryPriceId.set(id);
+                }
                 resolve(true);
               },
               (error) => {
@@ -105,14 +158,15 @@ export const ProductRoute = () => {
             }
             const position = await Geolocation.getCurrentPosition();
             const { latitude: lat, longitude: lon } = position.coords;
-            const { fullAddress, wilaya } = await getAddressFromCoords(
-              lat,
-              lon
-            );
+            const { wilaya } = await getAddressFromCoords(lat, lon);
             latitude.set(lat);
             longitude.set(lon);
-            setFieldValue("client-wilaya", wilaya);
-            setFieldValue("client-address", fullAddress);
+            const id = deliveryPlaces?.find(
+              (option) => option.name.toLowerCase() === wilaya.toLowerCase()
+            )?.id;
+            if (id) {
+              selectDeliveryPriceId.set(id);
+            }
             resolve(true);
           }
           // Check geolocation permission
@@ -121,12 +175,12 @@ export const ProductRoute = () => {
         }
       });
     },
-    []
+    [deliveryPlaces]
   );
   const loading = isLoading(action);
-  const formStructor: any[] = []; // Removed forms functionality
   const user = useUser();
   const count = useCopyState(1);
+
   useEffect(() => {
     pixels?.view(product);
   }, [pixels, product]);
@@ -139,8 +193,6 @@ export const ProductRoute = () => {
   const firstname = getFieldValue("client-firstname");
   const lastname = getFieldValue("client-lastname");
   const phone = getFieldValue("client-phone");
-  const address = getFieldValue("client-address");
-  const wilaya = getFieldValue("client-wilaya");
   const note = getFieldValue("client-note");
   const magic = getTemp<Record<string, any>>("magic-fields");
   const createOrderAction = useAction(
@@ -165,18 +217,9 @@ export const ProductRoute = () => {
         showToast("Enter Your Phone Number", "info");
         return;
       }
-      if (!address) {
-        setFocused("client-address");
-        showToast("Enter Your Address", "info");
-        return;
-      }
-      if (!wilaya) {
-        setFocused("client-wilaya");
-        showToast("Enter Your Wilaya", "info");
-        return;
-      }
       const { controls } = checkFormByFeilds(["client-phone"]);
       const founded = controls.find((control) => !control.isValide);
+      const wilaya = "";
       if (founded) {
         switch (founded.fieldName) {
           case "client-phone": {
@@ -205,8 +248,8 @@ export const ProductRoute = () => {
       };
       localStorage.setItem("phone", phone);
       const place: Biqpod.Snapbuy.Order["place"] = {
-        address,
         wilaya,
+        address: "",
       };
       if (latitude.get) {
         place.latitude = latitude.get;
@@ -214,10 +257,6 @@ export const ProductRoute = () => {
       if (longitude.get) {
         place.longitude = longitude.get;
       }
-      const metaData: Record<string, any> = {};
-      formStructor?.forEach((formId) => {
-        metaData[formId.id] = magic?.[formId.id];
-      });
       const options: CreateOrderOptions = {
         storeId: product.storeId,
         products,
@@ -228,17 +267,16 @@ export const ProductRoute = () => {
           id: crypto.randomUUID(),
         },
         place,
-        metaData,
         note,
+        deliveryPriceId: selectDeliveryPriceId.get || undefined,
       };
       const orderInfo = await snapbuyApi.order.create(options);
-      if (!orderInfo?.id) {
+      if (!orderInfo?.order) {
         throw "Order Info Incorrect";
       }
-      const order = await snapbuyApi.order.get(orderInfo.id);
-      if (order) {
-        pixels?.purchase(order);
-      }
+      pixels?.purchase(orderInfo.order);
+      orderId.set(orderInfo.order.id);
+      orderSuccess.set(true);
       showToast("Order Created", "success");
     },
     [
@@ -246,14 +284,12 @@ export const ProductRoute = () => {
       firstname,
       lastname,
       phone,
-      address,
-      wilaya,
       note,
       latitude.get,
       longitude.get,
-      formStructor,
       count.get,
       magic,
+      selectDeliveryPriceId.get,
     ]
   );
   const loadingAction = isLoading(createOrderAction);
@@ -263,208 +299,321 @@ export const ProductRoute = () => {
       count.get === 0 ? "" : count.get.toString()
     );
   }, [count.get]);
+
+  const orderSuccess = useCopyState(false);
+  const orderId = useCopyState<string | null>(null);
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.1,
+      },
+    },
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 50 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
+  };
+
   return (
-    <div className="relative flex flex-col w-full h-full overflow-hidden">
-      {product && (
+    <motion.div
+      className="relative flex flex-col w-full h-full overflow-hidden"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      {!orderSuccess.get && product && (
         <EmptyComponent>
           <Scroll className="flex max-md:flex-col">
             {!!product.photos?.length && (
-              <div className="w-full h-[50vh]">
+              <motion.div className="w-full h-[50vh]" variants={itemVariants}>
                 <ImageSlider viewImages zoom photos={product?.photos || []} />
-              </div>
+                <div className="max-md:hidden">
+                  <FormSection title="description : " />
+                  <Line />
+                  <div className="p-4">
+                    <Card className="p-3">
+                      <MarkDown
+                        value={product?.description || "No Description Found"}
+                      />
+                    </Card>
+                  </div>
+                </div>
+              </motion.div>
             )}
             <div className="w-full">
-              <FormSection title="form : " />
-              <div className="flex flex-col gap-2 p-2">
-                <label className="capitalize">
-                  <Translate content="firstname" /> :
-                </label>
-                <Field
-                  inputName="client-firstname"
-                  maxLength={40}
-                  placeholder="Enter Your Firstname"
-                />
-              </div>
-              <div className="flex flex-col gap-2 p-2">
-                <label className="capitalize">
-                  <Translate content="lastname" /> :
-                </label>
-                <Field
-                  inputName="client-lastname"
-                  maxLength={40}
-                  placeholder="Enter Your Lastname"
-                />
-              </div>
-              <div className="flex flex-col gap-2 p-2">
-                <label className="capitalize">
-                  <Translate content="phone" /> :
-                </label>
-                <Field
-                  maxLength={10}
-                  controls={{
-                    "[0-9]{10}": {
-                      succ: "valid",
-                      err: "invalid",
-                    },
-                  }}
-                  inputMode="numeric"
-                  inputName="client-phone"
-                  placeholder="Enter Your Phone Number"
-                />
-              </div>
-              <div className="flex flex-col gap-2 p-2">
-                <label className="capitalize">
-                  <Translate content="address" /> :
-                </label>
-                <Field
-                  inputName="client-address"
-                  multiLines
-                  maxRows={3}
-                  rows={3}
-                  placeholder="Enter Your Address"
-                />
-              </div>
-              <div className="flex flex-col gap-2 p-2">
-                <label className="capitalize">
-                  <Translate content="wilaya" /> :
-                </label>
-                <Field
-                  inputName="client-wilaya"
-                  placeholder="Enter Your Wilaya"
-                />
-              </div>
-              <div className="flex flex-col gap-2 p-2">
-                <label className="capitalize">
-                  <Translate content="note" /> :
-                </label>
-                <Field
-                  inputName="client-note"
-                  multiLines
-                  maxRows={3}
-                  rows={3}
-                  placeholder="Enter Your Note (optional)"
-                />
-              </div>
-              <div className="flex justify-between p-2">
-                <span />
-                <span className="flex items-center gap-2">
-                  {Boolean(address && wilaya) && (
-                    <Button
-                      icon={allIcons.solid.faXmark}
-                      className="bg-[--biqpod-gray-opacity] px-5 rounded-full text-[--biqpod-text-color]"
-                      onClick={() => {
-                        setFieldValue("client-wilaya", "");
-                        setFieldValue("client-address", "");
-                      }}
-                    >
-                      <Translate content="cancel" />
-                    </Button>
-                  )}
-                  <Button
-                    icon={
-                      loading
-                        ? allIcons.solid.faCircleNotch
-                        : allIcons.solid.faLocationDot
-                    }
-                    className="px-5 rounded-full"
-                    onClick={() => {
-                      execAction("auto-detect-location-in-product");
-                    }}
-                    iconClassName={tw(loading && "animate-spin")}
-                  >
-                    <Translate content="auto" />
-                  </Button>
-                </span>
-              </div>
-              {!!formStructor?.length && (
-                <EmptyComponent>
-                  {formStructor?.map((form) => {
-                    return (
-                      <div key={form.id} className="flex flex-col gap-2 p-2">
-                        <label htmlFor={form.id} className="block w-full">
-                          {form.name} :{" "}
-                        </label>
-                        <div className="w-full">
-                          <MagicField
-                            fieldId={form.id}
-                            config={form.config}
-                            type={form.type!}
-                          />
-                        </div>
+              <motion.div
+                className="border-[--biqpod-borders] border-l border-solid"
+                variants={itemVariants}
+              >
+                <Line />
+                <FormSection title="form : " />
+                <Line />
+                <div className="p-4">
+                  <Card className="bg-[--biqpod-gray-secondary-background]">
+                    <div className="flex flex-col gap-2 p-2">
+                      <label className="capitalize">
+                        <Translate content="firstname" /> :
+                      </label>
+                      <Field
+                        className="rounded-xl"
+                        inputName="client-firstname"
+                        maxLength={40}
+                        placeholder="Enter Your Firstname"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2 p-2">
+                      <label className="capitalize">
+                        <Translate content="lastname" /> :
+                      </label>
+                      <Field
+                        className="rounded-xl"
+                        inputName="client-lastname"
+                        maxLength={40}
+                        placeholder="Enter Your Lastname"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2 p-2">
+                      <label className="capitalize">
+                        <Translate content="phone" /> :
+                      </label>
+                      <Field
+                        className="rounded-xl"
+                        maxLength={10}
+                        controls={{
+                          "[0-9]{10}": {
+                            succ: "valid",
+                            err: "invalid",
+                          },
+                        }}
+                        inputMode="numeric"
+                        inputName="client-phone"
+                        placeholder="Enter Your Phone Number"
+                      />
+                    </div>
+                    <div className="flex flex-col gap-2 p-2">
+                      <label className="capitalize">
+                        <Translate content="note" /> :
+                      </label>
+                      <Field
+                        className="rounded-xl"
+                        inputName="client-note"
+                        multiLines
+                        maxRows={3}
+                        rows={3}
+                        placeholder="Enter Your Note (optional)"
+                      />
+                    </div>
+                  </Card>
+                </div>
+                <Line />
+                <div className="p-4">
+                  <Card>
+                    <div className="flex justify-center items-center gap-2 p-4">
+                      <div className="w-full">
+                        <Field
+                          inputName="product-quantity"
+                          inputMode="numeric"
+                          onChange={(e) => {
+                            const value = e.target.value;
+                            // Allow empty string for easier editing
+                            if (value === "") {
+                              count.set(0);
+                              return;
+                            }
+                            const numValue = parseInt(value);
+                            if (isNaN(numValue) || numValue < 1) {
+                              count.set(0);
+                              return;
+                            }
+                            const newValue = Math.min(500, numValue);
+                            count.set(newValue);
+                            e.currentTarget.value = newValue.toString();
+                          }}
+                          onBlur={() => {
+                            // If field is empty when user leaves it, set to 1
+                            if (count.get === 0) {
+                              count.set(1);
+                            }
+                          }}
+                          placeholder="Quantity"
+                          className="bg-[--biqpod-primary-background] focus:border-[--biqpod-primary] rounded-full outline-none text-3xl text-center"
+                          style={{ background: "transparent" }}
+                        />
                       </div>
-                    );
-                  })}
-                </EmptyComponent>
-              )}
-              <div className="flex justify-center items-center gap-2 p-4">
-                <div>
-                  <CircleTip
-                    className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
-                    onClick={() => count.set(Math.max(1, (count.get || 1) - 1))}
-                    icon={allIcons.solid.faMinus}
-                  />
+                      <div>
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          transition={{ type: "spring", stiffness: 400 }}
+                        >
+                          <CircleTip
+                            className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
+                            onClick={() =>
+                              count.set(Math.max(1, (count.get || 1) - 1))
+                            }
+                            icon={allIcons.solid.faMinus}
+                          />
+                        </motion.div>
+                      </div>
+                      <div>
+                        <motion.div
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                          transition={{ type: "spring", stiffness: 400 }}
+                        >
+                          <CircleTip
+                            className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
+                            onClick={() =>
+                              count.set(Math.min(500, (count.get || 0) + 1))
+                            }
+                            icon={allIcons.solid.faPlus}
+                          />
+                        </motion.div>
+                      </div>
+                    </div>
+                  </Card>
                 </div>
-                <div className="w-[100px]">
-                  <Field
-                    inputName="product-quantity"
-                    inputMode="numeric"
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      // Allow empty string for easier editing
-                      if (value === "") {
-                        count.set(0);
-                        return;
-                      }
-                      const numValue = parseInt(value);
-                      if (isNaN(numValue) || numValue < 1) {
-                        count.set(0);
-                        return;
-                      }
-                      const newValue = Math.min(500, numValue);
-                      count.set(newValue);
-                      e.currentTarget.value = newValue.toString();
-                    }}
-                    onBlur={() => {
-                      // If field is empty when user leaves it, set to 1
-                      if (count.get === 0) {
-                        count.set(1);
-                      }
-                    }}
-                    placeholder="Q"
-                    className="border-transparent focus:border-[--biqpod-primary] rounded-full outline-none text-3xl text-center"
-                    style={{ background: "transparent" }}
-                  />
+                <Line />
+                {!!deliveryOptions?.length && (
+                  <EmptyComponent>
+                    <FormSection title="Delivery" />
+                    <Line />
+                    <div className="p-4">
+                      <Card>
+                        <div className="flex gap-2 p-4">
+                          {deliveryOptions?.map((data) => {
+                            const isSelected =
+                              selectDeliveryOption.get &&
+                              data.id === selectDeliveryOption.get?.id;
+                            const icons: Record<string, IconProps["icon"]> = {
+                              domicile: allIcons.solid.faHouse,
+                              office: allIcons.solid.faBuilding,
+                              store: allIcons.solid.faStore,
+                            };
+                            return (
+                              <motion.div
+                                key={data.id}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                transition={{ type: "spring", stiffness: 300 }}
+                              >
+                                <Card
+                                  onClick={() => {
+                                    selectDeliveryOption.set(data);
+                                  }}
+                                  className={tw(
+                                    "w-full capitalize cursor-pointer",
+                                    isSelected &&
+                                      "border-[--biqpod-primary] bg-[--biqpod-secondary] text-[--biqpod-secondary-content]"
+                                  )}
+                                >
+                                  <div className="flex justify-between items-center gap-2 p-5">
+                                    <div className="flex items-center gap-2">
+                                      {data.type && (
+                                        <Icon icon={icons[data.type]} />
+                                      )}
+                                      <span>{data.type}</span>
+                                    </div>
+                                    {isSelected && (
+                                      <Icon icon={allIcons.solid.faCheck} />
+                                    )}
+                                  </div>
+                                </Card>
+                              </motion.div>
+                            );
+                          })}
+                        </div>
+                        {!!deliveryPlaces?.length && (
+                          <EmptyComponent>
+                            <Line />
+                            <div className="p-4">
+                              <EnumField
+                                state={selectDeliveryPriceId}
+                                config={{
+                                  list: deliveryPlaces.map((d) => {
+                                    return {
+                                      value: d.id!,
+                                      content: d.name,
+                                    };
+                                  }),
+                                  search: true,
+                                  placeholder: "Choos Wilaya On Click On Auto",
+                                }}
+                                id="delivery-pricing"
+                              />
+                            </div>
+                          </EmptyComponent>
+                        )}
+                        <Line />
+                        <div className="flex justify-between p-4">
+                          <span />
+                          <span className="flex items-center gap-2">
+                            <motion.div
+                              whileHover={{ scale: 1.05 }}
+                              whileTap={{ scale: 0.95 }}
+                              transition={{ type: "spring", stiffness: 300 }}
+                            >
+                              <Button
+                                icon={
+                                  loading
+                                    ? allIcons.solid.faCircleNotch
+                                    : allIcons.solid.faLocationDot
+                                }
+                                className="p-4 rounded-full"
+                                onClick={() => {
+                                  execAction("auto-detect-location-in-product");
+                                }}
+                                iconClassName={tw(loading && "animate-spin")}
+                              >
+                                <Translate content="auto" />
+                              </Button>
+                            </motion.div>
+                          </span>
+                        </div>
+                      </Card>
+                    </div>
+                  </EmptyComponent>
+                )}
+                <Line />
+                <div className="md:hidden">
+                  <FormSection title="description : " />
+                  <Line />
+                  <div className="p-4">
+                    <Card className="p-3">
+                      <MarkDown
+                        value={product?.description || "No Description Found"}
+                      />
+                    </Card>
+                  </div>
                 </div>
-                <div>
-                  <CircleTip
-                    className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
-                    onClick={() =>
-                      count.set(Math.min(500, (count.get || 0) + 1))
-                    }
-                    icon={allIcons.solid.faPlus}
-                  />
-                </div>
-              </div>
-              <FormSection title="description : " />
-              <div className="p-4">
-                <MarkDown
-                  value={product?.description || "No Description Found"}
-                />
-              </div>
+              </motion.div>
             </div>
           </Scroll>
           <Line />
-          <div className="flex gap-2 p-3">
-            <Button
-              className="rounded-full"
-              onClick={() => {
-                execAction("create-order-in-product");
-              }}
-              rightIcon={allIcons.solid.faChevronRight}
+          <motion.div className="flex gap-2 p-3" variants={itemVariants}>
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 300 }}
+              className="w-full"
             >
-              <Translate content="create order" /> ({price})DA
-            </Button>
-          </div>
+              <Button
+                className="p-4 rounded-xl text-lg"
+                onClick={() => {
+                  execAction("create-order-in-product");
+                }}
+                rightIcon={allIcons.solid.faChevronRight}
+              >
+                <Translate content="create order" />{" "}
+                {(price * (count.get || 1)).toFixed(2)}DA
+              </Button>
+            </motion.div>
+          </motion.div>
           {loadingAction && (
             <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity]">
               <CircleLoading />
@@ -472,7 +621,63 @@ export const ProductRoute = () => {
           )}
         </EmptyComponent>
       )}
+      {orderSuccess.get && (
+        <motion.div
+          className="flex flex-col justify-center items-center p-8 w-full h-full"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Card className="p-8 max-w-md text-center">
+            <Icon
+              icon={allIcons.solid.faCheckCircle}
+              className="mb-4 text-green-500 text-6xl"
+            />
+            <h2 className="mb-4 font-bold text-2xl">
+              <Translate content="Congratulations!" />
+            </h2>
+            <p className="mb-6">
+              <Translate content="Your order has been created successfully!" />
+            </p>
+            <div className="flex flex-col gap-4">
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Button
+                  className="p-4 rounded-xl w-full text-lg"
+                  onClick={() => {
+                    if (orderId.get) {
+                      hist.push(`/tracking?id=${orderId.get}`);
+                    }
+                  }}
+                  icon={allIcons.solid.faTruck}
+                >
+                  <Translate content="Track Order" />
+                </Button>
+              </motion.div>
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                transition={{ type: "spring", stiffness: 300 }}
+              >
+                <Button
+                  className="bg-[--biqpod-gray-opacity] p-4 rounded-xl w-full text-[--biqpod-text-color] text-lg"
+                  onClick={() => {
+                    orderSuccess.set(false);
+                    orderId.set(null);
+                  }}
+                  icon={allIcons.solid.faArrowLeft}
+                >
+                  <Translate content="Back to Product" />
+                </Button>
+              </motion.div>
+            </div>
+          </Card>
+        </motion.div>
+      )}
       {!product && <CardWait className="w-full h-full" />}
-    </div>
+    </motion.div>
   );
 };

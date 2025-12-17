@@ -41,7 +41,6 @@ import { useStoreId } from "../../utils";
 import { motion } from "framer-motion";
 import { CopyStoreLinkBottomSheet } from "./CopyStoreLinkBottomSheet";
 import { pixelsPhoto, SetPixels } from "./SetPixels";
-import { SetTemplate } from "./SetTemplate";
 import { platformsPhoto } from "../../utils/platforms";
 import { SetStorePlatforms } from "./SetStorePlatforms";
 import { Biqpod } from "@biqpod/app/ui/types";
@@ -517,15 +516,6 @@ export const Stores = () => {
                                           },
                                         },
                                         {
-                                          label: "Set Template",
-                                          click() {
-                                            showPopup(
-                                              <SetTemplate store={store} />
-                                            );
-                                          },
-                                          defaultIcon: allIcons.solid.faPalette,
-                                        },
-                                        {
                                           label: "Set Pixels",
                                           click: async () => {
                                             showPopup(
@@ -932,9 +922,7 @@ export const Stores = () => {
                                     src={store.photo}
                                     alt={
                                       <div className="flex justify-center items-center font-bold">
-                                        <i className="rotate-12">
-                                          Biqpod.Snapbuy
-                                        </i>
+                                        <i className="rotate-12">Snapbuy</i>
                                       </div>
                                     }
                                   />

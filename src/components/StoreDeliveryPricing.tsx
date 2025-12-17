@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo } from "react";
 import {
+  BooleanField,
   Button,
   Card,
   CardHeaderForPopup,
@@ -485,13 +486,11 @@ export const StoreDeliveryPricingList: React.FC<
                               y: clientY,
                               menu: [
                                 {
-                                  id: "edit",
                                   label: "Edit delivery option",
                                   defaultIcon: allIcons.solid.faEdit,
                                   click: () => handleEditDeliveryOption(option),
                                 },
                                 {
-                                  id: "delete",
                                   label: "Delete delivery option",
                                   defaultIcon: allIcons.solid.faTrash,
                                   click: () =>
@@ -499,6 +498,21 @@ export const StoreDeliveryPricingList: React.FC<
                                       "delete-delivery-option",
                                       option.id!
                                     ),
+                                },
+                                {
+                                  label: option.enabled ? "Disable" : "Enable",
+                                  defaultIcon: option.enabled
+                                    ? allIcons.solid.faToggleOn
+                                    : allIcons.solid.faToggleOff,
+                                  click: async () => {
+                                    await snapbuyApi.deliveryPrice.options.update(
+                                      option.id!,
+                                      {
+                                        enabled: !option.enabled,
+                                      }
+                                    );
+                                    execAction("fetch-delivery-options");
+                                  },
                                 },
                               ],
                             });
@@ -610,123 +624,125 @@ export const StoreDeliveryPricingList: React.FC<
                         </Button>
                       </div>
                     </div>
-                    <Line />
                     <AnimatePresence initial={false}>
                       {expandedOptions.get.has(option.id!) && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: "auto" }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.2 }}
-                          className="overflow-hidden"
-                        >
-                          <div className="space-y-3 p-3">
-                            {/* Search Field */}
-                            <div className="mb-3">
-                              <Field
-                                inputName="delivery-price-search"
-                                placeholder="Search delivery price by name or price..."
-                                className="rounded-lg"
-                              />
-                            </div>
+                        <EmptyComponent>
+                          <Line />
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            exit={{ opacity: 0, height: 0 }}
+                            transition={{ duration: 0.2 }}
+                            className="overflow-hidden"
+                          >
+                            <div className="space-y-3 p-3">
+                              {/* Search Field */}
+                              <div className="mb-3">
+                                <Field
+                                  inputName="delivery-price-search"
+                                  placeholder="Search delivery price by name or price..."
+                                  className="rounded-lg"
+                                />
+                              </div>
 
-                            {/* Prices List */}
-                            {option.prices.length === 0 ? (
-                              <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
-                                <Translate content="no prices added yet" />
-                              </div>
-                            ) : getFilteredPrices(option.prices).length ===
-                              0 ? (
-                              <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
-                                <Translate content="no prices found" />
-                              </div>
-                            ) : (
-                              <div className="gap-2 grid">
-                                {getFilteredPrices(option.prices).map(
-                                  (price) => (
-                                    <motion.div
-                                      key={price.id}
-                                      initial={{ opacity: 0, x: -10 }}
-                                      animate={{ opacity: 1, x: 0 }}
-                                      className={`flex justify-between items-center bg-[--biqpod-primary-background] p-3 border border-[--biqpod-borders] rounded-lg transition-opacity duration-200 ${
-                                        isDeletingBulk.get &&
-                                        selectedPrices.get.has(price.id!)
-                                          ? "opacity-50 pointer-events-none"
-                                          : ""
-                                      }`}
-                                    >
-                                      <div className="flex flex-1 items-center gap-3">
-                                        <CustomCheckbox
-                                          disabled={isDeletingBulk.get}
-                                          checked={selectedPrices.get.has(
-                                            price.id!
-                                          )}
-                                          onChange={() =>
-                                            togglePriceSelection(price.id!)
-                                          }
-                                          title={
-                                            isDeletingBulk.get
-                                              ? "Bulk delete in progress..."
-                                              : "Toggle selection"
-                                          }
-                                        />
-                                        <div className="flex-1">
-                                          <span className="font-medium">
-                                            <HighlightText
-                                              text={price.name}
-                                              query={priceSearch}
-                                            />
-                                          </span>
-                                          <span className="bg-green-500/15 ml-3 px-2 py-1 rounded-full font-medium text-green-500 text-sm">
-                                            <HighlightText
-                                              text={`${price.price} DA`}
-                                              query={priceSearch}
-                                            />
-                                          </span>
+                              {/* Prices List */}
+                              {option.prices.length === 0 ? (
+                                <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
+                                  <Translate content="no prices added yet" />
+                                </div>
+                              ) : getFilteredPrices(option.prices).length ===
+                                0 ? (
+                                <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
+                                  <Translate content="no prices found" />
+                                </div>
+                              ) : (
+                                <div className="gap-2 grid">
+                                  {getFilteredPrices(option.prices).map(
+                                    (price) => (
+                                      <motion.div
+                                        key={price.id}
+                                        initial={{ opacity: 0, x: -10 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        className={`flex justify-between items-center bg-[--biqpod-primary-background] p-3 border border-[--biqpod-borders] rounded-lg transition-opacity duration-200 ${
+                                          isDeletingBulk.get &&
+                                          selectedPrices.get.has(price.id!)
+                                            ? "opacity-50 pointer-events-none"
+                                            : ""
+                                        }`}
+                                      >
+                                        <div className="flex flex-1 items-center gap-3">
+                                          <CustomCheckbox
+                                            disabled={isDeletingBulk.get}
+                                            checked={selectedPrices.get.has(
+                                              price.id!
+                                            )}
+                                            onChange={() =>
+                                              togglePriceSelection(price.id!)
+                                            }
+                                            title={
+                                              isDeletingBulk.get
+                                                ? "Bulk delete in progress..."
+                                                : "Toggle selection"
+                                            }
+                                          />
+                                          <div className="flex-1">
+                                            <span className="font-medium">
+                                              <HighlightText
+                                                text={price.name}
+                                                query={priceSearch}
+                                              />
+                                            </span>
+                                            <span className="bg-green-500/15 ml-3 px-2 py-1 rounded-full font-medium text-green-500 text-sm">
+                                              <HighlightText
+                                                text={`${price.price} DA`}
+                                                query={priceSearch}
+                                              />
+                                            </span>
+                                          </div>
                                         </div>
-                                      </div>
-                                      <div className="flex gap-1">
-                                        <CircleTip
-                                          onClick={({ clientX, clientY }) => {
-                                            openMenu({
-                                              x: clientX,
-                                              y: clientY,
-                                              menu: [
-                                                {
-                                                  id: "edit",
-                                                  label: "Edit price",
-                                                  defaultIcon:
-                                                    allIcons.solid.faEdit,
-                                                  click: () =>
-                                                    handleEditDeliveryPrice(
-                                                      price
-                                                    ),
-                                                },
-                                                {
-                                                  id: "delete",
-                                                  label: "Delete price",
-                                                  defaultIcon:
-                                                    allIcons.solid.faTrash,
-                                                  click: () =>
-                                                    execAction(
-                                                      "delete-delivery-price",
-                                                      price.id!
-                                                    ),
-                                                },
-                                              ],
-                                            });
-                                          }}
-                                          icon={allIcons.solid.faEllipsisV}
-                                          title="More options"
-                                        />
-                                      </div>
-                                    </motion.div>
-                                  )
-                                )}
-                              </div>
-                            )}
-                          </div>
-                        </motion.div>
+                                        <div className="flex gap-1">
+                                          <CircleTip
+                                            onClick={({ clientX, clientY }) => {
+                                              openMenu({
+                                                x: clientX,
+                                                y: clientY,
+                                                menu: [
+                                                  {
+                                                    id: "edit",
+                                                    label: "Edit price",
+                                                    defaultIcon:
+                                                      allIcons.solid.faEdit,
+                                                    click: () =>
+                                                      handleEditDeliveryPrice(
+                                                        price
+                                                      ),
+                                                  },
+                                                  {
+                                                    id: "delete",
+                                                    label: "Delete price",
+                                                    defaultIcon:
+                                                      allIcons.solid.faTrash,
+                                                    click: () =>
+                                                      execAction(
+                                                        "delete-delivery-price",
+                                                        price.id!
+                                                      ),
+                                                  },
+                                                ],
+                                              });
+                                            }}
+                                            icon={allIcons.solid.faEllipsisV}
+                                            title="More options"
+                                          />
+                                        </div>
+                                      </motion.div>
+                                    )
+                                  )}
+                                </div>
+                              )}
+                            </div>
+                          </motion.div>
+                        </EmptyComponent>
                       )}
                     </AnimatePresence>
                   </motion.div>
@@ -779,6 +795,7 @@ export const UpsertStoreDeliveryOption: React.FC<
     );
     deliveryType.set(deliveryOption?.type || "store");
   }, [deliveryOption]);
+  const enabled = useCopyState<null | undefined | boolean>(false);
   useAction(
     "upsert-delivery-option",
     async () => {
@@ -799,6 +816,7 @@ export const UpsertStoreDeliveryOption: React.FC<
             name: name || "",
             description: description || "",
             type: validType,
+            enabled: enabled.get || false,
           });
           showToast("Delivery option updated successfully", "success");
         } else {
@@ -819,7 +837,7 @@ export const UpsertStoreDeliveryOption: React.FC<
         isLoading.set(false);
       }
     },
-    [formData, storeId, isEdit, deliveryOption]
+    [formData, storeId, isEdit, deliveryOption, enabled.get]
   );
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-[500px] max-md:h-full md:max-h-[90vh] overflow-hidden">
@@ -829,7 +847,7 @@ export const UpsertStoreDeliveryOption: React.FC<
       <Line />
       <div className="space-y-4 p-4 h-full">
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="block mb-2 font-medium capitalize">
             <Translate content="name" />
           </label>
           <Field
@@ -838,8 +856,9 @@ export const UpsertStoreDeliveryOption: React.FC<
             className="rounded-xl"
           />
         </div>
+
         <div>
-          <label className="block mb-2 font-medium">
+          <label className="block mb-2 font-medium capitalize">
             <Translate content="delivery type" />
           </label>
           <EnumField
@@ -860,6 +879,20 @@ export const UpsertStoreDeliveryOption: React.FC<
             rows={3}
             className="rounded-xl"
           />
+        </div>
+        <div className="flex justify-between items-center gap-2 p-2">
+          <label htmlFor="enable-delivery-option" className="w-full text-right">
+            <Translate content="enable" /> :
+          </label>
+          <div className="w-full">
+            <BooleanField
+              id="enable-delivery-option"
+              state={enabled}
+              config={{
+                style: "checkbox",
+              }}
+            />
+          </div>
         </div>
       </div>
       <Line />
@@ -886,7 +919,7 @@ export const UpsertStoreDeliveryOption: React.FC<
           disabled={isLoading.get}
         >
           <Translate
-            content={isLoading.get ? "saving" : isEdit ? "update" : "add"}
+            content={isLoading.get ? "saving" : isEdit ? "edit" : "add"}
           />
         </Button>
       </div>

@@ -1,11 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
-import {
-  EmptyComponent,
-  CircleTip,
-  Line,
-  Image,
-  Icon,
-} from "@biqpod/app/ui/components";
+import { EmptyComponent, CircleTip, Line } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
 import { tw } from "@biqpod/app/ui/utils";
 import React, { useEffect, useRef } from "react";
@@ -234,19 +228,13 @@ export const ImageSlider: React.FC<SliderProps> = ({
                   className="opacity-40 blur-lg w-full h-full object-cover"
                 />
                 <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
-                  <Image
+                  <img
                     draggable="false"
                     src={photo}
                     className={tw(
-                      "absolute top-1/2 rounded-none object-contain left-1/2 h-full w-full",
+                      "absolute top-1/2 rounded-none object-contain left-1/2 w-full h-full",
                       zoom && "transition-transform duration-200 ease-out"
                     )}
-                    alt={
-                      <Icon
-                        icon={allIcons.solid.faImage}
-                        className="text-[--biqpod-gray-opacity] text-6xl"
-                      />
-                    }
                     style={
                       zoom && index === current.get && isZooming.get
                         ? {

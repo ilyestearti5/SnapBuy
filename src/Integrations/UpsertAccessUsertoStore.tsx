@@ -3,12 +3,14 @@ import {
   Button,
   Card,
   CardHeaderForPopup,
+  CardWait,
   CircleTip,
   EmptyComponent,
   EnumField,
   Field,
   Line,
   Translate,
+  UserAvatar,
 } from "@biqpod/app/ui/components";
 import {
   closePopup,
@@ -25,15 +27,13 @@ import { snapbuyApi } from "../apis";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { useMemo } from "react";
-
+import { delay } from "@biqpod/app/ui/utils";
 type UserWithId = Biqpod.Account.User & { id: string };
-
 interface UpsertAccessUsertoStoreProps {
   storeId: string;
   existingAccess?: Biqpod.Snapbuy.StoreUserAccess;
   onSuccess?: () => void;
 }
-
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0, scale: 0.9 },
@@ -51,7 +51,6 @@ const containerVariants = {
     transition: { duration: 0.2 },
   },
 };
-
 const fieldVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
@@ -60,7 +59,6 @@ const fieldVariants = {
     transition: { duration: 0.3 },
   },
 };
-
 const buttonVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
@@ -70,7 +68,6 @@ const buttonVariants = {
   },
   tap: { scale: 0.98 },
 };
-
 const errorVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.95 },
   visible: {
@@ -86,7 +83,6 @@ const errorVariants = {
     transition: { duration: 0.2 },
   },
 };
-
 export const UpsertAccessUsertoStore = ({
   storeId,
   existingAccess,
@@ -99,12 +95,10 @@ export const UpsertAccessUsertoStore = ({
   const permissions = useCopyState<string | false | 0 | null | undefined>(
     existingAccess?.permissions || "read"
   );
-
   // Fetch all users once
   const allUsers = useAsyncMemo(async () => {
     return await snapbuyApi.friends.getList(100); // Get more users for better search
   }, []);
-
   // Filter users based on search term
   const filteredUsers = useMemo((): UserWithId[] => {
     if (!searchTerm.get || searchTerm.get.length < 1) return [];
@@ -120,27 +114,22 @@ export const UpsertAccessUsertoStore = ({
       ) || []
     );
   }, [searchTerm.get, allUsers]);
-
   const permissionOptions = [
     { value: "read", content: "Read Only" },
     { value: "edit", content: "Read & Edit" },
   ];
-
   const action = useAction(
     "upsert-user-access",
     async () => {
       error.set(null);
-
       if (!selectedUser.get) {
         error.set("Please select a user to invite");
         return;
       }
-
       if (!permissions.get) {
         error.set("Permission level is required");
         return;
       }
-
       try {
         if (existingAccess) {
           // Update existing access
@@ -156,16 +145,13 @@ export const UpsertAccessUsertoStore = ({
               | "read"
               | "edit",
           };
-
           await snapbuyApi.access.addUser(storeId, accessData);
           showToast("User access invitation sent successfully", "success");
         }
-
         // Clear form
         searchTerm.set("");
         selectedUser.set(null);
         permissions.set("read");
-
         onSuccess?.();
         closePopup();
       } catch (err) {
@@ -179,7 +165,6 @@ export const UpsertAccessUsertoStore = ({
     },
     [selectedUser.get, permissions.get, storeId, existingAccess]
   );
-
   return (
     <motion.div
       variants={containerVariants}
@@ -192,7 +177,6 @@ export const UpsertAccessUsertoStore = ({
           title={existingAccess ? "Edit User Access" : "Invite User to Store"}
         />
         <Line />
-
         <motion.div className="space-y-4 p-4" variants={fieldVariants}>
           {/* Error Display */}
           <AnimatePresence>
@@ -213,7 +197,6 @@ export const UpsertAccessUsertoStore = ({
               </motion.div>
             )}
           </AnimatePresence>
-
           {/* User Search */}
           {!existingAccess && (
             <motion.div variants={fieldVariants}>
@@ -388,36 +371,44 @@ export const UpsertAccessUsertoStore = ({
               )}
             </motion.div>
           )}
-
           {/* Selected User Display for Existing Access */}
           {existingAccess && (
             <motion.div variants={fieldVariants}>
               <label className="block mb-2 font-medium text-sm">
                 <Translate content="User" />
               </label>
-              <div className="bg-[--biqpod-secondary-background] p-3 border border-[--biqpod-borders] rounded-lg">
-                <div className="text-sm">
-                  <AsyncComponent
-                    deps={[existingAccess.relatedUid]}
-                    render={async () => {
-                      if (!existingAccess.relatedUid) {
-                        return <EmptyComponent />;
-                      }
-                      const user = await snapbuyApi.friends.get(
-                        existingAccess.relatedUid
-                      );
-                      return (
-                        <EmptyComponent>
-                          {user?.firstname || user?.email}
-                        </EmptyComponent>
-                      );
-                    }}
-                  />
-                </div>
+              <div className="text-sm">
+                <AsyncComponent
+                  deps={[existingAccess.relatedUid]}
+                  render={async () => {
+                    if (!existingAccess.relatedUid) {
+                      return <EmptyComponent />;
+                    }
+                    await delay(500); // Small delay to ensure loading state is visible
+                    const user = await snapbuyApi.friends.get(
+                      existingAccess.relatedUid
+                    );
+                    return (
+                      <div className="flex items-center gap-2 bg-[--biqpod-primary-background] p-2 border border-[--biqpod-borders] border-solid rounded-xl">
+                        <UserAvatar user={user} />
+                        <span>{user?.firstname || user?.email}</span>
+                      </div>
+                    );
+                  }}
+                  loading={
+                    <CardWait className="flex items-center gap-2 p-2 rounded-xl">
+                      <div>
+                        <CardWait className="rounded-full w-[35px] h-[35px]" />
+                      </div>
+                      <CardWait className="rounded-xl">
+                        <span className="invisible">not visible</span>
+                      </CardWait>
+                    </CardWait>
+                  }
+                />
               </div>
             </motion.div>
           )}
-
           {/* Permission Level */}
           <motion.div variants={fieldVariants}>
             <label className="block mb-2 font-medium text-sm">
@@ -456,7 +447,6 @@ export const UpsertAccessUsertoStore = ({
               </div>
             </motion.div>
           </motion.div>
-
           {/* Action Buttons */}
           <motion.div
             className="flex items-center gap-3 pt-4"

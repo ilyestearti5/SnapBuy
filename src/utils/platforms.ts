@@ -102,14 +102,14 @@ export const platformsInfo: PlatformInfo[] = [
   },
   {
     id: "chrome",
-    name: "Chrome Store",
+    name: "Chrome",
     icon: chromeIcon,
     placeholder: "https://chrome.google.com/webstore/detail/extension-id",
     color: "#4285F4",
   },
   {
     id: "edge",
-    name: "Edge Store",
+    name: "Edge",
     icon: edgeIcon,
     placeholder:
       "https://microsoftedge.microsoft.com/addons/detail/extension-id",
@@ -117,7 +117,7 @@ export const platformsInfo: PlatformInfo[] = [
   },
   {
     id: "safari",
-    name: "Safari Extensions",
+    name: "Safari",
     icon: safariIcon,
     placeholder: "https://apps.apple.com/app/app-name/id",
     color: "#006CFF",

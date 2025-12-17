@@ -495,7 +495,7 @@ const tasks: Task[] = [
     id: "create-store",
     title: "Create Your First Store",
     description:
-      "Set up your online store using the Biqpod.Snapbuy store management system",
+      "Set up your online store using the Snapbuy store management system",
     icon: allIcons.solid.faStore,
     category: "getting-started",
     difficulty: "beginner",
@@ -541,7 +541,7 @@ const tasks: Task[] = [
     id: "add-first-product",
     title: "Add Your First Product",
     description:
-      "Create your first product using the Biqpod.Snapbuy product management system",
+      "Create your first product using the Snapbuy product management system",
     icon: allIcons.solid.faBox,
     category: "getting-started",
     difficulty: "beginner",
@@ -1407,11 +1407,11 @@ export const DocumentationRoute = () => {
                   <Icon icon={allIcons.solid.faBook} />
                 </div>
                 <h1 className="font-bold text-4xl">
-                  <Translate content="Biqpod.Snapbuy Documentation" />
+                  <Translate content="Snapbuy Documentation" />
                 </h1>
               </div>
               <p className="mx-auto max-w-3xl text-[--biqpod-text-secondary] text-lg">
-                <Translate content="Discover all features, tips, and best practices to maximize your e-commerce success with Biqpod.Snapbuy" />
+                <Translate content="Discover all features, tips, and best practices to maximize your e-commerce success with Snapbuy" />
               </p>
             </motion.div>
             {/* Stats */}
@@ -1463,7 +1463,7 @@ export const DocumentationRoute = () => {
                 </h2>
               </div>
               <p className="mx-auto mb-6 max-w-3xl text-[--biqpod-text-secondary] text-center">
-                <Translate content="Step-by-step guides to help you get started and master Biqpod.Snapbuy's powerful features" />
+                <Translate content="Step-by-step guides to help you get started and master Snapbuy's powerful features" />
               </p>
               <div className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                 {tasks.map((task) => (

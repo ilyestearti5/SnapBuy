@@ -638,7 +638,7 @@ export const Orders = () => {
         {ordersState && ordersState.length > 0 && (
           <Button
             onClick={toggleSelectionMode}
-            className="bg-[--biqpod-gray-opacity-2] px-3 py-1 w-fit text-[--biqpod-text-color]"
+            className="bg-[--biqpod-gray-opacity] px-3 py-1 w-fit text-[--biqpod-text-color]"
           >
             <Icon
               icon={

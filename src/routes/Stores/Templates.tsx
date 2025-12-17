@@ -1,28 +1,39 @@
-import { allIcons } from "@biqpod/app/ui/apis";
+import { allIcons, getDoc } from "@biqpod/app/ui/apis";
 import {
+  AsyncComponent,
   Button,
   Card,
+  CardWait,
   CircleLoading,
+  EmptyComponent,
   Field,
   Icon,
+  IconProps,
   Image,
+  JoinComponentBy,
   Line,
   Scroll,
   Translate,
+  UserAvatar,
 } from "@biqpod/app/ui/components";
 import {
   confirm,
   execAction,
   getFieldValue,
+  getTempFromStore,
+  openMenu,
+  setTemp,
   showToast,
   useAction,
   useCopyState,
+  useEffectDelay,
 } from "@biqpod/app/ui/hooks";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef } from "react";
 import { snapbuyApi } from "../../apis";
 import { useStoreId } from "../../utils";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { delay, tw } from "@biqpod/app/ui/utils";
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -73,7 +84,7 @@ export const Templates = () => {
   const paymentLoading = useCopyState<string | null>(null);
   const lastDocId = useCopyState<string | null>(null);
   const isInitialLoad = useCopyState(true);
-  const paidTemplates = useCopyState<string[]>([]);
+  const paidTemplates = useCopyState<Biqpod.Account.Payout[]>([]);
   // Action to load templates from API
   useAction(
     "load-templates",
@@ -157,10 +168,14 @@ export const Templates = () => {
     []
   );
   // Load initial templates and paid templates
-  useEffect(() => {
-    execAction("load-templates", false);
-    execAction("load-paid-templates");
-  }, []);
+  useEffectDelay(
+    () => {
+      execAction("load-templates", false);
+      execAction("load-paid-templates");
+    },
+    [],
+    200
+  );
   // Infinite scroll effect
   useEffect(() => {
     const scrollElement = scrollRef.current;
@@ -186,15 +201,24 @@ export const Templates = () => {
   // Action to purchase template
   useAction(
     "purchase-template",
-    async (templateId: string) => {
+    async ({
+      template,
+      type,
+    }: {
+      template: Biqpod.Snapbuy.Template;
+      type: "single" | "multi";
+    }) => {
       try {
+        if (!template.id) {
+          showToast("Template ID is missing", "error");
+          return;
+        }
         if (!storeId) {
           showToast("Store ID is required", "error");
           return;
         }
-        paymentLoading.set(templateId);
+        paymentLoading.set(template.id);
         // Get template details for confirmation
-        const template = await snapbuyApi.templates.get(templateId);
         if (!template) {
           showToast("Template not found", "error");
           return;
@@ -210,10 +234,9 @@ export const Templates = () => {
           type: "question",
         });
         if (!response) return;
-        await snapbuyApi.templates.pay(templateId);
+        await snapbuyApi.templates.pay(template.id, type);
         showToast("Template purchased and applied successfully!", "success");
-        // Add the template to paid templates list
-        paidTemplates.set([...paidTemplates.get, templateId]);
+        execAction("load-paid-templates");
         // Refresh the store data
         execAction("fetch-my-stores");
       } catch (error) {
@@ -298,194 +321,246 @@ export const Templates = () => {
             {templates.get.length > 0 && (
               <div className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                 <AnimatePresence>
-                  {templates.get.map((template, index) => (
-                    <motion.div
-                      key={template.id}
-                      variants={templateCardVariants}
-                      initial="hidden"
-                      animate="visible"
-                      exit="hidden"
-                      whileHover="hover"
-                      whileTap="tap"
-                      custom={index}
-                    >
-                      <Card
-                        className={`h-full overflow-hidden ${
-                          paidTemplates.get.includes(template.id!)
-                            ? "ring-2 ring-[--biqpod-success] ring-opacity-50 bg-gradient-to-br from-green-50 to-transparent"
-                            : ""
-                        }`}
+                  {templates.get.map((template, index) => {
+                    const pricingAccepted = [
+                      typeof template.singlePrice === "number" && "single",
+                      typeof template.multiPrice === "number" && "multiple",
+                    ].filter(Boolean) as string[];
+                    const prices = [
+                      template.singlePrice,
+                      template.multiPrice,
+                    ].filter((price) => typeof price === "number");
+                    const selected = paidTemplates.get.find(
+                      (p) => p.meta?.templateId == template.id
+                    );
+                    return (
+                      <motion.div
+                        key={template.id}
+                        variants={templateCardVariants}
+                        initial="hidden"
+                        animate="visible"
+                        exit="hidden"
+                        whileHover="hover"
+                        whileTap="tap"
+                        custom={index}
                       >
-                        {/* Template preview image */}
-                        <div className="relative bg-[--biqpod-gray-opacity] h-48">
-                          {template.photo ? (
-                            <Image
-                              src={template.photo}
-                              className="rounded-none w-full h-full object-cover"
-                              alt={
-                                <div className="flex justify-center items-center w-full h-full">
-                                  <Icon
-                                    icon={allIcons.solid.faFileCode}
-                                    className="text-[--biqpod-gray-opacity-2] text-4xl"
-                                  />
-                                </div>
-                              }
-                            />
-                          ) : (
-                            <div className="flex justify-center items-center w-full h-full">
-                              <Icon
-                                icon={allIcons.solid.faFileCode}
-                                className="text-[--biqpod-gray-opacity-2] text-4xl"
+                        <Card className={`h-full overflow-hidden`}>
+                          {/* Template preview image */}
+                          <div className="relative bg-[--biqpod-gray-opacity] h-48">
+                            {template.photo ? (
+                              <Image
+                                src={template.photo}
+                                className="rounded-none w-full h-full object-cover"
+                                alt={
+                                  <div className="flex justify-center items-center w-full h-full">
+                                    <Icon
+                                      icon={allIcons.solid.faFileCode}
+                                      className="text-[--biqpod-gray-opacity-2] text-4xl"
+                                    />
+                                  </div>
+                                }
                               />
-                            </div>
-                          )}
-                          {/* Paid template indicator */}
-                          {paidTemplates.get.includes(template.id!) && (
-                            <motion.div
-                              className="top-2 left-2 absolute flex items-center gap-1 bg-[--biqpod-success] shadow-lg px-2 py-1 rounded-full font-medium text-white text-xs"
-                              initial={{ opacity: 0, scale: 0.8 }}
-                              animate={{ opacity: 1, scale: 1 }}
-                              transition={{ delay: 0.2, duration: 0.3 }}
-                            >
-                              <Icon
-                                icon={allIcons.solid.faCheck}
-                                className="text-xs"
-                              />
-                              <Translate content="Purchased" />
-                            </motion.div>
-                          )}
-                          {/* Preview button overlay */}
-                          {template.url && (
-                            <div className="top-2 right-2 absolute">
-                              <a
-                                href={template.url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="flex justify-center items-center bg-black bg-opacity-70 hover:bg-opacity-90 rounded-full w-8 h-8 text-white transition-all"
-                                onClick={(e) => e.stopPropagation()}
+                            ) : (
+                              <div className="flex justify-center items-center w-full h-full">
+                                <Icon
+                                  icon={allIcons.solid.faFileCode}
+                                  className="text-[--biqpod-gray-opacity-2] text-4xl"
+                                />
+                              </div>
+                            )}
+                            {/* Paid template indicator */}
+                            {selected && (
+                              <motion.div
+                                className="top-2 left-2 absolute flex items-center gap-1 bg-[--biqpod-success] shadow-lg px-2 py-1 rounded-full font-medium text-white text-xs"
+                                initial={{ opacity: 0, scale: 0.8 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                transition={{ delay: 0.2, duration: 0.3 }}
                               >
                                 <Icon
-                                  icon={allIcons.solid.faExternalLinkAlt}
-                                  className="text-sm"
+                                  icon={allIcons.solid.faCheck}
+                                  className="text-xs"
                                 />
-                              </a>
+                                <Translate content="Purchased" />
+                              </motion.div>
+                            )}
+                            {/* Preview button overlay */}
+                          </div>
+                          {/* Template info */}
+                          <div className="flex flex-col gap-1 p-2">
+                            <div className="flex justify-between items-start">
+                              <div className="flex items-center gap-2">
+                                <AsyncComponent
+                                  render={async () => {
+                                    if (!template.creatorId) {
+                                      throw "CREATOR ID NOT EXISTS";
+                                    }
+                                    await delay(500);
+                                    const info =
+                                      getTempFromStore<Biqpod.Account.User>(
+                                        "users." + template.creatorId
+                                      );
+                                    var information = info;
+                                    if (!information) {
+                                      const user =
+                                        await getDoc<Biqpod.Account.User>([
+                                          "users",
+                                          template.creatorId,
+                                        ]);
+                                      setTemp(
+                                        "users." + template.creatorId,
+                                        user
+                                      );
+                                      information = user;
+                                    }
+                                    return <UserAvatar user={information} />;
+                                  }}
+                                  loading={
+                                    <CardWait className="rounded-full w-[35px] h-[35px]" />
+                                  }
+                                />
+                                <h3 className="flex-1 font-semibold text-lg line-clamp-1">
+                                  {template.name || "Untitled Template"}
+                                </h3>
+                              </div>
+                              <div className="ml-2 font-bold text-[--biqpod-primary] text-lg">
+                                <JoinComponentBy
+                                  joinComponent={
+                                    <EmptyComponent> / </EmptyComponent>
+                                  }
+                                  list={prices.map((p) => {
+                                    return (
+                                      <span key={p}>${p?.toFixed(2)}</span>
+                                    );
+                                  })}
+                                />
+                              </div>
                             </div>
-                          )}
-                        </div>
-                        {/* Template info */}
-                        <div className="flex flex-col gap-1 p-2">
-                          <div className="flex justify-between items-start">
-                            <h3 className="flex-1 font-semibold text-lg line-clamp-1">
-                              {template.name || "Untitled Template"}
-                            </h3>
-                            <div className="ml-2 font-bold text-[--biqpod-primary] text-lg">
-                              {(() => {
-                                const price =
-                                  template.multiPrice ||
-                                  template.singlePrice ||
-                                  0;
-                                return price > 0
-                                  ? price.toFixed(2).concat("$")
-                                  : "Free";
-                              })()}
+                            {template.description && (
+                              <p className="text-[--biqpod-gray-opacity-2] mb-2 text-sm line-clamp-2">
+                                {template.description}
+                              </p>
+                            )}
+                            {/* Usage type indicator */}
+                            <div className="flex items-center gap-1">
+                              <span className="inline-flex gap-2 text-[--biqpod-gray-opacity-2] font-medium text-xs">
+                                <JoinComponentBy
+                                  joinComponent={
+                                    <EmptyComponent>/</EmptyComponent>
+                                  }
+                                  list={pricingAccepted.map((typeInfo) => {
+                                    const icons: Record<
+                                      string,
+                                      IconProps["icon"]
+                                    > = {
+                                      single: allIcons.solid.faUser,
+                                      multiple: allIcons.solid.faUsers,
+                                    };
+                                    return (
+                                      <span
+                                        key={typeInfo}
+                                        className={tw(
+                                          "inline-flex items-center gap-1",
+                                          selected?.meta?.type?.toString() ===
+                                            typeInfo &&
+                                            "text-[--biqpod-success]"
+                                        )}
+                                      >
+                                        <Icon icon={icons[typeInfo]} />
+                                        <Translate content={typeInfo} />
+                                      </span>
+                                    );
+                                  })}
+                                />
+                              </span>
                             </div>
                           </div>
-                          {template.description && (
-                            <p className="text-[--biqpod-gray-opacity-2] mb-2 text-sm line-clamp-2">
-                              {template.description}
-                            </p>
-                          )}
-                          {/* Usage type indicator */}
-                          <div className="flex items-center gap-1">
-                            <Icon
-                              icon={
-                                !!template.multiPrice
-                                  ? allIcons.solid.faUsers
-                                  : allIcons.solid.faUser
-                              }
-                              className="text-[--biqpod-gray-opacity-2] text-xs"
-                            />
-                            <span className="text-[--biqpod-gray-opacity-2] font-medium text-xs">
-                              {!!template.multiPrice
-                                ? "Multiple Use"
-                                : "Single Use"}
-                            </span>
-                          </div>
-                        </div>
-                        <Line />
-                        {/* Action buttons */}
-                        <div className="flex gap-2 p-3">
-                          {template.url && (
+                          <Line />
+                          {/* Action buttons */}
+                          <div className="flex gap-2 p-3">
                             <Button
-                              className="flex-1 bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+                              className={`flex-1 ${
+                                selected
+                                  ? "bg-[--biqpod-success] text-white"
+                                  : ""
+                              }`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                window.open(template.url!, "_blank");
-                              }}
-                              icon={allIcons.solid.faEye}
-                            >
-                              <Translate content="Preview" />
-                            </Button>
-                          )}
-                          <Button
-                            className={`flex-1 ${
-                              paidTemplates.get.includes(template.id!)
-                                ? "bg-[--biqpod-success] text-white"
-                                : ""
-                            }`}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              if (
-                                template.id &&
-                                !paidTemplates.get.includes(template.id)
-                              ) {
-                                execAction("purchase-template", template.id);
-                              }
-                            }}
-                            disabled={
-                              paymentLoading.get === template.id ||
-                              paidTemplates.get.includes(template.id!)
-                            }
-                            icon={
-                              paidTemplates.get.includes(template.id!)
-                                ? allIcons.solid.faCheck
-                                : paymentLoading.get === template.id
-                                ? allIcons.solid.faSpinner
-                                : allIcons.solid.faShoppingCart
-                            }
-                            iconClassName={
-                              paymentLoading.get === template.id
-                                ? "animate-spin"
-                                : ""
-                            }
-                          >
-                            {paidTemplates.get.includes(template.id!) ? (
-                              <Translate content="Purchased" />
-                            ) : paymentLoading.get === template.id ? (
-                              <Translate content="Processing..." />
-                            ) : (
-                              <span>
-                                <Translate content="Purchase" />
-                                <span>
-                                  {" "}
-                                  - $
-                                  {(() => {
+                                const { clientX, clientY } = e;
+                                const list = ["single", "multiple"];
+                                openMenu({
+                                  x: clientX,
+                                  y: clientY,
+                                  menu: list.map((t) => {
+                                    const label =
+                                      t === "single"
+                                        ? "Single User License"
+                                        : "Multiple Users License";
                                     const price =
-                                      template.multiPrice ||
-                                      template.singlePrice ||
-                                      0;
-                                    return price > 0
-                                      ? price.toFixed(2)
-                                      : "0.00";
-                                  })()}
+                                      t === "single"
+                                        ? template.singlePrice
+                                        : template.multiPrice;
+                                    return {
+                                      label: `${label} - $${price?.toFixed(2)}`,
+                                      click: () => {
+                                        if (template.id && !selected) {
+                                          execAction("purchase-template", {
+                                            template,
+                                            type: t,
+                                          });
+                                        }
+                                      },
+                                      defaultIcon:
+                                        t === "single"
+                                          ? allIcons.solid.faUser
+                                          : allIcons.solid.faUsers,
+                                    };
+                                  }),
+                                });
+                              }}
+                              disabled={
+                                paymentLoading.get === template.id || !!selected
+                              }
+                              icon={
+                                selected
+                                  ? allIcons.solid.faCheck
+                                  : paymentLoading.get === template.id
+                                  ? allIcons.solid.faSpinner
+                                  : allIcons.solid.faShoppingCart
+                              }
+                              iconClassName={tw(
+                                paymentLoading.get === template.id &&
+                                  "animate-spin"
+                              )}
+                            >
+                              {selected ? (
+                                <Translate content="Purchased" />
+                              ) : paymentLoading.get === template.id ? (
+                                <Translate content="Processing..." />
+                              ) : (
+                                <span>
+                                  <Translate content="Purchase" />
+                                  <span>
+                                    {" "}
+                                    - $
+                                    <JoinComponentBy
+                                      joinComponent={
+                                        <EmptyComponent> / </EmptyComponent>
+                                      }
+                                      list={prices.map((p) => {
+                                        return (
+                                          <span key={p}>{p?.toFixed(2)}</span>
+                                        );
+                                      })}
+                                    />
+                                  </span>
                                 </span>
-                              </span>
-                            )}
-                          </Button>
-                        </div>
-                      </Card>
-                    </motion.div>
-                  ))}
+                              )}
+                            </Button>
+                          </div>
+                        </Card>
+                      </motion.div>
+                    );
+                  })}
                 </AnimatePresence>
               </div>
             )}

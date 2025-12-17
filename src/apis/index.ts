@@ -57,6 +57,7 @@ export interface CreateOrderOptions {
   metaData?: Record<string, SettingValueType>;
   place: Biqpod.Snapbuy.Order["place"];
   note?: string;
+  deliveryPriceId?: string;
 }
 export interface Action {
   name: string;
@@ -614,18 +615,19 @@ export const createApi = (cloud: ClientCloud) => {
         if (!uid) throw "User not authenticated";
         await deleteDoc([mainRef, "templates", templateId]);
       },
-      async pay(templateId: string) {
-        const fn = await getUserFunction<
-          { url: string },
-          { templateId: string }
-        >("pay-invoice-template");
-        const response = await fn?.({ templateId });
+      async pay(templateId: string, type: string) {
+        const fn = await getUserFunction<{ url: string }>(
+          "pay-invoice-template"
+        );
+        const response = await fn?.({ templateId, type });
         const anchor = document.createElement("a");
         anchor.href = response?.url || "#";
         anchor.click();
       },
       async getPayed() {
-        const fn = await getUserFunction<string[]>("purchased-templates");
+        const fn = await getUserFunction<Biqpod.Account.Payout[]>(
+          "purchased-templates"
+        );
         return fn?.({});
       },
       async getGithubRepository() {
@@ -1052,7 +1054,7 @@ export const createApi = (cloud: ClientCloud) => {
         ]);
       },
       async getAll(storeId: string) {
-        const deliveryPrices = await getDocs<Biqpod.Snapbuy.DeliveryOptions>(
+        const deliveryPrices = await getDocs<Biqpod.Snapbuy.DeliveryPrice>(
           [mainRef, "deliveryPrices"],
           {
             where: and(where("storeId", "==", storeId)),
@@ -1364,7 +1366,7 @@ export const createApi = (cloud: ClientCloud) => {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
         const deleteCoupon = await getUserFunction("delete-coupon");
-        deleteCoupon?.({ id: couponId });
+        await deleteCoupon?.({ id: couponId });
         setTemp("coupons." + couponId, null);
       },
       async validate(code: string, storeId: string, orderAmount: number) {
@@ -1828,7 +1830,7 @@ export const createApi = (cloud: ClientCloud) => {
       },
       async create(order: CreateOrderOptions) {
         const createOrder = await getUserFunction<
-          { id: string },
+          { message: string; order: Biqpod.Snapbuy.Order },
           CreateOrderOptions
         >("create-order");
         return await createOrder?.(order);

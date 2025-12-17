@@ -26,7 +26,6 @@ import { UpsertTemplate } from "./UpsertTemplate";
 import { useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Biqpod } from "@biqpod/app/ui/types";
-
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -39,7 +38,6 @@ const containerVariants = {
     },
   },
 };
-
 const cardVariants = {
   hidden: {
     opacity: 0,
@@ -81,7 +79,6 @@ const cardVariants = {
     },
   },
 };
-
 const headerVariants = {
   hidden: { opacity: 0, y: -20 },
   visible: {
@@ -92,7 +89,6 @@ const headerVariants = {
     },
   },
 };
-
 const buttonVariants = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: {
@@ -112,7 +108,6 @@ const buttonVariants = {
     scale: 0.95,
   },
 };
-
 const emptyStateVariants = {
   hidden: {
     opacity: 0,
@@ -126,7 +121,6 @@ const emptyStateVariants = {
     },
   },
 };
-
 const iconVariants = {
   hidden: { scale: 0 },
   visible: {
@@ -143,7 +137,6 @@ const iconVariants = {
     },
   },
 };
-
 const loadingVariants = {
   hidden: { opacity: 0, y: 10 },
   visible: (i: number) => ({
@@ -155,7 +148,6 @@ const loadingVariants = {
     },
   }),
 };
-
 const templateCardVariants = {
   hidden: {
     opacity: 0,
@@ -176,8 +168,8 @@ const templateCardVariants = {
     },
   },
   hover: {
-    y: -8,
-    scale: 1.03,
+    y: -4,
+    scale: 1.01,
     rotateY: 2,
     transition: {
       duration: 0.3,
@@ -196,7 +188,6 @@ const templateCardVariants = {
     },
   },
 };
-
 const templateListVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -213,7 +204,6 @@ const templateListVariants = {
     },
   },
 };
-
 export const DeveloperRoute = () => {
   const deleteAction = useAction(
     "delete-template",
@@ -412,7 +402,7 @@ export const DeveloperRoute = () => {
             templates &&
             templates.get.length > 0 && (
               <motion.div
-                className="flex flex-col gap-2"
+                className="flex flex-wrap gap-2"
                 variants={templateListVariants}
                 initial="hidden"
                 animate="visible"
@@ -493,20 +483,7 @@ export const DeveloperRoute = () => {
                         <motion.div
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
-                        >
-                          <Button
-                            icon={allIcons.solid.faPen}
-                            onClick={() => {
-                              showPopup(<UpsertTemplate template={template} />);
-                            }}
-                            className="bg-[--biqpod-primary] px-3 py-2 rounded-full w-fit text-white"
-                          >
-                            <Translate content="edit" />
-                          </Button>
-                        </motion.div>
-                        <motion.div
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
+                          className="w-full"
                         >
                           <Button
                             icon={allIcons.solid.faTrash}
@@ -526,9 +503,24 @@ export const DeveloperRoute = () => {
                                 execAction("delete-template", template.id!);
                               }
                             }}
-                            className="bg-[--biqpod-danger] px-3 py-2 rounded-full w-fit text-white"
+                            className="bg-[--biqpod-danger] px-3 text-white"
                           >
                             <Translate content="delete" />
+                          </Button>
+                        </motion.div>
+                        <motion.div
+                          className="w-full"
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                        >
+                          <Button
+                            icon={allIcons.solid.faPen}
+                            onClick={() => {
+                              showPopup(<UpsertTemplate template={template} />);
+                            }}
+                            className="px-3"
+                          >
+                            <Translate content="edit" />
                           </Button>
                         </motion.div>
                       </motion.div>

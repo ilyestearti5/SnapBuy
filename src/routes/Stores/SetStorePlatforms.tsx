@@ -461,7 +461,7 @@ export const SetStorePlatforms = ({
                     exit={{ opacity: 0, x: 20 }}
                     transition={{ duration: 0.3, delay: 0.1 }}
                   >
-                    <div className="flex flex-col">
+                    <div className="flex flex-col gap-2">
                       {filteredAvailablePlatforms.map((platformInfo, index) => {
                         const isCurrentlyEditing =
                           isEditing.get === platformInfo.id;

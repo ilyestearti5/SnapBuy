@@ -487,41 +487,6 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         (template.multiPrice || 0).toString()
       );
       // Try to detect the source type from existing URL
-      const url = template.url || "";
-      if (url.includes("github.com")) {
-        const repoName = url.split("/").pop() || "";
-        searchQuery.set(repoName);
-        setSelected({
-          repo: { name: repoName },
-          pkg: null,
-          gitlab: null,
-          type: "github",
-          item: { provider: "github", name: repoName },
-        });
-      } else if (url.includes("npmjs.com")) {
-        const npmMatch = url.match(/npmjs\.com\/package\/([^\/]+)/);
-        if (npmMatch) {
-          const pkgName = npmMatch[1];
-          searchQuery.set(pkgName);
-          setSelected({
-            repo: null,
-            pkg: { name: pkgName },
-            gitlab: null,
-            type: "npm",
-            item: { provider: "npm", name: pkgName },
-          });
-        }
-      } else if (url.includes("gitlab.com")) {
-        const repoName = url.split("/").pop() || "";
-        searchQuery.set(repoName);
-        setSelected({
-          repo: null,
-          pkg: null,
-          gitlab: { name: repoName },
-          type: "gitlab",
-          item: { provider: "gitlab", name: repoName },
-        });
-      }
       photoState.set(template.photo || null);
     } else {
       setFieldValue("template-name", "");
@@ -585,15 +550,21 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
         showToast("Please select a repository or package", "error");
         return;
       }
+      console.log(selected);
+      const repoId = selected.item?.name;
+      if (!repoId) {
+        throw "REPO NOT SELECTED";
+      }
       const templateData: Biqpod.Snapbuy.Template = {
         id: template?.id,
         name: templateName.trim(),
         description: templateDescription?.trim() || "",
-        url: templateUrl,
         photo: photoState.get?.toString(),
         singlePrice: singlePriceValue,
         multiPrice: multiPriceValue,
         status: "accepted",
+        provider: selected.type,
+        repoId,
       };
       await snapbuyApi.templates.create(templateData);
       showToast(

@@ -1,0 +1,195 @@
+[
+  { "wilaya": "Alger", "delayDays": 1, "domicile": 600, "pointRelais": 500 },
+  { "wilaya": "Blida", "delayDays": 1, "domicile": 700, "pointRelais": 500 },
+  {
+    "wilaya": "Boumerdès",
+    "delayDays": 1,
+    "domicile": 700,
+    "pointRelais": 500
+  },
+  { "wilaya": "Tipaza", "delayDays": 1, "domicile": 700, "pointRelais": 500 },
+  { "wilaya": "Chlef", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Oum El Bouaghi",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  { "wilaya": "Batna", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Béjaïa", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Bouira", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Tlemcen", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Tiaret", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Tizi Ouzou",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  { "wilaya": "Jijel", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Sétif", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Saïda", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Skikda", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Sidi Bel Abbès",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  { "wilaya": "Annaba", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Guelma", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Constantine",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  { "wilaya": "Médéa", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Mostaganem",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  { "wilaya": "M'Sila", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Mascara", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  { "wilaya": "Oran", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Bordj Bou Arreridj",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  { "wilaya": "El Tarf", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Tissemsilt",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  {
+    "wilaya": "Khenchela",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  {
+    "wilaya": "Souk Ahras",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  { "wilaya": "Mila", "delayDays": 1, "domicile": 900, "pointRelais": 650 },
+  {
+    "wilaya": "Aïn Defla",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  {
+    "wilaya": "Aïn Témouchent",
+    "delayDays": 1,
+    "domicile": 900,
+    "pointRelais": 650
+  },
+  {
+    "wilaya": "Relizane",
+    "delayDays": 2,
+    "domicile": 1050,
+    "pointRelais": 800
+  },
+  {
+    "wilaya": "Laghouat",
+    "delayDays": 1,
+    "domicile": 1050,
+    "pointRelais": 800
+  },
+  { "wilaya": "Biskra", "delayDays": 1, "domicile": 1050, "pointRelais": 800 },
+  { "wilaya": "Tébessa", "delayDays": 1, "domicile": 1050, "pointRelais": 800 },
+  { "wilaya": "Djelfa", "delayDays": 1, "domicile": 1050, "pointRelais": 800 },
+  { "wilaya": "Ouargla", "delayDays": 1, "domicile": 1050, "pointRelais": 800 },
+  { "wilaya": "El Oued", "delayDays": 1, "domicile": 1050, "pointRelais": 800 },
+  {
+    "wilaya": "Ghardaïa",
+    "delayDays": 1,
+    "domicile": 1050,
+    "pointRelais": 800
+  },
+  {
+    "wilaya": "Ouled Djellal",
+    "delayDays": 1,
+    "domicile": 1050,
+    "pointRelais": 800
+  },
+  {
+    "wilaya": "Touggourt",
+    "delayDays": 2,
+    "domicile": 1500,
+    "pointRelais": 1200
+  },
+  {
+    "wilaya": "El M’Ghair",
+    "delayDays": 2,
+    "domicile": 1500,
+    "pointRelais": 1200
+  },
+  {
+    "wilaya": "El Menia",
+    "delayDays": 3,
+    "domicile": 1500,
+    "pointRelais": 1200
+  },
+  { "wilaya": "Adrar", "delayDays": 3, "domicile": 1500, "pointRelais": 1200 },
+  { "wilaya": "Béchar", "delayDays": 3, "domicile": 1500, "pointRelais": 1200 },
+  {
+    "wilaya": "El Bayadh",
+    "delayDays": 2,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  { "wilaya": "Naâma", "delayDays": 3, "domicile": 1700, "pointRelais": 1300 },
+  {
+    "wilaya": "Timimoun",
+    "delayDays": 5,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  {
+    "wilaya": "Bordj Badji Mokhtar",
+    "delayDays": 5,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  {
+    "wilaya": "Béni Abbès",
+    "delayDays": 5,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  {
+    "wilaya": "Tamanrasset",
+    "delayDays": 5,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  { "wilaya": "Illizi", "delayDays": 5, "domicile": 1700, "pointRelais": 1300 },
+  {
+    "wilaya": "Tindouf",
+    "delayDays": 5,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  {
+    "wilaya": "In Salah",
+    "delayDays": 5,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  {
+    "wilaya": "In Guezzam",
+    "delayDays": 5,
+    "domicile": 1700,
+    "pointRelais": 1300
+  },
+  { "wilaya": "Djanet", "delayDays": 5, "domicile": 1700, "pointRelais": 1300 }
+]

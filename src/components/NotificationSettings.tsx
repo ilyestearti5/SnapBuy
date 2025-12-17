@@ -413,7 +413,7 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "newOrder" as const,
         icon: allIcons.solid.faShoppingCart,
-        title: "new orders",
+        title: "admin / new orders",
         description: "get notified when customers place new orders",
         searchKeywords: [
           "new",
@@ -428,14 +428,14 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "orderStatusChanged" as const,
         icon: allIcons.solid.faSync,
-        title: "order status changes",
+        title: "admin / order status changes",
         description: "get notified when order status is updated",
         searchKeywords: ["order", "status", "change", "update", "sync"],
       },
       {
         key: "orderCompleted" as const,
         icon: allIcons.solid.faCheckCircle,
-        title: "order completed",
+        title: "admin / order completed",
         description: "get notified when orders are marked as completed",
         searchKeywords: [
           "order",
@@ -449,7 +449,7 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "orderCancelled" as const,
         icon: allIcons.solid.faTimesCircle,
-        title: "order cancelled",
+        title: "admin / order cancelled",
         description: "get notified when orders are cancelled",
         searchKeywords: [
           "order",
@@ -463,7 +463,7 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "orderProcessing" as const,
         icon: allIcons.solid.faCog,
-        title: "order processing",
+        title: "admin / order processing",
         description: "get notified when orders start processing",
         searchKeywords: [
           "order",
@@ -477,7 +477,7 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "orderDelivery" as const,
         icon: allIcons.solid.faTruck,
-        title: "order delivery",
+        title: "admin / order delivery",
         description: "get notified when orders are out for delivery",
         searchKeywords: [
           "order",
@@ -491,7 +491,7 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "lowStock" as const,
         icon: allIcons.solid.faExclamationTriangle,
-        title: "low stock alerts",
+        title: "admin / low stock alerts",
         description: "get notified when product inventory is running low",
         searchKeywords: [
           "low",
@@ -506,14 +506,14 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "newProduct" as const,
         icon: allIcons.solid.faBox,
-        title: "new products",
+        title: "admin / new products",
         description: "get notified when new products are added to your store",
         searchKeywords: ["new", "product", "products", "added", "store", "box"],
       },
       {
         key: "newClient" as const,
         icon: allIcons.solid.faUsers,
-        title: "new clients",
+        title: "admin / new clients",
         description: "get notified when new customers register",
         searchKeywords: [
           "new",
@@ -528,7 +528,7 @@ export const NotificationSettings: React.FC = () => {
       {
         key: "accountAutoAccept" as const,
         icon: allIcons.solid.faUserPlus,
-        title: "account auto accept",
+        title: "admin / account auto accept",
         description:
           "automatically accept extra account requests without manual approval",
         searchKeywords: [

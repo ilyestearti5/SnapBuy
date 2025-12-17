@@ -1,4 +1,10 @@
-export async function getAddressFromCoords(lat: number, lon: number) {
+export async function getAddressFromCoords(
+  lat: number,
+  lon: number
+): Promise<{
+  fullAddress: string;
+  wilaya: string;
+}> {
   const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&accept-language=fr`;
   const response = await fetch(url, {
     headers: {

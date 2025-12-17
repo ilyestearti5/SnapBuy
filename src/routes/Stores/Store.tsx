@@ -4,6 +4,7 @@ import {
   Card,
   CircleLoading,
   EmptyComponent,
+  Field,
   Line,
   Scroll,
   Translate,
@@ -18,8 +19,14 @@ import {
   useHistory,
   useParams,
 } from "react-router";
-import { setTemp, useUser } from "@biqpod/app/ui/hooks";
-import { useCallback, useEffect, useMemo } from "react";
+import {
+  setTemp,
+  useUser,
+  setFieldValue,
+  execAction,
+  showToast,
+} from "@biqpod/app/ui/hooks";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { DAYS_LEFT, userTabs } from "../../utils";
 import { tw } from "@biqpod/app/ui/utils";
 import { Integrations } from "../../Integrations";
@@ -37,6 +44,130 @@ import { snapbuyApi } from "../../apis";
 import { allIcons } from "@biqpod/app/ui/apis";
 import type { DataTypes } from "../../apis";
 import { useStoreVisit } from "../../hooks/useStoreVisit";
+const TellSupport = () => {
+  const user = useUser();
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null);
+  return (
+    <div
+      hidden
+      className="bottom-6 left-6 z-[1000000000000000000] absolute max-w-[360px]"
+    >
+      <Card>
+        <div className="p-2">
+          <h3 className="font-semibold text-2xl capitalize">
+            <Translate content="tell support" />
+          </h3>
+        </div>
+        <Line />
+        <div className="p-2">
+          <p className="text-[--biqpod-gray-opacity-2] text-sm">
+            <Translate content="which platform did you hear about snapbuy?" />
+          </p>
+        </div>
+        <Line />
+        <div className="flex flex-wrap justify-center gap-2 p-2">
+          {[
+            {
+              id: "facebook",
+              label: "Facebook",
+              icon: allIcons.brands.faFacebook,
+            },
+            {
+              id: "youtube",
+              label: "YouTube",
+              icon: allIcons.brands.faYoutube,
+            },
+            {
+              id: "tiktok",
+              label: "TikTok",
+              icon: allIcons.brands.faTiktok,
+            },
+            {
+              id: "instagram",
+              label: "Instagram",
+              icon: allIcons.brands.faInstagram,
+            },
+            {
+              id: "messenger",
+              label: "Messenger",
+              icon: allIcons.brands.faFacebookMessenger,
+            },
+            {
+              id: "twitter",
+              label: "Twitter",
+              icon: allIcons.brands.faTwitter,
+            },
+            {
+              id: "search",
+              label: "search",
+              icon: allIcons.solid.faMagnifyingGlass,
+            },
+            {
+              id: "other",
+              label: "Other",
+              icon: allIcons.solid.faQuestion,
+            },
+          ].map((p) => (
+            <Button
+              key={p.id}
+              onClick={() => setSelectedPlatform(p.id)}
+              className={tw(
+                "rounded-full w-fit px-3 py-1 text-sm",
+                selectedPlatform !== p.id &&
+                  "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]",
+                selectedPlatform === p.id &&
+                  "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+              )}
+              icon={p.icon}
+            >
+              {p.label}
+            </Button>
+          ))}
+        </div>
+        <Line />
+        {selectedPlatform === "other" && (
+          <EmptyComponent>
+            <div className="p-2">
+              <Field
+                inputName="support-other"
+                className="rounded-xl"
+                placeholder="Enter Link Or Name"
+              />
+            </div>
+            <Line />
+          </EmptyComponent>
+        )}
+        <div className="p-2">
+          <Button
+            onClick={async () => {
+              if (!user?.uid) {
+                showToast("Please login to send this to support");
+                return;
+              }
+              if (!selectedPlatform) {
+                showToast("Please select a platform first");
+                return;
+              }
+              const message = `I heard about SnapBuy from ${selectedPlatform}`;
+              setFieldValue("feedback-message", message);
+              try {
+                await execAction("send-feedback");
+                showToast("Sent to support. Thank you!");
+                setSelectedPlatform(null);
+              } catch (err) {
+                showToast("Failed to send. Please try again later.");
+              }
+            }}
+            icon={allIcons.solid.faPaperPlane}
+            className="rounded-full"
+          >
+            <Translate content="send" />
+          </Button>
+        </div>
+      </Card>
+    </div>
+  );
+};
 export const Store = () => {
   const loc = useLocation();
   const storeId = useParams<{ storeId: string }>().storeId;
@@ -158,7 +289,6 @@ export const Store = () => {
       free === null
     );
   }, [isWillExpired, usages, limits, free]);
-
   if (storeData === false) {
     return (
       <motion.div
@@ -212,7 +342,6 @@ export const Store = () => {
       </motion.div>
     );
   }
-
   if (!usedBy) {
     return (
       <div className="flex flex-col justify-center items-center w-full h-full">
@@ -379,6 +508,8 @@ export const Store = () => {
           </EmptyComponent>
         )}
       </div>
+      {/* Support quick feedback: where did you hear about SnapBuy? */}
+      {!showLoading && <TellSupport />}
     </div>
   );
 };

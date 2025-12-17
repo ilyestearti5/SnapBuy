@@ -26,7 +26,7 @@ import paymentChecked from "../assets/payment-checked.png";
 import products from "../assets/products.png";
 import shopping from "../assets/shopping.png";
 import overview from "../assets/overview.png";
-// Animation variants
+import { pagesSrcs } from "./pages";
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -145,6 +145,63 @@ export const Homepage = () => {
       rating: 5,
     },
   ];
+  const exampleImages = [
+    {
+      name: "Cat & Dog",
+      photo: pagesSrcs[0],
+      web: "https://snapbuy.com/docs/dashboard",
+    },
+    {
+      name: "Cosmetics",
+      photo: pagesSrcs[1],
+      web: "https://snapbuy.com/docs/products",
+    },
+    {
+      name: "Car Filters",
+      photo: pagesSrcs[2],
+      web: "https://snapbuy.com/docs/orders",
+    },
+    {
+      name: "Car Accessories",
+      photo: pagesSrcs[3],
+      web: "https://snapbuy.com/docs/delivery",
+    },
+    {
+      name: "Car Auto",
+      photo: pagesSrcs[4],
+      web: "https://snapbuy.com/docs/payments",
+    },
+    {
+      name: "Learning",
+      photo: pagesSrcs[5],
+      web: "https://snapbuy.com/docs/analytics",
+    },
+    {
+      name: "University",
+      photo: pagesSrcs[6],
+      web: "https://snapbuy.com/docs/customers",
+    },
+    {
+      name: "Sport Equipment",
+      photo: pagesSrcs[7],
+      web: "https://snapbuy.com/docs/inventory",
+    },
+    {
+      name: "Car Parts",
+      photo: pagesSrcs[8],
+      web: "https://snapbuy.com/docs/api",
+    },
+    {
+      name: "Motocycle Gear",
+      photo: pagesSrcs[9],
+      web: "https://snapbuy.com/docs/mobile",
+    },
+    ...pagesSrcs.slice(10).map((_, index) => ({
+      name: `Example ${index}`,
+      photo: _,
+      web: "https://snapbuy.com/docs",
+    })),
+  ];
   const hist = useHistory();
   return (
     <div className="bg-[--biqpod-primary-background] min-h-screen">
@@ -171,31 +228,31 @@ export const Homepage = () => {
             <nav className="hidden md:flex items-center space-x-8">
               <a
                 href="#home"
-                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
               >
                 <Translate content="Home" />
               </a>
               <a
                 href="#features"
-                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
               >
                 <Translate content="Features" />
               </a>
               <a
                 href="#how-it-works"
-                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
               >
                 <Translate content="How It Works" />
               </a>
               <a
                 href="#documentation"
-                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
               >
                 <Translate content="Documentation" />
               </a>
               <a
                 href="#contact"
-                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                className="text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
               >
                 <Translate content="Contact" />
               </a>
@@ -280,7 +337,7 @@ export const Homepage = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 0.8 }}
-                  className="p-4 text-center hover:scale-105 transition-transform duration-300"
+                  className="p-4 text-center hover:scale-105 transition-transform"
                 >
                   <div className="mb-3">
                     <img
@@ -297,7 +354,7 @@ export const Homepage = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.6, delay: 0.9 }}
-                  className="p-4 text-center hover:scale-105 transition-transform duration-300"
+                  className="p-4 text-center hover:scale-105 transition-transform"
                 >
                   <div className="mb-3">
                     <img
@@ -314,7 +371,7 @@ export const Homepage = () => {
                   initial={{ opacity: 0, x: 20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.6, delay: 1.0 }}
-                  className="p-4 text-center hover:scale-105 transition-transform duration-300"
+                  className="p-4 text-center hover:scale-105 transition-transform"
                 >
                   <div className="mb-3">
                     <img
@@ -700,6 +757,41 @@ export const Homepage = () => {
         </div>
       </section>
       <Line />
+      {/* Examples Section */}
+      <section className="py-20">
+        <div className="mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            transition={{ duration: 0.3 }}
+            className="mt-4 w-full overflow-hidden"
+          >
+            <div className="flex flex-wrap justify-center gap-4 w-full">
+              {exampleImages.map((image, index) => (
+                <Card
+                  key={index}
+                  className="overflow-hidden cursor-pointer"
+                  onClick={() => window.open(image.web, "_blank")}
+                >
+                  <img
+                    src={image.photo}
+                    alt={image.name}
+                    className="w-full h-48 object-cover"
+                  />
+                  <Line />
+                  <div className="p-2">
+                    <p className="font-semibold text-[--biqpod-text-color] text-sm text-center">
+                      {image.name}
+                    </p>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </motion.div>
+        </div>
+      </section>
+      <Line />
       {/* Features Section with Images */}
       <section
         id="features"
@@ -739,7 +831,7 @@ export const Homepage = () => {
                 variants={scaleIn}
                 whileHover={{ y: -8, transition: { duration: 0.3 } }}
               >
-                <Card className="group hover:shadow-2xl p-6 h-full overflow-hidden transition-all duration-300">
+                <Card className="group hover:shadow-2xl p-6 h-full overflow-hidden">
                   <div className="text-center">
                     {/* Animated Icon Background */}
                     <div className="relative mx-auto mb-4 w-20 h-20">
@@ -751,7 +843,7 @@ export const Homepage = () => {
                       <div className="relative flex justify-center items-center w-full h-full text-[--biqpod-primary]">
                         <Icon
                           icon={feature.icon}
-                          className="text-4xl group-hover:scale-110 transition-transform duration-300"
+                          className="text-4xl group-hover:scale-110 transition-transform"
                         />
                       </div>
                     </div>
@@ -885,7 +977,7 @@ export const Homepage = () => {
                 variants={scaleIn}
                 whileHover={{ y: -10, transition: { duration: 0.3 } }}
               >
-                <Card className="relative hover:shadow-2xl p-6 h-full overflow-hidden transition-all duration-300">
+                <Card className="relative hover:shadow-2xl p-6 h-full overflow-hidden">
                   {/* Decorative Quote Icon */}
                   <div className="top-4 right-4 absolute opacity-10">
                     <Icon
@@ -959,7 +1051,7 @@ export const Homepage = () => {
               className="gap-8 grid grid-cols-1 md:grid-cols-3 mb-12"
             >
               <motion.div variants={scaleIn} whileHover={{ y: -8 }}>
-                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center transition-all duration-300">
+                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center">
                   {/* Image Header */}
                   <div className="relative -mx-6 -mt-6 mb-4 h-32 overflow-hidden">
                     <motion.div
@@ -970,7 +1062,7 @@ export const Homepage = () => {
                     <div className="relative flex justify-center items-center h-full">
                       <Icon
                         icon={allIcons.solid.faRocket}
-                        className="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                        className="text-white text-5xl group-hover:scale-110 transition-transform"
                       />
                     </div>
                   </div>
@@ -988,7 +1080,7 @@ export const Homepage = () => {
                 </Card>
               </motion.div>
               <motion.div variants={scaleIn} whileHover={{ y: -8 }}>
-                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center transition-all duration-300">
+                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center">
                   {/* Image Header */}
                   <div className="relative -mx-6 -mt-6 mb-4 h-32 overflow-hidden">
                     <motion.div
@@ -999,7 +1091,7 @@ export const Homepage = () => {
                     <div className="relative flex justify-center items-center h-full">
                       <Icon
                         icon={allIcons.solid.faBook}
-                        className="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                        className="text-white text-5xl group-hover:scale-110 transition-transform"
                       />
                     </div>
                   </div>
@@ -1017,7 +1109,7 @@ export const Homepage = () => {
                 </Card>
               </motion.div>
               <motion.div variants={scaleIn} whileHover={{ y: -8 }}>
-                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center transition-all duration-300">
+                <Card className="group hover:shadow-xl p-6 h-full overflow-hidden text-center">
                   {/* Image Header */}
                   <div className="relative -mx-6 -mt-6 mb-4 h-32 overflow-hidden">
                     <motion.div
@@ -1028,7 +1120,7 @@ export const Homepage = () => {
                     <div className="relative flex justify-center items-center h-full">
                       <Icon
                         icon={allIcons.solid.faQuestionCircle}
-                        className="text-white text-5xl group-hover:scale-110 transition-transform duration-300"
+                        className="text-white text-5xl group-hover:scale-110 transition-transform"
                       />
                     </div>
                   </div>
@@ -1138,19 +1230,19 @@ export const Homepage = () => {
               <div className="flex space-x-4">
                 <a
                   href="#"
-                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                 >
                   <Icon icon={allIcons.brands.faFacebook} className="text-xl" />
                 </a>
                 <a
                   href="#"
-                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                 >
                   <Icon icon={allIcons.brands.faTwitter} className="text-xl" />
                 </a>
                 <a
                   href="#"
-                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                 >
                   <Icon
                     icon={allIcons.brands.faInstagram}
@@ -1159,7 +1251,7 @@ export const Homepage = () => {
                 </a>
                 <a
                   href="#"
-                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                  className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                 >
                   <Icon icon={allIcons.brands.faLinkedin} className="text-xl" />
                 </a>
@@ -1174,7 +1266,7 @@ export const Homepage = () => {
                 <li>
                   <a
                     href="#features"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Features" />
                   </a>
@@ -1182,7 +1274,7 @@ export const Homepage = () => {
                 <li>
                   <a
                     href="#pricing"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Pricing" />
                   </a>
@@ -1190,7 +1282,7 @@ export const Homepage = () => {
                 <li>
                   <Link
                     to="/documentation"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Documentation" />
                   </Link>
@@ -1198,7 +1290,7 @@ export const Homepage = () => {
                 <li>
                   <Link
                     to="/feedbacks"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Support" />
                   </Link>
@@ -1214,7 +1306,7 @@ export const Homepage = () => {
                 <li>
                   <a
                     href="#"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Privacy Policy" />
                   </a>
@@ -1222,7 +1314,7 @@ export const Homepage = () => {
                 <li>
                   <a
                     href="#"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Terms of Service" />
                   </a>
@@ -1230,7 +1322,7 @@ export const Homepage = () => {
                 <li>
                   <a
                     href="#"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Cookie Policy" />
                   </a>
@@ -1238,7 +1330,7 @@ export const Homepage = () => {
                 <li>
                   <a
                     href="#contact"
-                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary] transition-colors"
+                    className="opacity-60 text-[--biqpod-text-color] hover:text-[--biqpod-primary]"
                   >
                     <Translate content="Contact Us" />
                   </a>

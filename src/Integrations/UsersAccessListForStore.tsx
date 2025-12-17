@@ -1,5 +1,6 @@
 import {
   AsyncComponent,
+  BooleanField,
   Button,
   Card,
   CircleTip,
@@ -22,6 +23,30 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { useEffect } from "react";
 import { UpsertAccessUsertoStore } from "./UpsertAccessUsertoStore";
 import { Biqpod } from "@biqpod/app/ui/types";
+
+// input type checkbox
+interface InputCheckerProps
+  extends React.InputHTMLAttributes<HTMLInputElement> {
+  onValueChange: (value: boolean) => void;
+}
+
+const InputChecker = ({ checked, onValueChange }: InputCheckerProps) => {
+  return (
+    <BooleanField
+      state={{
+        get: !!checked,
+        set: (v) => {
+          const s = typeof v === "function" ? v(!!checked) : v;
+          onValueChange(!!s);
+          return s;
+        },
+      }}
+      config={{
+        style: "checkbox",
+      }}
+    />
+  );
+};
 
 interface UsersAccessListForStoreProps {
   storeId: string;
@@ -207,8 +232,8 @@ export const UsersAccessListForStore = ({
 
   const getPermissionColor = (permission: string) => {
     return permission === "edit"
-      ? "bg-blue-400/25 text-blue-400 border-blue-300"
-      : "bg-gray-400/25 text-gray-400 border-gray-300";
+      ? "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
+      : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]";
   };
 
   const formatDate = (timestamp: number) => {
@@ -288,21 +313,19 @@ export const UsersAccessListForStore = ({
       {/* Bulk Actions */}
       {!isLoading(loadUsersAction) && usersAccess.get.length > 0 && (
         <motion.div
-          className="flex justify-between items-center bg-gray-50 mb-4 p-3 border rounded-lg"
+          className="flex justify-between items-center bg-[--biqpod-primary-background] mb-4 p-3 border rounded-lg"
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
           <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
+            <InputChecker
               checked={
                 usersAccess.get.filter((u) => u.relatedUid).length > 0 &&
                 selectedUsers.get.length ===
                   usersAccess.get.filter((u) => u.relatedUid).length
               }
-              onChange={handleSelectAll}
-              className="w-4 h-4"
+              onValueChange={handleSelectAll}
             />
             <span className="font-medium text-[--biqpod-text-color] text-sm">
               <Translate content="Select All" />
@@ -357,10 +380,9 @@ export const UsersAccessListForStore = ({
             >
               <Card className="p-4">
                 <div className="flex items-start gap-4">
-                  <input
-                    type="checkbox"
+                  <InputChecker
                     checked={selectedUsers.get.includes(user.relatedUid || "")}
-                    onChange={() => {
+                    onValueChange={() => {
                       const current = selectedUsers.get;
                       const uid = user.relatedUid || "";
                       if (current.includes(uid)) {
@@ -371,7 +393,6 @@ export const UsersAccessListForStore = ({
                         selectedUsers.set([...current, uid]);
                       }
                     }}
-                    className="mt-1 w-4 h-4"
                   />
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
@@ -501,12 +522,12 @@ export const UsersAccessListForStore = ({
 
                 {user.status === "pending" && (
                   <motion.div
-                    className="bg-yellow-50 mt-3 p-3 border border-yellow-200 rounded-lg"
+                    className="bg-yellow-600/5 mt-3 p-3 border border-yellow-600 border-solid rounded-lg"
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: "auto" }}
                     transition={{ delay: 0.2 }}
                   >
-                    <div className="flex items-center gap-2 text-yellow-800 text-sm">
+                    <div className="flex items-center gap-2 text-yellow-600 text-sm">
                       <span
                         className={`fas ${allIcons.solid.faClock.iconName}`}
                       />
