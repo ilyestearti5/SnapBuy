@@ -178,11 +178,11 @@ export class StoreNotificationHandler {
   // Order status change notification
   public async notifyOrderStatusChanged(
     order: Biqpod.Snapbuy.Order,
-    oldStatus: Biqpod.Snapbuy.OrderStatus
+    oldStatus: Biqpod.Snapbuy.Basic.OrderStatus
   ): Promise<void> {
     if (!this.storeNotifySettings?.orderStatusChanged) return;
 
-    const statusEmojis: Record<Biqpod.Snapbuy.OrderStatus, string> = {
+    const statusEmojis: Record<Biqpod.Snapbuy.Basic.OrderStatus, string> = {
       pending: "⏳",
       processing: "🔄",
       delivery: "🚚",
@@ -193,7 +193,7 @@ export class StoreNotificationHandler {
 
     await this.notificationService.sendNotification({
       title: `${statusEmojis[order.status]} Order Status Updated`,
-      body: `Order #${order.id.slice(-6)} changed from ${oldStatus} to ${
+      body: `Order #${order.id!.slice(-6)} changed from ${oldStatus} to ${
         order.status
       }`,
       icon: "/assets/snapbuy.png",

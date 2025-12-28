@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   Button,
   Icon,
@@ -9,6 +9,7 @@ import {
   EmptyComponent,
   Field,
   Line,
+  AsyncComponent,
 } from "@biqpod/app/ui/components";
 import {
   execAction,
@@ -24,7 +25,6 @@ import { useMemo } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
-import { notificationService } from "../utils/notifications";
 import { motion, AnimatePresence } from "framer-motion";
 import { tw } from "@biqpod/app/ui/utils";
 import { Biqpod } from "@biqpod/app/ui/types";
@@ -36,47 +36,6 @@ const containerVariants = {
     transition: {
       staggerChildren: 0.1,
       delayChildren: 0.2,
-    },
-  },
-};
-const cardVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-    scale: 0.95,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.5,
-    },
-  },
-  hover: {
-    y: -2,
-    scale: 1.01,
-    transition: {
-      duration: 0.2,
-    },
-  },
-};
-const toggleVariants = {
-  hidden: {
-    opacity: 0,
-    x: -20,
-  },
-  visible: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      duration: 0.4,
-    },
-  },
-  hover: {
-    x: 4,
-    transition: {
-      duration: 0.2,
     },
   },
 };
@@ -238,6 +197,7 @@ interface NotificationToggleProps {
   enabled: boolean;
   onChange: (enabled: boolean) => void;
   searchQuery?: string;
+  id: string;
 }
 const NotificationToggle: React.FC<NotificationToggleProps> = ({
   icon,
@@ -246,15 +206,14 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({
   enabled,
   onChange,
   searchQuery = "",
+  id,
 }) => {
   return (
-    <motion.div
-      className="flex justify-between items-center px-4 py-3 border-[--biqpod-border] border-b"
-      variants={toggleVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover="hover"
-      layout
+    <div
+      className="flex justify-between items-center px-4 py-3 border-[--biqpod-borders] border-b border-solid cursor-pointer"
+      onClick={() => {
+        onChange(!enabled);
+      }}
     >
       <div className="flex items-center gap-3">
         <motion.div
@@ -288,31 +247,167 @@ const NotificationToggle: React.FC<NotificationToggleProps> = ({
           </motion.p>
         </motion.div>
       </div>
-      <motion.label
-        className="inline-flex relative items-center cursor-pointer"
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        transition={{ duration: 0.1 }}
-      >
-        <BooleanField
-          state={{
-            get: enabled,
-            set: (value) => {
-              var result =
-                typeof value === "function" ? value(enabled) : !value;
-              typeof result === "boolean" && onChange(result);
-            },
+      <div className="flex items-center">
+        <AsyncComponent
+          render={async () => {
+            const prices = await snapbuyApi.getPromotionalPrices();
+            const price = prices?.find((p) => p.key == id);
+            if (!price) return <EmptyComponent />;
+            return (
+              <span className="mr-4 text-[--biqpod-success] text-sm">
+                {price.price.toFixed(2)}DA
+              </span>
+            );
           }}
-          id={`notification-toggle-${title}`}
         />
-      </motion.label>
-    </motion.div>
+        <motion.label
+          className="inline-flex relative items-center cursor-pointer"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
+          transition={{ duration: 0.1 }}
+        >
+          <BooleanField
+            state={{
+              get: enabled,
+              set: () => false,
+            }}
+            id={`notification-toggle-${title}`}
+          />
+        </motion.label>
+      </div>
+    </div>
   );
 };
+export const notificationSettingsData = [
+  {
+    key: "newOrder" as const,
+    icon: allIcons.solid.faShoppingCart,
+    title: "admin / new orders",
+    description: "get notified when customers place new orders",
+    searchKeywords: [
+      "new",
+      "order",
+      "orders",
+      "customer",
+      "place",
+      "shopping",
+      "cart",
+    ],
+  },
+  {
+    key: "orderStatusChanged" as const,
+    icon: allIcons.solid.faSync,
+    title: "admin / order status changes",
+    description: "get notified when order status is updated",
+    searchKeywords: ["order", "status", "change", "update", "sync"],
+  },
+  {
+    key: "orderCompleted" as const,
+    icon: allIcons.solid.faCheckCircle,
+    title: "admin / order completed",
+    description: "get notified when orders are marked as completed",
+    searchKeywords: [
+      "order",
+      "completed",
+      "complete",
+      "finished",
+      "done",
+      "check",
+    ],
+  },
+  {
+    key: "orderCancelled" as const,
+    icon: allIcons.solid.faTimesCircle,
+    title: "admin / order cancelled",
+    description: "get notified when orders are cancelled",
+    searchKeywords: [
+      "order",
+      "cancelled",
+      "cancel",
+      "canceled",
+      "times",
+      "stop",
+    ],
+  },
+  {
+    key: "orderProcessing" as const,
+    icon: allIcons.solid.faCog,
+    title: "admin / order processing",
+    description: "get notified when orders start processing",
+    searchKeywords: ["order", "processing", "process", "start", "cog", "gear"],
+  },
+  {
+    key: "orderDelivery" as const,
+    icon: allIcons.solid.faTruck,
+    title: "admin / order delivery",
+    description: "get notified when orders are out for delivery",
+    searchKeywords: [
+      "order",
+      "delivery",
+      "deliver",
+      "truck",
+      "shipping",
+      "out",
+    ],
+  },
+  {
+    key: "lowStock" as const,
+    icon: allIcons.solid.faExclamationTriangle,
+    title: "admin / low stock alerts",
+    description: "get notified when product inventory is running low",
+    searchKeywords: [
+      "low",
+      "stock",
+      "inventory",
+      "running",
+      "alert",
+      "warning",
+      "triangle",
+    ],
+  },
+  {
+    key: "newProduct" as const,
+    icon: allIcons.solid.faBox,
+    title: "admin / new products",
+    description: "get notified when new products are added to your store",
+    searchKeywords: ["new", "product", "products", "added", "store", "box"],
+  },
+  {
+    key: "newClient" as const,
+    icon: allIcons.solid.faUsers,
+    title: "admin / new clients",
+    description: "get notified when new customers register",
+    searchKeywords: [
+      "new",
+      "client",
+      "clients",
+      "customer",
+      "customers",
+      "register",
+      "users",
+    ],
+  },
+  {
+    key: "accountAutoAccept" as const,
+    icon: allIcons.solid.faUserPlus,
+    title: "admin / account auto accept",
+    description:
+      "automatically accept extra account requests without manual approval",
+    searchKeywords: [
+      "account",
+      "auto",
+      "accept",
+      "automatic",
+      "extra",
+      "request",
+      "approval",
+      "user",
+      "plus",
+    ],
+  },
+];
 export const NotificationSettings: React.FC = () => {
   const storeId = useStoreId();
-  const [permissionStatus, setPermissionStatus] =
-    useState<NotificationPermission>("default");
   const [isLoading, setIsLoading] = useState(false);
   // Use field value hook for search
   const searchFieldValue = useFieldValue("notification-search");
@@ -322,27 +417,6 @@ export const NotificationSettings: React.FC = () => {
     return await snapbuyApi.store.get(storeId);
   }, [storeId]);
   // Check notification permission status
-  useEffect(() => {
-    if ("Notification" in window) {
-      setPermissionStatus(Notification.permission);
-    }
-  }, []);
-  const requestPermission = async () => {
-    try {
-      const permission = await notificationService.requestPermission();
-      setPermissionStatus(permission);
-      if (permission === "granted") {
-        showToast("Notifications enabled successfully!", "success");
-      } else if (permission === "denied") {
-        showToast(
-          "Notifications were denied. Please enable them in browser settings.",
-          "warning"
-        );
-      }
-    } catch (error) {
-      showToast("Failed to request notification permission", "error");
-    }
-  };
   const [notifications, setNotifications] = useState<
     Required<Biqpod.Snapbuy.Store>["notify"]
   >({});
@@ -358,23 +432,6 @@ export const NotificationSettings: React.FC = () => {
       [setting]: enabled,
     };
     setNotifications(newNotifications);
-  };
-  const testNotification = async () => {
-    if (permissionStatus !== "granted") {
-      showToast("Please enable notifications first", "warning");
-      return;
-    }
-    try {
-      await notificationService.sendNotification({
-        title: "🛒 Test Notification",
-        body: "This is a test notification from Biqpod.Snapbuy!",
-        icon: "/assets/snapbuy.png",
-        tag: "test-notification",
-      });
-      showToast("Test notification sent!", "success");
-    } catch (error) {
-      showToast("Failed to send test notification", "error");
-    }
   };
   // Reset changes to original values
   const resetNotificationSettings = () => {
@@ -407,145 +464,6 @@ export const NotificationSettings: React.FC = () => {
     [storeId, notifications]
   );
   const isInited = useCopyState(false);
-  // Define notification settings data
-  const notificationSettingsData = useMemo(
-    () => [
-      {
-        key: "newOrder" as const,
-        icon: allIcons.solid.faShoppingCart,
-        title: "admin / new orders",
-        description: "get notified when customers place new orders",
-        searchKeywords: [
-          "new",
-          "order",
-          "orders",
-          "customer",
-          "place",
-          "shopping",
-          "cart",
-        ],
-      },
-      {
-        key: "orderStatusChanged" as const,
-        icon: allIcons.solid.faSync,
-        title: "admin / order status changes",
-        description: "get notified when order status is updated",
-        searchKeywords: ["order", "status", "change", "update", "sync"],
-      },
-      {
-        key: "orderCompleted" as const,
-        icon: allIcons.solid.faCheckCircle,
-        title: "admin / order completed",
-        description: "get notified when orders are marked as completed",
-        searchKeywords: [
-          "order",
-          "completed",
-          "complete",
-          "finished",
-          "done",
-          "check",
-        ],
-      },
-      {
-        key: "orderCancelled" as const,
-        icon: allIcons.solid.faTimesCircle,
-        title: "admin / order cancelled",
-        description: "get notified when orders are cancelled",
-        searchKeywords: [
-          "order",
-          "cancelled",
-          "cancel",
-          "canceled",
-          "times",
-          "stop",
-        ],
-      },
-      {
-        key: "orderProcessing" as const,
-        icon: allIcons.solid.faCog,
-        title: "admin / order processing",
-        description: "get notified when orders start processing",
-        searchKeywords: [
-          "order",
-          "processing",
-          "process",
-          "start",
-          "cog",
-          "gear",
-        ],
-      },
-      {
-        key: "orderDelivery" as const,
-        icon: allIcons.solid.faTruck,
-        title: "admin / order delivery",
-        description: "get notified when orders are out for delivery",
-        searchKeywords: [
-          "order",
-          "delivery",
-          "deliver",
-          "truck",
-          "shipping",
-          "out",
-        ],
-      },
-      {
-        key: "lowStock" as const,
-        icon: allIcons.solid.faExclamationTriangle,
-        title: "admin / low stock alerts",
-        description: "get notified when product inventory is running low",
-        searchKeywords: [
-          "low",
-          "stock",
-          "inventory",
-          "running",
-          "alert",
-          "warning",
-          "triangle",
-        ],
-      },
-      {
-        key: "newProduct" as const,
-        icon: allIcons.solid.faBox,
-        title: "admin / new products",
-        description: "get notified when new products are added to your store",
-        searchKeywords: ["new", "product", "products", "added", "store", "box"],
-      },
-      {
-        key: "newClient" as const,
-        icon: allIcons.solid.faUsers,
-        title: "admin / new clients",
-        description: "get notified when new customers register",
-        searchKeywords: [
-          "new",
-          "client",
-          "clients",
-          "customer",
-          "customers",
-          "register",
-          "users",
-        ],
-      },
-      {
-        key: "accountAutoAccept" as const,
-        icon: allIcons.solid.faUserPlus,
-        title: "admin / account auto accept",
-        description:
-          "automatically accept extra account requests without manual approval",
-        searchKeywords: [
-          "account",
-          "auto",
-          "accept",
-          "automatic",
-          "extra",
-          "request",
-          "approval",
-          "user",
-          "plus",
-        ],
-      },
-    ],
-    []
-  );
   // Filter notification settings based on search query using fuzzy search
   const filteredNotificationSettings = useMemo(() => {
     const query = (searchFieldValue?.get || "").toLowerCase().trim();
@@ -628,92 +546,9 @@ export const NotificationSettings: React.FC = () => {
       ) : (
         <div className="relative flex flex-col w-full h-full overflow-hidden">
           <motion.div
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.1, duration: 0.5 }}
-            className="px-5 py-2"
-          >
-            <motion.div
-              className="bg-[--biqpod-gray-opacity] px-4 py-1 rounded-xl"
-              variants={cardVariants}
-              initial="hidden"
-              animate="visible"
-            >
-              <motion.div
-                className="flex justify-between items-center"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.3 }}
-              >
-                <motion.div
-                  initial={{ x: -20, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  transition={{ delay: 0.4 }}
-                  className="p-2"
-                >
-                  <motion.h3
-                    className="mb-1 font-medium text-[--biqpod-text]"
-                    whileHover={{ x: 2 }}
-                    transition={{ duration: 0.2 }}
-                  >
-                    <Translate content="Browser Notifications" />
-                  </motion.h3>
-                  <motion.p
-                    className="text-[--biqpod-text-secondary] text-sm"
-                    initial={{ opacity: 0, y: 5 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.5 }}
-                  >
-                    {permissionStatus === "granted" && (
-                      <EmptyComponent>
-                        ✅ <Translate content="Notifications are enabled" />
-                      </EmptyComponent>
-                    )}
-                    {permissionStatus === "denied" && (
-                      <EmptyComponent>
-                        ❌ <Translate content="Notifications are blocked" />
-                      </EmptyComponent>
-                    )}
-                    {permissionStatus === "default" && (
-                      <EmptyComponent>
-                        ⏳ <Translate content="Notifications not configured" />
-                      </EmptyComponent>
-                    )}
-                  </motion.p>
-                </motion.div>
-                <motion.div
-                  initial={{ x: 20, opacity: 0, scale: 0.8 }}
-                  animate={{ x: 0, opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.6 }}
-                >
-                  {permissionStatus !== "granted" && (
-                    <Button
-                      className="px-2 py-1 w-fit"
-                      icon={allIcons.solid.faBell}
-                      onClick={requestPermission}
-                    >
-                      <Translate content="Enable" />
-                    </Button>
-                  )}
-                  {permissionStatus === "granted" && (
-                    <Button
-                      onClick={testNotification}
-                      className="px-2 py-1 w-fit"
-                      icon={allIcons.solid.faPlay}
-                    >
-                      <Translate content="Test" />
-                    </Button>
-                  )}
-                </motion.div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-          {/* Search Input */}
-          <Line />
-          <motion.div
             initial={{ y: -10, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
-            className="px-2 py-1"
+            className="p-2"
             transition={{ delay: 0.7, duration: 0.4 }}
           >
             <motion.div className="relative">
@@ -794,6 +629,7 @@ export const NotificationSettings: React.FC = () => {
                         onChange={(enabled) =>
                           updateNotificationSetting(setting.key, enabled)
                         }
+                        id={setting.key}
                         searchQuery={searchFieldValue?.get || ""}
                       />
                     </motion.div>

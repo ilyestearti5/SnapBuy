@@ -37,7 +37,7 @@ import { setFocused, tw } from "@biqpod/app/ui/utils";
 import { useParams } from "react-router";
 import { CreateOrderOptions, snapbuyApi } from "../apis";
 import { useSearchParams } from "../routes/Clients/AddProductToCart";
-import { ImageSlider } from "./ImageSlider";
+import { FilesSlider } from "./FilesSlider";
 import { FormSection } from "./FormSection";
 import { useEffect, useMemo } from "react";
 import { colorsInListWithNames } from "../utils";
@@ -85,11 +85,9 @@ export const ProductRoute = () => {
       return options;
     }
   }, [product]);
-
   const selectDeliveryOption = useCopyState<
     Nothing | Biqpod.Snapbuy.DeliveryOptions
   >(null);
-
   const deliveryPlaces = useAsyncMemo(async () => {
     if (!selectDeliveryOption.get) {
       return;
@@ -103,6 +101,9 @@ export const ProductRoute = () => {
           selectDeliveryOption.get &&
           price.deliveryOptionId === selectDeliveryOption.get.id
       );
+    }
+    if (!selectDeliveryOption.get.storeId) {
+      return;
     }
     const fetchedPrices = await snapbuyApi.deliveryPrice.getAll(
       selectDeliveryOption.get.storeId
@@ -180,7 +181,6 @@ export const ProductRoute = () => {
   const loading = isLoading(action);
   const user = useUser();
   const count = useCopyState(1);
-
   useEffect(() => {
     pixels?.view(product);
   }, [pixels, product]);
@@ -271,7 +271,7 @@ export const ProductRoute = () => {
         deliveryPriceId: selectDeliveryPriceId.get || undefined,
       };
       const orderInfo = await snapbuyApi.order.create(options);
-      if (!orderInfo?.order) {
+      if (!orderInfo?.order.id) {
         throw "Order Info Incorrect";
       }
       pixels?.purchase(orderInfo.order);
@@ -299,10 +299,8 @@ export const ProductRoute = () => {
       count.get === 0 ? "" : count.get.toString()
     );
   }, [count.get]);
-
   const orderSuccess = useCopyState(false);
   const orderId = useCopyState<string | null>(null);
-
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -313,12 +311,153 @@ export const ProductRoute = () => {
       },
     },
   };
-
   const itemVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
-
+  const metadata = useMemo(() => {
+    return Object.entries(product?.metaData || {}).map(([key, value]) => {
+      return {
+        key,
+        value,
+      };
+    });
+  }, [product]);
+  const DescriptionPart = () => {
+    return (
+      <EmptyComponent>
+        {metadata.length > 0 && (
+          <EmptyComponent>
+            <Line />
+            <FormSection title="Metadata" />
+            <Line />
+            <div className="p-4">
+              <Card>
+                <div className="flex flex-col gap-2">
+                  {metadata.map((data, index) => {
+                    const value = data.value?.value;
+                    return (
+                      <div
+                        key={data.key}
+                        className={tw(
+                          "flex justify-between items-center p-3 border-[--biqpod-borders] border-solid",
+                          index && "border-b"
+                        )}
+                      >
+                        <span className="font-semibold capitalize">
+                          {data.key}
+                        </span>
+                        <span>
+                          {typeof value === "string" ? (
+                            value
+                          ) : typeof value === "number" ? (
+                            value
+                          ) : typeof value === "boolean" ? (
+                            <Icon
+                              className={tw(
+                                value
+                                  ? "text-[--biqpod-success]"
+                                  : "text-[--biqpod-error]"
+                              )}
+                              icon={
+                                value
+                                  ? allIcons.solid.faCheckCircle
+                                  : allIcons.solid.faTimesCircle
+                              }
+                            />
+                          ) : (
+                            JSON.stringify(value)
+                          )}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
+          </EmptyComponent>
+        )}
+        <Line />
+        <FormSection title="description : " />
+        <Line />
+        <div className="p-4">
+          <Card className="p-3">
+            <MarkDown value={product?.description || "No Description Found"} />
+          </Card>
+        </div>
+      </EmptyComponent>
+    );
+  };
+  const StoreInfo = () => {
+    if (!store) return null;
+    return (
+      <EmptyComponent>
+        <FormSection title="Store Information" />
+        <Line />
+        <div className="p-4">
+          <Card>
+            <div className="flex items-center gap-4 p-2">
+              {store.photo && (
+                <img
+                  src={store.photo}
+                  alt={store.name}
+                  className="rounded-full w-16 h-16 object-cover"
+                />
+              )}
+              <div>
+                <h3 className="font-bold text-lg">{store.name}</h3>
+                {store.phone && <p className="text-sm">Phone: {store.phone}</p>}
+                {store.email && (
+                  <p className="text-sm">
+                    Email:{" "}
+                    <a href={`mailto:${store.email}`} className="text-blue-500">
+                      {store.email}
+                    </a>
+                  </p>
+                )}
+              </div>
+            </div>
+            {store.address && (
+              <EmptyComponent>
+                <Line />
+                <p className="p-2 text-sm">
+                  Location: {store.address.latitude.toFixed(4)},{" "}
+                  {store.address.longitude.toFixed(4)}
+                </p>
+              </EmptyComponent>
+            )}
+            {store.platforms && Object.keys(store.platforms).length > 0 && (
+              <EmptyComponent>
+                <Line />
+                <div className="flex gap-2 p-2">
+                  {Object.entries(store.platforms).map(([key, value]) => {
+                    if (!value) return null;
+                    const iconName = `fa${
+                      key.charAt(0).toUpperCase() + key.slice(1)
+                    }`;
+                    const icon =
+                      allIcons.brands[iconName as keyof typeof allIcons.brands];
+                    if (!icon) return null;
+                    return (
+                      <a
+                        key={key}
+                        href={value}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-500 hover:text-blue-700"
+                      >
+                        <Icon icon={icon as IconProps["icon"]} />
+                      </a>
+                    );
+                  })}
+                </div>
+              </EmptyComponent>
+            )}
+          </Card>
+        </div>
+      </EmptyComponent>
+    );
+  };
   return (
     <motion.div
       className="relative flex flex-col w-full h-full overflow-hidden"
@@ -329,27 +468,21 @@ export const ProductRoute = () => {
       {!orderSuccess.get && product && (
         <EmptyComponent>
           <Scroll className="flex max-md:flex-col">
-            {!!product.photos?.length && (
+            {!!product.files?.length && (
               <motion.div className="w-full h-[50vh]" variants={itemVariants}>
-                <ImageSlider viewImages zoom photos={product?.photos || []} />
+                <FilesSlider viewContent zoom files={product?.files || []} />
                 <div className="max-md:hidden">
-                  <FormSection title="description : " />
+                  <DescriptionPart />
                   <Line />
-                  <div className="p-4">
-                    <Card className="p-3">
-                      <MarkDown
-                        value={product?.description || "No Description Found"}
-                      />
-                    </Card>
-                  </div>
+                  <StoreInfo />
                 </div>
               </motion.div>
             )}
+            <div className="max-md:hidden h-full">
+              <div className="bg-[--biqpod-borders] w-[1px] h-full" />
+            </div>
             <div className="w-full">
-              <motion.div
-                className="border-[--biqpod-borders] border-l border-solid"
-                variants={itemVariants}
-              >
+              <motion.div variants={itemVariants}>
                 <Line />
                 <FormSection title="form : " />
                 <Line />
@@ -581,15 +714,9 @@ export const ProductRoute = () => {
                 )}
                 <Line />
                 <div className="md:hidden">
-                  <FormSection title="description : " />
+                  <DescriptionPart />
                   <Line />
-                  <div className="p-4">
-                    <Card className="p-3">
-                      <MarkDown
-                        value={product?.description || "No Description Found"}
-                      />
-                    </Card>
-                  </div>
+                  <StoreInfo />
                 </div>
               </motion.div>
             </div>
@@ -603,7 +730,7 @@ export const ProductRoute = () => {
               className="w-full"
             >
               <Button
-                className="p-4 rounded-xl text-lg"
+                className="p-3 rounded-xl text-lg"
                 onClick={() => {
                   execAction("create-order-in-product");
                 }}

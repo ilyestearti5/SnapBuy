@@ -629,7 +629,7 @@ export const Customers = () => {
           >
             <span>
               <Translate content="joined" />:{" "}
-              {new Date(customer.createdAt).toLocaleDateString()}
+              {new Date(customer.createdAt!).toLocaleDateString()}
             </span>
           </motion.div>
           <AnimatePresence>

@@ -10,6 +10,7 @@ import {
   EnumField,
   Field,
   Icon,
+  Image,
   Line,
   NumberField,
   Scroll,
@@ -42,8 +43,9 @@ import de from "../../public/places/de.json";
 import us from "../../public/places/us.json";
 import es from "../../public/places/es.json";
 import it from "../../public/places/it.json";
-import { Biqpod } from "@biqpod/app/ui/types";
-
+import { Biqpod, Nothing } from "@biqpod/app/ui/types";
+import { CreateFirstUI } from "./CreateFirstUI";
+import { populareDeliveryCompanies } from "./populareDeliveryCompanies";
 // Custom Checkbox Component
 interface CustomCheckboxProps {
   checked: boolean;
@@ -52,7 +54,6 @@ interface CustomCheckboxProps {
   title?: string;
   className?: string;
 }
-
 const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
   checked,
   onChange,
@@ -88,22 +89,17 @@ const CustomCheckbox: React.FC<CustomCheckboxProps> = ({
     </div>
   );
 };
-
 // Highlight matching text component
 interface HighlightTextProps {
   text: string;
   query?: string;
 }
-
 const HighlightText: React.FC<HighlightTextProps> = ({ text, query }) => {
   if (!query) return <EmptyComponent>{text}</EmptyComponent>;
-
   const lowerText = text.toLowerCase();
   const lowerQuery = query.toLowerCase();
-
   const parts: { text: string; highlight: boolean }[] = [];
   let lastIndex = 0;
-
   // Find all query characters in order (fuzzy matching)
   let queryIndex = 0;
   for (let i = 0; i < lowerText.length && queryIndex < lowerQuery.length; i++) {
@@ -116,11 +112,9 @@ const HighlightText: React.FC<HighlightTextProps> = ({ text, query }) => {
       queryIndex++;
     }
   }
-
   if (lastIndex < text.length) {
     parts.push({ text: text.substring(lastIndex), highlight: false });
   }
-
   return (
     <EmptyComponent>
       {parts.map((part, idx) =>
@@ -135,7 +129,108 @@ const HighlightText: React.FC<HighlightTextProps> = ({ text, query }) => {
     </EmptyComponent>
   );
 };
-
+const ImportDeliveryPricesDirect = () => {
+  const selectedPlace = useCopyState<string | Nothing>(null);
+  const selected = useMemo(() => {
+    return selectedPlace.get
+      ? populareDeliveryCompanies?.[selectedPlace.get]
+      : undefined;
+  }, [selectedPlace.get]);
+  const searchPlace = getFieldValue("import-search-place");
+  const filteredPlaces = useMemo(() => {
+    return Object.entries(populareDeliveryCompanies)?.filter(([key]) =>
+      fuzzySearch(key, searchPlace || "")
+    );
+  }, [searchPlace]);
+  const searchCompany = getFieldValue("import-search-company");
+  const filteredCompanies = useMemo(() => {
+    return selected?.filter((p) => fuzzySearch(p.name, searchCompany || ""));
+  }, [searchCompany, selected]);
+  return (
+    <Card className="w-2/3 max-h-[90vh] overflow-hidden">
+      <CardHeaderForPopup title="Import Delivery Prices" />
+      <Line />
+      <div className="p-2">
+        <Field
+          className="rounded-xl"
+          inputName={selected ? "import-search-company" : "import-search-place"}
+          placeholder={
+            selected ? "Search delivery companies..." : "Search places..."
+          }
+        />
+      </div>
+      <Line />
+      {!selected && (
+        <Scroll>
+          {filteredPlaces.map(([placeCode]) => {
+            return (
+              <div
+                className="hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity-2] p-3 capitalize cursor-pointer"
+                onClick={() => {
+                  selectedPlace.set(placeCode);
+                }}
+              >
+                {placeCode}
+              </div>
+            );
+          })}
+        </Scroll>
+      )}
+      {selected && (
+        <Scroll>
+          {filteredCompanies?.map((s, index) => {
+            return (
+              <div
+                className="flex justify-between items-center hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity-2] p-2 cursor-pointer"
+                key={index}
+                onClick={async () => {
+                  const isYs = await confirm({
+                    type: "warning",
+                    title: "Import Delivery Company",
+                    message: `Are you sure you want to import delivery company "${s.name}" with default price 0 DA?`,
+                  });
+                  if (isYs) {
+                    //
+                  }
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <Image
+                    src={s.photo}
+                    alt={s.name}
+                    className="bg-[--biqpod-gray-opacity] rounded-md w-[40px] h-[40px]"
+                  />
+                  <div>
+                    <span>{s.name}</span>
+                    {s.description && (
+                      <p className="text-[--biqpod-gray-opacity-2]">
+                        {s.description}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </Scroll>
+      )}
+      <Line />
+      {selected && (
+        <div className="flex items-center gap-2 p-2">
+          <Button
+            icon={allIcons.solid.faChevronLeft}
+            className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
+            onClick={() => {
+              selectedPlace.set(null);
+            }}
+          >
+            <Translate content="back" />
+          </Button>
+        </div>
+      )}
+    </Card>
+  );
+};
 const places: Record<string, { name: string }[]> = {
   dz,
   ma,
@@ -174,7 +269,6 @@ export const StoreDeliveryPricingList: React.FC<
   const isDeletingBulk = useCopyState(false);
   const expandedOptions = useCopyState<Set<string>>(new Set());
   const priceSearch = getFieldValue("delivery-price-search");
-
   // Filter prices based on fuzzy search
   const getFilteredPrices = (prices: Biqpod.Snapbuy.DeliveryPrice[]) => {
     if (!priceSearch) return prices;
@@ -418,346 +512,333 @@ export const StoreDeliveryPricingList: React.FC<
           <CircleLoading />
         </div>
       ) : deliveryOptions.get.length === 0 ? (
-        <EmptyComponent>
-          <div className="flex flex-col justify-center items-center gap-4 p-8 h-full text-center">
-            <Card className="flex flex-col justify-center items-center gap-4 p-8 text-center">
-              <Icon className="text-8xl" icon={allIcons.solid.faTruck} />
-              <div>
-                <p className="text-[--biqpod-gray-opacity-2] font-medium">
-                  <Translate content="no delivery options set" />
-                </p>
-                <p className="text-[--biqpod-gray-opacity-2] text-sm">
-                  <Translate content="create delivery options and manage their pricing" />
-                </p>
-              </div>
-              <Button
-                onClick={handleAddDeliveryOption}
-                className="rounded-full w-fit"
-              >
-                <Translate content="add first delivery option" />
-              </Button>
-            </Card>
-          </div>
-        </EmptyComponent>
+        <CreateFirstUI
+          title="no delivery options set"
+          description="create delivery options and manage their pricing"
+          photo="https://cdn3d.iconscout.com/3d/premium/thumb/package-delivery-tracking-3d-icon-png-download-4204239.png"
+        />
       ) : (
-        <EmptyComponent>
-          <Scroll>
-            <div className="flex flex-col gap-3 p-3">
-              <AnimatePresence>
-                {deliveryOptions.get?.map((option, index) => (
-                  <motion.div
-                    key={option.id}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -20 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="bg-[--biqpod-secondary-background] border border-[--biqpod-borders] border-solid rounded-lg overflow-hidden"
-                  >
-                    {/* Delivery Option Header */}
-                    <div className="flex justify-between items-start bg-[--biqpod-primary-background] p-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-lg">
-                            {option.name}
-                          </h3>
-                          <span className="bg-blue-500/15 px-2 py-1 rounded-full font-medium text-blue-500 text-xs capitalize">
-                            {option.type === "store"
-                              ? "Store Pickup"
-                              : option.type === "domicile"
-                              ? "Home Delivery"
-                              : "Office Delivery"}
-                          </span>
-                        </div>
-                        {option.description && (
-                          <p className="text-[--biqpod-gray-opacity-2] mt-1 text-sm">
-                            {option.description}
-                          </p>
-                        )}
-                        <span className="text-[--biqpod-gray-opacity-2] text-xs capitalize">
-                          <Translate content="created at" />:{" "}
-                          {new Date(option.createdAt).toLocaleDateString()}
+        <Scroll>
+          <div className="flex flex-col gap-3 p-3">
+            <AnimatePresence>
+              {deliveryOptions.get?.map((option, index) => (
+                <motion.div
+                  key={option.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ delay: index * 0.1 }}
+                  className="bg-[--biqpod-secondary-background] border border-[--biqpod-borders] border-solid rounded-lg overflow-hidden"
+                >
+                  {/* Delivery Option Header */}
+                  <div className="flex justify-between items-start bg-[--biqpod-primary-background] p-3">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-lg">{option.name}</h3>
+                        <span className="bg-blue-500/15 px-2 py-1 rounded-full font-medium text-blue-500 text-xs capitalize">
+                          {option.type === "store"
+                            ? "Store Pickup"
+                            : option.type === "domicile"
+                            ? "Home Delivery"
+                            : "Office Delivery"}
                         </span>
                       </div>
-                      <div className="flex gap-2 ml-4">
-                        <CircleTip
-                          onClick={({ clientX, clientY }) => {
-                            openMenu({
-                              x: clientX,
-                              y: clientY,
-                              menu: [
-                                {
-                                  label: "Edit delivery option",
-                                  defaultIcon: allIcons.solid.faEdit,
-                                  click: () => handleEditDeliveryOption(option),
-                                },
-                                {
-                                  label: "Delete delivery option",
-                                  defaultIcon: allIcons.solid.faTrash,
-                                  click: () =>
-                                    execAction(
-                                      "delete-delivery-option",
-                                      option.id!
-                                    ),
-                                },
-                                {
-                                  label: option.enabled ? "Disable" : "Enable",
-                                  defaultIcon: option.enabled
-                                    ? allIcons.solid.faToggleOn
-                                    : allIcons.solid.faToggleOff,
-                                  click: async () => {
-                                    await snapbuyApi.deliveryPrice.options.update(
-                                      option.id!,
-                                      {
-                                        enabled: !option.enabled,
-                                      }
-                                    );
-                                    execAction("fetch-delivery-options");
-                                  },
-                                },
-                              ],
-                            });
-                          }}
-                          icon={allIcons.solid.faEllipsisV}
-                          title="More options"
-                        />
-                      </div>
+                      {option.description && (
+                        <p className="text-[--biqpod-gray-opacity-2] mt-1 text-sm">
+                          {option.description}
+                        </p>
+                      )}
+                      <span className="text-[--biqpod-gray-opacity-2] text-xs capitalize">
+                        <Translate content="created at" />:{" "}
+                        {new Date(option.createdAt!).toLocaleDateString()}
+                      </span>
                     </div>
-                    <Line />
-                    {/* Delivery Prices */}
-                    <div className="flex justify-between items-center p-3">
-                      <div className="flex flex-1 items-center gap-3">
-                        <CircleTip
-                          onClick={() => toggleOptionExpanded(option.id!)}
-                          title={
+                    <div className="flex gap-2 ml-4">
+                      <CircleTip
+                        onClick={({ clientX, clientY }) => {
+                          openMenu({
+                            x: clientX,
+                            y: clientY,
+                            menu: [
+                              {
+                                label: "Edit delivery option",
+                                defaultIcon: allIcons.solid.faEdit,
+                                click: () => handleEditDeliveryOption(option),
+                              },
+                              {
+                                label: "Delete delivery option",
+                                defaultIcon: allIcons.solid.faTrash,
+                                click: () =>
+                                  execAction(
+                                    "delete-delivery-option",
+                                    option.id!
+                                  ),
+                              },
+                              {
+                                label: option.enabled ? "Disable" : "Enable",
+                                defaultIcon: option.enabled
+                                  ? allIcons.solid.faToggleOn
+                                  : allIcons.solid.faToggleOff,
+                                click: async () => {
+                                  await snapbuyApi.deliveryPrice.options.update(
+                                    option.id!,
+                                    {
+                                      enabled: !option.enabled,
+                                    }
+                                  );
+                                  execAction("fetch-delivery-options");
+                                },
+                              },
+                            ],
+                          });
+                        }}
+                        icon={allIcons.solid.faEllipsisV}
+                        title="More options"
+                      />
+                    </div>
+                  </div>
+                  <Line />
+                  {/* Delivery Prices */}
+                  <div className="flex justify-between items-center p-3">
+                    <div className="flex flex-1 items-center gap-3">
+                      <CircleTip
+                        onClick={() => toggleOptionExpanded(option.id!)}
+                        title={
+                          expandedOptions.get.has(option.id!)
+                            ? "Collapse"
+                            : "Expand"
+                        }
+                      >
+                        <Icon
+                          icon={allIcons.solid.faChevronDown}
+                          className={`transition-transform duration-200 ${
                             expandedOptions.get.has(option.id!)
-                              ? "Collapse"
-                              : "Expand"
-                          }
-                        >
-                          <Icon
-                            icon={allIcons.solid.faChevronDown}
-                            className={`transition-transform duration-200 ${
-                              expandedOptions.get.has(option.id!)
-                                ? "rotate-0"
-                                : "-rotate-90"
-                            }`}
+                              ? "rotate-0"
+                              : "-rotate-90"
+                          }`}
+                        />
+                      </CircleTip>
+                      <h4 className="text-[--biqpod-gray-opacity-2] font-medium text-sm capitalize">
+                        <Translate content="delivery prices" /> (
+                        {option.prices.length})
+                      </h4>
+                      {option.prices.length > 0 && (
+                        <div className="flex items-center gap-2">
+                          <CustomCheckbox
+                            disabled={isDeletingBulk.get}
+                            checked={
+                              option.prices.length > 0 &&
+                              option.prices.every((p) =>
+                                selectedPrices.get.has(p.id!)
+                              )
+                            }
+                            onChange={() =>
+                              toggleSelectAllPrices(option.prices)
+                            }
+                            title={
+                              isDeletingBulk.get
+                                ? "Bulk delete in progress..."
+                                : option.prices.every((p) =>
+                                    selectedPrices.get.has(p.id!)
+                                  )
+                                ? "Deselect all"
+                                : "Select all"
+                            }
                           />
-                        </CircleTip>
-                        <h4 className="text-[--biqpod-gray-opacity-2] font-medium text-sm capitalize">
-                          <Translate content="delivery prices" /> (
-                          {option.prices.length})
-                        </h4>
-                        {option.prices.length > 0 && (
-                          <div className="flex items-center gap-2">
-                            <CustomCheckbox
-                              disabled={isDeletingBulk.get}
-                              checked={
-                                option.prices.length > 0 &&
-                                option.prices.every((p) =>
-                                  selectedPrices.get.has(p.id!)
+                          <span className="text-[--biqpod-gray-opacity-2] text-xs">
+                            {selectedPrices.get.size > 0 &&
+                              `${selectedPrices.get.size} selected`}
+                          </span>
+                          {selectedPrices.get.size > 0 && (
+                            <Button
+                              onClick={() =>
+                                execAction(
+                                  "bulk-delete-delivery-prices",
+                                  Array.from(selectedPrices.get)
                                 )
                               }
-                              onChange={() =>
-                                toggleSelectAllPrices(option.prices)
-                              }
-                              title={
+                              icon={
                                 isDeletingBulk.get
-                                  ? "Bulk delete in progress..."
-                                  : option.prices.every((p) =>
-                                      selectedPrices.get.has(p.id!)
-                                    )
-                                  ? "Deselect all"
-                                  : "Select all"
+                                  ? allIcons.solid.faRotate
+                                  : allIcons.solid.faTrashCan
                               }
-                            />
-                            <span className="text-[--biqpod-gray-opacity-2] text-xs">
-                              {selectedPrices.get.size > 0 &&
-                                `${selectedPrices.get.size} selected`}
-                            </span>
-                            {selectedPrices.get.size > 0 && (
-                              <Button
-                                onClick={() =>
-                                  execAction(
-                                    "bulk-delete-delivery-prices",
-                                    Array.from(selectedPrices.get)
+                              iconClassName={tw(
+                                isDeletingBulk.get && "animate-spin"
+                              )}
+                              disabled={isDeletingBulk.get}
+                              className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 px-2 py-1 rounded text-white text-xs disabled:cursor-not-allowed"
+                            >
+                              {isDeletingBulk.get ? (
+                                <EmptyComponent>
+                                  <Translate content="deleting" />
+                                  ...
+                                </EmptyComponent>
+                              ) : (
+                                <EmptyComponent>
+                                  <Translate content="delete" /> (
+                                  {selectedPrices.get.size})
+                                </EmptyComponent>
+                              )}
+                            </Button>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex gap-2">
+                      <CircleTip
+                        onClick={() => handleAddNavexPlaces(option.id!)}
+                        icon={allIcons.solid.faMapMarkerAlt}
+                        className="text-[--biqpod-primary]"
+                      />
+                      <Button
+                        onClick={() => handleAddDeliveryPrice(option.id!)}
+                        className="px-3 rounded-full w-fit text-xs"
+                        icon={allIcons.solid.faPlus}
+                      >
+                        <Translate content="add price" />
+                      </Button>
+                    </div>
+                  </div>
+                  <AnimatePresence initial={false}>
+                    {expandedOptions.get.has(option.id!) && (
+                      <EmptyComponent>
+                        <Line />
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className="overflow-hidden"
+                        >
+                          <div className="space-y-3 p-3">
+                            {/* Search Field */}
+                            <div className="mb-3">
+                              <Field
+                                inputName="delivery-price-search"
+                                placeholder="Search delivery price by name or price..."
+                                className="rounded-lg"
+                              />
+                            </div>
+                            {/* Prices List */}
+                            {option.prices.length === 0 ? (
+                              <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
+                                <Translate content="no prices added yet" />
+                              </div>
+                            ) : getFilteredPrices(option.prices).length ===
+                              0 ? (
+                              <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
+                                <Translate content="no prices found" />
+                              </div>
+                            ) : (
+                              <div className="gap-2 grid">
+                                {getFilteredPrices(option.prices).map(
+                                  (price) => (
+                                    <motion.div
+                                      key={price.id}
+                                      initial={{ opacity: 0, x: -10 }}
+                                      animate={{ opacity: 1, x: 0 }}
+                                      className={`flex justify-between items-center bg-[--biqpod-primary-background] p-3 border border-[--biqpod-borders] rounded-lg transition-opacity duration-200 ${
+                                        isDeletingBulk.get &&
+                                        selectedPrices.get.has(price.id!)
+                                          ? "opacity-50 pointer-events-none"
+                                          : ""
+                                      }`}
+                                    >
+                                      <div className="flex flex-1 items-center gap-3">
+                                        <CustomCheckbox
+                                          disabled={isDeletingBulk.get}
+                                          checked={selectedPrices.get.has(
+                                            price.id!
+                                          )}
+                                          onChange={() =>
+                                            togglePriceSelection(price.id!)
+                                          }
+                                          title={
+                                            isDeletingBulk.get
+                                              ? "Bulk delete in progress..."
+                                              : "Toggle selection"
+                                          }
+                                        />
+                                        <div className="flex-1">
+                                          <span className="font-medium">
+                                            <HighlightText
+                                              text={price.name}
+                                              query={priceSearch}
+                                            />
+                                          </span>
+                                          <span className="bg-green-500/15 ml-3 px-2 py-1 rounded-full font-medium text-green-500 text-sm">
+                                            <HighlightText
+                                              text={`${price.price} DA`}
+                                              query={priceSearch}
+                                            />
+                                          </span>
+                                        </div>
+                                      </div>
+                                      <div className="flex gap-1">
+                                        <CircleTip
+                                          onClick={({ clientX, clientY }) => {
+                                            openMenu({
+                                              x: clientX,
+                                              y: clientY,
+                                              menu: [
+                                                {
+                                                  id: "edit",
+                                                  label: "Edit price",
+                                                  defaultIcon:
+                                                    allIcons.solid.faEdit,
+                                                  click: () =>
+                                                    handleEditDeliveryPrice(
+                                                      price
+                                                    ),
+                                                },
+                                                {
+                                                  id: "delete",
+                                                  label: "Delete price",
+                                                  defaultIcon:
+                                                    allIcons.solid.faTrash,
+                                                  click: () =>
+                                                    execAction(
+                                                      "delete-delivery-price",
+                                                      price.id!
+                                                    ),
+                                                },
+                                              ],
+                                            });
+                                          }}
+                                          icon={allIcons.solid.faEllipsisV}
+                                          title="More options"
+                                        />
+                                      </div>
+                                    </motion.div>
                                   )
-                                }
-                                icon={
-                                  isDeletingBulk.get
-                                    ? allIcons.solid.faRotate
-                                    : allIcons.solid.faTrashCan
-                                }
-                                iconClassName={tw(
-                                  isDeletingBulk.get && "animate-spin"
                                 )}
-                                disabled={isDeletingBulk.get}
-                                className="bg-red-500 hover:bg-red-600 disabled:bg-red-300 px-2 py-1 rounded text-white text-xs disabled:cursor-not-allowed"
-                              >
-                                {isDeletingBulk.get ? (
-                                  <EmptyComponent>
-                                    <Translate content="deleting" />
-                                    ...
-                                  </EmptyComponent>
-                                ) : (
-                                  <EmptyComponent>
-                                    <Translate content="delete" /> (
-                                    {selectedPrices.get.size})
-                                  </EmptyComponent>
-                                )}
-                              </Button>
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                      <div className="flex gap-2">
-                        <CircleTip
-                          onClick={() => handleAddNavexPlaces(option.id!)}
-                          icon={allIcons.solid.faMapMarkerAlt}
-                          className="text-[--biqpod-primary]"
-                        />
-                        <Button
-                          onClick={() => handleAddDeliveryPrice(option.id!)}
-                          className="px-3 rounded-full w-fit text-xs"
-                          icon={allIcons.solid.faPlus}
-                        >
-                          <Translate content="add price" />
-                        </Button>
-                      </div>
-                    </div>
-                    <AnimatePresence initial={false}>
-                      {expandedOptions.get.has(option.id!) && (
-                        <EmptyComponent>
-                          <Line />
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: "auto" }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="overflow-hidden"
-                          >
-                            <div className="space-y-3 p-3">
-                              {/* Search Field */}
-                              <div className="mb-3">
-                                <Field
-                                  inputName="delivery-price-search"
-                                  placeholder="Search delivery price by name or price..."
-                                  className="rounded-lg"
-                                />
-                              </div>
-
-                              {/* Prices List */}
-                              {option.prices.length === 0 ? (
-                                <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
-                                  <Translate content="no prices added yet" />
-                                </div>
-                              ) : getFilteredPrices(option.prices).length ===
-                                0 ? (
-                                <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center">
-                                  <Translate content="no prices found" />
-                                </div>
-                              ) : (
-                                <div className="gap-2 grid">
-                                  {getFilteredPrices(option.prices).map(
-                                    (price) => (
-                                      <motion.div
-                                        key={price.id}
-                                        initial={{ opacity: 0, x: -10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        className={`flex justify-between items-center bg-[--biqpod-primary-background] p-3 border border-[--biqpod-borders] rounded-lg transition-opacity duration-200 ${
-                                          isDeletingBulk.get &&
-                                          selectedPrices.get.has(price.id!)
-                                            ? "opacity-50 pointer-events-none"
-                                            : ""
-                                        }`}
-                                      >
-                                        <div className="flex flex-1 items-center gap-3">
-                                          <CustomCheckbox
-                                            disabled={isDeletingBulk.get}
-                                            checked={selectedPrices.get.has(
-                                              price.id!
-                                            )}
-                                            onChange={() =>
-                                              togglePriceSelection(price.id!)
-                                            }
-                                            title={
-                                              isDeletingBulk.get
-                                                ? "Bulk delete in progress..."
-                                                : "Toggle selection"
-                                            }
-                                          />
-                                          <div className="flex-1">
-                                            <span className="font-medium">
-                                              <HighlightText
-                                                text={price.name}
-                                                query={priceSearch}
-                                              />
-                                            </span>
-                                            <span className="bg-green-500/15 ml-3 px-2 py-1 rounded-full font-medium text-green-500 text-sm">
-                                              <HighlightText
-                                                text={`${price.price} DA`}
-                                                query={priceSearch}
-                                              />
-                                            </span>
-                                          </div>
-                                        </div>
-                                        <div className="flex gap-1">
-                                          <CircleTip
-                                            onClick={({ clientX, clientY }) => {
-                                              openMenu({
-                                                x: clientX,
-                                                y: clientY,
-                                                menu: [
-                                                  {
-                                                    id: "edit",
-                                                    label: "Edit price",
-                                                    defaultIcon:
-                                                      allIcons.solid.faEdit,
-                                                    click: () =>
-                                                      handleEditDeliveryPrice(
-                                                        price
-                                                      ),
-                                                  },
-                                                  {
-                                                    id: "delete",
-                                                    label: "Delete price",
-                                                    defaultIcon:
-                                                      allIcons.solid.faTrash,
-                                                    click: () =>
-                                                      execAction(
-                                                        "delete-delivery-price",
-                                                        price.id!
-                                                      ),
-                                                  },
-                                                ],
-                                              });
-                                            }}
-                                            icon={allIcons.solid.faEllipsisV}
-                                            title="More options"
-                                          />
-                                        </div>
-                                      </motion.div>
-                                    )
-                                  )}
-                                </div>
-                              )}
-                            </div>
-                          </motion.div>
-                        </EmptyComponent>
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                ))}
-              </AnimatePresence>
-            </div>
-          </Scroll>
-          <Line />
-          <div className="p-2">
-            <Button onClick={handleAddDeliveryOption} className="rounded-full">
-              <Translate content="add delivery option" />
-            </Button>
+                        </motion.div>
+                      </EmptyComponent>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              ))}
+            </AnimatePresence>
           </div>
-        </EmptyComponent>
+        </Scroll>
       )}
+      <Line />
+      <div className="flex items-center gap-2 p-2">
+        <Button
+          onClick={() => {
+            showPopup(<ImportDeliveryPricesDirect />);
+          }}
+          className="bg-[--biqpod-gray-opacity] rounded-full text-[--biqpod-text-color]"
+        >
+          <Translate content="import" />
+        </Button>
+        <Button onClick={handleAddDeliveryOption} className="rounded-full">
+          <Translate content="add" />
+        </Button>
+      </div>
     </div>
   );
 };
@@ -856,7 +937,6 @@ export const UpsertStoreDeliveryOption: React.FC<
             className="rounded-xl"
           />
         </div>
-
         <div>
           <label className="block mb-2 font-medium capitalize">
             <Translate content="delivery type" />

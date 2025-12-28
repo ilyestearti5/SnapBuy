@@ -21,7 +21,7 @@ import {
   AnimatedList,
   AnimatedListItem,
 } from "./animations/components";
-import { Line, Translate, Button } from "@biqpod/app/ui/components";
+import { Line, Translate, Button, Card, Tip } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import unpaidPhoto from "./assets/unpaied.jpg";
 import payChecked from "./assets/payment-checked.png";
@@ -33,7 +33,6 @@ import { appTabs, extraTabs, tabServices } from "./utils";
 import { isWeb } from "@biqpod/app/ui/app";
 import { FeedbackRoute } from "./routes/App/FeedbackRoute";
 import { PageNotFound } from "./routes/App/PageNotFound";
-import { OffersPage } from "./routes/App/OffersPage";
 import { DocumentationRoute } from "./routes/App/DocumentationRoute";
 import { DeveloperRoute } from "./routes/Dev";
 import { CollectionsRoute } from "./routes/Collections/CollectionsRoute";
@@ -43,21 +42,13 @@ import { Client } from "./routes/Clients/Client";
 import { PackRoute } from "./Links/PackRoute";
 import { ProductRoute } from "./Links/ProductRoute";
 import { Stores } from "./routes/Stores/Stores";
-import { Store } from "./routes/Stores/Store";
 import { Homepage } from "./routes/Homepage";
 import { AccountLinking } from "./AccountLinking";
 import { useProfileContent } from "@biqpod/app/ui/hooks";
 import { TestGrid } from "./Test";
-const CheckBeforeShow = () => {
-  return (
-    <div className="h-full overflow-hidden">
-      <AnimatedPage>
-        <Store />
-      </AnimatedPage>
-    </div>
-  );
-};
-
+import { News } from "./News";
+import { CheckBeforeShow } from "./CheckBeforeShow";
+import { Preview } from "./Preview";
 export const App = () => {
   useUrlSettings();
   useProfileContent(<ProfileInside />);
@@ -116,123 +107,227 @@ export const App = () => {
         <LeftSide />
         <Container>
           <Switch>
+            <Route path="/preview">
+              <Preview />
+            </Route>
+            <Route path="/news/:newsId">
+              <Profile>
+                <News />
+              </Profile>
+            </Route>
             <Route path="/link">
               <div className="flex justify-center items-center h-full">
                 <AccountLinking />
               </div>
             </Route>
-            <Route path="/payout?">
+            <Route path="/__/payout">
               <PayoutRoute
-                successComponent={({ payout }) => (
-                  <AnimatedPage className="flex justify-center items-center h-full">
-                    <AnimatedCard className="max-w-md overflow-hidden">
-                      {payout?.status === "paid" ? (
-                        <EmptyComponent>
-                          <div className="flex justify-center p-6">
-                            <div className="flex justify-center items-center bg-[--biqpod-success] rounded-full w-24 h-24">
+                successComponent={({ payout }) => {
+                  const template = payout.meta?.template;
+                  const isPayTemplate = !!template;
+                  const storeId = payout.meta?.storeId;
+                  return (
+                    <AnimatedPage className="flex justify-center items-center h-full">
+                      <Card>
+                        {isPayTemplate ? (
+                          <EmptyComponent>
+                            <div className="flex justify-center p-6">
                               <img
                                 src={payChecked}
-                                className="w-16 h-16 object-contain"
+                                className="w-[150px] h-[150px] object-contain"
                                 draggable={false}
                               />
                             </div>
-                          </div>
-                          <Line />
-                          <div className="p-4 text-center">
-                            <h2 className="mb-2 font-bold text-[--biqpod-success] text-2xl">
-                              <Translate content="Congratulations!" />
-                            </h2>
-                            <p className="text-[--biqpod-gray-opacity-2] mb-4">
-                              <Translate content="Your payment has been processed successfully" />
-                            </p>
-                            <div className="bg-[--biqpod-secondary-background] mb-4 p-4 rounded-lg">
-                              <div className="space-y-2">
-                                <div className="flex justify-between">
-                                  <span className="text-[--biqpod-gray-opacity-2]">
-                                    <Translate content="Amount:" />
-                                  </span>
-                                  <span className="font-semibold">
-                                    {payout?.amount?.toFixed(2)} DA
-                                  </span>
+                            <Line />
+                            <div className="p-4 text-center">
+                              <h2 className="mb-2 font-bold text-[--biqpod-success] text-2xl">
+                                <Translate content="Template Purchased!" />
+                              </h2>
+                              <p className="text-[--biqpod-gray-opacity-2] mb-4">
+                                <Translate content="Your template payment has been processed successfully" />
+                              </p>
+                              <div className="bg-[--biqpod-secondary-background] mb-4 p-4 rounded-lg">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between">
+                                    <span className="text-[--biqpod-gray-opacity-2]">
+                                      <Translate content="Amount:" />
+                                    </span>
+                                    <span className="font-semibold">
+                                      {payout?.amount?.toFixed(2)} DA
+                                    </span>
+                                  </div>
+                                  {payout?.payoutId && (
+                                    <div className="flex justify-between">
+                                      <span className="text-[--biqpod-gray-opacity-2]">
+                                        <Translate content="Payment ID:" />
+                                      </span>
+                                      <div className="inline-flex items-center gap-2">
+                                        <span className="font-mono text-sm">
+                                          {payout.payoutId.slice(0, 4)}...
+                                          {payout.payoutId.slice(-4)}
+                                        </span>
+                                        <Tip
+                                          icon={allIcons.regular.faCopy}
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(
+                                              payout.payoutId || ""
+                                            );
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                  {payout?.createdAt && (
+                                    <div className="flex justify-between">
+                                      <span className="text-[--biqpod-gray-opacity-2]">
+                                        <Translate content="Date:" />
+                                      </span>
+                                      <span className="text-sm">
+                                        {new Date(
+                                          payout.createdAt
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
                                 </div>
-                                {payout?.payoutId && (
-                                  <div className="flex justify-between">
-                                    <span className="text-[--biqpod-gray-opacity-2]">
-                                      <Translate content="Payment ID:" />
-                                    </span>
-                                    <span className="font-mono text-sm">
-                                      {payout.payoutId}
-                                    </span>
-                                  </div>
-                                )}
-                                {payout?.createdAt && (
-                                  <div className="flex justify-between">
-                                    <span className="text-[--biqpod-gray-opacity-2]">
-                                      <Translate content="Date:" />
-                                    </span>
-                                    <span className="text-sm">
-                                      {new Date(
-                                        payout.createdAt
-                                      ).toLocaleDateString()}
-                                    </span>
-                                  </div>
-                                )}
                               </div>
                             </div>
-                          </div>
-                          <Line />
-                          <div className="p-4">
-                            <Link className="w-full" to="/profile">
-                              <Button className="bg-[--biqpod-success] hover:bg-[--biqpod-success-hover] w-full text-[--biqpod-primary-content]">
-                                <Translate content="Continue to Dashboard" />
-                              </Button>
-                            </Link>
-                          </div>
-                        </EmptyComponent>
-                      ) : (
-                        <EmptyComponent>
-                          <div className="flex justify-center p-6">
-                            <div className="flex justify-center items-center bg-[--biqpod-warning] rounded-full w-24 h-24">
+                            <Line />
+                            <div className="p-4">
+                              {storeId && (
+                                <Link
+                                  className="mb-2 w-full"
+                                  to={`/store/${storeId}/dashboard`}
+                                >
+                                  <Button className="bg-[--biqpod-primary] w-full text-[--biqpod-primary-content]">
+                                    <Translate content="Go to Store Dashboard" />
+                                  </Button>
+                                </Link>
+                              )}
+                              <Link className="w-full" to="/profile">
+                                <Button className="bg-[--biqpod-success] w-full text-[--biqpod-primary-content]">
+                                  <Translate content="Continue to Dashboard" />
+                                </Button>
+                              </Link>
+                            </div>
+                          </EmptyComponent>
+                        ) : payout?.status === "paid" ? (
+                          <EmptyComponent>
+                            <div className="flex justify-center p-6">
                               <img
-                                src={unpaidPhoto}
-                                className="opacity-75 w-16 h-16 object-contain"
+                                src={payChecked}
+                                className="w-[150px] h-[150px] object-contain"
                                 draggable={false}
                               />
                             </div>
-                          </div>
-                          <Line />
-                          <div className="p-4 text-center">
-                            <h2 className="mb-2 font-semibold text-[--biqpod-warning] text-xl">
-                              <Translate content="Payment Processing" />
-                            </h2>
-                            <p className="text-[--biqpod-gray-opacity-2] mb-4">
-                              <Translate content="Your payment is being processed. Please wait..." />
-                            </p>
-                            {payout?.status && (
-                              <div className="bg-[--biqpod-secondary-background] mb-4 p-3 rounded-lg">
-                                <p className="text-[--biqpod-warning] text-sm">
-                                  <Translate content="Status:" />{" "}
-                                  <span className="font-medium capitalize">
-                                    {payout.status}
-                                  </span>
-                                </p>
+                            <Line />
+                            <div className="p-4 text-center">
+                              <h2 className="mb-2 font-bold text-[--biqpod-success] text-2xl">
+                                <Translate content="Congratulations!" />
+                              </h2>
+                              <p className="text-[--biqpod-gray-opacity-2] mb-4">
+                                <Translate content="Your payment has been processed successfully" />
+                              </p>
+                              <div className="bg-[--biqpod-secondary-background] mb-4 p-4 rounded-lg">
+                                <div className="space-y-2">
+                                  <div className="flex justify-between">
+                                    <span className="text-[--biqpod-gray-opacity-2]">
+                                      <Translate content="Amount:" />
+                                    </span>
+                                    <span className="font-semibold">
+                                      {payout?.amount?.toFixed(2)} DA
+                                    </span>
+                                  </div>
+                                  {payout?.payoutId && (
+                                    <div className="flex justify-between">
+                                      <span className="text-[--biqpod-gray-opacity-2]">
+                                        <Translate content="Payment ID:" />
+                                      </span>
+                                      <div className="inline-flex items-center gap-2">
+                                        <span className="font-mono text-sm">
+                                          {payout.payoutId.slice(0, 4)}...
+                                          {payout.payoutId.slice(-4)}
+                                        </span>
+                                        <Tip
+                                          icon={allIcons.regular.faCopy}
+                                          onClick={() => {
+                                            navigator.clipboard.writeText(
+                                              payout.payoutId || ""
+                                            );
+                                          }}
+                                        />
+                                      </div>
+                                    </div>
+                                  )}
+                                  {payout?.createdAt && (
+                                    <div className="flex justify-between">
+                                      <span className="text-[--biqpod-gray-opacity-2]">
+                                        <Translate content="Date:" />
+                                      </span>
+                                      <span className="text-sm">
+                                        {new Date(
+                                          payout.createdAt
+                                        ).toLocaleDateString()}
+                                      </span>
+                                    </div>
+                                  )}
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          <Line />
-                          <div className="p-4">
-                            <Button
-                              className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-hover] w-full text-[--biqpod-text-color]"
-                              onClick={() => window.location.reload()}
-                            >
-                              <Translate content="Check Status" />
-                            </Button>
-                          </div>
-                        </EmptyComponent>
-                      )}
-                    </AnimatedCard>
-                  </AnimatedPage>
-                )}
+                            </div>
+                            <Line />
+                            <div className="p-4">
+                              <Link className="w-full" to="/profile">
+                                <Button className="bg-[--biqpod-success] w-full text-[--biqpod-primary-content]">
+                                  <Translate content="Continue to Dashboard" />
+                                </Button>
+                              </Link>
+                            </div>
+                          </EmptyComponent>
+                        ) : (
+                          <EmptyComponent>
+                            <div className="flex justify-center p-6">
+                              <div className="flex justify-center p-6">
+                                <img
+                                  src={unpaidPhoto}
+                                  className="w-[150px] h-[150px] object-contain"
+                                  draggable={false}
+                                />
+                              </div>
+                            </div>
+                            <Line />
+                            <div className="p-4 text-center">
+                              <h2 className="mb-2 font-semibold text-[--biqpod-warning] text-xl">
+                                <Translate content="Payment Processing" />
+                              </h2>
+                              <p className="text-[--biqpod-gray-opacity-2] mb-4">
+                                <Translate content="Your payment is being processed. Please wait..." />
+                              </p>
+                              {payout?.status && (
+                                <div className="bg-[--biqpod-secondary-background] mb-4 p-3 rounded-lg">
+                                  <p className="text-[--biqpod-warning] text-sm">
+                                    <Translate content="Status:" />{" "}
+                                    <span className="font-medium capitalize">
+                                      {payout.status}
+                                    </span>
+                                  </p>
+                                </div>
+                              )}
+                            </div>
+                            <Line />
+                            <div className="p-4">
+                              <Button
+                                className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-hover] w-full text-[--biqpod-text-color]"
+                                onClick={() => window.location.reload()}
+                              >
+                                <Translate content="Check Status" />
+                              </Button>
+                            </div>
+                          </EmptyComponent>
+                        )}
+                      </Card>
+                    </AnimatedPage>
+                  );
+                }}
               />
             </Route>
             <Route path="/agent">
@@ -385,11 +480,6 @@ export const App = () => {
             <Route path="/developer" exact>
               <AnimatedPage>
                 <DeveloperRoute />
-              </AnimatedPage>
-            </Route>
-            <Route path="/offers">
-              <AnimatedPage>
-                <OffersPage />
               </AnimatedPage>
             </Route>
             <Route exact path="/collection/:collectionId">

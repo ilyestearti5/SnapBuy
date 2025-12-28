@@ -13,7 +13,7 @@ import {
 import { showToast, useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { useParams } from "react-router";
 import { snapbuyApi } from "../apis";
-import { ImageSlider } from "./ImageSlider";
+import { FilesSlider } from "./FilesSlider";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { mapAsync } from "@biqpod/app/ui/utils";
 import { getPrice } from "../utils";
@@ -68,7 +68,7 @@ export const PackRoute = () => {
                     deps={[prod]}
                     render={async () => {
                       const product = await snapbuyApi.product.get(prod.prodId);
-                      const photos = product?.photos || [];
+                      const photos = product?.files || [];
                       const price = getPrice(product);
                       return (
                         <Card className="max-md:w-full md:w-[calc(50%-4px)] overflow-hidden">
@@ -77,7 +77,7 @@ export const PackRoute = () => {
                           </div>
                           <Line />
                           <div className="h-[200px]">
-                            <ImageSlider photos={photos} />
+                            <FilesSlider files={photos} />
                           </div>
                           <Line />
                           <div className="flex justify-between items-center p-2">

@@ -25,8 +25,6 @@ import {
   openMenu,
   setMagicField,
   useAsyncMemo,
-  useColorMerge,
-  handelShadowColor,
 } from "@biqpod/app/ui/hooks";
 import { motion, AnimatePresence } from "framer-motion";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
@@ -262,7 +260,7 @@ const SelectProductPopup = ({ onSelectProduct }: SelectProductPopupProps) => {
           }}
         >
           <Image
-            src={product.photos?.at(0)}
+            src={product.files?.at(0)?.url}
             alt={product.name?.at(0)}
             className="bg-[--biqpod-gray-opacity-2] rounded w-8 h-8 object-cover"
           />
@@ -278,7 +276,6 @@ const SelectProductPopup = ({ onSelectProduct }: SelectProductPopupProps) => {
       showRightSide.set(true);
     }
   }, [selectedProduct.get]);
-  const colorMerge = useColorMerge();
   return (
     <Card className="w-[800px] max-h-[80vh] overflow-hidden">
       <div className="z-[10] flex justify-between items-center gap-2 bg-[--biqpod-primary-background] p-2">
@@ -326,19 +323,6 @@ const SelectProductPopup = ({ onSelectProduct }: SelectProductPopupProps) => {
             "absolute bg-[--biqpod-primary-background] border-[--biqpod-borders] border-l border-solid w-2/3 h-full transition-[right]",
             showRightSide.get ? "right-0" : "-right-full"
           )}
-          style={{
-            ...colorMerge({
-              boxShadow: handelShadowColor([
-                {
-                  colorId: "shadow.color",
-                  blur: 10,
-                  size: 20,
-                  x: -20,
-                  y: 0,
-                },
-              ]),
-            }),
-          }}
         >
           {selectedProduct.get ? (
             <div className="h-full overflow-y-auto">
@@ -706,24 +690,38 @@ export const MetadataFieldComponent = ({
                       </Key>
                     </div>
                     {showFieldActions && (
-                      <EmptyComponent>
-                        <div className="max-md:hidden md:flex">
-                          {menu.map((item, menuIndex) => {
-                            return (
-                              <motion.div
-                                whileHover={{ scale: 1.1 }}
-                                whileTap={{ scale: 0.9 }}
-                                key={menuIndex}
-                              >
-                                <CircleTip
-                                  icon={item.defaultIcon}
-                                  onClick={() => {
-                                    item.click?.();
-                                  }}
-                                />
-                              </motion.div>
-                            );
-                          })}
+                      <div className="flex items-center gap-2">
+                        <div>
+                          {field.type === "boolean" ? (
+                            field.value ? (
+                              "True"
+                            ) : (
+                              "False"
+                            )
+                          ) : field.type === "array" ? (
+                            Array.isArray(field.value) ? (
+                              field.value.join(", ")
+                            ) : (
+                              String(field.value)
+                            )
+                          ) : field.type === "colors" ? (
+                            Array.isArray(field.value) ? (
+                              <div className="flex flex-wrap gap-1">
+                                {field.value.map((color, idx) => (
+                                  <div
+                                    key={idx}
+                                    className="border border-[--biqpod-borders] border-solid rounded-full w-4 h-4"
+                                    style={{ backgroundColor: color }}
+                                    title={color}
+                                  />
+                                ))}
+                              </div>
+                            ) : (
+                              String(field.value)
+                            )
+                          ) : (
+                            String(field.value)
+                          )}
                         </div>
                         <div className="md:hidden max-md:flex">
                           <motion.div
@@ -742,7 +740,7 @@ export const MetadataFieldComponent = ({
                             />
                           </motion.div>
                         </div>
-                      </EmptyComponent>
+                      </div>
                     )}
                   </div>
                 </motion.div>

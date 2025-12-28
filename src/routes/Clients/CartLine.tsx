@@ -22,7 +22,7 @@ export const CartLine = ({ data }: CartLineProps) => {
     var prod = await snapbuyApi.product.get(data.prodId);
     return prod;
   }, []);
-  const photo = product?.photos?.at(0);
+  const file = product?.files?.at(0);
   const count = data.count;
   const [price, total] = useMemo(() => {
     const price = getPrice(product!, count);
@@ -41,7 +41,7 @@ export const CartLine = ({ data }: CartLineProps) => {
             <div>
               <Image
                 className="bg-[--biqpod-gray-opacity] w-[40px] h-[40px]"
-                src={photo}
+                src={file?.url}
                 alt={<Icon icon={allIcons.solid.faImage} />}
               />
             </div>

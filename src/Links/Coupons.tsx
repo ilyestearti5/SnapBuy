@@ -1,9 +1,8 @@
 import { allIcons, and, where } from "@biqpod/app/ui/apis";
-import { mergeArray, range, tw } from "@biqpod/app/ui/utils";
+import { mergeArray, tw } from "@biqpod/app/ui/utils";
 import {
   Button,
   Card,
-  CardWait,
   CircleTip,
   Field,
   Icon,
@@ -32,7 +31,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { useMemo, useRef, useCallback, memo } from "react";
 import { FixedSizeList as List } from "react-window";
-import { getDocs, setDoc } from "../server";
+import { getDocs } from "../server";
 import { motion } from "framer-motion";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { useStoreId } from "../utils";
@@ -41,6 +40,9 @@ import { SlidingFilter, FilterOption } from "../components/SlidingFilter";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { snapbuyApi } from "../apis";
 import { OrdersOfCoupon } from "./OrdersOfCoupon";
+import { CreateFirstUI } from "../components/CreateFirstUI";
+import { LoadingData } from "./LoadingData";
+import { setTextSide } from "../hooks/usePayments";
 const PAGE_SIZE = 100;
 // Highlight component for search terms
 function highlightMatch(
@@ -281,7 +283,7 @@ const CouponRender = memo(
               : undefined
           }
         >
-          <div className="flex justify-between items-center p-4">
+          <div className="flex justify-between items-center p-2">
             <div className="flex items-center gap-3">
               <div
                 className={tw(
@@ -291,15 +293,17 @@ const CouponRender = memo(
                     : "bg-red-600/10 text-red-600"
                 )}
               >
-                <Icon icon={getTypeIcon()} className="text-xl" />
+                <Icon icon={getTypeIcon()} className="md:text-xl" />
               </div>
               <div className="flex flex-col">
-                <h3 className="font-semibold text-[--biqpod-text] text-lg">
+                <h3 className="font-semibold text-[--biqpod-text] md:text-lg">
                   {highlightMatch(coupon.name || "", searchTerm)}
                 </h3>
-                <p className="font-mono text-[--biqpod-text-secondary] text-sm">
+                <p className="font-mono text-[--biqpod-text-secondary]">
                   <Translate content="code" />:{" "}
-                  <Key>{highlightMatch(coupon.code || "", searchTerm)}</Key>
+                  <Key className="max-md:p-1">
+                    {highlightMatch(coupon.code || "", searchTerm)}
+                  </Key>
                 </p>
                 {coupon.description && (
                   <p className="mt-1 text-[--biqpod-text-secondary] text-xs">
@@ -326,7 +330,7 @@ const CouponRender = memo(
             <div className="text-right">
               <div
                 className={tw(
-                  "text-2xl font-bold",
+                  "md:text-2xl font-bold",
                   isActive ? "text-green-600" : "text-red-600"
                 )}
               >
@@ -339,7 +343,7 @@ const CouponRender = memo(
             </div>
           </div>
           <Line />
-          <div className="flex justify-between items-center p-3 text-sm">
+          <div className="flex justify-between items-center p-2 text-sm">
             <div className="flex items-center gap-4">
               <span
                 className={tw(
@@ -371,10 +375,12 @@ const CouponRender = memo(
                   navigator.clipboard.writeText(coupon.code);
                   showToast("coupon code copied", "success");
                 }}
-                className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-2] text-[--biqpod-text-color] text-xs"
+                className="bg-[--biqpod-gray-opacity] hover:bg-[--biqpod-gray-opacity-2] rounded-full text-[--biqpod-text-color] text-xs"
+                icon={allIcons.regular.faCopy}
               >
-                <Icon icon={allIcons.regular.faCopy} className="mr-1 text-xs" />
-                <Translate content="copy" />
+                <span className="max-md:hidden">
+                  <Translate content="copy" />
+                </span>
               </Button>
               {usedBy === "owned" || usedBy === "read/edit" ? (
                 <div>
@@ -422,8 +428,15 @@ const CouponRender = memo(
                                 type: "warning",
                               });
                               if (coupon.id && response) {
+                                setTextSide("Deleting coupon...");
                                 await snapbuyApi.coupon.delete(coupon.id);
-                                execAction("fetch-coupons");
+                                setTextSide("Refreshing coupons...");
+                                showToast(
+                                  "Coupon deleted successfully",
+                                  "success"
+                                );
+                                await execAction("fetch-coupons");
+                                setTextSide();
                               }
                             },
                             defaultIcon: allIcons.solid.faTrash,
@@ -472,7 +485,6 @@ export const Coupons = () => {
           startAt: next && lastDoc.get?.id && mergeArray(lastDoc.get?.id),
         }
       );
-      console.log("Fetched coupons:", newCoupons);
       if (!newCoupons) return;
       const list = newCoupons.map((coupon) => ({
         ...coupon.data,
@@ -488,13 +500,10 @@ export const Coupons = () => {
   useAction(
     "update-coupon",
     async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      await setDoc(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "coupons", id],
-        { isActive }
-      );
+      await snapbuyApi.coupon.upsert({ isActive, id, storeId } as any);
       execAction("fetch-coupons");
     },
-    []
+    [storeId]
   );
   const success = isSuccess(action);
   const loading = isLoading(action);
@@ -634,133 +643,54 @@ export const Coupons = () => {
         <Line />
       </PositionView>
       {idle || loading ? (
-        <motion.div
-          className="flex flex-col gap-2 p-2"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-        >
-          {range(5).map((_, index) => {
-            return (
-              <motion.div
-                key={index}
-                className="p-2 w-full"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{
-                  duration: 0.4,
-                  delay: index * 0.1,
-                  ease: [0.4, 0, 0.2, 1],
-                }}
-              >
-                <CardWait className="rounded-2xl h-[60px]" />
-              </motion.div>
-            );
-          })}
-        </motion.div>
-      ) : success && filterCoupons?.length ? (
-        <PositionView
-          positionId="coupon-list"
-          className="flex flex-col h-full overflow-hidden"
-        >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3, delay: 0.1 }}
-            className="h-full"
-          >
-            <List
-              ref={listRef}
-              height={listHeight}
-              itemCount={filterCoupons.length}
-              itemSize={180}
-              width="100%"
-            >
-              {RenderItem}
-            </List>
-          </motion.div>
-          <Line />
-          {(usedBy === "owned" || usedBy === "read/edit") && (
-            <div className="p-2">
-              <Button
-                onClick={() => {
-                  showPopup(<UpsertCoupon />);
-                }}
-                className="rounded-full"
-                icon={allIcons.solid.faPlus}
-              >
-                <Translate content="create" />
-              </Button>
-            </div>
-          )}
-        </PositionView>
+        <LoadingData />
       ) : (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex flex-col h-full"
-        >
-          <motion.div
-            className="flex justify-center items-center p-8 h-full"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
+        success && (
+          <PositionView
+            positionId="coupon-list"
+            className="flex flex-col h-full overflow-hidden"
           >
-            <motion.div
-              animate={{ rotate: [0, 5, -5, 0] }}
-              transition={{
-                duration: 2,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              <Icon
-                icon={allIcons.solid.faTicket}
-                className="text-[--biqpod-primary] text-9xl"
-              />
-            </motion.div>
-          </motion.div>
-          <Line />
-          <motion.div
-            className="flex flex-col justify-center items-center gap-4 p-6 h-full"
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <div className="font-semibold text-2xl text-center">
-              <Translate content="no coupons found" />
-            </div>
-            <div className="text-[--biqpod-text-secondary] text-sm text-center">
-              <Translate content="create your first coupon to get started" />
-            </div>
-          </motion.div>
-          <Line />
-          {usedBy === "owned" || usedBy === "read/edit" ? (
-            <motion.div
-              className="p-2"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.6 }}
-            >
+            {!!filterCoupons?.length && (
               <motion.div
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ duration: 0.2 }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className="h-full"
               >
+                <List
+                  ref={listRef}
+                  height={listHeight}
+                  itemCount={filterCoupons.length}
+                  itemSize={180}
+                  width="100%"
+                >
+                  {RenderItem}
+                </List>
+              </motion.div>
+            )}
+            {!filterCoupons?.length && (
+              <CreateFirstUI
+                photo="https://cdn3d.iconscout.com/3d/premium/thumb/coupon-3d-icon-png-download-5523041.png"
+                title="No Coupons Found"
+                description="Create your first coupon to get started"
+              />
+            )}
+            <Line />
+            {(usedBy === "owned" || usedBy === "read/edit") && (
+              <div className="p-2">
                 <Button
                   onClick={() => {
                     showPopup(<UpsertCoupon />);
                   }}
-                  icon={allIcons.solid.faPlus}
                   className="rounded-full"
+                  icon={allIcons.solid.faPlus}
                 >
-                  <Translate content="create coupon" />
+                  <Translate content="create" />
                 </Button>
-              </motion.div>
-            </motion.div>
-          ) : null}
-        </motion.div>
+              </div>
+            )}
+          </PositionView>
+        )
       )}
       {/* Sliding Filter */}
       <SlidingCouponFilter

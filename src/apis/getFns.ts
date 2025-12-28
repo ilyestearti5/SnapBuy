@@ -69,10 +69,10 @@ export const {
   use: useFormType,
 } = getFns<"single" | "multiple">("product-type");
 export const {
-  get: getFormPhotos,
-  set: setFormPhotos,
-  use: useFormPhotos,
-} = getFns<Biqpod.Snapbuy.Product["photos"]>("product-images");
+  get: getFormFiles,
+  set: setFormFiles,
+  use: useFormFiles,
+} = getFns<Biqpod.Snapbuy.Product["files"]>("product-files");
 export const {
   get: getFormClientPrice,
   set: setFormClientPrice,
@@ -100,13 +100,8 @@ export const {
 } = getFns<Partial<Record<string, Biqpod.Snapbuy.MetadataField>>>(
   "product-metadata"
 );
-export const {
-  get: getHiddenPhotos,
-  set: setHiddenPhotos,
-  use: useHiddenPhotos,
-} = getFns<Biqpod.Snapbuy.Product["hiddenPhotos"]>("product-hidden-photos");
 export const useFormProduct = () => {
-  const photos = getFormPhotos();
+  const files = getFormFiles();
   const clientPrice = getFormClientPrice();
   const customerPrice = getFormCustomerPrice();
   const limited = getFormLimited();
@@ -118,11 +113,10 @@ export const useFormProduct = () => {
   const type = getFormType();
   const brandId = getFormBrand();
   const metadata = getFormMetadata();
-  const hiddenPhotos = getHiddenPhotos();
   const product = useMemo(() => {
     // Convert metadata array to object format
     const result: Partial<Biqpod.Snapbuy.Product> = {
-      photos: photos || [],
+      files: files || [],
       type: type || "single",
       name: name || "",
       available: isAvailable ?? true,
@@ -130,7 +124,6 @@ export const useFormProduct = () => {
       description: description || "",
       limited: limited || false,
       metaData: metadata || {},
-      hiddenPhotos: hiddenPhotos || [],
     };
     if (type === "multiple") {
       result.multiple = {
@@ -151,7 +144,7 @@ export const useFormProduct = () => {
     }
     return result;
   }, [
-    photos,
+    files,
     clientPrice,
     customerPrice,
     limited,
@@ -163,7 +156,6 @@ export const useFormProduct = () => {
     type,
     brandId,
     metadata,
-    hiddenPhotos,
   ]);
   return product;
 };
@@ -173,13 +165,12 @@ export const setFormProduct = (value?: Partial<Biqpod.Snapbuy.Product>) => {
   setFormQuantity(value?.quantity ?? 0);
   setFormDescription(value?.description ?? "");
   setFormName(value?.name ?? "");
-  setFormPhotos(value?.photos ?? []);
+  setFormFiles(value?.files ?? []);
   setFormClientPrice(value?.single?.client ?? undefined);
   setFormCustomerPrice(value?.single?.customer ?? undefined);
   setFormLimited(value?.limited ?? false);
   setFormBrand(value?.brandId ?? "");
   setFormType(value?.type ?? "single");
-  setHiddenPhotos(value?.hiddenPhotos || []);
   // Handle multiple prices
   if (value?.type === "multiple" && value?.multiple?.prices) {
     setFormPrices(value.multiple.prices);
@@ -200,7 +191,7 @@ export const clearFormProduct = () => {
   setFormQuantity(0);
   setFormDescription("");
   setFormName("");
-  setFormPhotos([]);
+  setFormFiles([]);
   setFormClientPrice(undefined);
   setFormCustomerPrice(undefined);
   setFormLimited(false);

@@ -11,7 +11,6 @@ import {
   CircleTip,
   EmptyComponent,
   Field,
-  Icon,
   Line,
   Scroll,
   Translate,
@@ -32,6 +31,7 @@ import {
   useCopyState,
   useUser,
 } from "@biqpod/app/ui/hooks";
+import accountsPhotos from "../assets/accounts.png";
 import { UpsertAccount } from "./UpsertAccount";
 import { snapbuyApi } from "../apis";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
@@ -40,13 +40,14 @@ import { useEffect, useMemo } from "react";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { rolsInList } from "../utils";
 import { FilterAccounts, useAccountFilterState } from "./FilterAccounts";
+import { CreateFirstUI } from "../components/CreateFirstUI";
 const PAGE_SIZE = 10;
 export const Accounts = () => {
   const accounts = useCopyState<Biqpod.Snapbuy.Account[] | null>(null);
   const firstname = getFieldValue("account-firstname");
   const lastname = getFieldValue("account-lastname");
   const phone = getFieldValue("account-phone");
-  const role = getTemp<Biqpod.Snapbuy.DeliveryCompanyRole | Nothing>(
+  const role = getTemp<Biqpod.Snapbuy.Basic.DeliveryCompanyRole | Nothing>(
     "roleState"
   );
   useAction(
@@ -194,8 +195,8 @@ export const Accounts = () => {
         </div>
       </div>
       <Line />
-      <Scroll>
-        {!!filteredAccounts?.length && (
+      {!!filteredAccounts?.length && (
+        <Scroll>
           <div className="flex flex-col gap-2 p-2">
             {filteredAccounts?.map((account, index) => {
               const fullName = `${account.firstname || ""} ${
@@ -288,23 +289,11 @@ export const Accounts = () => {
               </div>
             )}
           </div>
-        )}
-        {filteredAccounts && filteredAccounts.length === 0 && (
-          <div className="flex justify-center items-center h-full">
-            <Card>
-              <div className="text-center">
-                <div className="p-4 text-8xl">
-                  <Icon icon={allIcons.solid.faUserSlash} />
-                </div>
-                <Line />
-                <h1 className="p-4 text-xl uppercase">
-                  <Translate content="no accounts" />
-                </h1>
-              </div>
-            </Card>
-          </div>
-        )}
-      </Scroll>
+        </Scroll>
+      )}
+      {filteredAccounts && filteredAccounts.length === 0 && (
+        <CreateFirstUI title="No Accounts Found" photo={accountsPhotos} />
+      )}
       <Line />
       <div className="p-2">
         <Button

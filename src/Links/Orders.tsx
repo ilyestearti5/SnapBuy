@@ -28,7 +28,7 @@ import {
   useTemp,
   useUser,
 } from "@biqpod/app/ui/hooks";
-import { fuzzySearch, range, tw } from "@biqpod/app/ui/utils";
+import { fuzzySearch, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
 import { onCollectionSnapshot } from "../server";
 import { useLocation } from "react-router-dom";
@@ -54,7 +54,6 @@ import {
 import {
   AnimatedList,
   AnimatedListItem,
-  ScaleIn,
   HoverScale,
   useInViewAnimation,
   springTransition,
@@ -62,225 +61,21 @@ import {
 import { AnimatedMarkdownRenderer } from "../components/AnimatedMarkdownRenderer";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { ChangeStatus } from "../routes/Stores/ChangeStatus";
+import { CreateFirstUI } from "../components/CreateFirstUI";
+import { LoadingData } from "./LoadingData";
+import { setTextSide } from "../hooks/usePayments";
 const NoOrdersFound = () => {
   return (
-    <motion.div className="flex justify-center items-center h-full min-h-[400px]">
-      <ScaleIn delay={0.2}>
-        <Card className="relative mx-auto max-w-md overflow-hidden text-center">
-          {/* Animated background pattern */}
-          <motion.div
-            className="absolute inset-0 opacity-5"
-            initial={{ scale: 0, rotate: 0 }}
-            animate={{ scale: 1, rotate: 360 }}
-            transition={{
-              duration: 20,
-              repeat: Infinity,
-              ease: "linear",
-            }}
-          >
-            <div className="bg-gradient-to-br from-[--biqpod-primary] to-[--biqpod-secondary] w-full h-full" />
-          </motion.div>
-          <div className="z-10 relative">
-            <motion.div
-              className="p-5"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
-            >
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Icon
-                  icon={allIcons.solid.faShoppingCart}
-                  className="text-[--biqpod-gray-opacity] text-8xl"
-                />
-              </motion.div>
-              {/* Floating particles animation */}
-              {[...Array(6)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  className="absolute bg-[--biqpod-primary] opacity-30 rounded-full w-2 h-2"
-                  style={{
-                    left: `${20 + i * 10}%`,
-                    top: `${30 + (i % 2) * 20}%`,
-                  }}
-                  animate={{
-                    y: [-10, 10, -10],
-                    opacity: [0.3, 0.7, 0.3],
-                  }}
-                  transition={{
-                    duration: 3,
-                    repeat: Infinity,
-                    delay: i * 0.5,
-                  }}
-                />
-              ))}
-            </motion.div>
-            <Line />
-            <motion.div
-              className="flex flex-col gap-2 p-3"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-            >
-              <motion.h3
-                className="font-semibold text-[--biqpod-text-color] text-xl uppercase"
-                animate={{
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }}
-                transition={{ duration: 3, repeat: Infinity }}
-                style={{
-                  background:
-                    "linear-gradient(90deg, var(--biqpod-text-color), var(--biqpod-primary), var(--biqpod-text-color))",
-                  backgroundSize: "200% 100%",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                <Translate content="no orders found" />
-              </motion.h3>
-              <motion.p
-                className="text-[--biqpod-gray-opacity-2]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
-              >
-                <Translate content="there are no orders matching your criteria" />
-              </motion.p>
-            </motion.div>
-            <Line />
-            <motion.div
-              className="p-3"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.9 }}
-            >
-              <HoverScale>
-                <motion.div
-                  whileTap={{ scale: 0.95 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
-                  <Button
-                    icon={allIcons.solid.faRefresh}
-                    onClick={() => execAction("fetch-orders", {})}
-                    className="relative mx-auto rounded-full overflow-hidden"
-                  >
-                    <motion.div
-                      className="absolute inset-0 bg-gradient-to-r from-transparent via-white to-transparent opacity-30"
-                      initial={{ x: "-100%" }}
-                      whileHover={{ x: "100%" }}
-                      transition={{ duration: 0.6 }}
-                    />
-                    <span className="z-10 relative">
-                      <Translate content="refresh" />
-                    </span>
-                  </Button>
-                </motion.div>
-              </HoverScale>
-            </motion.div>
-          </div>
-        </Card>
-      </ScaleIn>
-    </motion.div>
+    <CreateFirstUI
+      photo="https://cdn3d.iconscout.com/3d/premium/thumb/order-3d-icon-png-download-9984720.png"
+      title="No Orders Found"
+      description="You have no orders yet. Create your first order to get started."
+    />
   );
 };
 const PAGE_SIZE = 40;
-// Custom shimmer loading component
-const OrderLoadingSkeleton = ({ index }: { index: number }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.05 }}
-      className="relative bg-[--biqpod-secondary-background] rounded-2xl h-[180px] overflow-hidden"
-    >
-      {/* Shimmer overlay */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-[--biqpod-primary] to-transparent opacity-20"
-        initial={{ x: "-100%" }}
-        animate={{ x: "100%" }}
-        transition={{
-          duration: 1.5,
-          repeat: Infinity,
-          ease: "linear",
-          delay: index * 0.1,
-        }}
-      />
-      {/* Content skeleton */}
-      <div className="space-y-3 p-4">
-        <div className="flex items-center gap-3">
-          <div className="bg-[--biqpod-border] rounded-lg w-10 h-10 animate-pulse" />
-          <div className="flex-1 space-y-2">
-            <div className="bg-[--biqpod-border] rounded w-3/4 h-4 animate-pulse" />
-            <div className="bg-[--biqpod-border] rounded w-1/2 h-3 animate-pulse" />
-          </div>
-        </div>
-        <div className="bg-[--biqpod-border] h-px" />
-        <div className="space-y-2">
-          <div className="bg-[--biqpod-border] rounded w-full h-3 animate-pulse" />
-          <div className="bg-[--biqpod-border] rounded w-5/6 h-3 animate-pulse" />
-        </div>
-        <div className="flex justify-between items-center">
-          <div className="flex gap-2">
-            <div className="bg-[--biqpod-border] rounded-full w-8 h-6 animate-pulse" />
-            <div className="bg-[--biqpod-border] rounded-full w-16 h-6 animate-pulse" />
-          </div>
-          <div className="bg-[--biqpod-border] rounded w-12 h-4 animate-pulse" />
-        </div>
-      </div>
-    </motion.div>
-  );
-};
-// Desktop loading skeleton
-const DesktopOrderLoadingSkeleton = ({ index }: { index: number }) => {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3, delay: index * 0.03 }}
-      className="relative flex justify-between items-center gap-2 odd:bg-[--biqpod-secondary-background] p-2 rounded-lg overflow-hidden"
-    >
-      {/* Shimmer overlay */}
-      <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-[--biqpod-primary] to-transparent opacity-10"
-        initial={{ x: "-100%" }}
-        animate={{ x: "100%" }}
-        transition={{
-          duration: 1.2,
-          repeat: Infinity,
-          ease: "linear",
-          delay: index * 0.05,
-        }}
-      />
-      {/* Content skeleton */}
-      <div className="flex items-center gap-2 w-full">
-        <div className="bg-[--biqpod-border] rounded-full w-8 h-8 animate-pulse" />
-        <div className="flex-1 space-y-1">
-          <div className="bg-[--biqpod-border] rounded w-2/3 h-3 animate-pulse" />
-          <div className="bg-[--biqpod-border] rounded w-1/2 h-2 animate-pulse" />
-        </div>
-      </div>
-      <div className="bg-[--biqpod-border] rounded w-full h-3 animate-pulse" />
-      <div className="flex justify-center w-full">
-        <div className="bg-[--biqpod-border] rounded-full w-6 h-6 animate-pulse" />
-      </div>
-      <div className="bg-[--biqpod-border] rounded-full w-full h-6 animate-pulse" />
-      <div className="flex items-center gap-2 w-full">
-        <div className="bg-[--biqpod-border] rounded w-8 h-8 animate-pulse" />
-        <div className="bg-[--biqpod-border] rounded w-16 h-3 animate-pulse" />
-      </div>
-      <div className="flex items-center gap-2 w-full">
-        <div className="bg-[--biqpod-border] rounded-full w-4 h-4 animate-pulse" />
-        <div className="bg-[--biqpod-border] rounded w-8 h-3 animate-pulse" />
-      </div>
-      <div className="bg-[--biqpod-border] rounded-full w-6 h-6 animate-pulse" />
-    </motion.div>
-  );
-};
 interface StatusUiProps {
-  status: Biqpod.Snapbuy.OrderStatus;
+  status: Biqpod.Snapbuy.Basic.OrderStatus;
 }
 export const StatusUi = ({ status }: StatusUiProps) => {
   return (
@@ -503,9 +298,11 @@ export const Orders = () => {
     });
     if (!response) return;
     try {
+      setTextSide("Deleting orders...");
       await Promise.all(
-        selectedOrders.get.map((order) => snapbuyApi.order.delete(order.id))
+        selectedOrders.get.map((order) => snapbuyApi.order.delete(order.id!))
       );
+      setTextSide();
       showToast(
         `${selectedOrders.get.length} order(s) deleted successfully`,
         "success"
@@ -532,7 +329,7 @@ export const Orders = () => {
     >
       <div className="flex justify-between items-center gap-2 p-2">
         <motion.div
-          className="relative w-full"
+          className="relative flex justify-center w-full"
           transition={{ type: "spring", stiffness: 300, damping: 30 }}
         >
           <Field
@@ -548,14 +345,15 @@ export const Orders = () => {
             className="rounded-xl"
           />
           {ordersState && (
-            <motion.span
-              className="top-1/2 right-3 absolute text-[--biqpod-primary] capitalize -translate-y-1/2 pointer-events-none"
-              initial={{ opacity: 0, x: 10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.3 }}
-            >
-              / {ordersState?.length || <Translate content="no orders" />}
-            </motion.span>
+            <span className="top-1/2 right-2 absolute font-bold text-[--biqpod-primary] -translate-y-1/2 transform">
+              <motion.span
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ delay: 0.2, type: "spring", stiffness: 300 }}
+              >
+                / {ordersState?.length || 0}
+              </motion.span>
+            </span>
           )}
         </motion.div>
         <div>
@@ -574,87 +372,93 @@ export const Orders = () => {
           </HoverScale>
         </div>
       </div>
-      <Line />
-      <motion.div
-        className="flex justify-end gap-2 p-2 w-full"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.1 }}
-      >
-        {isSelectionMode.get && selectedOrders.get.length > 0 && (
-          <Button
-            onClick={({ clientX, clientY }) => {
-              openMenu({
-                x: clientX,
-                y: clientY,
-                menu: [
-                  {
-                    label: "Delete Selected",
-                    defaultIcon: allIcons.solid.faTrash,
-                    click: () => {
-                      bulkDeleteOrders();
-                    },
-                  },
-                  {
-                    label: "Change Status",
-                    defaultIcon: allIcons.solid.faTag,
-                    click() {
-                      showPopup(<ChangeStatus orders={selectedOrders.get} />);
-                    },
-                  },
-                ],
-              });
-            }}
-            className="px-3 py-1 w-fit text-sm"
+      {!!orders.get?.length && (
+        <EmptyComponent>
+          <Line />
+          <motion.div
+            className="flex justify-end gap-2 p-2 w-full"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.1 }}
           >
-            Execute ({selectedOrders.get.length})
-          </Button>
-        )}
-        {isSelectionMode.get &&
-          !!selectedOrders.get.length &&
-          selectedOrders.get.length === ordersState?.length && (
-            <Button
-              onClick={() => {
-                selectedOrders.set([]);
-              }}
-              className="px-3 py-1 w-fit text-sm"
-            >
-              Deselect ({selectedOrders.get.length})
-            </Button>
-          )}
-        {isSelectionMode.get &&
-          selectedOrders.get.length !== ordersState?.length && (
-            <Button
-              onClick={() => {
-                selectedOrders.set(
-                  ordersState?.map(({ order }) => order) || []
-                );
-              }}
-              className="px-3 py-1 w-fit text-sm"
-            >
-              Select ({selectedOrders.get.length})
-            </Button>
-          )}
-        {ordersState && ordersState.length > 0 && (
-          <Button
-            onClick={toggleSelectionMode}
-            className="bg-[--biqpod-gray-opacity] px-3 py-1 w-fit text-[--biqpod-text-color]"
-          >
-            <Icon
-              icon={
-                isSelectionMode.get
-                  ? allIcons.solid.faTimes
-                  : allIcons.solid.faCheck
-              }
-            />
-            <Translate
-              content={
-                isSelectionMode.get ? "cancel selection" : "select orders"
-              }
-            />
-          </Button>
-        )}
-      </motion.div>
+            {isSelectionMode.get && selectedOrders.get.length > 0 && (
+              <Button
+                onClick={({ clientX, clientY }) => {
+                  openMenu({
+                    x: clientX,
+                    y: clientY,
+                    menu: [
+                      {
+                        label: "Delete Selected",
+                        defaultIcon: allIcons.solid.faTrash,
+                        click: () => {
+                          bulkDeleteOrders();
+                        },
+                      },
+                      {
+                        label: "Change Status",
+                        defaultIcon: allIcons.solid.faTag,
+                        click() {
+                          showPopup(
+                            <ChangeStatus orders={selectedOrders.get} />
+                          );
+                        },
+                      },
+                    ],
+                  });
+                }}
+                className="px-3 py-1 w-fit text-sm"
+              >
+                Execute ({selectedOrders.get.length})
+              </Button>
+            )}
+            {isSelectionMode.get &&
+              !!selectedOrders.get.length &&
+              selectedOrders.get.length === ordersState?.length && (
+                <Button
+                  onClick={() => {
+                    selectedOrders.set([]);
+                  }}
+                  className="px-3 py-1 w-fit text-sm"
+                >
+                  Deselect ({selectedOrders.get.length})
+                </Button>
+              )}
+            {isSelectionMode.get &&
+              selectedOrders.get.length !== ordersState?.length && (
+                <Button
+                  onClick={() => {
+                    selectedOrders.set(
+                      ordersState?.map(({ order }) => order) || []
+                    );
+                  }}
+                  className="px-3 py-1 w-fit text-sm"
+                >
+                  Select ({selectedOrders.get.length})
+                </Button>
+              )}
+            {ordersState && ordersState.length > 0 && (
+              <Button
+                onClick={toggleSelectionMode}
+                className="bg-[--biqpod-gray-opacity] px-3 py-1 w-fit text-[--biqpod-text-color]"
+              >
+                <Icon
+                  icon={
+                    isSelectionMode.get
+                      ? allIcons.solid.faTimes
+                      : allIcons.solid.faCheck
+                  }
+                />
+                <Translate
+                  content={
+                    isSelectionMode.get ? "cancel selection" : "select orders"
+                  }
+                />
+              </Button>
+            )}
+          </motion.div>
+        </EmptyComponent>
+      )}
       <Line />
       {!isSmallView && (
         <EmptyComponent>
@@ -801,7 +605,7 @@ export const Orders = () => {
                               </Card>
                             );
                           }}
-                          onMouseLeave={() => setNoteHover(order.id, null)}
+                          onMouseLeave={() => setNoteHover(order.id!, null)}
                           className="w-full overflow-hidden"
                         >
                           <span className="text-[--biqpod-gray-opacity] text-sm truncate">
@@ -884,7 +688,7 @@ export const Orders = () => {
                                                       if (response) {
                                                         snapbuyApi
                                                           .setDeliveryToOrder({
-                                                            orderId: order.id,
+                                                            orderId: order.id!,
                                                             delivery: null,
                                                           })
                                                           .then(() => {
@@ -941,18 +745,7 @@ export const Orders = () => {
                 );
               })}
             </AnimatedList>
-            {isLoading && (
-              <AnimatedList staggerDelay={0.03}>
-                {range(PAGE_SIZE).map((index) => (
-                  <AnimatedListItem
-                    key={`desktop-loading-${index}`}
-                    index={index}
-                  >
-                    <DesktopOrderLoadingSkeleton index={index} />
-                  </AnimatedListItem>
-                ))}
-              </AnimatedList>
-            )}
+            {isLoading && <LoadingData />}
             {hasMore.get && !isLoading && (
               <div className="flex justify-center items-center gap-2 p-2">
                 <span>
@@ -1186,12 +979,12 @@ export const Orders = () => {
                               <motion.div
                                 className="relative mt-1 overflow-hidden"
                                 initial={{
-                                  maxHeight: expandedNotes.get[order.id]
+                                  maxHeight: expandedNotes.get[order.id!]
                                     ? 1000
                                     : 48,
                                 }}
                                 animate={{
-                                  maxHeight: expandedNotes.get[order.id]
+                                  maxHeight: expandedNotes.get[order.id!]
                                     ? 1000
                                     : 48,
                                 }}
@@ -1208,12 +1001,12 @@ export const Orders = () => {
                                   <motion.div
                                     className="right-0 bottom-0 left-0 absolute bg-gradient-to-t from-[--biqpod-secondary-background] to-transparent h-4"
                                     initial={{
-                                      opacity: expandedNotes.get[order.id]
+                                      opacity: expandedNotes.get[order.id!]
                                         ? 0
                                         : 1,
                                     }}
                                     animate={{
-                                      opacity: expandedNotes.get[order.id]
+                                      opacity: expandedNotes.get[order.id!]
                                         ? 0
                                         : 1,
                                     }}
@@ -1229,14 +1022,14 @@ export const Orders = () => {
                                 >
                                   <CircleTip
                                     icon={
-                                      expandedNotes.get[order.id]
+                                      expandedNotes.get[order.id!]
                                         ? allIcons.solid.faChevronUp
                                         : allIcons.solid.faChevronDown
                                     }
                                     onClick={() => {
                                       expandedNotes.set((prev) => ({
                                         ...prev,
-                                        [order.id]: !prev[order.id],
+                                        [order.id!]: !prev[order.id!],
                                       }));
                                     }}
                                   />
@@ -1253,19 +1046,7 @@ export const Orders = () => {
               );
             })}
           </AnimatedList>
-          {isLoading && (
-            <AnimatedList staggerDelay={0.05}>
-              {range(PAGE_SIZE).map((index) => (
-                <AnimatedListItem
-                  className="p-2"
-                  key={`mobile-loading-${index}`}
-                  index={index}
-                >
-                  <OrderLoadingSkeleton index={index} />
-                </AnimatedListItem>
-              ))}
-            </AnimatedList>
-          )}
+          {isLoading && <LoadingData />}
           {hasMore.get && !isLoading && (
             <HoverScale className="p-2">
               <Card className="justify-center items-center w-full h-[180px]">

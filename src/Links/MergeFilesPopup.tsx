@@ -26,12 +26,12 @@ import { useState, useRef, useEffect } from "react";
 import { snapbuyApi } from "../apis";
 import {
   useStoreId,
-  MediaFile,
+  SnapbuyBasicFile,
   cleanupMediaFile,
   compressImage,
 } from "../utils";
 
-export const MergePhotosPopup = ({
+export const MergeFilesPopup = ({
   selectedProducts,
   onSuccess,
 }: {
@@ -39,41 +39,43 @@ export const MergePhotosPopup = ({
   onSuccess: () => void;
 }) => {
   const storeId = useStoreId();
-  const [mediaFiles, setMediaFiles] = useState<MediaFile[]>([]);
+  const [mediaFiles, setMediaFiles] = useState<SnapbuyBasicFile[]>([]);
   const url = useCopyState("");
-  const [drivePhotos, setDrivePhotos] = useState<
-    { name: string; link: string }[]
-  >([]);
-  const [productPhotos, setProductPhotos] = useState<
-    { name: string; link: string; productName: string }[]
-  >([]);
+  const [driveFiles, setDriveFiles] = useState<All[]>([]);
+  const [productFiles, setProductFiles] = useState<All[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
-  const [loadingPhotos, setLoadingPhotos] = useState(false);
+  const [loadingFiles, setLoadingFiles] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const inputRef = useRef<HTMLInputElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const itemRefs = useRef<(HTMLDivElement | null)[]>([]);
   const action = useAction(
-    "merge-photos",
+    "merge-files",
     async () => {
       if (!storeId || mediaFiles.length === 0) return;
-      // Collect all photo URLs to add
-      const photoUrls = mediaFiles.map((file) => file.url);
-      // Update each selected product by adding the photos
+      // Collect all file URLs to add
+      const filesUrls = mediaFiles.map((file) => file);
+      // Update each selected product by adding the files
       const updatePromises = selectedProducts.map(async (productId) => {
         const product = await snapbuyApi.product.get(productId);
         if (product) {
-          const existingPhotos = product.photos || [];
+          const existingFiles = product.files || [];
           const updatedProduct: Partial<Biqpod.Snapbuy.Product> = {
             id: productId,
-            photos: [...existingPhotos, ...photoUrls],
+            files: [
+              ...existingFiles,
+              ...filesUrls.map((file) => ({
+                url: file.url,
+                type: "",
+              })),
+            ],
           };
           await snapbuyApi.product.upsert(storeId, [updatedProduct]);
         }
       });
       await Promise.all(updatePromises);
       showToast(
-        `Photos merged successfully to ${selectedProducts.length} product${
+        `Files merged successfully to ${selectedProducts.length} product${
           selectedProducts.length > 1 ? "s" : ""
         }`,
         "success"
@@ -95,10 +97,10 @@ export const MergePhotosPopup = ({
       const objectURL = URL.createObjectURL(file);
       const compressedDataURL = await compressImage(objectURL, 0.3);
       URL.revokeObjectURL(objectURL);
-      const mediaFile: MediaFile = {
+      const mediaFile: SnapbuyBasicFile = {
         url: compressedDataURL,
-        name: file.name,
         size: file.size,
+        type: file.type.split("/").at(0) || "",
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
     } catch (error) {
@@ -108,20 +110,19 @@ export const MergePhotosPopup = ({
   const addUrlMedia = async (urlString: string) => {
     try {
       // For URLs, we still use the original approach
-      const compressedSrc = await compressImage(urlString, 0.3);
-      const mediaFile: MediaFile = {
-        url: compressedSrc,
-        name: urlString.split("/").pop() || "unknown",
+      const mediaFile: SnapbuyBasicFile = {
+        url: urlString,
         size: 0,
+        type: "image",
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
     } catch (error) {
       console.error("Failed to add URL media:", error);
       // Fallback to original URL
-      const mediaFile: MediaFile = {
+      const mediaFile: SnapbuyBasicFile = {
         url: urlString,
-        name: urlString.split("/").pop() || "unknown",
         size: 0,
+        type: "image",
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
     }
@@ -135,46 +136,41 @@ export const MergePhotosPopup = ({
       return prev.filter((_, index) => index !== indexToRemove);
     });
   };
-  const fetchDrivePhotos = async () => {
-    setLoadingPhotos(true);
+  const fetchDriveFiles = async () => {
+    setLoadingFiles(true);
     try {
-      const photos = await snapbuyApi.getDrivePhotos();
-      setDrivePhotos(photos || []);
+      const files = await snapbuyApi.getDriveFiles();
+      setDriveFiles(files || []);
     } catch (error) {
-      console.error("Failed to fetch drive photos:", error);
-      setDrivePhotos([]);
+      console.error("Failed to fetch drive files:", error);
+      setDriveFiles([]);
     } finally {
-      setLoadingPhotos(false);
+      setLoadingFiles(false);
     }
   };
-  const fetchProductsPhotos = async () => {
-    setLoadingPhotos(true);
+  const fetchProductsFiles = async () => {
+    setLoadingFiles(true);
     try {
       if (storeId) {
         const products = await snapbuyApi.product.getProductsOf(storeId);
-        const allProductPhotos: {
-          name: string;
-          link: string;
-          productName: string;
-        }[] = [];
+        const allProductFiles: All[] = [];
         products
           ?.sort((a, b) => (a.name || "").localeCompare(b.name || ""))
           .forEach((product: Biqpod.Snapbuy.Product) => {
-            product.photos?.forEach((photoUrl: string, index: number) => {
-              allProductPhotos.push({
-                name: `${product.name} - Photo ${index + 1}`,
-                link: photoUrl,
-                productName: product.name || "Unknown Product",
+            product.files?.forEach((file, index) => {
+              allProductFiles.push({
+                name: `${product.name} - File ${index + 1}`,
+                file,
               });
             });
           });
-        setProductPhotos(allProductPhotos);
+        setProductFiles(allProductFiles);
       }
     } catch (error) {
-      console.error("Failed to fetch products photos:", error);
-      setProductPhotos([]);
+      console.error("Failed to fetch products files:", error);
+      setProductFiles([]);
     } finally {
-      setLoadingPhotos(false);
+      setLoadingFiles(false);
     }
   };
   useEffect(() => {
@@ -196,21 +192,15 @@ export const MergePhotosPopup = ({
       document.removeEventListener("paste", handlePaste);
     };
   }, []);
-  // Get filtered photos for keyboard navigation
-  const getFilteredPhotos = () => {
-    const filteredProducts = productPhotos.filter(
-      ({ name, link, productName }) => {
-        if (!url.get) return true;
-        return (
-          fuzzySearch(name, url.get) ||
-          fuzzySearch(link, url.get) ||
-          fuzzySearch(productName, url.get)
-        );
-      }
-    );
-    const filteredDrive = drivePhotos.filter(({ name, link }) => {
+  // Get filtered files for keyboard navigation
+  const getFilteredFiles = () => {
+    const filteredProducts = productFiles.filter(({ name }) => {
       if (!url.get) return true;
-      return fuzzySearch(name, url.get) || fuzzySearch(link, url.get);
+      return fuzzySearch(name, url.get);
+    });
+    const filteredDrive = driveFiles.filter(({ name }) => {
+      if (!url.get) return true;
+      return fuzzySearch(name, url.get);
     });
     return { filteredProducts, filteredDrive };
   };
@@ -218,7 +208,7 @@ export const MergePhotosPopup = ({
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!showDropdown) return;
-      const { filteredProducts, filteredDrive } = getFilteredPhotos();
+      const { filteredProducts, filteredDrive } = getFilteredFiles();
       const totalItems = filteredProducts.length + filteredDrive.length;
       if (totalItems === 0) return;
       switch (e.key) {
@@ -233,14 +223,17 @@ export const MergePhotosPopup = ({
         case "Enter":
           e.preventDefault();
           if (selectedIndex >= 0 && selectedIndex < totalItems) {
-            let photo;
+            let file;
             if (selectedIndex < filteredProducts.length) {
-              photo = filteredProducts[selectedIndex];
+              file = filteredProducts[selectedIndex];
             } else {
-              photo = filteredDrive[selectedIndex - filteredProducts.length];
+              file = filteredDrive[selectedIndex - filteredProducts.length];
             }
-            if (photo && !mediaFiles.some((file) => file.url === photo.link)) {
-              addUrlMedia(photo.link);
+            if (
+              file.file.url &&
+              !mediaFiles.some((s) => s.url === file.file.url)
+            ) {
+              addUrlMedia(file.file.url);
             }
             setShowDropdown(false);
             setSelectedIndex(-1);
@@ -261,8 +254,8 @@ export const MergePhotosPopup = ({
   }, [
     showDropdown,
     selectedIndex,
-    productPhotos,
-    drivePhotos,
+    productFiles,
+    driveFiles,
     url.get,
     mediaFiles,
   ]);
@@ -283,17 +276,17 @@ export const MergePhotosPopup = ({
       });
     }
   }, [selectedIndex]);
-  // Update itemRefs array size when filtered photos change
+  // Update itemRefs array size when filtered files change
   useEffect(() => {
-    const { filteredProducts, filteredDrive } = getFilteredPhotos();
+    const { filteredProducts, filteredDrive } = getFilteredFiles();
     const totalItems = filteredProducts.length + filteredDrive.length;
     itemRefs.current = itemRefs.current.slice(0, totalItems);
-  }, [productPhotos, drivePhotos, url.get]);
+  }, [productFiles, driveFiles, url.get]);
   return (
     <Card className="max-md:rounded-none max-md:w-full md:w-2/3 max-md:h-full md:h-[80vh] overflow-hidden">
       <div className="flex justify-between items-center p-3">
         <h1 className="text-2xl uppercase">
-          <Translate content="merge photos to products" />
+          <Translate content="merge files to products" />
         </h1>
         <CircleTip
           icon={allIcons.solid.faXmark}
@@ -306,7 +299,7 @@ export const MergePhotosPopup = ({
       <div className="flex flex-col gap-4 p-4 h-full overflow-hidden">
         <div className="flex flex-col gap-2">
           <label className="font-semibold">
-            <Translate content="select photos to merge" />
+            <Translate content="select files to merge" />
           </label>
           <div className="flex items-center gap-1 p-1">
             <div className="relative w-full">
@@ -315,11 +308,11 @@ export const MergePhotosPopup = ({
                 value={url.get}
                 onChange={(e) => url.set(e.target.value)}
                 onFocus={() => {
-                  if (!drivePhotos.length) {
-                    fetchDrivePhotos();
+                  if (!driveFiles.length) {
+                    fetchDriveFiles();
                   }
-                  if (!productPhotos.length) {
-                    fetchProductsPhotos();
+                  if (!productFiles.length) {
+                    fetchProductsFiles();
                   }
                   setShowDropdown(true);
                   setSelectedIndex(-1);
@@ -346,7 +339,7 @@ export const MergePhotosPopup = ({
                   ref={dropdownRef}
                   className="top-full right-0 left-0 z-10 absolute bg-[--biqpod-primary-background] shadow-lg border border-[--biqpod-borders] border-solid rounded-lg max-h-60 overflow-y-auto"
                 >
-                  {loadingPhotos ? (
+                  {loadingFiles ? (
                     <div className="p-2 text-center">
                       <Translate content="loading" />
                       ...
@@ -354,7 +347,7 @@ export const MergePhotosPopup = ({
                   ) : (
                     <EmptyComponent>
                       {/* My Products Section */}
-                      {productPhotos.length > 0 && (
+                      {productFiles.length > 0 && (
                         <div>
                           <div className="top-0 sticky bg-[--biqpod-secondary-background] font-semibold text-sm capitalize">
                             <div className="hover:bg-[--biqpod-gray-opacity] mx-2 my-1 px-4 py-2 rounded-2xl w-fit cursor-pointer">
@@ -363,16 +356,12 @@ export const MergePhotosPopup = ({
                             </div>
                             <Line />
                           </div>
-                          {productPhotos
-                            .filter(({ name, link, productName }) => {
+                          {productFiles
+                            .filter(({ name }) => {
                               if (!url.get) return true;
-                              return (
-                                fuzzySearch(name, url.get) ||
-                                fuzzySearch(link, url.get) ||
-                                fuzzySearch(productName, url.get)
-                              );
+                              return fuzzySearch(name, url.get);
                             })
-                            .map((photo, index) => {
+                            .map((file, index) => {
                               const isSelected = selectedIndex === index;
                               return (
                                 <div
@@ -386,23 +375,22 @@ export const MergePhotosPopup = ({
                                   onClick={async () => {
                                     setShowDropdown(false);
                                     if (
+                                      file.file.url &&
                                       !mediaFiles.some(
-                                        (file) => file.url === photo.link
+                                        (s) => s.url === file.file.url
                                       )
                                     ) {
-                                      await addUrlMedia(photo.link);
+                                      await addUrlMedia(file.file.url);
                                     }
                                   }}
                                 >
                                   <img
-                                    src={photo.link}
-                                    alt={photo.name}
+                                    src={file.file.url}
+                                    alt={file.name}
                                     className="mr-2 rounded w-10 h-10 object-cover"
                                   />
                                   <div className="flex flex-col">
-                                    <span className="text-sm">
-                                      {photo.productName}
-                                    </span>
+                                    <span className="text-sm">{file.name}</span>
                                     <span
                                       className={`text-xs ${
                                         isSelected
@@ -410,7 +398,7 @@ export const MergePhotosPopup = ({
                                           : "text-[--biqpod-gray-opacity-2]"
                                       }`}
                                     >
-                                      {photo.name}
+                                      {file.name}
                                     </span>
                                   </div>
                                 </div>
@@ -419,28 +407,21 @@ export const MergePhotosPopup = ({
                         </div>
                       )}
                       {/* Drive Section */}
-                      {drivePhotos.length > 0 && (
+                      {driveFiles.length > 0 && (
                         <div>
                           <div className="top-0 sticky bg-[--biqpod-secondary-background] px-3 py-2 font-semibold text-sm">
                             <Translate content="drive" /> &gt;
                           </div>
-                          {drivePhotos
-                            .filter(({ name, link }) => {
+                          {driveFiles
+                            .filter(({ name }) => {
                               if (!url.get) return true;
-                              return (
-                                fuzzySearch(name, url.get) ||
-                                fuzzySearch(link, url.get)
-                              );
+                              return fuzzySearch(name, url.get);
                             })
-                            .map((photo, index) => {
-                              const filteredProducts = productPhotos.filter(
-                                ({ name, link, productName }) => {
+                            .map((file, index) => {
+                              const filteredProducts = productFiles.filter(
+                                ({ name }) => {
                                   if (!url.get) return true;
-                                  return (
-                                    fuzzySearch(name, url.get) ||
-                                    fuzzySearch(link, url.get) ||
-                                    fuzzySearch(productName, url.get)
-                                  );
+                                  return fuzzySearch(name, url.get);
                                 }
                               );
                               const itemIndex = filteredProducts.length + index;
@@ -459,32 +440,32 @@ export const MergePhotosPopup = ({
                                   onClick={async () => {
                                     setShowDropdown(false);
                                     if (
+                                      file.file.url &&
                                       !mediaFiles.some(
-                                        (file) => file.url === photo.link
+                                        (s) => s.url === file.file.url
                                       )
                                     ) {
-                                      await addUrlMedia(photo.link);
+                                      await addUrlMedia(file.file.url);
                                     }
                                   }}
                                 >
                                   <img
-                                    src={photo.link}
-                                    alt={photo.name}
+                                    src={file.file.url}
+                                    alt={file.name}
                                     className="mr-2 rounded w-10 h-10 object-cover"
                                   />
-                                  <span className="text-sm">{photo.name}</span>
+                                  <span className="text-sm">{file.name}</span>
                                 </div>
                               );
                             })}
                         </div>
                       )}
                       {/* No results message */}
-                      {drivePhotos.length === 0 &&
-                        productPhotos.length === 0 && (
-                          <div className="text-[--biqpod-gray-opacity-2] p-2 text-center">
-                            <Translate content="no photos found" />
-                          </div>
-                        )}
+                      {driveFiles.length === 0 && productFiles.length === 0 && (
+                        <div className="text-[--biqpod-gray-opacity-2] p-2 text-center">
+                          <Translate content="no files found" />
+                        </div>
+                      )}
                     </EmptyComponent>
                   )}
                 </div>
@@ -577,7 +558,7 @@ export const MergePhotosPopup = ({
         </Button>
         <Button
           onClick={async () => {
-            execAction("merge-photos");
+            execAction("merge-files");
           }}
           disabled={loading || mediaFiles.length === 0}
           rightIcon={
@@ -586,7 +567,7 @@ export const MergePhotosPopup = ({
           className="flex-1"
           iconClassName={tw(loading && "animate-spin")}
         >
-          <Translate content="merge photos" />
+          <Translate content="merge files" />
         </Button>
       </div>
     </Card>

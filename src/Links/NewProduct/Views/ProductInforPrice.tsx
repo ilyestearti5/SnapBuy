@@ -33,11 +33,10 @@ export const PostInforPrice = () => {
     return [isSingle, !isSingle];
   }, [postType]);
   const maxCount = useMemo(() => {
-    return Math.min(
-      ...(pricesList.get?.map(({ quantity }) => {
-        return quantity;
-      }) || [1])
-    );
+    if (!pricesList.get?.length) {
+      return 1;
+    }
+    return Math.min(...pricesList.get.map(({ quantity }) => quantity));
   }, [pricesList.get]);
   const limited = getFormLimited();
   return (

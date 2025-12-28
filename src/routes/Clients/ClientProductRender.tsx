@@ -25,7 +25,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { mergeArray, tw } from "@biqpod/app/ui/utils";
 import { AddProductInCart, useSearchParams } from "./AddProductToCart";
-import { ImageSlider } from "../../Links/ImageSlider";
+import { FilesSlider } from "../../Links/FilesSlider";
 import { Biqpod, MenuRecordProps } from "@biqpod/app/ui/types";
 import { initPixels } from "../../Links/pixles";
 import { snapbuyApi } from "../../apis";
@@ -58,7 +58,7 @@ export const ClientProductRender = React.memo(
     const storeId = product.storeId!;
     const cartCount = useCartCount(storeId, product.id!);
     const hasCart = cartCount > 0;
-    const photos = Array.isArray(product.photos) ? [...product.photos] : [];
+    const files = Array.isArray(product.files) ? [...product.files] : [];
     // pour promostion
     const isPromotion = product.type === "multiple";
     const prices = product.multiple?.prices || [];
@@ -78,8 +78,8 @@ export const ClientProductRender = React.memo(
           {showPhoto && (
             <EmptyComponent>
               <div className="relative flex justify-center items-center w-full h-[150px] cursor-pointer">
-                {photos.length > 0 ? (
-                  <ImageSlider photos={photos} />
+                {files.length > 0 ? (
+                  <FilesSlider files={files} />
                 ) : (
                   <div className="flex flex-col justify-center items-center text-[--biqpod-gray-opacity-2] w-full h-full">
                     <Icon
@@ -176,7 +176,7 @@ export const ClientProductRender = React.memo(
                             <CardHeaderForPopup title={product.name} />
                             <Line />
                             <div className="relative flex justify-center items-center h-[400px] cursor-pointer">
-                              <ImageSlider zoom photos={photos} />
+                              <FilesSlider zoom files={files} />
                             </div>
                           </Card>
                         );

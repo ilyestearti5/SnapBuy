@@ -7,6 +7,7 @@ import {
   EnumField,
   Field,
   Icon,
+  Image,
   Line,
   NumberField,
   Scroll,
@@ -22,7 +23,7 @@ import {
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
-import { tw } from "@biqpod/app/ui/utils";
+import { fuzzySearch, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { snapbuyApi } from "../apis";
@@ -85,22 +86,6 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
   > | null>(null);
   const [brands, setBrands] = useState<Biqpod.Snapbuy.Brand[]>([]);
   const brandSearchValue = getFieldValue("brand-search");
-  const fuzzySearch = (text: string, search: string): boolean => {
-    if (!search) return true;
-    const searchLower = search.toLowerCase();
-    const textLower = text.toLowerCase();
-    let searchIndex = 0;
-    for (
-      let i = 0;
-      i < textLower.length && searchIndex < searchLower.length;
-      i++
-    ) {
-      if (textLower[i] === searchLower[searchIndex]) {
-        searchIndex++;
-      }
-    }
-    return searchIndex === searchLower.length;
-  };
   useEffect(() => {
     const fetchBrands = async () => {
       if (!storeId) return;
@@ -278,13 +263,13 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                   <Translate content="is for getting product with specific price range" />
                 </div>
                 <Line />
-                <div className="flex flex-col gap-2 p-2">
+                <div className="flex flex-col gap-2 p-2 w-full">
                   <div className="flex max-md:flex-col items-center gap-2">
                     <label
                       htmlFor="min-price"
                       className="block w-full md:text-right"
                     >
-                      <Translate content="min price" />
+                      <Translate content="min price" /> :
                     </label>
                     <div className="w-full">
                       <NumberField
@@ -304,7 +289,7 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                       htmlFor="max-price"
                       className="block w-full md:text-right"
                     >
-                      <Translate content="max price" />
+                      <Translate content="max price" /> :
                     </label>
                     <div className="w-full">
                       <NumberField
@@ -337,6 +322,7 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                     inputName="brand-search"
                     placeholder="Search brands..."
                     id="brand-search"
+                    className="rounded-xl"
                   />
                 </div>
                 <Line />
@@ -352,25 +338,17 @@ export const AdminFilterProducts = ({ onChange, value }: PopupFilterProps) => {
                       .map((b) => (
                         <motion.div
                           key={b.id}
-                          className="flex flex-col items-center gap-2 hover:bg-[var(--biqpod-gray-opacity)] hover:shadow-md p-2 border rounded transition-all duration-200 cursor-pointer"
+                          className="flex items-center gap-2 hover:bg-[var(--biqpod-gray-opacity)] p-2 border cursor-pointer"
                           onClick={() => {
                             brandsState.set([...brandsState.get, b.id!]);
                           }}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
                         >
-                          <div className="flex justify-center items-center h-12 overflow-hidden">
-                            {b.photo ? (
-                              <img
-                                src={b.photo}
-                                alt={b.name}
-                                className="rounded max-w-full max-h-full object-contain"
-                              />
-                            ) : (
-                              <div className="flex justify-center items-center bg-[var(--biqpod-gray-opacity-2)] border rounded w-16 h-12">
-                                <Icon icon={allIcons.solid.faBuilding} />
-                              </div>
-                            )}
+                          <div className="flex justify-center items-center overflow-hidden">
+                            <Image
+                              src={b.photo}
+                              alt={b.name}
+                              className="bg-[--biqpod-gray-opacity] w-[50px] h-[50px]"
+                            />
                           </div>
                           <span className="font-medium text-sm text-center">
                             {b.name}

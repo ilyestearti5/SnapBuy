@@ -5,7 +5,9 @@ import {
   Card,
   CircleTip,
   EmptyComponent,
+  Icon,
   Translate,
+  UserAvatar,
 } from "@biqpod/app/ui/components";
 import {
   confirm,
@@ -23,14 +25,13 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { useEffect } from "react";
 import { UpsertAccessUsertoStore } from "./UpsertAccessUsertoStore";
 import { Biqpod } from "@biqpod/app/ui/types";
-
+import { tw } from "@biqpod/app/ui/utils";
 // input type checkbox
 interface InputCheckerProps
   extends React.InputHTMLAttributes<HTMLInputElement> {
   onValueChange: (value: boolean) => void;
 }
-
-const InputChecker = ({ checked, onValueChange }: InputCheckerProps) => {
+export const InputChecker = ({ checked, onValueChange }: InputCheckerProps) => {
   return (
     <BooleanField
       state={{
@@ -47,11 +48,16 @@ const InputChecker = ({ checked, onValueChange }: InputCheckerProps) => {
     />
   );
 };
-
+const getStatusIcon = (status: Biqpod.Snapbuy.Access["status"]) => {
+  return status === "accepted"
+    ? allIcons.solid.faCheckCircle
+    : status === "pending"
+    ? allIcons.solid.faClock
+    : allIcons.solid.faTimesCircle;
+};
 interface UsersAccessListForStoreProps {
   storeId: string;
 }
-
 // Animation variants
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -63,7 +69,6 @@ const containerVariants = {
     },
   },
 };
-
 const userCardVariants = {
   hidden: {
     opacity: 0,
@@ -90,7 +95,6 @@ const userCardVariants = {
     },
   },
 };
-
 const emptyStateVariants = {
   hidden: {
     opacity: 0,
@@ -109,7 +113,6 @@ const emptyStateVariants = {
     },
   },
 };
-
 const badgeVariants = {
   hidden: { opacity: 0, scale: 0.8 },
   visible: {
@@ -126,7 +129,6 @@ const badgeVariants = {
     transition: { duration: 0.2 },
   },
 };
-
 const loadingVariants = {
   hidden: { opacity: 0, y: 20 },
   visible: {
@@ -135,20 +137,13 @@ const loadingVariants = {
     transition: { duration: 0.4 },
   },
 };
-
 export const UsersAccessListForStore = ({
   storeId,
 }: UsersAccessListForStoreProps) => {
-  const usersAccess = useCopyState<Biqpod.Snapbuy.StoreUserAccess[]>([]);
+  const usersAccess = useCopyState<Biqpod.Snapbuy.Access[]>([]);
   const error = useCopyState<string | null>(null);
   const selectedUsers = useCopyState<string[]>([]);
-
   // Helper function to get identifier type (simplified since we fetch user)
-  const getUserIdentifierType = (fetchedUser: Biqpod.Account.User | null) => {
-    if (!fetchedUser) return "user";
-    return fetchedUser.email ? "email" : "username";
-  };
-
   const loadUsersAction = useAction(
     "load-users-access",
     async () => {
@@ -163,7 +158,6 @@ export const UsersAccessListForStore = ({
     },
     [storeId]
   );
-
   useAction(
     "remove-user-access",
     async ({ storeId, relatedUid }) => {
@@ -178,7 +172,6 @@ export const UsersAccessListForStore = ({
     },
     []
   );
-
   const handleSelectAll = () => {
     const allUids = usersAccess.get
       .map((u) => u.relatedUid)
@@ -189,17 +182,15 @@ export const UsersAccessListForStore = ({
       selectedUsers.set(allUids);
     }
   };
-
   const handleBulkRemove = async () => {
     const selected = selectedUsers.get;
     if (selected.length === 0) return;
-
     const response = await confirm({
       title: "Remove Multiple Users",
       message: `Are you sure you want to remove access for ${selected.length} users?`,
       detail: "These users will no longer be able to access your store data.",
+      type: "warning",
     });
-
     if (response) {
       for (const relatedUid of selected) {
         execAction("remove-user-access", { storeId, relatedUid });
@@ -207,13 +198,11 @@ export const UsersAccessListForStore = ({
       selectedUsers.set([]);
     }
   };
-
   // Load users on component mount
   useEffect(() => {
     execAction("load-users-access");
   }, [storeId]);
-
-  const getStatusColor = (status: Biqpod.Snapbuy.StoreUserAccess["status"]) => {
+  const getStatusColor = (status: Biqpod.Snapbuy.Access["status"]) => {
     switch (status) {
       case "accepted":
         return "bg-green-600/25 text-green-600 border-green-300";
@@ -225,17 +214,14 @@ export const UsersAccessListForStore = ({
         return "bg-gray-600/25 text-gray-600 border-gray-300";
     }
   };
-
   const getPermissionIcon = (permission: string) => {
     return permission === "edit" ? allIcons.solid.faPen : allIcons.solid.faEye;
   };
-
   const getPermissionColor = (permission: string) => {
     return permission === "edit"
       ? "bg-[--biqpod-primary] text-[--biqpod-primary-content]"
       : "bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]";
   };
-
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
       year: "numeric",
@@ -243,8 +229,7 @@ export const UsersAccessListForStore = ({
       day: "numeric",
     });
   };
-
-  const handleEditUser = (user: Biqpod.Snapbuy.StoreUserAccess) => {
+  const handleEditUser = (user: Biqpod.Snapbuy.Access) => {
     showPopup(
       <UpsertAccessUsertoStore
         storeId={storeId}
@@ -254,8 +239,7 @@ export const UsersAccessListForStore = ({
       { type: "blur" }
     );
   };
-
-  const handleRemoveUser = async (user: Biqpod.Snapbuy.StoreUserAccess) => {
+  const handleRemoveUser = async (user: Biqpod.Snapbuy.Access) => {
     let userName = "this user";
     if (user.relatedUid) {
       try {
@@ -273,16 +257,16 @@ export const UsersAccessListForStore = ({
       title: "Remove User Access",
       message: `Are you sure you want to remove access for ${userName}?`,
       detail: "This user will no longer be able to access your store data.",
+      type: "warning",
     });
-
     if (response) {
-      execAction("remove-user-access", {
+      await execAction("remove-user-access", {
         storeId,
         relatedUid: user.relatedUid,
       });
+      showToast("User access removed successfully", "success");
     }
   };
-
   return (
     <motion.div
       className="space-y-4"
@@ -309,7 +293,6 @@ export const UsersAccessListForStore = ({
           </motion.div>
         )}
       </AnimatePresence>
-
       {/* Bulk Actions */}
       {!isLoading(loadUsersAction) && usersAccess.get.length > 0 && (
         <motion.div
@@ -349,7 +332,6 @@ export const UsersAccessListForStore = ({
           )}
         </motion.div>
       )}
-
       {/* Loading State */}
       {isLoading(loadUsersAction) && (
         <motion.div
@@ -368,7 +350,6 @@ export const UsersAccessListForStore = ({
           </div>
         </motion.div>
       )}
-
       {/* Users List */}
       {!isLoading(loadUsersAction) && (
         <EmptyComponent>
@@ -414,82 +395,68 @@ export const UsersAccessListForStore = ({
                               const fetchedUser = await snapbuyApi.friends.get(
                                 user.relatedUid
                               );
+                              const fullName = [
+                                fetchedUser?.firstname || "",
+                                fetchedUser?.lastname || "",
+                              ]
+                                .join(" ")
+                                .trim();
                               return (
-                                <EmptyComponent>
-                                  {fetchedUser?.firstname ||
-                                    fetchedUser?.email || (
-                                      <Translate content="Unknown User" />
-                                    )}
-                                </EmptyComponent>
+                                <div className="inline-flex items-center gap-2">
+                                  <UserAvatar user={fetchedUser} />
+                                  <span>
+                                    {fullName ||
+                                      fetchedUser?.email ||
+                                      (fetchedUser?.username
+                                        ? `@${fetchedUser.username}`
+                                        : fetchedUser?.uid)}
+                                  </span>
+                                </div>
                               );
                             }}
                           />
-                        </span>
-                        <span className="opacity-60 ml-1 text-[--biqpod-text-color] text-xs">
-                          (
-                          <AsyncComponent
-                            deps={[user.relatedUid]}
-                            render={async () => {
-                              if (!user.relatedUid) {
-                                return (
-                                  <EmptyComponent>
-                                    <Translate content="user" />
-                                  </EmptyComponent>
-                                );
-                              }
-                              const fetchedUser = await snapbuyApi.friends.get(
-                                user.relatedUid
-                              );
-                              return (
-                                <EmptyComponent>
-                                  {getUserIdentifierType(fetchedUser)}
-                                </EmptyComponent>
-                              );
-                            }}
-                          />
-                          )
                         </span>
                       </div>
                     </div>
-
                     <div className="flex items-center gap-3 text-sm">
                       <motion.span
-                        className={`px-2 py-1 rounded-full border text-xs font-medium ${getStatusColor(
-                          user.status
-                        )}`}
-                        variants={badgeVariants}
-                        whileHover="hover"
-                      >
-                        {user.status.charAt(0).toUpperCase() +
-                          user.status.slice(1)}
-                      </motion.span>
-
-                      <motion.span
-                        className={`px-2 py-1 rounded-full border text-xs font-medium flex items-center gap-1 ${getPermissionColor(
-                          user.permissions
-                        )}`}
-                        variants={badgeVariants}
-                        whileHover="hover"
-                      >
-                        <span
-                          className={`fas ${
-                            getPermissionIcon(user.permissions).iconName
-                          }`}
-                        />
-                        {user.permissions === "edit" ? (
-                          <Translate content="Read & Edit" />
-                        ) : (
-                          <Translate content="Read Only" />
+                        className={tw(
+                          `px-2 py-1 inline-flex gap-2 items-center justify-center capitalize rounded-full border text-xs font-medium`,
+                          getStatusColor(user.status)
                         )}
+                        variants={badgeVariants}
+                        whileHover="hover"
+                      >
+                        <Icon icon={getStatusIcon(user.status)} />
+                        <span className="max-md:hidden">
+                          <Translate content={user.status} />
+                        </span>
                       </motion.span>
-
+                      <motion.span
+                        className={tw(
+                          `px-2 py-1 inline-flex gap-2 items-center justify-center capitalize rounded-full border text-xs font-medium`,
+                          getPermissionColor(user.permissions)
+                        )}
+                        variants={badgeVariants}
+                        whileHover="hover"
+                      >
+                        <Icon icon={getPermissionIcon(user.permissions)} />
+                        <span className="max-md:hidden">
+                          <Translate
+                            content={
+                              user.permissions === "edit"
+                                ? "Read & Edit"
+                                : "Read Only"
+                            }
+                          />
+                        </span>
+                      </motion.span>
                       <span className="opacity-60 text-[--biqpod-text-color] text-xs">
                         <Translate content="Added" />{" "}
-                        {formatDate(user.createdAt)}
+                        {formatDate(user.createdAt!)}
                       </span>
                     </div>
                   </div>
-
                   <div className="flex items-center gap-2">
                     <motion.div
                       whileHover={{ scale: 1.1 }}
@@ -519,7 +486,6 @@ export const UsersAccessListForStore = ({
                     </motion.div>
                   </div>
                 </div>
-
                 {user.status === "pending" && (
                   <motion.div
                     className="bg-yellow-600/5 mt-3 p-3 border border-yellow-600 border-solid rounded-lg"
@@ -542,7 +508,6 @@ export const UsersAccessListForStore = ({
           ))}
         </EmptyComponent>
       )}
-
       {/* Empty State */}
       {!isLoading(loadUsersAction) && usersAccess.get.length === 0 && (
         <motion.div

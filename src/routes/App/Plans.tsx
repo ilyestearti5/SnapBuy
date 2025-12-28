@@ -13,12 +13,14 @@ import {
 } from "@biqpod/app/ui/components";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { tw } from "@biqpod/app/ui/utils";
 import { DAYS_LEFT, useStoreId } from "../../utils";
 import { DataTypes, snapbuyApi } from "../../apis";
 import { confirm, useAsyncMemo, useCopyState } from "@biqpod/app/ui/hooks";
 import { Nothing, State } from "@biqpod/app/ui/types";
+import { notificationSettingsData } from "../../components/NotificationSettings";
+import { openNotificationSettings } from "../../components/NotificationSettingsExamples";
 export const Plans = () => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [tooltipVisible, setTooltipVisible] = useState<string | null>(null);
@@ -32,6 +34,14 @@ export const Plans = () => {
     if (!storeId) return null;
     return await snapbuyApi.store.get(storeId);
   }, [storeId]);
+  const pricesHelp = useAsyncMemo(() => {
+    return snapbuyApi.getPromotionalPrices();
+  }, []);
+
+  const usedNotifications = useMemo(() => {
+    return pricesHelp?.filter((p) => !!storeInfo?.notify?.[p.key]);
+  }, [pricesHelp, storeInfo]);
+
   const usageData = useAsyncMemo(async () => {
     if (storeId) {
       return await snapbuyApi.usage.get(storeId);
@@ -55,7 +65,6 @@ export const Plans = () => {
     return null;
   }, [storeId]);
   // Create copy states for each usage type with values from current payment
-  const photosUsage = useCopyState<number | Nothing>(0);
   const orderUsage = useCopyState<number | Nothing>(0);
   const customersUsage = useCopyState<number | Nothing>(0);
   const productsUsage = useCopyState<number | Nothing>(0);
@@ -85,7 +94,6 @@ export const Plans = () => {
         ? Number(combinedMeta[type])
         : usageData?.[type] || 0;
     };
-    photosUsage.set(get("photos"));
     orderUsage.set(get("orders"));
     customersUsage.set(get("customers"));
     productsUsage.set(get("products"));
@@ -97,7 +105,6 @@ export const Plans = () => {
   }, [currentPayments, usageData]);
   // Create a separate mapping object for state management using DataTypes
   const usageStates: Partial<Record<DataTypes, State<number | Nothing>>> = {
-    photos: photosUsage,
     orders: orderUsage,
     customers: customersUsage,
     products: productsUsage,
@@ -109,13 +116,18 @@ export const Plans = () => {
   };
   const calculateTotalCost = () => {
     if (!pricesData) return 0;
-    return pricesData.reduce((total, price) => {
+    const total = pricesData.reduce((total, price) => {
       const state = usageStates[price.type];
       const current = usageData?.[price.type] || 0;
       const selectedValue =
         state && typeof state.get === "number" ? state.get : current;
       return total + selectedValue * (price.extraPrice || 0);
     }, 0);
+    const restPrices = usedNotifications?.reduce(
+      (prev, curr) => prev + curr.price,
+      0
+    );
+    return total + (restPrices || 0);
   };
   const handlePayment = async () => {
     if (!storeId) {
@@ -131,17 +143,27 @@ export const Plans = () => {
         usages[price.type] = current;
       }
     }
+    const detail = `| Type | Quantity | Cost |\n|------|----------|------|\n${Object.entries(
+      usages
+    )
+      .map(([type, value]) => {
+        const price = pricesData?.find((p) => p.type === type);
+        return `| ${type} | ${value} | ${(
+          value * (price?.extraPrice || 0)
+        ).toFixed(2)} DA |`;
+      })
+      .join("\n")}\n${
+      usedNotifications
+        ?.map(
+          (notification) =>
+            `| ${notification.key} | 1 | ${notification.price.toFixed(2)} DA |`
+        )
+        .join("\n") || ""
+    }\n| Total | | ${calculateTotalCost().toFixed(2)} DA |`;
     const isYes = await confirm({
       message: "Are you sure you want to proceed with the payment?",
       title: "Confirm Payment",
-      detail: `${Object.entries(usages)
-        .map(([type, value]) => {
-          const price = pricesData?.find((p) => p.type === type);
-          return `* ${type}: ${value} / **(${
-            value * (price?.extraPrice || 0)
-          })** DA`;
-        })
-        .join("\n")}\n* **Total Cost**: ${calculateTotalCost().toFixed(2)} DA`,
+      detail,
       type: "question",
     });
     if (isYes) {
@@ -174,7 +196,6 @@ export const Plans = () => {
     });
   };
   const ranges: Record<DataTypes, { min: number; max: number }> = {
-    photos: { min: 0, max: 10000 },
     orders: { min: 0, max: 10000 },
     customers: { min: 0, max: 10000 },
     products: { min: 0, max: 5000 },
@@ -184,13 +205,20 @@ export const Plans = () => {
     coupons: { min: 0, max: 1000 },
     vars: { min: 0, max: 1000 },
   };
-  const free = useAsyncMemo(async () => {
-    return snapbuyApi.getFree();
+  const [free, setFree] = useState<
+    | undefined
+    | {
+        count: number;
+        type: DataTypes;
+      }[]
+  >(undefined);
+  useEffect(() => {
+    snapbuyApi.getFree().then(setFree);
   }, []);
   return (
     <Scroll>
       <div className="p-2">
-        <Card className="w-full">
+        <Card className="w-full overflow-hidden">
           <div className="p-4">
             <div className="flex justify-between items-center">
               <div>
@@ -295,7 +323,7 @@ export const Plans = () => {
                                 className={`w-full h-2 rounded-full ${bgColor}`}
                               >
                                 <div
-                                  className={`h-2 rounded-full  duration-300 ${barColor}`}
+                                  className={`h-2 rounded-full duration-300 ${barColor}`}
                                   style={{
                                     width: `${Math.min(
                                       progressPercentage,
@@ -368,11 +396,9 @@ export const Plans = () => {
                 {pricesData.map((price, index) => {
                   const current = usageData?.[price.type] || 0;
                   const cost = current * (price.extraPrice || 0);
-
                   // Get free limit for this type
                   const freeLimit =
                     free?.find((f) => f.type === price.type)?.count || 0;
-
                   // Get usage limits from all active payments meta data combined
                   const getUsageLimit = (type: string): number | null => {
                     let totalLimit = 0;
@@ -387,10 +413,8 @@ export const Plans = () => {
                     }
                     return hasAnyLimit ? totalLimit : null;
                   };
-
                   const paidLimit = getUsageLimit(price.type) || 0;
                   const totalLimit = freeLimit + paidLimit;
-
                   // Calculate percentages for the segmented progress bar
                   const freePercentage =
                     totalLimit > 0 ? (freeLimit / totalLimit) * 100 : 100;
@@ -398,11 +422,9 @@ export const Plans = () => {
                     totalLimit > 0
                       ? Math.min((current / totalLimit) * 100, 100)
                       : 0;
-
                   const isInFreeZone = current <= freeLimit;
                   const isNearLimit = currentPercentage >= 80;
                   const isAtLimit = current >= totalLimit;
-
                   return (
                     <div
                       key={price.type}
@@ -457,55 +479,52 @@ export const Plans = () => {
                                 </div>
                               )}
                             </div>
-                            <div className="text-right">
-                              <div
-                                className={tw(
-                                  "p-2 rounded-full mb-1",
-                                  paidLimit === 0
-                                    ? isAtLimit
-                                      ? "bg-red-500/20"
-                                      : isNearLimit
-                                      ? "bg-orange-500/20"
-                                      : "bg-green-500/20"
-                                    : isAtLimit
+                            <div
+                              className={tw(
+                                "p-2 w-[30px] flex items-center justify-center h-[30px] rounded-full mb-1",
+                                paidLimit === 0
+                                  ? isAtLimit
                                     ? "bg-red-500/20"
                                     : isNearLimit
                                     ? "bg-orange-500/20"
-                                    : "bg-blue-500/20"
-                                )}
-                              >
-                                <Icon
-                                  icon={
-                                    isAtLimit
-                                      ? allIcons.solid.faExclamationTriangle
-                                      : isNearLimit
-                                      ? allIcons.solid.faExclamationCircle
-                                      : paidLimit === 0
-                                      ? allIcons.solid.faGift
-                                      : allIcons.solid.faCheck
-                                  }
-                                  className={tw(
-                                    "text-sm",
-                                    paidLimit === 0
-                                      ? isAtLimit
-                                        ? "text-red-500"
-                                        : isNearLimit
-                                        ? "text-orange-500"
-                                        : "text-green-500"
-                                      : isAtLimit
+                                    : "bg-green-500/20"
+                                  : isAtLimit
+                                  ? "bg-red-500/20"
+                                  : isNearLimit
+                                  ? "bg-orange-500/20"
+                                  : "bg-blue-500/20"
+                              )}
+                            >
+                              <Icon
+                                icon={
+                                  isAtLimit
+                                    ? allIcons.solid.faExclamationTriangle
+                                    : isNearLimit
+                                    ? allIcons.solid.faExclamationCircle
+                                    : paidLimit === 0
+                                    ? allIcons.solid.faGift
+                                    : allIcons.solid.faCheck
+                                }
+                                className={tw(
+                                  "text-sm",
+                                  paidLimit === 0
+                                    ? isAtLimit
                                       ? "text-red-500"
                                       : isNearLimit
                                       ? "text-orange-500"
-                                      : "text-blue-500"
-                                  )}
-                                />
-                              </div>
+                                      : "text-green-500"
+                                    : isAtLimit
+                                    ? "text-red-500"
+                                    : isNearLimit
+                                    ? "text-orange-500"
+                                    : "text-blue-500"
+                                )}
+                              />
                             </div>
                           </div>
-
                           {/* Cost Info */}
                           {paidLimit > 0 && (
-                            <div className="bg-[--biqpod-primary-background] mb-3 p-2 rounded text-center">
+                            <div className="bg-[--biqpod-primary-background] mb-3 p-2 border border-[--biqpod-borders] border-solid rounded text-center">
                               <span className="opacity-70 text-[--biqpod-text-color] text-xs">
                                 {current} × {price.extraPrice} DA
                               </span>
@@ -514,7 +533,6 @@ export const Plans = () => {
                               </div>
                             </div>
                           )}
-
                           {/* Segmented Progress Bar */}
                           <div className="w-full">
                             <div className="relative bg-[--biqpod-primary-background] rounded-full w-full h-3 overflow-hidden">
@@ -604,9 +622,11 @@ export const Plans = () => {
             )}
           </div>
           <Line />
-          <div className="flex justify-center items-center p-3">
+          <div
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex justify-center items-center active:bg-[--biqpod-gray-opacity-2] p-3 cursor-pointer"
+          >
             <CircleTip
-              onClick={() => setIsExpanded(!isExpanded)}
               icon={allIcons.solid.faChevronDown}
               className={tw(isExpanded && "rotate-180")}
             />
@@ -621,196 +641,240 @@ export const Plans = () => {
                 className="overflow-hidden"
               >
                 <Line />
-                <div className="p-4">
-                  <div className="flex justify-between items-center mb-4">
-                    <h2 className="font-bold text-xl">
-                      <Translate content="Payment Breakdown" />
-                    </h2>
-                    <CircleTip
-                      onClick={() => {
-                        // Calculate combined meta values from all active payments
-                        const combinedMeta: Record<string, number> = {};
-                        if (Array.isArray(currentPayments)) {
-                          currentPayments.forEach((payment) => {
-                            if (payment.meta) {
-                              Object.entries(payment.meta).forEach(
-                                ([key, value]) => {
-                                  if (typeof value === "number") {
-                                    combinedMeta[key] =
-                                      (combinedMeta[key] || 0) + value;
-                                  } else if (
-                                    typeof value === "string" &&
-                                    !isNaN(Number(value))
-                                  ) {
-                                    combinedMeta[key] =
-                                      (combinedMeta[key] || 0) + Number(value);
-                                  }
+                <div className="flex justify-between items-center p-4">
+                  <h2 className="font-bold text-xl">
+                    <Translate content="Payment Breakdown" />
+                  </h2>
+                  <CircleTip
+                    onClick={() => {
+                      // Calculate combined meta values from all active payments
+                      const combinedMeta: Record<string, number> = {};
+                      if (Array.isArray(currentPayments)) {
+                        currentPayments.forEach((payment) => {
+                          if (payment.meta) {
+                            Object.entries(payment.meta).forEach(
+                              ([key, value]) => {
+                                if (typeof value === "number") {
+                                  combinedMeta[key] =
+                                    (combinedMeta[key] || 0) + value;
+                                } else if (
+                                  typeof value === "string" &&
+                                  !isNaN(Number(value))
+                                ) {
+                                  combinedMeta[key] =
+                                    (combinedMeta[key] || 0) + Number(value);
                                 }
-                              );
-                            }
-                          });
-                        }
-                        // Set usage states to current usage minus what's already covered by active subscriptions
-                        photosUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.photos || 0) -
-                              (combinedMeta.photos || 0)
-                          )
-                        );
-                        orderUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.orders || 0) -
-                              (combinedMeta.orders || 0)
-                          )
-                        );
-                        customersUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.customers || 0) -
-                              (combinedMeta.customers || 0)
-                          )
-                        );
-                        productsUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.products || 0) -
-                              (combinedMeta.products || 0)
-                          )
-                        );
-                        brandsUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.brands || 0) -
-                              (combinedMeta.brands || 0)
-                          )
-                        );
-                        collectionsUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.collections || 0) -
-                              (combinedMeta.collections || 0)
-                          )
-                        );
-                        packsUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.packs || 0) - (combinedMeta.packs || 0)
-                          )
-                        );
-                        couponUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.coupons || 0) -
-                              (combinedMeta.coupons || 0)
-                          )
-                        );
-                        variablesUsage.set(
-                          Math.max(
-                            0,
-                            (usageData?.vars || 0) - (combinedMeta.vars || 0)
-                          )
-                        );
-                      }}
-                      icon={allIcons.solid.faSync}
-                    />
-                  </div>
-                  <div className="space-y-4">
-                    {!pricesData ? (
-                      <div className="opacity-70 text-[--biqpod-text-color] text-center">
-                        Loading prices data...
-                      </div>
-                    ) : (
-                      pricesData.map((price) => {
-                        const range = ranges[price.type];
-                        const state = usageStates[price.type];
-                        const current = usageData?.[price.type] || 0;
-                        const selectedValue =
-                          typeof state?.get === "number" ? state.get : current;
-                        const cost = selectedValue * (price.extraPrice || 0);
-                        const unitInfo = `1 ${price.type} per unit`;
-                        return (
-                          <div key={price.type} className="space-y-2">
-                            <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg capitalize">
-                                  <Translate content={`${price.type} usage`} />
-                                </span>
-                                <div
-                                  className="relative cursor-help"
-                                  onMouseEnter={() =>
-                                    setTooltipVisible(price.type)
-                                  }
-                                  onMouseLeave={() => setTooltipVisible(null)}
-                                >
-                                  <Icon
-                                    icon={allIcons.solid.faCircleInfo}
-                                    className="opacity-60 hover:opacity-80 text-[--biqpod-text-color] text-sm"
+                              }
+                            );
+                          }
+                        });
+                      }
+                      // Set usage states to current usage minus what's already covered by active subscriptions
+                      orderUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.orders || 0) - (combinedMeta.orders || 0)
+                        )
+                      );
+                      customersUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.customers || 0) -
+                            (combinedMeta.customers || 0)
+                        )
+                      );
+                      productsUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.products || 0) -
+                            (combinedMeta.products || 0)
+                        )
+                      );
+                      brandsUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.brands || 0) - (combinedMeta.brands || 0)
+                        )
+                      );
+                      collectionsUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.collections || 0) -
+                            (combinedMeta.collections || 0)
+                        )
+                      );
+                      packsUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.packs || 0) - (combinedMeta.packs || 0)
+                        )
+                      );
+                      couponUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.coupons || 0) -
+                            (combinedMeta.coupons || 0)
+                        )
+                      );
+                      variablesUsage.set(
+                        Math.max(
+                          0,
+                          (usageData?.vars || 0) - (combinedMeta.vars || 0)
+                        )
+                      );
+                    }}
+                    icon={allIcons.solid.faSync}
+                  />
+                </div>
+                <Line />
+                <div className="space-y-4 p-4">
+                  {!pricesData ? (
+                    <div className="opacity-70 text-[--biqpod-text-color] text-center">
+                      Loading prices data...
+                    </div>
+                  ) : (
+                    pricesData.map((price) => {
+                      const range = ranges[price.type];
+                      const state = usageStates[price.type];
+                      const current = usageData?.[price.type] || 0;
+                      const selectedValue =
+                        typeof state?.get === "number" ? state.get : current;
+                      const cost = selectedValue * (price.extraPrice || 0);
+                      const unitInfo = `1 ${price.type} per unit`;
+                      return (
+                        <div key={price.type} className="space-y-2">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-2">
+                              <span className="text-lg capitalize">
+                                <Translate content={`${price.type} usage`} />
+                              </span>
+                              <div
+                                className="relative cursor-help"
+                                onMouseEnter={() =>
+                                  setTooltipVisible(price.type)
+                                }
+                                onMouseLeave={() => setTooltipVisible(null)}
+                              >
+                                <Icon
+                                  icon={allIcons.solid.faCircleInfo}
+                                  className="opacity-60 hover:opacity-80 text-[--biqpod-text-color] text-sm"
+                                />
+                                {tooltipVisible === price.type && (
+                                  <div className="top-1/2 left-full z-10 absolute bg-[--biqpod-gray-opacity] shadow-lg backdrop-blur-md ml-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap -translate-y-1/2 transform">
+                                    <Translate content={unitInfo} />
+                                    <div
+                                      className="top-1/2 right-full absolute border-4 border-transparent -translate-y-1/2 transform"
+                                      style={{
+                                        borderRightColor:
+                                          "var(--biqpod-gray-opacity)",
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                            <span className="opacity-70 text-[--biqpod-text-color] text-sm">
+                              {cost.toFixed(2)} DA
+                            </span>
+                          </div>
+                          {state && (
+                            <div className="space-y-3">
+                              {/* Range Field */}
+                              <div className="flex items-center space-x-4">
+                                <div className="flex-1">
+                                  <RangeField
+                                    state={state}
+                                    id={`${price.type.replace(/\s+/g, "-")}`}
+                                    config={range}
                                   />
-                                  {tooltipVisible === price.type && (
-                                    <div className="top-1/2 left-full z-10 absolute bg-[--biqpod-gray-opacity] shadow-lg backdrop-blur-md ml-2 px-3 py-2 rounded-lg text-sm whitespace-nowrap -translate-y-1/2 transform">
-                                      <Translate content={unitInfo} />
-                                      <div
-                                        className="top-1/2 right-full absolute border-4 border-transparent -translate-y-1/2 transform"
-                                        style={{
-                                          borderRightColor:
-                                            "var(--biqpod-gray-opacity)",
-                                        }}
-                                      />
-                                    </div>
-                                  )}
+                                </div>
+                                <div className="w-20">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    max={range.max}
+                                    value={selectedValue || ""}
+                                    onChange={(e) => {
+                                      const value = e.target.value;
+                                      if (value === "") {
+                                        state.set(0);
+                                      } else {
+                                        const numValue = parseInt(value) || 0;
+                                        if (numValue < range.min) {
+                                          state.set(range.min);
+                                        } else if (numValue > range.max) {
+                                          state.set(range.max);
+                                        } else {
+                                          state.set(numValue);
+                                        }
+                                      }
+                                    }}
+                                    className="bg-[--biqpod-primary-background] px-2 py-1 border border-[--biqpod-borders] focus:border-transparent border-solid rounded focus:outline-none focus:ring-[--biqpod-primary] focus:ring-1 w-full text-[--biqpod-text-color] text-base text-center"
+                                  />
                                 </div>
                               </div>
-                              <span className="opacity-70 text-[--biqpod-text-color] text-sm">
-                                {cost.toFixed(2)} DA
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+                <Line />
+                {!usedNotifications?.length && (
+                  <EmptyComponent>
+                    <Line />
+                  </EmptyComponent>
+                )}
+                {usedNotifications && usedNotifications.length > 0 && (
+                  <div>
+                    <Line />
+                    <div className="p-4">
+                      <div className="flex justify-between items-center mb-3 p-2">
+                        <h3 className="font-bold text-lg capitalize">
+                          <Translate content="Activated Notifications" />
+                        </h3>
+                        <div>
+                          <CircleTip
+                            icon={allIcons.solid.faGear}
+                            onClick={() => {
+                              openNotificationSettings();
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <Card className="bg-[--biqpod-primary-background] overflow-hidden">
+                        {usedNotifications.map((notification) => {
+                          const data = notificationSettingsData.find(
+                            (s) => s.key === notification.key
+                          );
+                          return (
+                            <div
+                              key={notification.key}
+                              className="flex justify-between items-center gap-2 p-2 border-[--biqpod-borders] border-b border-solid last:border-none"
+                            >
+                              <div className="flex items-center gap-2">
+                                <Icon
+                                  icon={allIcons.solid.faCheckCircle}
+                                  className="text-[--biqpod-success]"
+                                />
+                                <span className="capitalize text-nowrap">
+                                  <Translate content={data?.title || ""} />
+                                </span>
+                              </div>
+                              <span className="font-bold text-[--biqpod-primary] text-nowrap">
+                                {notification.price.toFixed(2)} DA
                               </span>
                             </div>
-                            {state && (
-                              <div className="space-y-3">
-                                {/* Range Field */}
-                                <div className="flex items-center space-x-4">
-                                  <div className="flex-1">
-                                    <RangeField
-                                      state={state}
-                                      id={`${price.type.replace(/\s+/g, "-")}`}
-                                      config={range}
-                                    />
-                                  </div>
-                                  <div className="w-20">
-                                    <input
-                                      type="number"
-                                      min="0"
-                                      max={range.max}
-                                      value={selectedValue || ""}
-                                      onChange={(e) => {
-                                        const value = e.target.value;
-                                        if (value === "") {
-                                          state.set(0);
-                                        } else {
-                                          const numValue = parseInt(value) || 0;
-                                          if (numValue < range.min) {
-                                            state.set(range.min);
-                                          } else if (numValue > range.max) {
-                                            state.set(range.max);
-                                          } else {
-                                            state.set(numValue);
-                                          }
-                                        }
-                                      }}
-                                      className="bg-[--biqpod-primary-background] px-2 py-1 border border-[--biqpod-borders] focus:border-transparent border-solid rounded focus:outline-none focus:ring-[--biqpod-primary] focus:ring-1 w-full text-[--biqpod-text-color] text-base text-center"
-                                    />
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })
-                    )}
+                          );
+                        })}
+                      </Card>
+                    </div>
                   </div>
-                  {usageData !== null && (
-                    <div className="bg-[--biqpod-primary-background] mt-6 p-4 border border-[--biqpod-borders] border-solid rounded-lg">
+                )}
+                {usageData !== null && (
+                  <div className="p-4">
+                    <div className="bg-[--biqpod-primary-background] p-4 border border-[--biqpod-borders] border-solid rounded-lg">
                       <div className="flex justify-between items-center mb-4">
                         <span className="font-bold text-lg">
                           <Translate content="Total Cost:" />
@@ -826,22 +890,28 @@ export const Plans = () => {
                         <Translate content="Pay Now" />
                       </Button>
                     </div>
-                  )}
-                </div>
+                  </div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </Card>
         {/* Payment History Section */}
-        <Card className="mt-4 w-full">
-          <div className="p-4">
+        <Card className="mt-4 w-full overflow-hidden">
+          <div
+            className="active:bg-[--biqpod-gray-opacity] p-4 cursor-pointer"
+            onClick={() => setShowPaymentHistory(!showPaymentHistory)}
+          >
             <div className="flex justify-between items-center">
               <h2 className="font-bold text-xl">
                 <Translate content="Payment History" />
               </h2>
               <CircleTip
-                onClick={() => setShowPaymentHistory(!showPaymentHistory)}
-                icon={allIcons.solid.faHistory}
+                icon={
+                  showPaymentHistory
+                    ? allIcons.solid.faChevronUp
+                    : allIcons.solid.faChevronDown
+                }
                 className="opacity-70 text-[--biqpod-text-color]"
               />
             </div>
@@ -887,13 +957,20 @@ export const Plans = () => {
                           const now = Date.now();
                           const endTime = Number(payment?.meta?.endAt);
                           const wasExpired = now >= endTime;
+                          const notifayArray = payment?.meta
+                            ?.notifay as string[];
                           return (
                             <div
                               key={paymentId}
-                              className="bg-[--biqpod-secondary-background] p-3 border border-[--biqpod-borders] border-solid rounded-lg"
+                              className="bg-[--biqpod-secondary-background] border border-[--biqpod-borders] border-solid rounded-lg overflow-hidden"
                             >
                               {/* Compact Payment Info */}
-                              <div className="flex justify-between items-center">
+                              <div
+                                onClick={() =>
+                                  togglePaymentExpansion(paymentId)
+                                }
+                                className="flex justify-between items-center active:bg-[--biqpod-primary-background] p-3 cursor-pointer"
+                              >
                                 <div className="flex flex-1 items-center gap-2">
                                   <Icon
                                     icon={
@@ -946,9 +1023,6 @@ export const Plans = () => {
                                     )}
                                   </div>
                                   <CircleTip
-                                    onClick={() =>
-                                      togglePaymentExpansion(paymentId)
-                                    }
                                     icon={allIcons.solid.faChevronDown}
                                     className={tw(
                                       "text-[--biqpod-text-color] text-sm opacity-60 transition-transform duration-200",
@@ -960,104 +1034,109 @@ export const Plans = () => {
                               {/* Expanded Payment Details */}
                               <AnimatePresence>
                                 {isExpanded && (
-                                  <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="overflow-hidden"
-                                  >
-                                    <div className="mt-3 pt-3 border-[--biqpod-borders] border-t">
-                                      {/* Payment ID */}
-                                      {payment.payoutId && (
-                                        <p className="opacity-60 mb-2 text-[--biqpod-text-color] text-xs">
-                                          <Translate content="Payment ID:" />{" "}
-                                          {payment.payoutId}
-                                        </p>
-                                      )}
-                                      {/* Full Date and Time */}
-                                      {(payment.paidAt ||
-                                        payment.createdAt) && (
-                                        <p className="opacity-70 mb-2 text-[--biqpod-text-color] text-xs">
-                                          <Translate content="Date:" />{" "}
-                                          {new Date(
-                                            payment.paidAt || payment.createdAt!
-                                          ).toLocaleDateString()}{" "}
-                                          -{" "}
-                                          {new Date(
-                                            payment.paidAt || payment.createdAt!
-                                          ).toLocaleTimeString()}
-                                        </p>
-                                      )}
-                                      {/* Transaction Note */}
-                                      {payment.transaction?.note && (
-                                        <p className="opacity-80 mb-2 text-[--biqpod-text-color] text-xs">
-                                          <Translate content="Note:" />{" "}
-                                          {payment.transaction.note}
-                                        </p>
-                                      )}
-                                      {/* Subscription Info */}
-                                      {!!payment.subscription?.duration && (
-                                        <div className="mb-2">
-                                          <p className="opacity-70 text-[--biqpod-text-color] text-xs">
-                                            <Translate content="Duration:" />{" "}
-                                            {payment.subscription.duration /
-                                              60 /
-                                              60 /
-                                              24}{" "}
-                                            days
+                                  <EmptyComponent>
+                                    <Line />
+                                    <motion.div
+                                      initial={{ height: 0, opacity: 0 }}
+                                      animate={{ height: "auto", opacity: 1 }}
+                                      exit={{ height: 0, opacity: 0 }}
+                                      transition={{ duration: 0.3 }}
+                                      className="p-3 overflow-hidden"
+                                    >
+                                      <div className="pt-3 border-[--biqpod-borders] border-t">
+                                        {/* Payment ID */}
+                                        {payment.payoutId && (
+                                          <p className="opacity-60 mb-2 text-[--biqpod-text-color] text-xs">
+                                            <Translate content="Payment ID:" />{" "}
+                                            {payment.payoutId}
                                           </p>
-                                        </div>
-                                      )}
-                                      {/* Subscription End Date */}
-                                      {payment.meta?.endAt && (
-                                        <div className="mb-2">
-                                          <p className="opacity-80 text-[--biqpod-text-color] text-xs">
-                                            <Translate content="Subscription End Date:" />{" "}
+                                        )}
+                                        {/* Full Date and Time */}
+                                        {(payment.paidAt ||
+                                          payment.createdAt) && (
+                                          <p className="opacity-70 mb-2 text-[--biqpod-text-color] text-xs">
+                                            <Translate content="Date:" />{" "}
                                             {new Date(
-                                              Number(payment.meta.endAt)
+                                              payment.paidAt ||
+                                                payment.createdAt!
                                             ).toLocaleDateString()}{" "}
+                                            -{" "}
                                             {new Date(
-                                              Number(payment.meta.endAt)
+                                              payment.paidAt ||
+                                                payment.createdAt!
                                             ).toLocaleTimeString()}
                                           </p>
-                                          <div className="mt-1">
-                                            <span
-                                              className={`px-2 py-1 rounded text-xs ${
-                                                wasExpired
-                                                  ? "bg-red-500/25 text-red-500"
-                                                  : "bg-green-500/25 text-green-500"
-                                              }`}
-                                            >
-                                              <Translate
-                                                content={
-                                                  wasExpired
-                                                    ? "Expired"
-                                                    : "Active"
-                                                }
-                                              />
-                                            </span>
-                                          </div>
-                                        </div>
-                                      )}
-                                      {/* Product Info */}
-                                      {/* Usage Breakdown */}
-                                      {payment.meta &&
-                                        Object.keys(payment.meta).length >
-                                          0 && (
+                                        )}
+                                        {/* Transaction Note */}
+                                        {payment.transaction?.note && (
+                                          <p className="opacity-80 mb-2 text-[--biqpod-text-color] text-xs">
+                                            <Translate content="Note:" />{" "}
+                                            {payment.transaction.note}
+                                          </p>
+                                        )}
+                                        {/* Subscription Info */}
+                                        {!!payment.subscription?.duration && (
                                           <div className="mb-2">
-                                            <p className="opacity-80 mb-1 text-[--biqpod-text-color] text-xs">
-                                              <Translate content="Usage breakdown:" />
+                                            <p className="opacity-70 text-[--biqpod-text-color] text-xs">
+                                              <Translate content="Duration:" />{" "}
+                                              {payment.subscription.duration /
+                                                86400000}{" "}
+                                              days
                                             </p>
-                                            <div className="flex flex-wrap gap-2">
-                                              {Object.entries(payment.meta).map(
-                                                ([type, value]) => {
+                                          </div>
+                                        )}
+                                        {/* Subscription End Date */}
+                                        {payment.meta?.endAt && (
+                                          <div className="mb-2">
+                                            <p className="opacity-80 text-[--biqpod-text-color] text-xs">
+                                              <Translate content="Subscription End Date:" />{" "}
+                                              {new Date(
+                                                Number(payment.meta.endAt)
+                                              ).toLocaleDateString()}{" "}
+                                              {new Date(
+                                                Number(payment.meta.endAt)
+                                              ).toLocaleTimeString()}
+                                            </p>
+                                            <div className="mt-1">
+                                              <span
+                                                className={`px-2 py-1 rounded text-xs ${
+                                                  wasExpired
+                                                    ? "bg-red-500/25 text-red-500"
+                                                    : "bg-green-500/25 text-green-500"
+                                                }`}
+                                              >
+                                                <Translate
+                                                  content={
+                                                    wasExpired
+                                                      ? "Expired"
+                                                      : "Active"
+                                                  }
+                                                />
+                                              </span>
+                                            </div>
+                                          </div>
+                                        )}
+                                        {/* Product Info */}
+                                        {/* Usage Breakdown */}
+                                        {payment.meta &&
+                                          Object.keys(payment.meta).length >
+                                            0 && (
+                                            <div className="flex flex-col gap-2">
+                                              <p className="opacity-80 text-[--biqpod-text-color] text-xs">
+                                                <Translate content="Usage breakdown:" />
+                                              </p>
+                                              <div className="flex flex-wrap gap-2">
+                                                {Object.entries(
+                                                  payment.meta
+                                                ).map(([type, value]) => {
                                                   if (
                                                     [
                                                       "storeId",
                                                       "endAt",
+                                                      "notifay",
                                                     ].includes(type)
                                                   ) {
+                                                    console.log(type, value);
                                                     return null;
                                                   }
                                                   return (
@@ -1073,13 +1152,44 @@ export const Plans = () => {
                                                       </span>
                                                     </span>
                                                   );
-                                                }
-                                              )}
+                                                })}
+                                              </div>
+                                              <p className="opacity-80 text-[--biqpod-text-color] text-xs">
+                                                <Translate content="Activated notifications:" />
+                                              </p>
+                                              <div className="flex flex-wrap gap-2">
+                                                {notifayArray &&
+                                                  notifayArray.map((s) => {
+                                                    const data =
+                                                      notificationSettingsData.find(
+                                                        (setting) =>
+                                                          setting.key === s
+                                                      );
+                                                    if (!data) return null;
+                                                    return (
+                                                      <span
+                                                        key={s}
+                                                        className="inline-flex items-center gap-2 bg-[--biqpod-primary-background] px-2 py-1 border border-[--biqpod-borders] border-solid rounded text-xs"
+                                                      >
+                                                        <Icon
+                                                          icon={
+                                                            allIcons.solid
+                                                              .faCheckCircle
+                                                          }
+                                                          className="text-[--biqpod-success] text-xs"
+                                                        />
+                                                        <Translate
+                                                          content={data.title}
+                                                        />
+                                                      </span>
+                                                    );
+                                                  })}
+                                              </div>
                                             </div>
-                                          </div>
-                                        )}
-                                    </div>
-                                  </motion.div>
+                                          )}
+                                      </div>
+                                    </motion.div>
+                                  </EmptyComponent>
                                 )}
                               </AnimatePresence>
                             </div>

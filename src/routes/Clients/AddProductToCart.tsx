@@ -18,7 +18,7 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { setFocused } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
-import { ImageSlider } from "../../Links/ImageSlider";
+import { FilesSlider } from "../../Links/FilesSlider";
 import { getPrice } from "../../utils";
 import { useLocation } from "react-router";
 import { snapbuyApi } from "../../apis";
@@ -48,7 +48,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
   const storeId = product.storeId!;
   const currentCount = getFieldValue("prod-count");
   const cartCount = useCartCount(storeId, product.id!);
-  const photos = product.photos || [];
+  const files = product.files || [];
   const priceDetected = getPrice(prod, +(currentCount || ""));
   useEffect(() => {
     setFocused("prod-count");
@@ -79,7 +79,7 @@ export const AddProductInCart = ({ product }: ProductPopupProps) => {
       {showPhoto && (
         <EmptyComponent>
           <div className="h-[300px]">
-            <ImageSlider photos={photos} />
+            <FilesSlider files={files} />
           </div>
           <Line />
         </EmptyComponent>

@@ -41,7 +41,7 @@ export const OrderInvoice = ({ order }: OrderInvoiceProps) => {
   }, [order]);
 
   const list = useAsyncMemo(async () => {
-    return snapbuyApi.order.getProducts(order.id);
+    return snapbuyApi.order.getProducts(order.id!);
   }, []);
   const handleDownloadPDF = async () => {
     if (!invoiceRef.current) return;

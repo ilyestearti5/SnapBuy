@@ -22,7 +22,7 @@ import { snapbuyApi } from "../../apis";
 export interface ChangeStatusProps {
   orders: Biqpod.Snapbuy.Order[];
 }
-export const allStatus: Biqpod.Snapbuy.OrderStatus[] = [
+export const allStatus: Biqpod.Snapbuy.Basic.OrderStatus[] = [
   "pending",
   "cancelled",
   "processing",
@@ -30,8 +30,17 @@ export const allStatus: Biqpod.Snapbuy.OrderStatus[] = [
   "delivery",
   "done",
 ];
+export const emojis: Record<Biqpod.Snapbuy.Basic.OrderStatus, string> = {
+  pending: "⏳",
+  cancelled: "❌",
+  processing: "🔄",
+  completed: "✅",
+  delivery: "🚚",
+  done: "🎉",
+};
 export const ChangeStatus = ({ orders }: ChangeStatusProps) => {
-  const selectOne = getTemp<Biqpod.Snapbuy.OrderStatus>("selected-status");
+  const selectOne =
+    getTemp<Biqpod.Snapbuy.Basic.OrderStatus>("selected-status");
   return (
     <Card className="max-md:w-11/12 md:w-2/3">
       <div className="flex justify-between items-center p-2">
@@ -96,7 +105,7 @@ export const ChangeStatus = ({ orders }: ChangeStatusProps) => {
             }
             closePopup();
             const allPromiseds = orders.map(async (order) => {
-              return snapbuyApi.order.updateStatus(order.id, selectOne!);
+              return snapbuyApi.order.updateStatus(order.id!, selectOne!);
             });
             await Promise.all(allPromiseds);
             showToast("status updated successfully", "success");

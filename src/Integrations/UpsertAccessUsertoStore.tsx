@@ -1,11 +1,8 @@
 import {
-  AsyncComponent,
   Button,
   Card,
   CardHeaderForPopup,
-  CardWait,
   CircleTip,
-  EmptyComponent,
   EnumField,
   Field,
   Line,
@@ -20,6 +17,8 @@ import {
   useAction,
   useCopyState,
   useAsyncMemo,
+  useError,
+  useAsyncEffect,
 } from "@biqpod/app/ui/hooks";
 import { highlightMatch } from "../routes/Clients/ClientProductRender";
 import { motion, AnimatePresence } from "framer-motion";
@@ -27,11 +26,12 @@ import { snapbuyApi } from "../apis";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { useMemo } from "react";
-import { delay } from "@biqpod/app/ui/utils";
-type UserWithId = Biqpod.Account.User & { id: string };
+import { fuzzySearch, tw } from "@biqpod/app/ui/utils";
+import { Icon } from "@biqpod/app/ui/shared";
+type User = Biqpod.Account.User;
 interface UpsertAccessUsertoStoreProps {
   storeId: string;
-  existingAccess?: Biqpod.Snapbuy.StoreUserAccess;
+  existingAccess?: Biqpod.Snapbuy.Access;
   onSuccess?: () => void;
 }
 // Animation variants
@@ -59,15 +59,6 @@ const fieldVariants = {
     transition: { duration: 0.3 },
   },
 };
-const buttonVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0 },
-  hover: {
-    scale: 1.02,
-    transition: { duration: 0.2 },
-  },
-  tap: { scale: 0.98 },
-};
 const errorVariants = {
   hidden: { opacity: 0, y: -10, scale: 0.95 },
   visible: {
@@ -88,9 +79,8 @@ export const UpsertAccessUsertoStore = ({
   existingAccess,
   onSuccess,
 }: UpsertAccessUsertoStoreProps) => {
-  const error = useCopyState<string | null>(null);
   const searchTerm = useCopyState<string>("");
-  const selectedUser = useCopyState<UserWithId | null>(null);
+  const selectedUser = useCopyState<User | null>(null);
   const showDropdown = useCopyState<boolean>(false);
   const permissions = useCopyState<string | false | 0 | null | undefined>(
     existingAccess?.permissions || "read"
@@ -99,18 +89,24 @@ export const UpsertAccessUsertoStore = ({
   const allUsers = useAsyncMemo(async () => {
     return await snapbuyApi.friends.getList(100); // Get more users for better search
   }, []);
+  useAsyncEffect(async () => {
+    if (existingAccess?.relatedUid) {
+      const user = await snapbuyApi.friends.get(existingAccess.relatedUid);
+      selectedUser.set(user);
+    }
+  }, [existingAccess]);
   // Filter users based on search term
-  const filteredUsers = useMemo((): UserWithId[] => {
+  const filteredUsers = useMemo((): User[] => {
     if (!searchTerm.get || searchTerm.get.length < 1) return [];
     const term = searchTerm.get.toLowerCase();
     return (
-      allUsers?.filter(
-        (user) =>
-          user.firstname?.toLowerCase().includes(term) ||
-          user.lastname?.toLowerCase().includes(term) ||
-          user.email?.toLowerCase().includes(term) ||
-          user.id?.toLowerCase().includes(term) ||
-          user.username?.toLowerCase().includes(term)
+      allUsers?.filter((user) =>
+        fuzzySearch(
+          [user.firstname, user.lastname, user.email, user.nickname, user.phone]
+            .filter(Boolean)
+            .join(" "),
+          term
+        )
       ) || []
     );
   }, [searchTerm.get, allUsers]);
@@ -121,19 +117,16 @@ export const UpsertAccessUsertoStore = ({
   const action = useAction(
     "upsert-user-access",
     async () => {
-      error.set(null);
       if (!selectedUser.get) {
-        error.set("Please select a user to invite");
-        return;
+        throw "Please select a user to invite";
       }
       if (!permissions.get) {
-        error.set("Permission level is required");
-        return;
+        throw "Permission level is required";
       }
       try {
         if (existingAccess) {
           // Update existing access
-          await snapbuyApi.access.updateUser(existingAccess.id, {
+          await snapbuyApi.access.updateUser(existingAccess.id!, {
             permissions: permissions.get === "edit" ? "edit" : "read",
           });
           showToast("User access updated successfully", "success");
@@ -156,15 +149,13 @@ export const UpsertAccessUsertoStore = ({
         closePopup();
       } catch (err) {
         console.error("Failed to manage user access:", err);
-        error.set(
-          existingAccess
-            ? "Failed to update user access. Please try again."
-            : "Failed to send invitation. Please try again."
-        );
+        throw err;
       }
     },
     [selectedUser.get, permissions.get, storeId, existingAccess]
   );
+  const upsertUserIsLoading = isLoading(action);
+  const error = useError(action);
   return (
     <motion.div
       variants={containerVariants}
@@ -180,235 +171,171 @@ export const UpsertAccessUsertoStore = ({
         <motion.div className="space-y-4 p-4" variants={fieldVariants}>
           {/* Error Display */}
           <AnimatePresence>
-            {error.get && (
+            {error && (
               <motion.div
-                className="bg-red-700/20 mb-3 px-4 py-3 border border-red-300 rounded-lg"
+                className="bg-red-600/10 mb-3 px-4 py-3 border border-red-600 border-solid rounded-lg text-red-600"
                 variants={errorVariants}
                 initial="hidden"
                 animate="visible"
                 exit="exit"
               >
                 <div className="flex items-center gap-2">
-                  <span
-                    className={`fas ${allIcons.solid.faExclamationTriangle.iconName}`}
-                  />
-                  <span className="text-sm">{error.get}</span>
+                  <Icon icon={allIcons.solid.faExclamationTriangle} />
+                  <span className="text-sm">{error}</span>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
           {/* User Search */}
-          {!existingAccess && (
-            <motion.div variants={fieldVariants}>
-              <label className="block mb-2 font-medium text-sm">
-                <Translate content="Search User" />
-              </label>
-              <div className="relative">
-                {!selectedUser.get && (
-                  <Field
-                    inputName="user-search"
-                    value={searchTerm.get}
-                    onChange={(e) => {
-                      searchTerm.set(e.target.value);
-                      showDropdown.set(true);
-                      if (selectedUser.get) {
-                        selectedUser.set(null);
-                      }
-                    }}
-                    placeholder="Search by name, email, or ID..."
-                    className="rounded-2xl"
-                  />
-                )}
-                {selectedUser.get && (
-                  <div className="flex items-center gap-3 bg-[--biqpod-primary]/10 mt-2 p-3 border border-[--biqpod-primary]/30 rounded-lg">
-                    <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 overflow-hidden font-bold text-[--biqpod-primary-content] text-sm">
-                      {selectedUser.get.photo ? (
-                        <img
-                          src={selectedUser.get.photo}
-                          alt={`${selectedUser.get.firstname} ${selectedUser.get.lastname}`}
-                          className="rounded-full w-full h-full object-cover"
-                          onError={(e) => {
-                            // Fallback to first letter if image fails to load
-                            const target = e.target as HTMLElement;
-                            target.style.display = "none";
-                            const parent = target.parentElement;
-                            if (parent && selectedUser.get) {
-                              parent.textContent =
-                                selectedUser.get.firstname?.[0] ||
-                                selectedUser.get.email?.[0] ||
-                                "?";
-                            }
-                          }}
-                        />
-                      ) : (
-                        selectedUser.get.firstname?.[0] ||
-                        selectedUser.get.email?.[0] ||
-                        "?"
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium text-[--biqpod-text-color]">
-                        {selectedUser.get.firstname} {selectedUser.get.lastname}
-                      </div>
-                      <div className="text-sm">{selectedUser.get.email}</div>
-                    </div>
-                    <CircleTip
-                      onClick={() => {
-                        selectedUser.set(null);
-                        searchTerm.set("");
-                      }}
-                      icon={allIcons.solid.faTimes}
-                      className="hover:text-red-500"
-                    />
+          <motion.div variants={fieldVariants}>
+            <label className="block mb-2 font-medium text-sm">
+              <Translate content="Search User" />
+            </label>
+            <div className="relative">
+              {!selectedUser.get && (
+                <Field
+                  inputName="user-search"
+                  value={searchTerm.get}
+                  onChange={(e) => {
+                    searchTerm.set(e.target.value);
+                    showDropdown.set(true);
+                    if (selectedUser.get) {
+                      selectedUser.set(null);
+                    }
+                  }}
+                  placeholder="Search by name, email, or ID..."
+                  className="rounded-2xl"
+                />
+              )}
+              {selectedUser.get && (
+                <div className="flex items-center gap-3 bg-[--biqpod-primary]/10 mt-2 p-3 border border-[--biqpod-primary]/30 rounded-lg">
+                  <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 overflow-hidden font-bold text-[--biqpod-primary-content] text-sm">
+                    {selectedUser.get.photo ? (
+                      <img
+                        src={selectedUser.get.photo}
+                        alt={`${selectedUser.get.firstname} ${selectedUser.get.lastname}`}
+                        className="rounded-full w-full h-full object-cover"
+                        onError={(e) => {
+                          // Fallback to first letter if image fails to load
+                          const target = e.target as HTMLElement;
+                          target.style.display = "none";
+                          const parent = target.parentElement;
+                          if (parent && selectedUser.get) {
+                            parent.textContent =
+                              selectedUser.get.firstname?.[0] ||
+                              selectedUser.get.email?.[0] ||
+                              "?";
+                          }
+                        }}
+                      />
+                    ) : (
+                      selectedUser.get.firstname?.[0] ||
+                      selectedUser.get.email?.[0] ||
+                      "?"
+                    )}
                   </div>
-                )}
-                <AnimatePresence>
-                  {showDropdown.get &&
-                    searchTerm.get.length >= 1 &&
-                    filteredUsers &&
-                    filteredUsers.length > 0 &&
-                    !selectedUser.get && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="right-0 bottom-full left-0 z-50 absolute bg-[--biqpod-primary-background] shadow-xl mb-1 border border-[--biqpod-borders] rounded-lg max-h-60 overflow-y-auto"
-                      >
-                        {filteredUsers.slice(0, 10).map((user: UserWithId) => (
-                          <div
-                            key={user.id}
-                            className="hover:bg-[--biqpod-gray-opacity] p-3 border-[--biqpod-borders] border-b last:border-b-0 transition-colors duration-150 cursor-pointer"
-                            onClick={() => {
-                              selectedUser.set(user);
-                              searchTerm.set(
-                                `${user.firstname} ${user.lastname} (${user.email})`
-                              );
-                              showDropdown.set(false);
-                            }}
-                          >
-                            <div className="flex items-center gap-3">
-                              <div className="flex justify-center items-center bg-[--biqpod-primary] rounded-full w-8 h-8 overflow-hidden font-bold text-[--biqpod-primary-content] text-sm">
-                                {user.photo ? (
-                                  <img
-                                    src={user.photo}
-                                    alt={`${user.firstname} ${user.lastname}`}
-                                    className="w-full h-full object-cover"
-                                    onError={(e) => {
-                                      // Fallback to first letter if image fails to load
-                                      const target = e.target as HTMLElement;
-                                      target.style.display = "none";
-                                      const parent = target.parentElement;
-                                      if (parent) {
-                                        parent.textContent =
-                                          user.firstname?.[0] ||
-                                          user.email?.[0] ||
-                                          "?";
-                                      }
-                                    }}
-                                  />
-                                ) : (
-                                  user.firstname?.[0] || user.email?.[0] || "?"
+                  <div className="flex-1">
+                    <div className="font-medium text-[--biqpod-text-color]">
+                      {selectedUser.get.firstname} {selectedUser.get.lastname}
+                    </div>
+                    <div className="text-sm">{selectedUser.get.email}</div>
+                  </div>
+                  <CircleTip
+                    onClick={() => {
+                      selectedUser.set(null);
+                      searchTerm.set("");
+                    }}
+                    icon={allIcons.solid.faTimes}
+                    className="hover:text-red-500"
+                  />
+                </div>
+              )}
+              <AnimatePresence>
+                {showDropdown.get &&
+                  searchTerm.get.length >= 1 &&
+                  filteredUsers &&
+                  filteredUsers.length > 0 &&
+                  !selectedUser.get && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="right-0 bottom-full left-0 z-50 absolute bg-[--biqpod-primary-background] shadow-xl mb-1 border border-[--biqpod-borders] rounded-lg max-h-60 overflow-y-auto"
+                    >
+                      {filteredUsers.slice(0, 10).map((user: User) => (
+                        <div
+                          key={user.uid}
+                          className="hover:bg-[--biqpod-gray-opacity] p-3 border-[--biqpod-borders] border-b last:border-b-0 transition-colors duration-150 cursor-pointer"
+                          onClick={() => {
+                            selectedUser.set(user);
+                            searchTerm.set(
+                              `${user.firstname} ${user.lastname} (${user.email})`
+                            );
+                            showDropdown.set(false);
+                          }}
+                        >
+                          <div className="flex items-center gap-3">
+                            <UserAvatar user={user} />
+                            <div>
+                              <div className="font-medium">
+                                {highlightMatch(
+                                  `${user.firstname || ""} ${
+                                    user.lastname || ""
+                                  }`.trim(),
+                                  searchTerm.get || ""
                                 )}
                               </div>
-                              <div>
-                                <div className="font-medium">
+                              <div className="text-sm">
+                                {highlightMatch(
+                                  user.email || "",
+                                  searchTerm.get || ""
+                                )}
+                              </div>
+                              {user.username && (
+                                <div className="text-xs">
+                                  @
                                   {highlightMatch(
-                                    `${user.firstname || ""} ${
-                                      user.lastname || ""
-                                    }`.trim(),
+                                    user.username,
                                     searchTerm.get || ""
                                   )}
                                 </div>
-                                <div className="text-sm">
-                                  {highlightMatch(
-                                    user.email || "",
-                                    searchTerm.get || ""
-                                  )}
-                                </div>
-                                {user.username && (
-                                  <div className="text-xs">
-                                    @
-                                    {highlightMatch(
-                                      user.username,
-                                      searchTerm.get || ""
-                                    )}
-                                  </div>
-                                )}
-                              </div>
+                              )}
                             </div>
                           </div>
-                        ))}
-                      </motion.div>
-                    )}
-                  {showDropdown.get &&
-                    searchTerm.get.length >= 1 &&
-                    filteredUsers &&
-                    filteredUsers.length === 0 &&
-                    !selectedUser.get && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: 10 }}
-                        className="right-0 bottom-full left-0 z-50 absolute bg-[--biqpod-primary-background] shadow-xl mb-1 p-3 border border-[--biqpod-borders] rounded-lg"
-                      >
-                        <div className="text-sm text-center">
-                          <Translate content="No users found matching" /> "
-                          {searchTerm.get}"
                         </div>
-                      </motion.div>
-                    )}
-                </AnimatePresence>
-              </div>
-              {!existingAccess && (
-                <motion.p
-                  className="mt-1 text-xs"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.2 }}
-                >
-                  <Translate content="Start typing to search for users by name, email, or ID" />
-                </motion.p>
-              )}
-            </motion.div>
-          )}
-          {/* Selected User Display for Existing Access */}
-          {existingAccess && (
-            <motion.div variants={fieldVariants}>
-              <label className="block mb-2 font-medium text-sm">
-                <Translate content="User" />
-              </label>
-              <div className="text-sm">
-                <AsyncComponent
-                  deps={[existingAccess.relatedUid]}
-                  render={async () => {
-                    if (!existingAccess.relatedUid) {
-                      return <EmptyComponent />;
-                    }
-                    await delay(500); // Small delay to ensure loading state is visible
-                    const user = await snapbuyApi.friends.get(
-                      existingAccess.relatedUid
-                    );
-                    return (
-                      <div className="flex items-center gap-2 bg-[--biqpod-primary-background] p-2 border border-[--biqpod-borders] border-solid rounded-xl">
-                        <UserAvatar user={user} />
-                        <span>{user?.firstname || user?.email}</span>
+                      ))}
+                    </motion.div>
+                  )}
+                {showDropdown.get &&
+                  searchTerm.get.length >= 1 &&
+                  filteredUsers &&
+                  filteredUsers.length === 0 &&
+                  !selectedUser.get && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: 10 }}
+                      className="right-0 bottom-full left-0 z-50 absolute bg-[--biqpod-primary-background] shadow-xl mb-1 p-3 border border-[--biqpod-borders] rounded-lg"
+                    >
+                      <div className="text-sm text-center">
+                        <Translate content="No users found matching" /> "
+                        {searchTerm.get}"
                       </div>
-                    );
-                  }}
-                  loading={
-                    <CardWait className="flex items-center gap-2 p-2 rounded-xl">
-                      <div>
-                        <CardWait className="rounded-full w-[35px] h-[35px]" />
-                      </div>
-                      <CardWait className="rounded-xl">
-                        <span className="invisible">not visible</span>
-                      </CardWait>
-                    </CardWait>
-                  }
-                />
-              </div>
-            </motion.div>
-          )}
+                    </motion.div>
+                  )}
+              </AnimatePresence>
+            </div>
+            {!existingAccess && (
+              <motion.p
+                className="mt-1 text-xs"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Translate content="Start typing to search for users by name, email, or ID" />
+              </motion.p>
+            )}
+          </motion.div>
           {/* Permission Level */}
           <motion.div variants={fieldVariants}>
             <label className="block mb-2 font-medium text-sm">
@@ -448,55 +375,39 @@ export const UpsertAccessUsertoStore = ({
             </motion.div>
           </motion.div>
           {/* Action Buttons */}
-          <motion.div
-            className="flex items-center gap-3 pt-4"
-            variants={fieldVariants}
-            transition={{ delay: 0.4 }}
-          >
-            <motion.div
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-              className="flex-1"
-            >
-              <Button
-                onClick={() => {
-                  closePopup();
-                }}
-                className="bg-[--biqpod-gray-opacity] w-full text-[--biqpod-text-color]"
-              >
-                <Translate content="Cancel" />
-              </Button>
-            </motion.div>
-            <motion.div
-              variants={buttonVariants}
-              whileHover="hover"
-              whileTap="tap"
-              className="flex-1"
-            >
-              <Button
-                onClick={() => execAction("upsert-user-access")}
-                disabled={isLoading(action)}
-                className="w-full"
-                icon={
-                  isLoading(action)
-                    ? allIcons.solid.faSpinner
-                    : existingAccess
-                    ? allIcons.solid.faPen
-                    : allIcons.solid.faUserPlus
-                }
-              >
-                {isLoading(action) ? (
-                  <Translate content="Processing..." />
-                ) : existingAccess ? (
-                  <Translate content="Update Access" />
-                ) : (
-                  <Translate content="Invitation" />
-                )}
-              </Button>
-            </motion.div>
-          </motion.div>
         </motion.div>
+        <Line />
+        <div className="flex items-center gap-2 p-2">
+          <Button
+            onClick={() => {
+              closePopup();
+            }}
+            className="bg-[--biqpod-gray-opacity] w-full text-[--biqpod-text-color]"
+          >
+            <Translate content="Cancel" />
+          </Button>
+          <Button
+            onClick={() => execAction("upsert-user-access")}
+            disabled={upsertUserIsLoading}
+            className="w-full"
+            iconClassName={tw(upsertUserIsLoading && "animate-spin")}
+            icon={
+              upsertUserIsLoading
+                ? allIcons.solid.faSpinner
+                : existingAccess
+                ? allIcons.solid.faPen
+                : allIcons.solid.faUserPlus
+            }
+          >
+            {upsertUserIsLoading ? (
+              <Translate content="Processing..." />
+            ) : existingAccess ? (
+              <Translate content="Update" />
+            ) : (
+              <Translate content="Invitation" />
+            )}
+          </Button>
+        </div>
       </Card>
     </motion.div>
   );

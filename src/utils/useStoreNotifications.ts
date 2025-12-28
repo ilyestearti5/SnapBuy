@@ -50,7 +50,7 @@ export const useStoreNotifications = () => {
       notificationHandler?.notifyNewOrder(order),
     notifyOrderStatusChanged: (
       order: Biqpod.Snapbuy.Order,
-      oldStatus: Biqpod.Snapbuy.OrderStatus
+      oldStatus: Biqpod.Snapbuy.Basic.OrderStatus
     ) => notificationHandler?.notifyOrderStatusChanged(order, oldStatus),
     notifyOrderCompleted: (order: Biqpod.Snapbuy.Order) =>
       notificationHandler?.notifyOrderCompleted(order),
@@ -80,7 +80,7 @@ export const useStoreNotifications = () => {
 //     notifyNewOrder(order);
 //   };
 //
-//   const handleStatusChange = (order: Biqpod.Snapbuy.Order, oldStatus: Biqpod.Snapbuy.OrderStatus) => {
+//   const handleStatusChange = (order: Biqpod.Snapbuy.Order, oldStatus: Biqpod.Snapbuy.Basic.OrderStatus) => {
 //     // Your existing status change logic...
 //
 //     // Trigger notification if enabled

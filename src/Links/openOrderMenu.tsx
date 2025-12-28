@@ -1,6 +1,5 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import {
-  closeBottomSheet,
   openMenu,
   showBottomSheet,
   showPopup,
@@ -10,24 +9,14 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { ChangeStatus } from "../routes/Stores/ChangeStatus";
 import { OrderInvoice } from "./OrderInvoice";
-import { delay, mergeArray } from "@biqpod/app/ui/utils";
+import { mergeArray } from "@biqpod/app/ui/utils";
 import { ViewClient } from "./ViewClient";
 import { UpsertDelivery } from "./UpsertDelivery";
-import {
-  AsyncComponent,
-  Button,
-  CardWait,
-  EmptyComponent,
-  JoinComponentBy,
-  Key,
-  Line,
-  Translate,
-} from "@biqpod/app/ui/components";
 import { OrderView } from "../routes/Clients/OrderView";
 import { snapbuyApi } from "../apis";
-import { notifyOrderDeleted } from "../utils/orderNotifications";
 import { OrderEditPopup } from "../components/OrderEditPopup";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { setTextSide } from "../hooks/usePayments";
 export interface OpenOrderMenuOptions {
   x: number;
   y: number;
@@ -38,81 +27,6 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
     x,
     y,
     menu: mergeArray(
-      {
-        label: "View Form",
-        defaultIcon: allIcons.solid.faFile,
-        click() {
-          const infos = Object.entries(order.metaData || {});
-          showBottomSheet(
-            <EmptyComponent>
-              <div className="px-3 py-2 font-bold text-lg">
-                <Translate content="Order Form Details" />
-              </div>
-              <Line />
-              <div>
-                {infos.map(([key, value]) => {
-                  return (
-                    <AsyncComponent
-                      key={key}
-                      deps={[key, value]}
-                      render={async () => {
-                        await delay(1000);
-                        return (
-                          <div className="flex items-center odd:bg-[--biqpod-primary-background] px-3 border-[--biqpod-borders] border-b border-solid h-[50px]">
-                            <div className="px-3 w-full">{key}</div>
-                            <div className="h-full">
-                              <div className="bg-[--biqpod-borders] w-[1px] h-full"></div>
-                            </div>
-                            <div className="px-3 w-full font-bold">
-                              {typeof value === "boolean" ? (
-                                value ? (
-                                  "✅ Yes"
-                                ) : (
-                                  "🚫 No"
-                                )
-                              ) : typeof value === "number" ? (
-                                <Key>{value}</Key>
-                              ) : Array.isArray(value) ? (
-                                <JoinComponentBy
-                                  joinComponent={
-                                    <EmptyComponent>, </EmptyComponent>
-                                  }
-                                  list={value.map((content, index) => (
-                                    <Key key={index}>{content}</Key>
-                                  ))}
-                                />
-                              ) : typeof value === "object" ? (
-                                JSON.stringify(value)
-                              ) : (
-                                value
-                              )}
-                            </div>
-                          </div>
-                        );
-                      }}
-                      loading={
-                        <div className="flex items-center px-3 w-full h-[50px]">
-                          <CardWait className="rounded-xl w-full h-2/3" />
-                        </div>
-                      }
-                    />
-                  );
-                })}
-              </div>
-              <Line />
-              <div className="p-2">
-                <Button
-                  onClick={() => {
-                    closeBottomSheet();
-                  }}
-                >
-                  <Translate content="close" />
-                </Button>
-              </div>
-            </EmptyComponent>
-          );
-        },
-      },
       {
         label: "View Client",
         defaultIcon: allIcons.solid.faUser,
@@ -166,7 +80,7 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
       {
         label: "Copy ID",
         async click() {
-          await navigator.clipboard.writeText(order.id);
+          await navigator.clipboard.writeText(order.id!);
           showToast("Order ID Copied");
         },
         defaultIcon: allIcons.regular.faCopy,
@@ -185,14 +99,13 @@ export const openOrderMenu = ({ order, x, y }: OpenOrderMenuOptions) => {
           });
           if (response) {
             try {
-              // Send notification before deleting
-              if (order.storeId) {
-                await notifyOrderDeleted(order.storeId, order);
-              }
-              await snapbuyApi.order.delete(order.id);
+              setTextSide("Deleting order...");
+              await snapbuyApi.order.delete(order.id!);
               showToast("Order deleted successfully", "success");
+              setTextSide("Refreshing orders...");
               // Refresh the orders list
-              execAction("fetch-orders", {});
+              await execAction("fetch-orders", {});
+              setTextSide();
             } catch (error) {
               showToast("Failed to delete order", "error");
             }

@@ -13,7 +13,6 @@ import { snapbuyApi } from "../../apis";
 import { ClientProductRender } from "../Clients/ClientProductRender";
 import { tw } from "@biqpod/app/ui/utils";
 import { allIcons } from "@biqpod/app/ui/apis";
-import { ImageSlider } from "../../Links/ImageSlider";
 import { CartPopup } from "../Clients/CartPopup";
 import { useFullCart } from "../../apis/snapbuy";
 export const CollectionsRoute = () => {
@@ -32,7 +31,7 @@ export const CollectionsRoute = () => {
           {collection.photo && (
             <EmptyComponent>
               <div className="w-full h-[50vh] overflow-hidden">
-                <ImageSlider photos={[collection.photo]} />
+                <img src={collection.photo} alt={collection.name} />
               </div>
               <Line />
             </EmptyComponent>

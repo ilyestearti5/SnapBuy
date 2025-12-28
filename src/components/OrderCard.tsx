@@ -35,7 +35,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
   };
 
   // Get status color and icon
-  const getStatusInfo = (status: Biqpod.Snapbuy.OrderStatus) => {
+  const getStatusInfo = (status: Biqpod.Snapbuy.Basic.OrderStatus) => {
     switch (status) {
       case "pending":
         return {

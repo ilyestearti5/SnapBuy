@@ -49,8 +49,10 @@ import { HoverScale } from "./animations/components";
 import { motion } from "framer-motion";
 import { useUsedBy } from "./routes/Stores/Stores";
 import { useEffectDelay } from "@biqpod/app/ui/shared";
+import { HeaderNews } from "./HeaderNews";
+import { setTextSide } from "./hooks/usePayments";
 const LIMIT = 20;
-const Notifications = () => {
+export const Notifications = () => {
   const storeId = useStoreId();
   const hasMore = useTemp<boolean>("notifications-has-more");
   const lastNotification = useTemp<Biqpod.Snapbuy.Notification | null>(
@@ -204,47 +206,7 @@ export const HeaderContent = () => {
   initStoreIdSave();
   const user = useUser();
   const isDark = useSettingValue("window/dark.boolean");
-  const loadingPercent = useTemp<number>("loading-percent");
-  const loadingText = useTemp<string>("loading-text");
   const storeId = useStoreId();
-  useAction(
-    "upsert-pack",
-    async (packInfo: Biqpod.Snapbuy.Pack) => {
-      if (!user) {
-        showToast("You must be logged in to add a pack");
-        return;
-      }
-      if (!storeId) {
-        showToast("Store not found");
-        return;
-      }
-      if (!packInfo.name) {
-        showToast("Pack name is required");
-        return;
-      }
-      if (!packInfo.products || packInfo.products.length === 0) {
-        showToast("Pack must have at least one product");
-        return;
-      }
-      closePopup();
-      loadingText.set("Adding Pack...");
-      if (packInfo.id) {
-        await snapbuyApi.packs.update(packInfo.id, {
-          ...packInfo,
-          storeId,
-        });
-      } else {
-        await snapbuyApi.packs.add({
-          ...packInfo,
-          storeId,
-        });
-      }
-      loadingText.set("");
-      showToast("Pack saved successfully");
-      execAction("fetch-packs");
-    },
-    [storeId, user]
-  );
   useAction(
     "add-products",
     async ({ exists = [], news = [] }: AddProductActionProps) => {
@@ -256,46 +218,36 @@ export const HeaderContent = () => {
       const existsList = exists || [];
       closePopup();
       try {
-        loadingText.set("Adding News products...");
-        loadingPercent.set(0);
+        setTextSide("Adding News products...");
         await snapbuyApi.product.upsert(storeId, newList, (product, index) => {
-          loadingText.set(
+          setTextSide(
             `Adding ${product.name?.slice(0, 10)} ${index + 1}/${
               newList.length
             } ...`
           );
-          loadingPercent.set(Math.round(((index + 1) / newList.length) * 100));
         });
       } catch (e) {
-        loadingPercent.set(0);
-        loadingText.set("");
+        setTextSide();
         showToast("Error adding new products");
         return;
       }
       try {
-        loadingText.set("Adding Exists products...");
-        loadingPercent.set(0);
+        setTextSide("Updating Existing products...");
         await snapbuyApi.product.upsert(
           storeId,
           existsList,
           (product, index) => {
-            loadingText.set(
+            setTextSide(
               `Updating ${product.name?.slice(0, 10)} ${index + 1}/${
                 existsList.length
               } ...`
             );
-            loadingPercent.set(
-              Math.round(((index + 1) / existsList.length) * 100)
-            );
           }
         );
-        loadingText.set("");
-        loadingPercent.set(0);
-      } catch (e) {
-        loadingPercent.set(0);
-        loadingText.set("");
-      }
-      execAction("fetch-products");
+      } catch (e) {}
+      setTextSide("Refreshing products...");
+      await execAction("fetch-products");
+      setTextSide();
     },
     [storeId]
   );
@@ -313,13 +265,12 @@ export const HeaderContent = () => {
       if (!user) {
         return;
       }
+      setTextSide("Deleting products...");
       await mapAsync(prodsIds, async (prodId, index) => {
-        loadingText.set(`Deleting product ${prodId}...`);
-        loadingPercent.set(Math.round(((index + 1) / prodsIds.length) * 100));
+        setTextSide(`Deleting product ${index + 1}/${prodsIds.length}...`);
         await snapbuyApi.product.delete(prodId);
       });
-      loadingText.set("");
-      loadingPercent.set(0);
+      setTextSide();
     },
     [user]
   );
@@ -383,6 +334,11 @@ export const HeaderContent = () => {
                 }
               />
             </Route>
+            <Route path="/news/:newsId">
+              <span className="max-md:text-xl md:text-2xl capitalize">
+                News
+              </span>
+            </Route>
             <Route path="/collection/:collectionId">
               <AsyncComponent
                 render={async () => {
@@ -438,12 +394,6 @@ export const HeaderContent = () => {
           </Switch>
         </div>
         <div className="flex items-center">
-          {loadingText.get && (
-            <span className="max-md:hidden md:inline-flex items-center gap-2 bg-[--biqpod-primary] p-2 rounded-lg text-[--biqpod-primary-content] text-sm text-nowrap">
-              <Icon icon={allIcons.solid.faBox} />
-              <span>{loadingText.get}</span>
-            </span>
-          )}
           <div className="max-md:hidden flex items-center gap-x-4">
             <DarkLightIcon />
           </div>
@@ -596,24 +546,19 @@ export const HeaderContent = () => {
             </div>
           </div>
           <CircleTip
-            icon={allIcons.solid.faBell}
-            onClick={() => {
-              showPopup(<Notifications />);
-            }}
+            onClick={() => showPopup(<HeaderNews />)}
+            icon={allIcons.solid.faInbox}
           />
           {user?.uid && (
-            <div className="relative">
+            <div className="relative ml-2">
               <UserAvatar
                 user={user}
-                subscribed={!loadingText.get && subed?.isSubscribed}
+                subscribed={subed?.isSubscribed}
                 className="relative cursor-pointer"
                 onClick={() => {
                   showProfile();
                 }}
               />
-              {loadingText.get && (
-                <div className="absolute inset-[-4px] border border-x-transparent border-y-[--biqpod-primary] border-solid rounded-full animate-spin pointer-events-none" />
-              )}
             </div>
           )}
         </div>

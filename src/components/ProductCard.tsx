@@ -61,18 +61,12 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         className="flex items-center gap-3 bg-[--biqpod-background-secondary] p-3 border border-[--biqpod-border] hover:border-[--biqpod-primary] rounded-lg transition-colors"
       >
         {/* Product Image */}
-        <div className="flex-shrink-0 bg-[--biqpod-gray-opacity] rounded-lg w-16 h-16 overflow-hidden">
-          {product.photos && product.photos.length > 0 ? (
-            <Image
-              src={product.photos.at(0)}
-              alt={product.name || "Product"}
-              className="w-full h-full object-cover"
-            />
-          ) : (
-            <div className="flex justify-center items-center w-full h-full text-[--biqpod-text-secondary]">
-              <Icon icon={allIcons.solid.faImage} />
-            </div>
-          )}
+        <div className="flex-shrink-0 rounded-lg overflow-hidden">
+          <Image
+            src={product.files?.at(0)?.url}
+            alt={product.name || "Product"}
+            className="bg-[--biqpod-gray-opacity] w-16 h-16 object-cover text-[--biqpod-text-secondary]"
+          />
         </div>
         {/* Product Info */}
         <div className="flex-1 min-w-0">
@@ -111,17 +105,11 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     >
       {/* Product Image */}
       <div className="relative bg-[--biqpod-gray-opacity] aspect-square overflow-hidden">
-        {product.photos && product.photos.length > 0 ? (
-          <Image
-            src={product.photos.at(0)}
-            alt={product.name || "Product"}
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex justify-center items-center w-full h-full text-[--biqpod-text-secondary]">
-            <Icon icon={allIcons.solid.faImage} />
-          </div>
-        )}
+        <Image
+          src={product.files?.at(0)?.url}
+          alt={product.name || "Product"}
+          className="object-cover text-[--biqpod-text-secondary]"
+        />
         {/* Availability Badge */}
         {!isAvailable && (
           <div className="top-2 right-2 absolute bg-red-500 px-2 py-1 rounded text-white text-xs">

@@ -233,60 +233,11 @@ export const isObjectURL = (url: string): boolean => {
 /**
  * Interface for media file with metadata
  */
-export interface MediaFile {
-  url: string;
-  name: string;
-  size: number;
-  originalFile?: File;
-  compressed?: boolean; // For images that have been compressed
-}
-/**
- * Create a MediaFile object from a File
- * @param file File - The file to create MediaFile from
- * @param compressed boolean - Whether the file has been compressed (for images)
- * @returns MediaFile
- */
-export const createMediaFile = (
-  file: File,
-  compressed: boolean = false
-): MediaFile => {
-  const url = createObjectURL(file);
-  return {
-    url,
-    name: file.name,
-    size: file.size,
-    originalFile: file,
-    compressed,
-  };
-};
-/**
- * Create a MediaFile object from a URL (for existing images/URLs)
- * @param url string - The URL
- * @param name string - Optional name
- * @returns MediaFile
- */
-export const createMediaFileFromURL = (
-  url: string,
-  name?: string
-): MediaFile => {
-  return {
-    url,
-    name: name || url.split("/").pop() || "Unknown",
-    size: 0, // Unknown for URLs
-    compressed: false,
-  };
-};
+export type SnapbuyBasicFile = Biqpod.Snapbuy.Basic.File;
 /**
  * Clean up MediaFile by revoking object URL if needed
  * @param mediaFile MediaFile - The media file to clean up
  */
-export const cleanupMediaFile = (mediaFile: MediaFile): void => {
+export const cleanupMediaFile = (mediaFile: SnapbuyBasicFile): void => {
   revokeObjectURL(mediaFile.url);
-};
-/**
- * Clean up multiple MediaFiles
- * @param mediaFiles MediaFile[] - Array of media files to clean up
- */
-export const cleanupMediaFiles = (mediaFiles: MediaFile[]): void => {
-  mediaFiles.forEach(cleanupMediaFile);
 };

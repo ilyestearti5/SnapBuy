@@ -28,14 +28,12 @@ export const StoreRoute = () => {
   const products = useAsyncMemo(async () => {
     return await snapbuyApi.product.getProductsOf(storeId);
   }, [storeId]);
-  const photos = useAsyncMemo(async () => {
+  const files = useAsyncMemo(async () => {
     if (!products) return undefined;
     const list = randomizeArray(
       products
         ?.filter((prod) => prod.available)
-        .map((product) =>
-          product.photos?.map((photo) => ({ ...product, photo }))
-        )
+        .map((product) => product.files?.map((file) => ({ ...product, file })))
         .flat()
     );
     return list;
@@ -44,14 +42,14 @@ export const StoreRoute = () => {
   const length = useMemo(() => {
     return isTablet ? 30 : isMobile ? 20 : 40;
   }, [isMobile, isTablet, isDesktop]);
-  const filterdPhotos = useMemo(() => {
-    if (!photos) return undefined;
+  const filterdFiles = useMemo(() => {
+    if (!files) return undefined;
     var length = isTablet ? 30 : isMobile ? 20 : 40;
     return {
-      photos: photos.slice(0, length),
-      length: photos.slice(length + 1),
+      files: files.slice(0, length),
+      length: files.slice(length + 1),
     };
-  }, [photos, length]);
+  }, [files, length]);
   const promotedProducts = useMemo(() => {
     return products?.filter((prod) => prod.type === "multiple");
   }, [products]);
@@ -122,7 +120,7 @@ export const StoreRoute = () => {
         <Translate content="explore products" />
       </div>
       <Line />
-      {filterdPhotos && (
+      {filterdFiles && (
         <div
           className={tw(
             "relative grid object-cover items-center bg-[--biqpod-primary-background]",
@@ -131,7 +129,7 @@ export const StoreRoute = () => {
             isMobile && "grid-cols-4"
           )}
         >
-          {filterdPhotos?.photos.map((product, index) => (
+          {filterdFiles?.files.map((product, index) => (
             <Link
               key={index}
               className="group relative hover:bg-[--biqpod-secondary-background] transition-colors duration-300"
@@ -139,7 +137,7 @@ export const StoreRoute = () => {
             >
               <img
                 draggable={false}
-                src={product?.photo}
+                src={product?.file.url}
                 alt={`logo-${index}`}
               />
               <div className="bottom-0 absolute inset-x-0 opacity-0 group-hover:opacity-100 backdrop-blur-sm p-2 bg-[--biqpod-text-color] text-[--biqpod-primary-background] text-xs text-center transition-opacity pointer-events-none">
@@ -149,18 +147,18 @@ export const StoreRoute = () => {
           ))}
         </div>
       )}
-      {!filterdPhotos && (
+      {!filterdFiles && (
         <div className="flex justify-center items-center p-4">
           <CardWait className="w-full h-[200px]" />
         </div>
       )}
-      {!!filterdPhotos?.length.length && (
+      {!!filterdFiles?.length.length && (
         <Link
           to={`/client/stores/${storeId}/products`}
           className="flex justify-center items-center bg-[--biqpod-primary] p-3 font-bold text-[--biqpod-primary-content] text-2xl capitalize"
         >
           <Translate content="view all products" /> (
-          {filterdPhotos?.length.length}+)
+          {filterdFiles?.length.length}+)
         </Link>
       )}
       <Line />

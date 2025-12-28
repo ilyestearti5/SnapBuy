@@ -5,12 +5,12 @@ declare interface Tab {
   icon: IconProps["icon"];
 }
 declare interface AddClientActionProps {
-  exists?: Biqpod.Snapbuy.Client[];
-  news?: Biqpod.Snapbuy.Client[];
+  exists?: import("@biqpod/app/ui/types").Biqpod.Snapbuy.Client[];
+  news?: import("@biqpod/app/ui/types").Biqpod.Snapbuy.Client[];
 }
 declare interface AddProductActionProps {
-  exists?: Biqpod.Snapbuy.Product[] | null;
-  news?: Biqpod.Snapbuy.Product[] | null;
+  exists?: import("@biqpod/app/ui/types").Biqpod.Snapbuy.Product[] | null;
+  news?: import("@biqpod/app/ui/types").Biqpod.Snapbuy.Product[] | null;
 }
 declare module "html2pdf.js" {
   // You can add more specific type definitions here as you explore the library's API.
@@ -18,7 +18,12 @@ declare module "html2pdf.js" {
   export default html2pdf;
 }
 declare type keys =
-  | keyof Biqpod.Snapbuy.Product
+  | keyof import("@biqpod/app/ui/types").Biqpod.Snapbuy.Product
   | "single.price"
   | "multiple.prices"
   | "multiple.counts";
+
+declare interface All {
+  name: string;
+  file: import("@biqpod/app/ui/types").Biqpod.Snapbuy.Basic.File;
+}

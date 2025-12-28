@@ -1,4 +1,4 @@
-import { useAsyncMemo, useUser } from "@biqpod/app/ui/hooks";
+import { getTemp, setTemp, useAsyncMemo, useUser } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 export const useCurrentPayments = () => {
@@ -45,10 +45,6 @@ export const useFullUsageCalculation = () => {
     }
     // Combine with actual usage data
     const fullUsage = {
-      photos:
-        combinedMeta.photos !== undefined
-          ? Number(combinedMeta.photos)
-          : usageData.photos || 0,
       orders:
         combinedMeta.orders !== undefined
           ? Number(combinedMeta.orders)
@@ -85,4 +81,12 @@ export const useFullUsageCalculation = () => {
     return fullUsage;
   }, [usageData, currentPayments]);
   return fullUsageCalculation;
+};
+
+export const setTextSide = (text: string | null = null) => {
+  setTemp("textSide", text);
+};
+
+export const getTextSide = () => {
+  return getTemp<string>("textSide");
 };

@@ -109,7 +109,7 @@ const PackLineProduct = ({
   onDelete,
   count = 1,
 }: PackLineProductProps) => {
-  const photo = product?.photos?.at(0);
+  const photo = product?.files?.at(0)?.url;
   const prices =
     product?.type === "multiple"
       ? product?.multiple?.prices?.map((price) => price.price)
@@ -514,7 +514,7 @@ export const UpsertPack = ({ pack, back }: UpsertPackProps) => {
                 return 0;
               })
               .map(({ product, isExists }, index) => {
-                const photo = product?.photos?.at(0);
+                const photo = product?.files?.at(0)?.url;
                 const prices =
                   product?.type === "multiple"
                     ? product?.multiple?.prices?.map((p) => p.price)

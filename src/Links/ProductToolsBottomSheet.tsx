@@ -29,9 +29,10 @@ import { useMemo } from "react";
 import { ChromePicker as ColorPicker } from "react-color";
 import { snapbuyApi } from "../apis";
 import { colorsInListWithNames } from "../utils";
-import { PostNewProduct } from "./NewProduct/NewProduct";
+import { UpsertProduct } from "./NewProduct/NewProduct";
 import { sharSocialMedia } from "../utils";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { setTextSide } from "../hooks/usePayments";
 interface CopyLinkPickColorProps {
   product: Biqpod.Snapbuy.Product;
 }
@@ -55,10 +56,10 @@ function PreviewWindow({ title, zoom, url, orientation }: PreviewWindowProps) {
     return (
       <div
         className={tw(
-          `relative mx-auto border-gray-800 bg-gray-800 border-[10px] border-solid rounded-[2.5rem] shadow-xl`,
+          `relative border-gray-500 bg-gray-500 border-[10px] border-solid rounded-[2.5rem] shadow-xl`,
           orientation === "portrait"
-            ? "h-[700px] w-[350px]"
-            : "h-[350px] w-[700px]"
+            ? "h-[700px] w-[500px]"
+            : "h-[500px] w-[700px]"
         )}
         style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}
       >
@@ -143,7 +144,7 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
       <Line />
       <div className="flex items-stretch md:w-[80vw] max-md:h-full md:max-h-[70vh] overflow-hidden">
         <div className="border-[--biqpod-borders] border-r border-solid">
-          <div className="w-[200px] overflow-hidden">
+          <div className="w-[150px] overflow-hidden">
             <div className="p-2">
               <Field
                 inputName="colorSearch"
@@ -205,13 +206,14 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
               ]}
               identifier="preview"
               defaultValue="mobile"
+              contentClassName="max-md:hidden"
             />
           </div>
           <Line />
           <div className="justify-center items-center bg-white w-full h-full overflow-hidden">
             <TabContent
               identifier="preview"
-              className="flex justify-center items-center p-2 h-full"
+              className="flex justify-center items-center p-2 w-full h-full"
               value="mobile"
             >
               <AsyncComponent
@@ -272,21 +274,23 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
           className="rounded-full"
           onClick={async () => {
             closePopup();
-            const files = await mapAsync(
-              product.photos || [],
-              async (photo) => {
-                const response = await fetch(photo);
-                const blob = await response.blob();
-                return new File([blob], photo.split("/").pop() || "image.jpg", {
+            const files = await mapAsync(product.files || [], async (file) => {
+              if (!file.url) return null;
+              const response = await fetch(file.url);
+              const blob = await response.blob();
+              return new File(
+                [blob],
+                file.url.split("/").pop() || "image.jpg",
+                {
                   type: blob.type,
-                });
-              }
-            );
+                }
+              );
+            });
             await navigator.share({
               title: product.name,
               url: uri.href,
               text: product.description || "",
-              files,
+              files: files.filter((f): f is File => f !== null),
             });
           }}
         >
@@ -520,7 +524,7 @@ export const ProductToolsBottomSheet = ({
                       ...product,
                       id: undefined, // This will generate a new ID when creating
                     };
-                    showPopup(<PostNewProduct product={duplicatedProduct} />);
+                    showPopup(<UpsertProduct product={duplicatedProduct} />);
                   },
                   defaultIcon: allIcons.solid.faCodeFork,
                 },
@@ -542,7 +546,7 @@ export const ProductToolsBottomSheet = ({
                 {
                   label: "Edit Product",
                   click: () => {
-                    showPopup(<PostNewProduct product={product} />);
+                    showPopup(<UpsertProduct product={product} />);
                   },
                   defaultIcon: allIcons.solid.faPen,
                 },
@@ -556,9 +560,13 @@ export const ProductToolsBottomSheet = ({
                       type: "warning",
                     });
                     if (response) {
+                      setTextSide("Start deleting product...");
                       await snapbuyApi.product.delete(product.id!);
+                      setTextSide("Product deleted.");
                       execAction("fetch-products");
                       showToast("Product Deleted");
+                      await delay(200);
+                      setTextSide();
                     }
                   },
                   defaultIcon: allIcons.solid.faTrashCan,

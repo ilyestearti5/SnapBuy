@@ -119,7 +119,7 @@ export const UpsertDelivery = ({ order }: UpsertDeliveryProps) => {
                     setTemp("delivery-loading", true);
                     try {
                       await snapbuyApi.setDeliveryToOrder({
-                        orderId: order.id,
+                        orderId: order.id!,
                         delivery: null,
                       });
                       closePopup();
@@ -196,7 +196,7 @@ export const UpsertDelivery = ({ order }: UpsertDeliveryProps) => {
                             setTemp("delivery-loading", true);
                             try {
                               await snapbuyApi.setDeliveryToOrder({
-                                orderId: order.id,
+                                orderId: order.id!,
                                 delivery: user.uid || null,
                               });
                               closePopup();

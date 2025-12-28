@@ -19,7 +19,7 @@ import {
 import { tw } from "@biqpod/app/ui/utils";
 import { useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import chatBotSrc from "../../assets/Bot Face.mp4";
+import chatBotSrc from "../../public/biqpod.svg";
 import { aiService, AIMessage } from "../apis/aiService";
 import { openPath } from "@biqpod/app/ui/shared";
 import AnimatedMarkdownRenderer from "../components/AnimatedMarkdownRenderer";
@@ -429,35 +429,30 @@ export const AgentAi = () => {
         ]);
       } else {
         // Regular text message with streaming
-        let accumulatedResponse = "";
-        // Set this message as actively streaming
         streamingMessageId.set(aiResponseId);
+        let aiResponse = "";
         await aiService.sendStreamingMessage(
           userMessage,
           conversationHistory.get,
-          (chunk: string) => {
-            accumulatedResponse += chunk;
-            // Update the message content with the accumulated response
+          (chunk) => {
+            aiResponse += chunk;
             messages.set((prev) =>
               prev.map((msg) =>
-                msg.id === aiResponseId
-                  ? { ...msg, content: accumulatedResponse }
-                  : msg
+                msg.id === aiResponseId ? { ...msg, content: aiResponse } : msg
               )
             );
           },
           { model: selectedModel.get.id }
         );
-        // Clear streaming state when done
         streamingMessageId.set(null);
-        // Update conversation history with the complete response
+        // Update conversation history
         const newUserMessage: AIMessage = {
           role: "user",
           content: userMessage,
         };
         const newAIMessage: AIMessage = {
           role: "assistant",
-          content: accumulatedResponse,
+          content: aiResponse,
         };
         conversationHistory.set((prev) => [
           ...prev,
@@ -467,8 +462,6 @@ export const AgentAi = () => {
       }
     } catch (error) {
       console.error("AI Service Error:", error);
-      // Clear streaming state
-      streamingMessageId.set(null);
       // Remove the placeholder message if it exists
       messages.set((prev) => prev.filter((msg) => msg.id !== aiResponseId));
       // Add error message
@@ -500,12 +493,7 @@ export const AgentAi = () => {
       >
         <div className="flex justify-between items-center mx-auto max-w-4xl">
           <div className="flex items-center gap-3">
-            <video
-              src={chatBotSrc}
-              className="rounded-full w-8 h-8"
-              autoPlay
-              loop
-            />
+            <img src={chatBotSrc} className="rounded-full w-8 h-8" />
             <div>
               <h1 className="font-semibold text-lg capitalize">
                 <Translate content="snapbuy ai assistant" />
@@ -621,11 +609,9 @@ export const AgentAi = () => {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.6, delay: 0.5 }}
           >
-            <motion.video
+            <motion.img
               src={chatBotSrc}
               className="mb-4 rounded-full w-16 h-16"
-              autoPlay
-              loop
               initial={{ opacity: 0, rotate: -10 }}
               animate={{ opacity: 1, rotate: 0 }}
               transition={{ duration: 0.5, delay: 0.7 }}
@@ -665,12 +651,7 @@ export const AgentAi = () => {
           >
             {/* AI Avatar */}
             {message.sender === "ai" && (
-              <video
-                src={chatBotSrc}
-                className="rounded-full w-8 h-8"
-                autoPlay
-                loop
-              />
+              <img src={chatBotSrc} className="rounded-full w-8 h-8" />
             )}
             <Card
               className={tw(

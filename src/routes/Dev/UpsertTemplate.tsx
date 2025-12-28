@@ -637,7 +637,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
             </div>
           )}
         </div>
-        {useReadmeDescription.get && (
+        {!useReadmeDescription.get && (
           <div className="flex flex-col gap-2 p-3">
             <label className="font-semibold capitalize">
               <Translate content="description" />

@@ -35,7 +35,7 @@ export const AssignDeliveryAgent = ({
         showToast("Please select an agent", "error");
         return;
       }
-      await snapbuyApi.assignDeliveryAgent(order.id, selectedAgent.get);
+      await snapbuyApi.assignDeliveryAgent(order.id!, selectedAgent.get);
       showToast("Agent assigned successfully", "success");
       execAction("fetch-delivery-orders", {});
     },

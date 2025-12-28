@@ -555,20 +555,21 @@ export const Integrations = () => {
                       animate={{ opacity: 1, y: 0 }}
                     >
                       <div className="flex items-center gap-2">
-                        <span className="text-[--biqpod-text-color] text-sm">
+                        <span className="max-md:hidden text-[--biqpod-text-color] text-sm">
                           {selectedTokens.get.length} of {apiTokens.get.length}{" "}
                           selected
                         </span>
                       </div>
-                      <div className="flex gap-2">
+                      <div className="flex items-center gap-2">
                         {isSelectionMode.get &&
                           apiTokens.get.length !==
                             selectedTokens.get.length && (
                             <Button
                               onClick={selectAllTokens}
                               className="px-3 py-1 text-sm text-nowrap"
+                              icon={allIcons.solid.faList}
                             >
-                              Select All
+                              <span className="max-md:hidden">Select All</span>
                             </Button>
                           )}
                         {isSelectionMode.get &&
@@ -577,8 +578,11 @@ export const Integrations = () => {
                             <Button
                               onClick={deselectAllTokens}
                               className="px-3 py-1 text-sm text-nowrap"
+                              icon={allIcons.solid.faTimes}
                             >
-                              Deselect All
+                              <span className="max-md:hidden">
+                                Deselect All
+                              </span>
                             </Button>
                           )}
                         {selectedTokens.get.length > 0 && (
@@ -586,8 +590,11 @@ export const Integrations = () => {
                             <Button
                               onClick={bulkDeleteTokens}
                               className="bg-red-500 hover:bg-red-600 px-3 py-1 text-white text-sm text-nowrap"
+                              icon={allIcons.solid.faTrashAlt}
                             >
-                              Delete Selected ({selectedTokens.get.length})
+                              <span className="max-md:hidden">
+                                Delete Selected {selectedTokens.get.length}
+                              </span>
                             </Button>
                           </div>
                         )}
@@ -596,22 +603,21 @@ export const Integrations = () => {
                             <Button
                               onClick={toggleSelectionMode}
                               className="bg-[--biqpod-gray-opacity-2] px-3 py-1 text-sm text-nowrap"
+                              icon={
+                                isSelectionMode.get
+                                  ? allIcons.solid.faTimes
+                                  : allIcons.solid.faCheckSquare
+                              }
                             >
-                              <Icon
-                                icon={
-                                  isSelectionMode.get
-                                    ? allIcons.solid.faTimes
-                                    : allIcons.solid.faCheckSquare
-                                }
-                                className="mr-2"
-                              />
-                              <Translate
-                                content={
-                                  isSelectionMode.get
-                                    ? "Exit Selection"
-                                    : "Select Multiple"
-                                }
-                              />
+                              <span className="max-md:hidden">
+                                <Translate
+                                  content={
+                                    isSelectionMode.get
+                                      ? "Exit Selection"
+                                      : "Select Multiple"
+                                  }
+                                />
+                              </span>
                             </Button>
                           </div>
                         )}
@@ -677,7 +683,10 @@ export const Integrations = () => {
                                       : allIcons.solid.faUser
                                   }
                                 />
-                                {token.token}
+                                <span className="text-md">
+                                  {token.token.slice(0, 8)}....
+                                  {token.token.slice(-4)}
+                                </span>
                               </motion.div>
                               <motion.div
                                 className={tw(
@@ -841,7 +850,7 @@ export const Integrations = () => {
               transition={{ delay: 0.5 }}
             >
               <motion.div
-                className="flex justify-between items-center mb-4"
+                className="flex max-md:flex-col justify-between items-center gap-4 mb-4"
                 initial={{ opacity: 0, x: -15 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.6 }}
@@ -858,6 +867,7 @@ export const Integrations = () => {
                   variants={buttonVariants}
                   whileHover="hover"
                   whileTap="tap"
+                  className="flex justify-end w-full"
                 >
                   <Button
                     onClick={() =>
@@ -871,7 +881,7 @@ export const Integrations = () => {
                         { type: "blur" }
                       )
                     }
-                    className="px-4 py-2"
+                    className="px-4 py-2 w-fit"
                     icon={allIcons.solid.faUserPlus}
                   >
                     <Translate content="Invite User" />

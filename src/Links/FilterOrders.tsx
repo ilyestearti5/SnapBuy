@@ -2,7 +2,7 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Button,
   Card,
-  CircleTip,
+  CardHeaderForPopup,
   EnumField,
   Line,
   PinField,
@@ -19,7 +19,7 @@ import {
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { Nothing } from "@biqpod/app/ui/types";
-import { allStatus } from "../routes/Stores/ChangeStatus";
+import { allStatus, emojis } from "../routes/Stores/ChangeStatus";
 import { useEffect } from "react";
 import { delay, tw } from "@biqpod/app/ui/utils";
 export interface FilterOrdersProps {
@@ -86,28 +86,7 @@ export const FilterOrders = () => {
   const loading = isLoading(action);
   return (
     <Card className="max-md:w-11/12 md:w-2/3 overflow-hidden">
-      <div className="flex justify-between items-center p-2">
-        <h1 className="text-2xl uppercase">
-          <Translate content="filter" />
-        </h1>
-        <div className="flex">
-          <CircleTip
-            icon={allIcons.solid.faRotateBack}
-            onClick={() => {
-              filterOrderByState.set(null);
-              filterPhoneState.set(null);
-              filterStatusState.set(null);
-              filterTimeState.set(null);
-            }}
-          />
-          <CircleTip
-            icon={allIcons.solid.faXmark}
-            onClick={() => {
-              closePopup();
-            }}
-          />
-        </div>
-      </div>
+      <CardHeaderForPopup title="filter orders" />
       <Line />
       <div className="flex flex-col gap-2 p-4">
         <div className="flex flex-col gap-2">
@@ -117,11 +96,17 @@ export const FilterOrders = () => {
           <EnumField
             config={{
               list: allStatus.map((status) => {
+                const empojie = emojis[status];
                 return {
-                  content: status
-                    .split(" ")
-                    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-                    .join(" "),
+                  content:
+                    empojie +
+                    " " +
+                    status
+                      .split(" ")
+                      .map(
+                        (word) => word.charAt(0).toUpperCase() + word.slice(1)
+                      )
+                      .join(" "),
                   value: status,
                 };
               }),

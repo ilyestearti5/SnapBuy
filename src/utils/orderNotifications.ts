@@ -57,7 +57,7 @@ export const notifyNewOrder = async (
 export const notifyOrderStatusChange = async (
   storeId: string,
   order: Biqpod.Snapbuy.Order,
-  oldStatus: Biqpod.Snapbuy.OrderStatus
+  oldStatus: Biqpod.Snapbuy.Basic.OrderStatus
 ): Promise<void> => {
   const handler = await getNotificationHandler(storeId);
   if (handler) {

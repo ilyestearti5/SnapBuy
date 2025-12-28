@@ -20,12 +20,12 @@ import {
   getTemp,
 } from "@biqpod/app/ui/hooks";
 import { delay, tw } from "@biqpod/app/ui/utils";
-import { ImageSlider } from "./ImageSlider";
+import { FilesSlider } from "./FilesSlider";
 import { motion } from "framer-motion";
 import { highlightMatch } from "../routes/Clients/ClientProductRender";
 import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
 import { snapbuyApi } from "../apis";
-import { PostNewProduct } from "./NewProduct/NewProduct";
+import { UpsertProduct } from "./NewProduct/NewProduct";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Biqpod } from "@biqpod/app/ui/types";
 export interface ProductRenderProps {
@@ -36,7 +36,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const isSelectionMode = getTemp<boolean>("is-selection-mode");
   const usedBy = useUsedBy();
   const { isMobile, isTablet, isDesktop } = useDeviceResolution();
-  const photos = product.photos || [];
+  const photos = product.files || [];
   const search = getFieldValue("producer-search-product");
   const prices = Array.from(product.multiple?.prices || []);
   const clientPrice = product.single?.client || 0;
@@ -85,7 +85,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             isSelectionMode ? "pointer-events-none" : "cursor-pointer"
           )}
         >
-          {!!photos.length && <ImageSlider photos={photos} />}
+          {!!photos.length && <FilesSlider files={photos} />}
           {photos.length == 0 && (
             <div className="flex justify-center items-center w-full h-full">
               <Icon
@@ -148,7 +148,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                     usedBy === "read"
                       ? undefined
                       : async () => {
-                          showPopup(<PostNewProduct product={product} />);
+                          showPopup(<UpsertProduct product={product} />);
                           await delay(100);
                           setTemp("post-focused", 3);
                         }
@@ -172,7 +172,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
                     usedBy === "read"
                       ? undefined
                       : async () => {
-                          showPopup(<PostNewProduct product={product} />);
+                          showPopup(<UpsertProduct product={product} />);
                           await delay(100);
                           setTemp("post-focused", 3);
                         }

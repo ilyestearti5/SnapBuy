@@ -212,7 +212,7 @@ export const ProductsLimitView = ({
             <div className="p-3">
               {filteredProducts.map((product, index) => {
                 const productId = product.id!;
-                const productImage = product.photos?.[0] || null;
+                const fileImage = product.files?.at(0)?.url || null;
                 const isSelected = selectedProducts.includes(productId);
                 return (
                   <div
@@ -227,9 +227,9 @@ export const ProductsLimitView = ({
                   >
                     {/* Product Image */}
                     <div className="flex-shrink-0 bg-[--biqpod-gray-opacity] rounded-lg w-12 h-12 overflow-hidden">
-                      {productImage ? (
+                      {fileImage ? (
                         <img
-                          src={productImage}
+                          src={fileImage}
                           alt={product.name || "Product"}
                           className="w-full h-full object-cover"
                           onError={(e) => {
@@ -242,7 +242,7 @@ export const ProductsLimitView = ({
                       ) : null}
                       <div
                         className={`w-full h-full flex items-center justify-center text-[--biqpod-text-color] opacity-50 ${
-                          productImage ? "hidden" : ""
+                          fileImage ? "hidden" : ""
                         }`}
                       >
                         <span className="text-xs">No Image</span>

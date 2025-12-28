@@ -2,13 +2,13 @@ import {
   AsyncComponent,
   Button,
   Card,
+  CardHeaderForPopup,
   CardWait,
-  CircleLoading,
-  CircleTip,
   EmptyComponent,
   Field,
   Icon,
   Image,
+  ImageField,
   KeyPanding,
   Line,
   Scroll,
@@ -21,7 +21,6 @@ import {
   confirm,
   execAction,
   getFieldValue,
-  isLoading,
   setFieldValue,
   setTab,
   showToast,
@@ -29,14 +28,16 @@ import {
   useAsyncEffect,
   useAsyncMemo,
   useCopyState,
+  useDefaultTab,
 } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../apis";
 import { delay, filterFuzzySearch, mapAsync, tw } from "@biqpod/app/ui/utils";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { getPrice } from "../utils";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { compressImage } from "../utils/utilities";
+import { setTextSide } from "../hooks/usePayments";
 interface ProductRenderProps {
   product: Biqpod.Snapbuy.Product;
   selectedProducts: Biqpod.Snapbuy.Product[];
@@ -47,7 +48,7 @@ export const ProductRender = ({
   selectedProducts,
   onChangeSelectedProducts,
 }: ProductRenderProps) => {
-  const photo = product.photos?.at(0);
+  const file = product.files?.at(0);
   const isSelected = selectedProducts?.includes(product);
   const price = getPrice(product);
   return (
@@ -63,6 +64,7 @@ export const ProductRender = ({
             title: "Remove Product",
             message: `Are you sure you want to remove ${product.name} from the collection?`,
             detail: "This action cannot be undone.",
+            type: "warning",
           });
           if (!response) return;
           onChangeSelectedProducts?.(
@@ -83,7 +85,7 @@ export const ProductRender = ({
         <div>
           <div className="w-16 h-16">
             <Image
-              src={photo}
+              src={file?.url}
               alt={product.name}
               className="bg-[--biqpod-gray-opacity] rounded-xl w-full h-full object-cover"
             />
@@ -120,9 +122,6 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
     setFieldValue("collection-name", collection?.name || "");
   }, []);
   const storeId = useStoreId();
-  const [isPasting, setIsPasting] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
   const handleFileUpload = async (file: File) => {
     if (file && file.type.startsWith("image/")) {
       try {
@@ -144,24 +143,16 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
               "success"
             );
           }
-          setIsPasting(false);
-          setIsDragging(false);
         };
         reader.onerror = () => {
           showToast("Failed to upload image", "error");
-          setIsPasting(false);
-          setIsDragging(false);
         };
         reader.readAsDataURL(file);
       } catch (error) {
         showToast("Failed to process image", "error");
-        setIsPasting(false);
-        setIsDragging(false);
       }
     } else {
       showToast("Please select a valid image file", "error");
-      setIsPasting(false);
-      setIsDragging(false);
     }
   };
   // Handle paste events for image upload
@@ -175,31 +166,25 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
       );
       if (imageItem) {
         e.preventDefault();
-        setIsPasting(true);
         try {
           const file = imageItem.getAsFile();
           if (file) {
             handleFileUpload(file);
           } else {
-            setIsPasting(false);
           }
         } catch (error) {
           showToast("Failed to paste image", "error");
-          setIsPasting(false);
         }
       }
     };
     const handleDragOver = (e: DragEvent) => {
       e.preventDefault();
-      setIsDragging(true);
     };
     const handleDragLeave = (e: DragEvent) => {
       e.preventDefault();
-      setIsDragging(false);
     };
     const handleDrop = (e: DragEvent) => {
       e.preventDefault();
-      setIsDragging(false);
       const files = e.dataTransfer?.files;
       if (files && files.length > 0) {
         handleFileUpload(files[0]);
@@ -259,9 +244,6 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
       ...filterdList,
     ];
   }, [selectedProducts.get, unSelectedProducts, value]);
-  useEffect(() => {
-    setTab("upsert-collection", "upsert-collection");
-  }, []);
   const photoState = useCopyState<string | Nothing>(collection?.photo);
   // Handle paste events for image upload
   useEffect(() => {
@@ -274,51 +256,26 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
       );
       if (imageItem) {
         e.preventDefault();
-        setIsPasting(true);
         try {
           const file = imageItem.getAsFile();
           if (file) {
             handleFileUpload(file);
           } else {
-            setIsPasting(false);
           }
         } catch (error) {
           showToast("Failed to paste image", "error");
-          setIsPasting(false);
         }
-      }
-    };
-    const handleDragOver = (e: DragEvent) => {
-      e.preventDefault();
-      setIsDragging(true);
-    };
-    const handleDragLeave = (e: DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-    };
-    const handleDrop = (e: DragEvent) => {
-      e.preventDefault();
-      setIsDragging(false);
-      const files = e.dataTransfer?.files;
-      if (files && files.length > 0) {
-        handleFileUpload(files[0]);
       }
     };
     // Add event listeners
     document.addEventListener("paste", handlePaste);
-    document.addEventListener("dragover", handleDragOver);
-    document.addEventListener("dragleave", handleDragLeave);
-    document.addEventListener("drop", handleDrop);
     // Cleanup event listeners on component unmount
     return () => {
       document.removeEventListener("paste", handlePaste);
-      document.removeEventListener("dragover", handleDragOver);
-      document.removeEventListener("dragleave", handleDragLeave);
-      document.removeEventListener("drop", handleDrop);
     };
   }, []);
   const name = getFieldValue("collection-name");
-  const upsertCollection = useAction(
+  useAction(
     "upsert-collection",
     async () => {
       if (!storeId) {
@@ -329,6 +286,7 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
         showToast("Collection name is required");
         throw new Error("Collection name is required");
       }
+      closePopup();
       const id = collection?.id;
       const options: Biqpod.Snapbuy.Collection = {
         id,
@@ -340,36 +298,24 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
       if (photoState.get) {
         options.photo = photoState.get;
       }
+      setTextSide("Uploading collection...");
       await snapbuyApi.collections.upsert(options);
-      closePopup();
       showToast(
         `Collection ${collection ? "updated" : "created"} successfully!`,
         "success"
       );
-      execAction("fetch-collections");
+      setTextSide("Refreshing Collections...");
+      await execAction("fetch-collections");
+      setTextSide();
     },
     [collection, storeId, photoState.get, selectedProducts.get]
   );
-  const loading = isLoading(upsertCollection);
+  useDefaultTab("upsert-collection", "upsert-collection");
   return (
     <Card className="relative max-md:rounded-none max-md:w-full md:w-1/2 max-md:h-full md:max-h-[80vh] overflow-hidden">
-      <div className="flex justify-between items-center gap-2 p-4">
-        <div className="flex items-center gap-2">
-          <h1 className="text-2xl">
-            <Translate
-              content={collection ? "Update Collection" : "Create Collection"}
-            />
-          </h1>
-        </div>
-        <div>
-          <CircleTip
-            onClick={() => {
-              closePopup();
-            }}
-            icon={allIcons.solid.faXmark}
-          />
-        </div>
-      </div>
+      <CardHeaderForPopup
+        title={collection ? "Update Collection" : "Create Collection"}
+      />
       <Line />
       <TabContent
         identifier="upsert-collection"
@@ -415,12 +361,13 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
                   type: "warning",
                 });
                 if (response) {
-                  setIsDeleting(true);
-                  await snapbuyApi.collections.delete(collection.id!);
-                  execAction("fetch-collections");
-                  showToast("Collection deleted successfully", "success");
                   closePopup();
-                  setIsDeleting(false);
+                  setTextSide("Deleting collection...");
+                  await snapbuyApi.collections.delete(collection.id!);
+                  showToast("Collection deleted successfully", "success");
+                  setTextSide("Refreshing collections...");
+                  await execAction("fetch-collections");
+                  setTextSide();
                 }
               }}
               className="bg-[--biqpod-error] rounded-full"
@@ -459,73 +406,7 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
                 <KeyPanding shortcut={["Ctrl+v"]} />
               </span>
             </div>
-            <div className="flex max-md:flex-col justify-between items-center gap-4">
-              {photoState.get ? (
-                <div className="relative">
-                  <Image
-                    src={photoState.get}
-                    className="bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-solid rounded-xl w-20 h-20 object-cover"
-                    alt="Collection"
-                  />
-                </div>
-              ) : (
-                <div
-                  className={`flex justify-center items-center bg-[--biqpod-gray-opacity] border border-[--biqpod-borders] border-dashed rounded-xl w-20 h-20 transition-all duration-200 ${
-                    isPasting || isDragging
-                      ? "border-[--biqpod-primary] bg-[--biqpod-primary-background] scale-105"
-                      : ""
-                  }`}
-                >
-                  {isPasting ? (
-                    <Icon
-                      icon={allIcons.solid.faSpinner}
-                      className="text-[--biqpod-primary] text-2xl animate-spin"
-                    />
-                  ) : isDragging ? (
-                    <Icon
-                      icon={allIcons.solid.faCloudArrowUp}
-                      className="text-[--biqpod-primary] text-2xl"
-                    />
-                  ) : (
-                    <Icon icon={allIcons.solid.faImage} className="text-2xl" />
-                  )}
-                </div>
-              )}
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) {
-                    handleFileUpload(file);
-                  }
-                }}
-                style={{ display: "none" }}
-                id="collection-photo-upload"
-              />
-              <div className="flex items-center gap-2">
-                {photoState.get && (
-                  <Button
-                    onClick={() => {
-                      photoState.set(null);
-                    }}
-                    icon={allIcons.solid.faXmark}
-                    className="bg-[--biqpod-error] px-3 py-1 w-fit text-[--biqpod-primary-content]"
-                  >
-                    <Translate content="remove" />
-                  </Button>
-                )}
-                <Button
-                  icon={allIcons.solid.faUpload}
-                  className="px-3 py-1 w-fit"
-                  onClick={() => {
-                    document.getElementById("collection-photo-upload")?.click();
-                  }}
-                >
-                  <Translate content="upload" />
-                </Button>
-              </div>
-            </div>
+            <ImageField state={photoState} id="collection-photo-url" />
           </div>
         </div>
         <Line />
@@ -567,14 +448,7 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
           </Button>
           <Button
             className="rounded-full"
-            iconClassName={tw(loading && "animate-spin")}
-            icon={
-              loading
-                ? allIcons.solid.faSpinner
-                : collection
-                ? allIcons.solid.faPen
-                : allIcons.solid.faPlus
-            }
+            icon={collection ? allIcons.solid.faPen : allIcons.solid.faPlus}
             onClick={() => {
               execAction("upsert-collection");
             }}
@@ -583,11 +457,6 @@ export const UpsertCollection = ({ collection }: UpsertCollectionProps) => {
           </Button>
         </div>
       </TabContent>
-      {(isDeleting || loading) && (
-        <div className="z-10 absolute inset-0 flex justify-center items-center bg-opacity-50 bg-[--biqpod-gray-opacity-2]">
-          <CircleLoading />
-        </div>
-      )}
     </Card>
   );
 };

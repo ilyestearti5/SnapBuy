@@ -2,10 +2,11 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import {
   Button,
   Card,
+  CardHeaderForPopup,
   CircleTip,
   EmptyComponent,
   Field,
-  Icon,
+  IconProps,
   Line,
   Scroll,
   Translate,
@@ -16,6 +17,8 @@ import {
   isLoading,
   setTemp,
   showPopup,
+  setFieldValue,
+  closePopup,
   useAction,
   useDeviceResolution,
   useTemp,
@@ -23,75 +26,122 @@ import {
   confirm,
   showToast,
 } from "@biqpod/app/ui/hooks";
-import { fuzzySearch } from "@biqpod/app/ui/utils";
+import { fuzzySearch, tw } from "@biqpod/app/ui/utils";
 import { useMemo, useEffect } from "react";
 import { useStoreId } from "../utils";
-import { motion } from "framer-motion";
-import { AnimatedList, AnimatedListItem, ScaleIn } from "../animations";
+import { AnimatedList, AnimatedListItem } from "../animations";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Biqpod } from "@biqpod/app/ui/types";
 import { UpsertInvoice } from "./CreateInvoicePopup";
 import { InvoiceStatusBadge } from "./InvoiceStatusBadge";
 import { snapbuyApi } from "../apis";
+import { CreateFirstUI } from "../components/CreateFirstUI";
 const NoInvoicesFound = () => {
   return (
-    <motion.div className="flex justify-center items-center h-full min-h-[400px]">
-      <ScaleIn delay={0.2}>
-        <Card className="relative mx-auto max-w-md overflow-hidden text-center">
-          <div className="z-10 relative">
-            <motion.div
-              className="p-5"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.3 }}
+    <CreateFirstUI
+      photo="https://cdn3d.iconscout.com/3d/premium/thumb/invoice-3d-icon-png-download-7869546.png"
+      title="No Invoices Found"
+      description="You have no invoices yet. Create your first invoice to get started."
+    />
+  );
+};
+const ChangeStatusPopup = ({
+  invoice,
+}: {
+  invoice: Biqpod.Snapbuy.Invoice;
+}) => {
+  // clear the note when opening
+  useEffect(() => {
+    setFieldValue("status-note", "");
+  }, [invoice?.id]);
+  const note = getFieldValue("status-note");
+  const statuses = ["draft", "sent", "paid", "overdue", "cancelled"] as const;
+  type Status = (typeof statuses)[number];
+  const changeStatus = async (status: Status) => {
+    try {
+      const response = await confirm({
+        title: "Change Invoice Status",
+        message: `Are you sure you want to change the status to "${status}"?`,
+        detail: note ? `Note: ${note}` : undefined,
+        type: "warning",
+      });
+      if (!response) {
+        return;
+      }
+      await snapbuyApi.invoice.create({ id: invoice.id, status, notes: note });
+      showToast(`Invoice status updated to ${status}`, "success");
+      closePopup();
+      execAction("fetch-invoices");
+    } catch (error) {
+      console.error("Failed to update invoice status:", error);
+      showToast("Failed to update invoice status", "error");
+    }
+  };
+  const icons: Record<string, IconProps["icon"]> = {
+    draft: allIcons.solid.faFileAlt,
+    sent: allIcons.solid.faPaperPlane,
+    paid: allIcons.solid.faCheckCircle,
+    overdue: allIcons.solid.faExclamationCircle,
+    cancelled: allIcons.solid.faTimesCircle,
+  };
+  const colors: Record<string, string> = {
+    draft: "text-gray-500",
+    sent: "text-blue-500",
+    paid: "text-green-500",
+    overdue: "text-red-500",
+    cancelled: "text-gray-500",
+  };
+  const bgColors: Record<string, string> = {
+    draft: "bg-gray-500/10",
+    sent: "bg-blue-500/10",
+    paid: "bg-green-500/10",
+    overdue: "bg-red-500/10",
+    cancelled: "bg-gray-500/10",
+  };
+  return (
+    <Card className="w-96">
+      <CardHeaderForPopup title="change invoice status" />
+      <Line />
+      <div className="flex justify-between items-center p-3">
+        <div className="font-medium">Current status</div>
+        <div>
+          <InvoiceStatusBadge status={invoice.status} />
+        </div>
+      </div>
+      <Line />
+      <div className="p-2">
+        <Field
+          inputName="status-note"
+          className="rounded-xl"
+          placeholder="Optional note (reason)"
+        />
+      </div>
+      <Line />
+      <div className="p-2">
+        <div className="flex flex-wrap gap-2">
+          {statuses.map((s) => (
+            <Button
+              key={s}
+              className={tw("rounded-full w-fit", colors[s], bgColors[s])}
+              disabled={s === invoice.status}
+              icon={icons[s]}
+              onClick={() => changeStatus(s)}
             >
-              <motion.div
-                whileHover={{ scale: 1.1, rotate: 5 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <Icon
-                  icon={allIcons.solid.faFileInvoice}
-                  className="text-[--biqpod-gray-opacity] text-8xl"
-                />
-              </motion.div>
-            </motion.div>
-            <Line />
-            <motion.div
-              className="flex flex-col gap-2 p-3"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.5 }}
-            >
-              <motion.h3
-                className="font-semibold text-[--biqpod-text-color] text-xl uppercase"
-                animate={{
-                  backgroundPosition: ["0% 50%", "100% 50%", "0% 50%"],
-                }}
-                transition={{ duration: 3, repeat: Infinity }}
-                style={{
-                  background:
-                    "linear-gradient(90deg, var(--biqpod-text-color), var(--biqpod-primary), var(--biqpod-text-color))",
-                  backgroundSize: "200% 100%",
-                  WebkitBackgroundClip: "text",
-                  WebkitTextFillColor: "transparent",
-                  backgroundClip: "text",
-                }}
-              >
-                <Translate content="no invoices found" />
-              </motion.h3>
-              <motion.p
-                className="text-[--biqpod-gray-opacity-2]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.6, delay: 0.7 }}
-              >
-                <Translate content="there are no invoices matching your criteria" />
-              </motion.p>
-            </motion.div>
-          </div>
-        </Card>
-      </ScaleIn>
-    </motion.div>
+              <Translate content={s} />
+            </Button>
+          ))}
+        </div>
+      </div>
+      <Line />
+      <div className="p-2">
+        <Button
+          className="bg-[--biqpod-gray-opacity] rounded-full"
+          onClick={() => closePopup()}
+        >
+          <Translate content="cancel" />
+        </Button>
+      </div>
+    </Card>
   );
 };
 export const Invoices = () => {
@@ -134,6 +184,7 @@ export const Invoices = () => {
   }, [searchInvoice, invoices.get]);
   const { isMobile, isTablet } = useDeviceResolution();
   const isSmallView = isMobile || isTablet;
+  const loading = isLoading("fetch-invoices");
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex justify-between items-center gap-2 p-2">
@@ -168,7 +219,7 @@ export const Invoices = () => {
             {filteredInvoices.length === 0 && !isLoading("fetch-invoices") && (
               <NoInvoicesFound />
             )}
-            {/* <AnimatedList staggerDelay={0.05}>
+            <AnimatedList staggerDelay={0.05}>
               {filteredInvoices.map((invoice, index) => (
                 <AnimatedListItem key={invoice.id} index={index}>
                   <div className="flex justify-between items-center gap-2 odd:bg-[--biqpod-secondary-background] p-2 rounded-lg">
@@ -185,7 +236,7 @@ export const Invoices = () => {
                       <InvoiceStatusBadge status={invoice.status} />
                     </div>
                     <div className="w-full text-[--biqpod-gray-opacity] text-sm">
-                      {new Date(invoice.createdAt).toLocaleDateString()}
+                      {new Date(invoice.createdAt!).toLocaleDateString()}
                     </div>
                     <div>
                       {(usedBy === "owned" || usedBy === "read/edit") && (
@@ -200,73 +251,38 @@ export const Invoices = () => {
                                   label: "View Details",
                                   defaultIcon: allIcons.solid.faEye,
                                   click: () => {
-                                    showToast("View invoice details - Coming soon", "info");
+                                    showToast(
+                                      "View invoice details - Coming soon",
+                                      "info"
+                                    );
                                   },
                                 },
                                 {
                                   label: "Edit",
                                   defaultIcon: allIcons.solid.faEdit,
                                   click: () => {
-                                    showToast("Edit invoice - Coming soon", "info");
+                                    showToast(
+                                      "Edit invoice - Coming soon",
+                                      "info"
+                                    );
                                   },
                                 },
                                 {
                                   label: "Change Status",
                                   defaultIcon: allIcons.solid.faExchange,
-                                  click: () => {
-                                    openMenu({
-                                      x: clientX,
-                                      y: clientY,
-                                      menu: [
-                                        {
-                                          label: "Draft",
-                                          click: async () => {
-                                            await snapbuyApi.invoice.update(invoice.id, { status: "draft" });
-                                            showToast("Invoice status updated to draft", "success");
-                                            execAction("fetch-invoices");
-                                          },
-                                        },
-                                        {
-                                          label: "Sent",
-                                          click: async () => {
-                                            await snapbuyApi.invoice.update(invoice.id, { status: "sent" });
-                                            showToast("Invoice status updated to sent", "success");
-                                            execAction("fetch-invoices");
-                                          },
-                                        },
-                                        {
-                                          label: "Paid",
-                                          click: async () => {
-                                            await snapbuyApi.invoice.update(invoice.id, { status: "paid" });
-                                            showToast("Invoice status updated to paid", "success");
-                                            execAction("fetch-invoices");
-                                          },
-                                        },
-                                        {
-                                          label: "Overdue",
-                                          click: async () => {
-                                            await snapbuyApi.invoice.update(invoice.id, { status: "overdue" });
-                                            showToast("Invoice status updated to overdue", "success");
-                                            execAction("fetch-invoices");
-                                          },
-                                        },
-                                        {
-                                          label: "Cancelled",
-                                          click: async () => {
-                                            await snapbuyApi.invoice.update(invoice.id, { status: "cancelled" });
-                                            showToast("Invoice status updated to cancelled", "success");
-                                            execAction("fetch-invoices");
-                                          },
-                                        },
-                                      ],
-                                    });
-                                  },
+                                  click: () =>
+                                    showPopup(
+                                      <ChangeStatusPopup invoice={invoice} />
+                                    ),
                                 },
                                 {
                                   label: "Download PDF",
                                   defaultIcon: allIcons.solid.faDownload,
                                   click: () => {
-                                    showToast("Download PDF - Coming soon", "info");
+                                    showToast(
+                                      "Download PDF - Coming soon",
+                                      "info"
+                                    );
                                   },
                                 },
                                 {
@@ -279,8 +295,13 @@ export const Invoices = () => {
                                       detail: "This action cannot be undone.",
                                     });
                                     if (response) {
-                                      await snapbuyApi.invoice.delete(invoice.id);
-                                      showToast("Invoice deleted successfully", "success");
+                                      await snapbuyApi.invoice.delete(
+                                        invoice.id!
+                                      );
+                                      showToast(
+                                        "Invoice deleted successfully",
+                                        "success"
+                                      );
                                       execAction("fetch-invoices");
                                     }
                                   },
@@ -294,15 +315,13 @@ export const Invoices = () => {
                   </div>
                 </AnimatedListItem>
               ))}
-            </AnimatedList> */}
+            </AnimatedList>
           </Scroll>
         </EmptyComponent>
       )}
       {isSmallView && (
         <Scroll>
-          {filteredInvoices.length === 0 && !isLoading("fetch-invoices") && (
-            <NoInvoicesFound />
-          )}
+          {filteredInvoices.length === 0 && !loading && <NoInvoicesFound />}
           <AnimatedList className="flex flex-col gap-4 p-2" staggerDelay={0.05}>
             {filteredInvoices.map((invoice, index) => (
               <AnimatedListItem key={invoice.id} index={index}>
@@ -328,7 +347,7 @@ export const Invoices = () => {
                   <Line />
                   <div className="flex justify-between items-center p-4">
                     <div className="text-[--biqpod-gray-opacity] text-sm">
-                      {new Date(invoice.createdAt).toLocaleDateString()}
+                      {new Date(invoice.createdAt!).toLocaleDateString()}
                     </div>
                     {(usedBy === "owned" || usedBy === "read/edit") && (
                       <CircleTip
@@ -360,84 +379,10 @@ export const Invoices = () => {
                               {
                                 label: "Change Status",
                                 defaultIcon: allIcons.solid.faExchange,
-                                click: () => {
-                                  openMenu({
-                                    x: clientX,
-                                    y: clientY,
-                                    menu: [
-                                      {
-                                        label: "Draft",
-                                        click: async () => {
-                                          await snapbuyApi.invoice.create({
-                                            status: "draft",
-                                            id: invoice.id,
-                                          });
-                                          showToast(
-                                            "Invoice status updated to draft",
-                                            "success"
-                                          );
-                                          execAction("fetch-invoices");
-                                        },
-                                      },
-                                      {
-                                        label: "Sent",
-                                        click: async () => {
-                                          await snapbuyApi.invoice.create({
-                                            status: "sent",
-                                            id: invoice.id,
-                                          });
-                                          showToast(
-                                            "Invoice status updated to sent",
-                                            "success"
-                                          );
-                                          execAction("fetch-invoices");
-                                        },
-                                      },
-                                      {
-                                        label: "Paid",
-                                        click: async () => {
-                                          await snapbuyApi.invoice.create({
-                                            id: invoice.id,
-                                            status: "paid",
-                                          });
-                                          showToast(
-                                            "Invoice status updated to paid",
-                                            "success"
-                                          );
-                                          execAction("fetch-invoices");
-                                        },
-                                      },
-                                      {
-                                        label: "Overdue",
-                                        click: async () => {
-                                          await snapbuyApi.invoice.create({
-                                            id: invoice.id,
-                                            status: "overdue",
-                                          });
-                                          showToast(
-                                            "Invoice status updated to overdue",
-                                            "success"
-                                          );
-                                          execAction("fetch-invoices");
-                                        },
-                                      },
-                                      {
-                                        label: "Cancelled",
-                                        click: async () => {
-                                          await snapbuyApi.invoice.create({
-                                            id: invoice.id,
-                                            status: "cancelled",
-                                          });
-                                          showToast(
-                                            "Invoice status updated to cancelled",
-                                            "success"
-                                          );
-                                          execAction("fetch-invoices");
-                                        },
-                                      },
-                                    ],
-                                  });
-                                },
+                                click: () =>
+                                  showPopup(
+                                    <ChangeStatusPopup invoice={invoice} />
+                                  ),
                               },
                               {
                                 label: "Download PDF",
@@ -460,7 +405,9 @@ export const Invoices = () => {
                                     type: "warning",
                                   });
                                   if (response) {
-                                    await snapbuyApi.invoice.delete(invoice.id);
+                                    await snapbuyApi.invoice.delete(
+                                      invoice.id!
+                                    );
                                     showToast(
                                       "Invoice deleted successfully",
                                       "success"

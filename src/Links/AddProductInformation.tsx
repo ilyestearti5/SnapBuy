@@ -34,7 +34,7 @@ export function AddProductInformation({
   const price = useCopyState<number | null | undefined>(
     selectedProducts.get?.[product.id || ""]?.price || product.single?.customer
   );
-  const photo = product.photos?.at(0);
+  const file = product.files?.at(0)?.url;
   const total = (count.get || 0) * (price.get || 0);
   return (
     <Card className="w-2/3">
@@ -42,7 +42,7 @@ export function AddProductInformation({
       <Line />
       <div className="flex flex-col justify-center items-center gap-2 p-3">
         <Image
-          src={photo}
+          src={file}
           alt={
             <Icon
               icon={allIcons.solid.faBoxOpen}

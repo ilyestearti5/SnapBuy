@@ -20,15 +20,13 @@ import {
   getTemp,
   isLoading,
   showPopup,
-  showProfile,
   useAction,
-  useAsyncEffect,
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import { Biqpod } from "@biqpod/app/ui/types";
-import { delay, tw } from "@biqpod/app/ui/utils";
+import { tw } from "@biqpod/app/ui/utils";
 import { snapbuyApi } from "../../apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { CartPopup } from "./CartPopup";
@@ -41,31 +39,6 @@ const containerVariants = {
     transition: {
       staggerChildren: 0.1,
       delayChildren: 0.1,
-    },
-  },
-};
-const userCardVariants = {
-  hidden: {
-    opacity: 0,
-    y: 20,
-    scale: 0.95,
-  },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      type: "spring" as const,
-      stiffness: 200,
-      damping: 25,
-    },
-  },
-  hover: {
-    scale: 1.02,
-    transition: {
-      type: "spring" as const,
-      stiffness: 400,
-      damping: 25,
     },
   },
 };
@@ -181,103 +154,6 @@ const loadMoreButtonVariants = {
       damping: 20,
     },
   },
-};
-interface UserLineProps {
-  user: Biqpod.Account.User;
-}
-export const UserLine = ({ user }: UserLineProps) => {
-  const { uid, nickname, photo } = user;
-  const isFollow = useCopyState<null | boolean>(null);
-  useAsyncEffect(async () => {
-    await delay(300);
-    const result = uid ? await snapbuyApi.following.isFollowing(uid) : false;
-    isFollow.set(!!result);
-  }, []);
-  return (
-    <motion.div
-      variants={userCardVariants}
-      initial="hidden"
-      animate="visible"
-      whileHover="hover"
-    >
-      <Card className="cursor-pointer">
-        <div className="flex justify-between items-center gap-2 p-2">
-          <div className="flex items-center gap-2">
-            <Image
-              className="border-none outline-none w-[50px] h-[50px]"
-              src={photo ?? undefined}
-              alt={<Icon className="text-5xl" icon={allIcons.solid.faBox} />}
-            />
-            <div>{nickname}</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              className={tw(
-                "py-1 rounded-full",
-                !isFollow.get &&
-                  "bg-[--biqpod-gray-opacity] text-[--biqpod-color]"
-              )}
-              onClick={async () => {
-                if (!user) {
-                  showProfile();
-                  return;
-                }
-                if (!uid) {
-                  return;
-                }
-                if (isFollow.get === null) {
-                  return;
-                }
-                var state = isFollow.get;
-                if (state) {
-                  isFollow.set(null);
-                  await snapbuyApi.following.unfollow(uid);
-                } else {
-                  isFollow.set(null);
-                  await snapbuyApi.following.follow(uid);
-                }
-                await delay(300);
-                isFollow.set(!state);
-              }}
-            >
-              <div
-                className={tw(
-                  "inline-flex items-center gap-0 transition-[gap] duration-200",
-                  typeof isFollow.get === "boolean" && "gap-2"
-                )}
-              >
-                <Icon
-                  icon={
-                    typeof isFollow.get === "boolean"
-                      ? !isFollow.get
-                        ? allIcons.solid.faPlus
-                        : allIcons.solid.faMinus
-                      : allIcons.solid.faCircleNotch
-                  }
-                  className={tw(isFollow.get === null && "animate-spin")}
-                />
-                <span
-                  className={tw(
-                    "inline-block overflow-hidden h-[0px] w-[0px] transition-[width,height] duration-200",
-                    typeof isFollow.get === "boolean" && "w-[55px] h-[20px]"
-                  )}
-                >
-                  {isFollow.get ? (
-                    <Translate content="unfollow" />
-                  ) : (
-                    <Translate content="follow" />
-                  )}
-                </span>
-              </div>
-            </Button>
-            <Link to={"/client/stores/" + uid}>
-              <CircleTip icon={allIcons.solid.faChevronRight} />
-            </Link>
-          </div>
-        </div>
-      </Card>
-    </motion.div>
-  );
 };
 interface StoreRecordProps {
   store: Biqpod.Snapbuy.Store;

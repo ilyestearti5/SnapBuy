@@ -29,8 +29,10 @@ import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { CreateFirstUI } from "../components/CreateFirstUI";
+import { setTextSide } from "../hooks/usePayments";
 // Highlight component for search terms
-export function highlightMatch(
+function highlightMatch(
   text: string,
   search: string | undefined
 ): React.ReactNode {
@@ -245,6 +247,9 @@ export const Collections = () => {
                                               type: "warning",
                                             });
                                             if (!response) return;
+                                            setTextSide(
+                                              "Deleting collection..."
+                                            );
                                             await snapbuyApi.collections.delete(
                                               collection.id!
                                             );
@@ -252,7 +257,13 @@ export const Collections = () => {
                                               "Collection deleted successfully",
                                               "success"
                                             );
-                                            execAction("fetch-collections");
+                                            setTextSide(
+                                              "Refresh Collections..."
+                                            );
+                                            await execAction(
+                                              "fetch-collections"
+                                            );
+                                            setTextSide();
                                           },
                                           defaultIcon: allIcons.solid.faTrash,
                                         },
@@ -322,36 +333,11 @@ export const Collections = () => {
         </Scroll>
       )}
       {collections && collections.get.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          className="flex justify-center items-center h-full overflow-hidden"
-        >
-          <div className="flex flex-col items-center gap-6 p-8">
-            <motion.img
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 0.6 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-              draggable={false}
-              src="https://cdn3d.iconscout.com/3d/premium/thumb/file-not-found-3d-icon-png-download-7980703.png?f=webp"
-              className="w-40 h-40"
-            />
-            <motion.div
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center"
-            >
-              <h3 className="mb-2 font-semibold text-[--biqpod-text] text-xl">
-                <Translate content="no collections yet" />
-              </h3>
-              <p className="mb-4 max-w-sm text-[--biqpod-text-secondary] text-sm">
-                <Translate content="collections help organize your products into groups. Create your first collection to get started!" />
-              </p>
-            </motion.div>
-          </div>
-        </motion.div>
+        <CreateFirstUI
+          photo="https://cdn3d.iconscout.com/3d/premium/thumb/file-not-found-3d-icon-png-download-7980703.png?f=webp"
+          title="no collections yet"
+          description="collections help organize your products into groups. Create your first collection to get started!"
+        />
       )}
       <Line />
       {usedBy === "owned" || usedBy === "read/edit" ? (

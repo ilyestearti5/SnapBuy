@@ -4,7 +4,7 @@ import facebook from "../assets/platforms/facebook.png";
 import instagram from "../assets/platforms/instagram.png";
 import snapchat from "../assets/platforms/snapchat.png";
 import tiktok from "../assets/platforms/tiktok.png";
-import twitter from "../assets/platforms/x.png";
+import x from "../assets/platforms/x.png";
 import reddit from "../assets/platforms/reddit.png";
 import telegram from "../assets/platforms/telegram.png";
 import linkedin from "../assets/platforms/linkedin.png";
@@ -15,7 +15,6 @@ import chrome from "../assets/platforms/chrome.png";
 import safari from "../assets/platforms/safari.png";
 import clientPhoto from "../assets/clients.png";
 import feedbackPhoto from "../assets/feedback.png";
-import offersPhoto from "../assets/offers.png";
 import deliveryPhoto from "../assets/delivery.png";
 import androidPhoto from "../assets/android.png";
 import integrationsPhoto from "../assets/integrations.png";
@@ -29,25 +28,26 @@ import shoppingPhoto from "../assets/shopping.png";
 import overviewPhoto from "../assets/overview.png";
 import settingsPhoto from "../assets/settings.png";
 import { mergeArray } from "@biqpod/app/ui/shared";
-export const platformsPhotos: Partial<Record<Biqpod.Snapbuy.Platform, string>> =
-  {
-    discord,
-    facebook,
-    instagram,
-    snapchat,
-    tiktok,
-    twitter,
-    reddit,
-    telegram,
-    linkedin,
-    pinterest,
-    youtube,
-    unknown,
-    chrome,
-    safari,
-    edge,
-  };
-export const getImageByPlatform = (string?: Biqpod.Snapbuy.Platform) => {
+export const platformsPhotos: Partial<
+  Record<Biqpod.Snapbuy.Basic.Platform, string>
+> = {
+  discord,
+  facebook,
+  instagram,
+  snapchat,
+  tiktok,
+  x,
+  reddit,
+  telegram,
+  linkedin,
+  pinterest,
+  youtube,
+  unknown,
+  chrome,
+  safari,
+  edge,
+};
+export const getImageByPlatform = (string?: Biqpod.Snapbuy.Basic.Platform) => {
   return (string && platformsPhotos[string]) || unknown;
 };
 export const colors: Record<string, string> = {
@@ -67,7 +67,7 @@ export const orderStatusIcons: Record<string, IconProps["icon"]> = {
   delivery: allIcons.solid.faCar,
 };
 export const roleIcons: Record<
-  Biqpod.Snapbuy.DeliveryCompanyRole,
+  Biqpod.Snapbuy.Basic.DeliveryCompanyRole,
   IconProps["icon"]
 > = {
   customer: allIcons.solid.faUser,
@@ -79,7 +79,10 @@ export const roleIcons: Record<
   franchise_partner: allIcons.solid.faHandshake,
   merchant: allIcons.solid.faStore,
 };
-export const roleColors: Record<Biqpod.Snapbuy.DeliveryCompanyRole, string> = {
+export const roleColors: Record<
+  Biqpod.Snapbuy.Basic.DeliveryCompanyRole,
+  string
+> = {
   customer: "#4CAF50",
   admin: "#2196F3",
   finance: "#FF9800",
@@ -115,11 +118,6 @@ export const tabServices = mergeArray(
 );
 export const extraTabs = [
   {
-    name: "offers",
-    link: "/offers",
-    photo: offersPhoto,
-  },
-  {
     name: "feedbacks",
     link: "/feedbacks",
     photo: feedbackPhoto,
@@ -154,7 +152,7 @@ export const appTabs = [
 ];
 export const rolsInList: {
   content: string;
-  value: Biqpod.Snapbuy.DeliveryCompanyRole;
+  value: Biqpod.Snapbuy.Basic.DeliveryCompanyRole;
 }[] = [
   { content: "🏭 Warehouse Operator", value: "warehouse_operator" },
   { content: "🚚 Delivery Agent", value: "delivery_agent" },

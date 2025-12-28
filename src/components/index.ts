@@ -6,5 +6,3 @@ export {
 } from "./StoreDeliveryPricing";
 export { Vars } from "./Vars";
 export { OrderEditPopup } from "./OrderEditPopup";
-export { SimpleGLTFRenderer } from "./SimpleGLTFRenderer";
-export { ThreeJSDiagnostic } from "./ThreeJSDiagnostic";

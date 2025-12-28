@@ -32,6 +32,7 @@ import { useEffect, useMemo } from "react";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { filterFuzzySearch } from "@biqpod/app/ui/utils";
 import { motion } from "framer-motion";
+import { setTextSide } from "../hooks/usePayments";
 export interface UpsertCouponProps {
   coupon?: Biqpod.Snapbuy.Coupon;
 }
@@ -170,6 +171,7 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
         return;
       }
       const infinity = 1e10;
+      closePopup();
       const couponData: Biqpod.Snapbuy.Coupon = {
         id: coupon?.id,
         code: code.trim().toUpperCase(),
@@ -187,13 +189,14 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
         isActive: Boolean(isActiveState.get),
         storeId,
       };
+      setTextSide(coupon?.id ? "Updating coupon..." : "Creating coupon...");
       await snapbuyApi.coupon.upsert(couponData);
       showToast(
         coupon ? "Coupon updated successfully" : "Coupon created successfully",
         "success"
       );
-      execAction("fetch-coupons");
-      closePopup();
+      setTextSide("Refreshing coupons...");
+      await execAction("fetch-coupons");
     },
     [
       storeId,
@@ -463,7 +466,7 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
                       className="flex items-center gap-2 bg-[--biqpod-primary-background] p-2 border border-[--biqpod-borders] border-solid rounded-2xl"
                     >
                       <Image
-                        src={product?.photos?.at(0)}
+                        src={product?.files?.at(0)?.url}
                         alt={<Icon icon={allIcons.solid.faBox} />}
                         className="bg-[--biqpod-gray-opacity] rounded-lg w-8 h-8"
                       />
@@ -509,7 +512,7 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
                         }}
                       >
                         <Image
-                          src={product.photos?.at(0)}
+                          src={product.files?.at(0)?.url}
                           alt={<Icon icon={allIcons.solid.faBox} />}
                           className="bg-[--biqpod-gray-opacity] rounded-xl w-8 h-8"
                         />
@@ -593,10 +596,12 @@ export const UpsertCoupon = ({ coupon }: UpsertCouponProps) => {
                 type: "warning",
               });
               if (response) {
+                closePopup();
+                setTextSide("Deleting coupon...");
                 await snapbuyApi.coupon.delete(coupon.id!);
                 showToast("Coupon deleted successfully", "success");
-                execAction("fetch-coupons");
-                closePopup();
+                await execAction("fetch-coupons");
+                setTextSide();
               }
             }}
             className="bg-[--biqpod-error] rounded-full"

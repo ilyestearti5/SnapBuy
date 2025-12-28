@@ -143,7 +143,7 @@ export const AddProductPopup = () => {
                           transition={{ type: "spring", stiffness: 300 }}
                         >
                           <Image
-                            src={product.photos?.at(0)}
+                            src={product.files?.at(0)?.url}
                             alt={
                               <Icon
                                 icon={allIcons.solid.faBoxOpen}

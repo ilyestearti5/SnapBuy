@@ -116,7 +116,7 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
   const handleSave = async () => {
     setSaving(true);
     try {
-      await snapbuyApi.order.edit(order.id, {
+      await snapbuyApi.order.edit(order.id!, {
         products: editedProducts,
         packs: editedPacks,
       });
@@ -265,9 +265,9 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
                   >
                     <div className="flex-1">
                       <div className="flex items-center gap-3">
-                        {product?.photos?.[0] && (
+                        {product?.files?.[0] && (
                           <img
-                            src={product.photos[0]}
+                            src={product.files[0].url}
                             alt={product.name}
                             className="rounded-lg w-12 h-12 object-cover"
                           />
@@ -580,9 +580,9 @@ export const OrderEditPopup: React.FC<OrderEditPopupProps> = ({
                           e.currentTarget.style.backgroundColor = "transparent";
                         }}
                       >
-                        {product.photos?.[0] && (
+                        {product.files?.[0] && (
                           <img
-                            src={product.photos[0]}
+                            src={product.files[0].url}
                             alt={product.name}
                             className="rounded w-8 h-8 object-cover"
                           />

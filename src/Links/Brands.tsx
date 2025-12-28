@@ -2,7 +2,6 @@ import {
   Button,
   Card,
   CardHeaderForPopup,
-  CardWait,
   CircleTip,
   EmptyComponent,
   Field,
@@ -24,12 +23,13 @@ import {
 } from "@biqpod/app/ui/hooks";
 import { UpsertBrand } from "./UpsertBrand";
 import { allIcons } from "@biqpod/app/ui/apis";
-import notFounPhoto from "../assets/page-not-found.png";
 import { useActionStatus } from "../routes/Clients/CartPopup";
-import { delay, range, tw } from "@biqpod/app/ui/utils";
+import { delay } from "@biqpod/app/ui/utils";
 import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Biqpod } from "@biqpod/app/ui/types";
+import { CreateFirstUI } from "../components/CreateFirstUI";
+import { LoadingData } from "./LoadingData";
 // Fuzzy search function
 function filterFuzzySearch<T>(
   list: T[],
@@ -184,7 +184,6 @@ export const Brands = () => {
     if (filters.get.noPhoto) {
       filtered = filtered.filter((brand) => !brand.photo);
     }
-    // TODO: Add time range filtering when brand properties are available
     return filtered;
   }, [brands.get, searchQuery, filters.get]);
   return (
@@ -224,6 +223,9 @@ export const Brands = () => {
                     delay: index * 0.05,
                     ease: "easeOut",
                   }}
+                  onClick={() => {
+                    showPopup(<UpsertBrand brand={brand} />);
+                  }}
                   className="flex justify-between items-center gap-2 hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-secondary-background] p-2 cursor-pointer"
                 >
                   <div className="flex items-center gap-3">
@@ -231,25 +233,15 @@ export const Brands = () => {
                       <Image
                         src={brand.photo}
                         alt={brand.name}
-                        className="bg-[--biqpod-gray-opacity] rounded-xl w-[60px] h-[60px] object-cover"
+                        className="bg-[--biqpod-gray-opacity] rounded-xl w-[40px] h-[40px] object-cover"
                       />
                     </div>
                     <span>{brand.name || <i>No name</i>}</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    {usedBy === "owned" || usedBy === "read/edit" ? (
-                      <motion.div
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <CircleTip
-                          onClick={() => {
-                            showPopup(<UpsertBrand brand={brand} />);
-                          }}
-                          icon={allIcons.solid.faChevronRight}
-                        />
-                      </motion.div>
-                    ) : null}
+                    {(usedBy === "owned" || usedBy === "read/edit") && (
+                      <CircleTip icon={allIcons.solid.faChevronRight} />
+                    )}
                   </div>
                 </motion.div>
               );
@@ -257,69 +249,13 @@ export const Brands = () => {
           </AnimatePresence>
         )}
         {isSuccess && !filteredBrands.length && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-            className="flex justify-center items-center h-full"
-          >
-            <Card>
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: 0.2 }}
-                className="flex justify-center items-center"
-              >
-                <img src={notFounPhoto} alt="" />
-              </motion.div>
-              <Line />
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 }}
-                className="p-2"
-              >
-                <Translate
-                  content={
-                    searchQuery
-                      ? "No brands found matching your search. Try a different search term."
-                      : "No brands found. You can create a new brand by clicking the button below."
-                  }
-                />
-              </motion.div>
-            </Card>
-          </motion.div>
+          <CreateFirstUI
+            photo="https://static.vecteezy.com/system/resources/thumbnails/015/214/759/small/brand-3d-illustration-icon-png.png"
+            title="no brands found"
+            description="brands help organize your products and build your identity. Create your first brand to get started!"
+          />
         )}
-        {isLoading && (
-          <Scroll>
-            <div className="flex flex-col gap-2 p-1">
-              {range(10).map((index) => {
-                return (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{
-                      duration: 0.3,
-                      delay: index * 0.05,
-                      ease: "easeOut",
-                    }}
-                  >
-                    <CardWait className="flex items-center gap-2 p-2 rounded-2xl h-[80px]">
-                      <CardWait className="rounded-full w-[60px] h-[60px]" />
-                      <CardWait
-                        className={tw(
-                          "h-[20px] rounded-full",
-                          index % 2 === 0 ? "w-[200px]" : "w-[150px]"
-                        )}
-                      />
-                    </CardWait>
-                  </motion.div>
-                );
-              })}
-            </div>
-          </Scroll>
-        )}
+        {isLoading && <LoadingData />}
       </Scroll>
       {usedBy === "owned" || usedBy === "read/edit" ? (
         <EmptyComponent>

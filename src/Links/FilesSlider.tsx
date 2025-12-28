@@ -1,21 +1,26 @@
 import { allIcons } from "@biqpod/app/ui/apis";
 import { EmptyComponent, CircleTip, Line } from "@biqpod/app/ui/components";
 import { useCopyState } from "@biqpod/app/ui/hooks";
+import { Biqpod } from "@biqpod/app/ui/types";
 import { tw } from "@biqpod/app/ui/utils";
-import React, { useEffect, useRef } from "react";
+import { useEffect, useRef } from "react";
+import { MediaPreview } from "./NewProduct/Views/MediaPreview";
+import { MediaShowContentPreview } from "./NewProduct/Views/MediaShowContentPreview";
 interface SliderProps {
-  photos?: string[];
+  files?: Biqpod.Snapbuy.Basic.File[];
   autoSlide?: boolean;
   slideInterval?: number;
   zoom?: boolean;
   viewImages?: boolean;
+  viewContent?: boolean;
 }
-export const ImageSlider: React.FC<SliderProps> = ({
-  photos = [],
+export const FilesSlider: React.FC<SliderProps> = ({
+  files = [],
   autoSlide = false,
   slideInterval = 5000,
   zoom = false,
   viewImages = false,
+  viewContent = false,
 }) => {
   const current = useCopyState(0);
   const isDragging = useCopyState(false);
@@ -30,7 +35,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
   const nextSlide = () => {
     animation.set(true);
     current.set((prev) => {
-      if (prev + 1 < photos.length) {
+      if (prev + 1 < files.length) {
         return prev + 1;
       }
       return prev; // Stay on the last slide
@@ -145,7 +150,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
     }
   };
   useEffect(() => {
-    if (photos.length < 2 && !zoom) return;
+    if (viewContent || (files.length < 2 && !zoom)) return;
     const trackRef = sliderRef.current;
     if (trackRef) {
       trackRef.addEventListener("mousedown", handleMouseDown);
@@ -173,7 +178,14 @@ export const ImageSlider: React.FC<SliderProps> = ({
         }
       };
     }
-  }, [isDragging.get, startX.get, translateX.get, zoom, isZooming.get]);
+  }, [
+    isDragging.get,
+    startX.get,
+    translateX.get,
+    zoom,
+    isZooming.get,
+    viewContent,
+  ]);
   useEffect(() => {
     if (autoSlide) {
       intervalRef.current = window.setInterval(nextSlide, slideInterval);
@@ -183,7 +195,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
         clearInterval(intervalRef.current);
       }
     };
-  }, [autoSlide, slideInterval, photos.length]);
+  }, [autoSlide, slideInterval, files.length]);
   useEffect(() => {
     if (intervalRef.current && !autoSlide) {
       clearInterval(intervalRef.current);
@@ -215,44 +227,22 @@ export const ImageSlider: React.FC<SliderProps> = ({
           className="flex items-center w-full h-full"
           style={slideStyle}
         >
-          {photos.map((photo, index) => {
+          {files.map((file, index) => {
             return (
               <div
                 key={index}
-                className="relative flex flex-shrink-0 justify-center items-center w-full h-full overflow-hidden cursor-pointer"
+                className="flex flex-shrink-0 w-full h-full overflow-hidden cursor-pointer"
               >
-                <img
-                  draggable="false"
-                  src={photo}
-                  loading="eager"
-                  className="opacity-40 blur-lg w-full h-full object-cover"
-                />
-                <div className="top-1/2 left-1/2 z-[10] absolute inset-y-0 flex justify-center w-full h-full object-cover -translate-x-1/2 -translate-y-1/2 transform">
-                  <img
-                    draggable="false"
-                    src={photo}
-                    className={tw(
-                      "absolute top-1/2 rounded-none object-contain left-1/2 w-full h-full",
-                      zoom && "transition-transform duration-200 ease-out"
-                    )}
-                    style={
-                      zoom && index === current.get && isZooming.get
-                        ? {
-                            transform: `translate(-50%, -50%) scale(${zoomLevel.get})`,
-                            transformOrigin: `${zoomOrigin.get.x}% ${zoomOrigin.get.y}%`,
-                          }
-                        : {
-                            transform: `translate(-50%, -50%) scale(1)`,
-                            transformOrigin: `50% 50%`,
-                          }
-                    }
-                  />
-                </div>
+                {!viewContent ? (
+                  <MediaPreview mediaFile={file} />
+                ) : (
+                  <MediaShowContentPreview mediaFile={file} />
+                )}
               </div>
             );
           })}
         </div>
-        {photos.length > 1 && !zoom && (
+        {files.length > 1 && !zoom && (
           <EmptyComponent>
             <div className="top-1/2 left-2 absolute -translate-y-1/2 transform">
               <CircleTip
@@ -268,18 +258,18 @@ export const ImageSlider: React.FC<SliderProps> = ({
             </div>
             {!viewImages && (
               <div className="bottom-2 left-1/2 absolute bg-[--biqpod-gray-opacity-2] px-2 rounded-lg text-white -translate-x-1/2 transform">
-                {current.get + 1} / {photos.length}
+                {current.get + 1} / {files.length}
               </div>
             )}
           </EmptyComponent>
         )}
       </div>
-      {viewImages && photos.length > 1 && (
+      {viewImages && files.length > 1 && (
         <EmptyComponent>
           <Line />
           <div className="w-full">
             <div className="flex justify-center gap-2 p-2 w-full overflow-x-auto">
-              {photos.map((photo, index) => (
+              {files.map((file, index) => (
                 <div
                   key={index}
                   className={tw(
@@ -291,7 +281,7 @@ export const ImageSlider: React.FC<SliderProps> = ({
                   onClick={() => goToSlide(index)}
                 >
                   <img
-                    src={photo}
+                    src={file.url}
                     alt={`Thumbnail ${index + 1}`}
                     className="w-full h-full object-cover"
                   />

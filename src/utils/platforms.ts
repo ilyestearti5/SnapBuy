@@ -9,13 +9,10 @@ import redditIcon from "../assets/platforms/reddit.png";
 import linkedinIcon from "../assets/platforms/linkedin.png";
 import pinterestIcon from "../assets/platforms/pinterest.png";
 import xIcon from "../assets/platforms/x.png";
-import chromeIcon from "../assets/platforms/chrome.png";
-import edgeIcon from "../assets/platforms/edge.png";
-import safariIcon from "../assets/platforms/safari.png";
 import { Biqpod } from "@biqpod/app/ui/types";
 
 export interface PlatformInfo {
-  id: keyof Required<Required<Biqpod.Snapbuy.Store>["platforms"]>;
+  id: Biqpod.Snapbuy.Basic.SocielPlatform;
   name: string;
   icon: string;
   placeholder: string;
@@ -100,38 +97,16 @@ export const platformsInfo: PlatformInfo[] = [
     placeholder: "https://x.com/username",
     color: "#000000",
   },
-  {
-    id: "chrome",
-    name: "Chrome",
-    icon: chromeIcon,
-    placeholder: "https://chrome.google.com/webstore/detail/extension-id",
-    color: "#4285F4",
-  },
-  {
-    id: "edge",
-    name: "Edge",
-    icon: edgeIcon,
-    placeholder:
-      "https://microsoftedge.microsoft.com/addons/detail/extension-id",
-    color: "#0078D4",
-  },
-  {
-    id: "safari",
-    name: "Safari",
-    icon: safariIcon,
-    placeholder: "https://apps.apple.com/app/app-name/id",
-    color: "#006CFF",
-  },
 ];
 
 export const getPlatformInfo = (
-  platformId: keyof Required<Required<Biqpod.Snapbuy.Store>["platforms"]>
+  platformId: Biqpod.Snapbuy.Basic.SocielPlatform
 ): PlatformInfo | undefined => {
   return platformsInfo.find((platform) => platform.id === platformId);
 };
 
 export const platformsPhoto: Record<
-  keyof Required<Required<Biqpod.Snapbuy.Store>["platforms"]>,
+  Biqpod.Snapbuy.Basic.SocielPlatform,
   string
 > = {
   facebook: facebookIcon,
@@ -145,7 +120,4 @@ export const platformsPhoto: Record<
   linkedin: linkedinIcon,
   pinterest: pinterestIcon,
   x: xIcon,
-  chrome: chromeIcon,
-  edge: edgeIcon,
-  safari: safariIcon,
 };

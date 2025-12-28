@@ -96,7 +96,6 @@ export type DataTypes =
   | "packs"
   | "collections"
   | "brands"
-  | "photos"
   | "coupons"
   | "vars";
 const buildFunction = (name: string) => {
@@ -138,12 +137,76 @@ export const createApi = (cloud: ClientCloud) => {
     });
     return photos;
   };
+  interface News {
+    id: string;
+    title: string;
+    photo: string;
+    description: string;
+    createdAt: number;
+  }
   const snapbuyApi = {
+    async getNews() {
+      const saved = getTempFromStore<News[]>("news-data");
+      if (saved) {
+        return saved;
+      }
+      const news = await getDocs<News>([mainRef, "news"], {
+        orders: [orderBy("createdAt", "desc")],
+      });
+      const newsData = news?.map((n) => n.data) || [];
+      if (newsData.length > 0) {
+        setTemp("news-data", newsData);
+      }
+      return newsData;
+    },
+    async getNew(newId: string) {
+      const savedList = getTempFromStore<News[]>("news-data");
+      const saved = savedList?.find((d) => d.id === newId);
+      if (saved) {
+        return saved;
+      }
+      const newData = await getDoc<News>([mainRef, "news", newId]);
+      if (newData) {
+        const list = savedList
+          ? [...savedList, newData].sort((a, b) => {
+              // sort by created at Desc
+              return b.createdAt - a.createdAt;
+            })
+          : [newData];
+        setTemp("news-data", list);
+      }
+      return newData;
+    },
     async getFree() {
-      const fn = await getFunction<{ count: number; type: DataTypes }[]>(
-        "get-free-data"
-      );
+      interface FreeData {
+        count: number;
+        type: DataTypes;
+      }
+      const savedData = getTempFromStore<FreeData[]>("free-data");
+      if (savedData) {
+        return savedData;
+      }
+      const fn = await getFunction<FreeData[]>("get-free-data");
       const result = await fn?.({});
+      if (result) {
+        setTemp("free-data", result);
+      }
+      return result;
+    },
+    async getPromotionalPrices() {
+      interface Pricing {
+        key: keyof Biqpod.Snapbuy.Store["notify"];
+        price: number;
+      }
+      const pricing = getTempFromStore<Pricing[]>("promotional-pricing");
+      if (pricing) {
+        return pricing;
+      }
+      const fn = await getFunction<Pricing[]>("get-promotional-pricing");
+      const result = await fn?.({});
+      if (result) {
+        setTemp("promotional-pricing", result);
+      }
       return result;
     },
     async deleteToken(storeId: string, token: string) {
@@ -164,7 +227,7 @@ export const createApi = (cloud: ClientCloud) => {
     async hasAccessToStore(storeId: string) {
       const uid = await getCurrentAuth();
       if (!uid) throw "User not authenticated";
-      const fn = await getUserFunction<Biqpod.Snapbuy.StoreUserAccess>(
+      const fn = await getUserFunction<Biqpod.Snapbuy.Access>(
         "has-access-to-store"
       );
       const result = await fn?.({ storeId, uid });
@@ -197,12 +260,14 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(collectionId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.collections", true);
         const deleteCollection = await getUserFunction("delete-collection");
         await deleteCollection?.({
           id: collectionId,
         });
       },
       async upsert(collection: Biqpod.Snapbuy.Collection) {
+        setTemp("updating-hapen.collections", true);
         const createCollection =
           await getUserFunction<Biqpod.Snapbuy.Collection>("create-collection");
         var files: File[] | undefined = undefined;
@@ -240,18 +305,30 @@ export const createApi = (cloud: ClientCloud) => {
         return doc;
       },
       async getAll(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.collections"
+        );
+        if (!isUpdatingHapens) {
+          const collections = getTempFromStore<Biqpod.Snapbuy.Collection[]>(
+            "collections." + storeId
+          );
+          if (collections) {
+            return collections;
+          }
+        }
         const collections = await getDocs<Biqpod.Snapbuy.Collection>(
           [mainRef, "collections"],
           {
             where: and(where("storeId", "==", storeId)),
           }
         );
-        return (
+        const result =
           collections?.map((collection) => ({
             ...collection.data,
             id: collection.id,
-          })) || []
-        );
+          })) || [];
+        setTemp("collections." + storeId, result);
+        return result;
       },
     },
     async getSinglePack(storeId: string) {
@@ -386,6 +463,17 @@ export const createApi = (cloud: ClientCloud) => {
         );
       },
       async getProductsOf(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.products"
+        );
+        if (!isUpdatingHapens) {
+          const products =
+            getTempFromStore<Biqpod.Snapbuy.Product[]>("products");
+          if (products) {
+            const list = Object.values(products);
+            return list;
+          }
+        }
         const products = await getDocs<Biqpod.Snapbuy.Product>(
           [mainRef, "products"],
           {
@@ -396,6 +484,12 @@ export const createApi = (cloud: ClientCloud) => {
         result?.forEach((prod) => {
           setTemp("products." + prod.id, prod);
         });
+        await uploadFile(
+          ["projects", appProjectId, "stored-products", storeId],
+          new Blob([JSON.stringify(products || [])], {
+            type: "application/json",
+          })
+        );
         return result;
       },
       async upsert(
@@ -406,6 +500,7 @@ export const createApi = (cloud: ClientCloud) => {
           index: number
         ) => void | Promise<void>
       ) {
+        setTemp("updating-hapen.products", true);
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
         const createProduct = await getUserFunction<Biqpod.Snapbuy.Product>(
@@ -414,33 +509,35 @@ export const createApi = (cloud: ClientCloud) => {
         await mapAsync(products, async (product, index) => {
           onBeforeStart?.(product, index);
           var files: File[] | undefined;
-          const filtedPhotos = product.photos?.filter((p) =>
-            p.startsWith("data:")
+          const filtedFiles = product.files?.filter((p) =>
+            p.url.startsWith("blob:")
           );
-          if (filtedPhotos?.length) {
-            files = await mapAsync(filtedPhotos || [], async (p) => {
-              const response = await fetch(p).then((s) => s.blob());
-              return new File([response], "photo.png", { type: response.type });
+          if (filtedFiles?.length) {
+            files = await mapAsync(filtedFiles || [], async (p) => {
+              const response = await fetch(p.url).then((s) => s.blob());
+              URL.revokeObjectURL(p.url);
+              return new File([response], p.type, {
+                type: response.type,
+              });
             });
           }
           const prod = {
             ...product,
             storeId,
           };
-          if (product.photos) {
-            prod.photos = product.photos.filter((p) => !p.startsWith("data:"));
+          if (product.files) {
+            prod.files = product.files.filter(
+              (p) => !p.url?.startsWith("blob:")
+            );
           }
           const result = await createProduct?.(prod, files);
           if (result) {
-            const temp = getTempFromStore<Biqpod.Snapbuy.Product>(
-              "products." + prod.id
-            );
-            const s = temp ? { ...temp, ...result } : result;
-            setTemp("products." + result.id, s);
+            setTemp("products." + result.id, result);
           }
         });
       },
       async delete(productId: string) {
+        setTemp("updating-hapen.products", true);
         const deleteProduct = await getUserFunction("delete-product");
         await deleteProduct?.({
           id: productId,
@@ -512,7 +609,7 @@ export const createApi = (cloud: ClientCloud) => {
       },
       async setPixelId(
         storeId: string,
-        id: Biqpod.Snapbuy.PixelId,
+        id: Biqpod.Snapbuy.Basic.PixelId,
         value: string | null
       ) {
         await setDoc([mainRef, "stores", storeId], {
@@ -685,61 +782,9 @@ export const createApi = (cloud: ClientCloud) => {
         });
       },
     },
-    following: {
-      async follow(followed: string) {
-        const doFollow = await getUserFunction<{
-          followed: string;
-        }>("follow");
-        await doFollow?.({
-          followed,
-        });
-      },
-      async unfollow(followed: string) {
-        const doUnfollow = await getUserFunction<{
-          followed: string;
-        }>("unfollow");
-        await doUnfollow?.({
-          followed,
-        });
-      },
-      async isFollowing(followed: string) {
-        const isFollowing = await getUserFunction<boolean>("is-following");
-        return isFollowing?.({
-          followed,
-        });
-      },
-      async get(limit?: number, from?: Biqpod.Snapbuy.Follow | null) {
-        var uid = await getCurrentAuth();
-        if (!uid) {
-          throw "User not authenticated";
-        }
-        const follows = await getDocs<Biqpod.Snapbuy.Follow>(
-          [mainRef, "follows"],
-          {
-            where: and(
-              where("follower", "==", uid),
-              where("follow", "==", true)
-            ),
-            limit,
-            startAt: from?.followed && mergeArray(from?.followed),
-            orders: [orderBy("followed", "desc")],
-          }
-        );
-        return mapAsync(follows || [], async (follow) => {
-          const followed = follow.data.followed;
-          const user = await getDoc<Biqpod.Account.User>(["users", followed]);
-          if (user) {
-            setTemp("users." + followed, user);
-          }
-          return {
-            user,
-            follow: follow.data,
-          };
-        });
-      },
-    },
     brands: {
       async upsert(brand: Biqpod.Snapbuy.Brand) {
+        setTemp("updating-hapen.brands", true);
         const createBrand = await getUserFunction<Biqpod.Snapbuy.Brand>(
           "create-brand"
         );
@@ -755,6 +800,17 @@ export const createApi = (cloud: ClientCloud) => {
         return await createBrand?.(brand, files);
       },
       async getAll(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.brands"
+        );
+        if (!isUpdatingHapens) {
+          const brands = getTempFromStore<Biqpod.Snapbuy.Brand[]>(
+            "brands." + storeId
+          );
+          if (brands) {
+            return brands;
+          }
+        }
         const brands = await getDocs<Biqpod.Snapbuy.Brand>(
           [mainRef, "brands"],
           {
@@ -766,6 +822,7 @@ export const createApi = (cloud: ClientCloud) => {
         result.forEach((brand) => {
           setTemp("brands." + brand.id, brand);
         });
+        setTemp("brands." + storeId, result);
         return result;
       },
       async get(brandId: string) {
@@ -789,6 +846,7 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(brandId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.brands", true);
         const deleteBrand = await getUserFunction("delete-brand");
         await deleteBrand?.({
           id: brandId,
@@ -796,33 +854,12 @@ export const createApi = (cloud: ClientCloud) => {
         setTemp("brands." + brandId, null);
       },
     },
-    async syncProductsData() {
-      const syncProductsData = await getUserFunction("sync-data-products");
-      await syncProductsData?.({});
-    },
-    async syncBrandsData() {
-      const syncBrandsData = await getUserFunction("sync-data-brands");
-      await syncBrandsData?.({});
-    },
-    async syncCollectionsData() {
-      const syncCollectionsData = await getUserFunction(
-        "sync-data-collections"
+    async getDriveFiles() {
+      const fn = await functions.getUserFunction<All[]>(
+        "get-files-from-google-drive"
       );
-      await syncCollectionsData?.({});
-    },
-    async syncStoresData() {
-      const syncStoresData = await getUserFunction("sync-data-stores");
-      await syncStoresData?.({});
-    },
-    async getDrivePhotos() {
-      const fn = await functions.getUserFunction<
-        {
-          name: string;
-          link: string;
-        }[]
-      >("get-photos-from-google-drive");
-      const photos = await fn?.({});
-      return photos;
+      const files = await fn?.({});
+      return files;
     },
     // Brand Management Functions
     async getOrderPacks(orderId: string) {
@@ -1016,6 +1053,7 @@ export const createApi = (cloud: ClientCloud) => {
       async add(storeId: string, deliveryPrice: Biqpod.Snapbuy.DeliveryPrice) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.deliveryPrices", true);
         const deliveryPriceData: Biqpod.Snapbuy.DeliveryPrice = {
           ...deliveryPrice,
           id: deliveryPrice.id || crypto.randomUUID(),
@@ -1033,6 +1071,7 @@ export const createApi = (cloud: ClientCloud) => {
       ) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.deliveryPrices", true);
         const deliveryPriceData: Biqpod.Snapbuy.DeliveryPrice = {
           ...deliveryPrice,
           storeId,
@@ -1046,6 +1085,7 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(deliveryPriceId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.deliveryPrices", true);
         await deleteDoc([
           "projects",
           appProjectId,
@@ -1054,6 +1094,17 @@ export const createApi = (cloud: ClientCloud) => {
         ]);
       },
       async getAll(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.deliveryPrices"
+        );
+        if (!isUpdatingHapens) {
+          const deliveryPrices = getTempFromStore<
+            Biqpod.Snapbuy.DeliveryPrice[]
+          >("deliveryPrices." + storeId);
+          if (deliveryPrices) {
+            return deliveryPrices;
+          }
+        }
         const deliveryPrices = await getDocs<Biqpod.Snapbuy.DeliveryPrice>(
           [mainRef, "deliveryPrices"],
           {
@@ -1061,10 +1112,11 @@ export const createApi = (cloud: ClientCloud) => {
             orders: [orderBy("createdAt", "desc")],
           }
         );
-        return (
+        const result =
           deliveryPrices?.map((price) => ({ ...price.data, id: price.id })) ||
-          []
-        );
+          [];
+        setTemp("deliveryPrices." + storeId, result);
+        return result;
       },
       options: {
         async add(
@@ -1076,6 +1128,7 @@ export const createApi = (cloud: ClientCloud) => {
         ) {
           const uid = await getCurrentAuth();
           if (!uid) throw "User not authenticated";
+          setTemp("updating-hapen.deliveryOptions", true);
           const id = crypto.randomUUID();
           await setDoc([mainRef, "deliveryOptions", id], {
             ...deliveryOption,
@@ -1091,6 +1144,7 @@ export const createApi = (cloud: ClientCloud) => {
         ) {
           const uid = await getCurrentAuth();
           if (!uid) throw "User not authenticated";
+          setTemp("updating-hapen.deliveryOptions", true);
           await setDoc([mainRef, "deliveryOptions", deliveryOptionId], {
             ...deliveryOption,
             uid,
@@ -1099,6 +1153,7 @@ export const createApi = (cloud: ClientCloud) => {
         async delete(deliveryOptionId: string) {
           const uid = await getCurrentAuth();
           if (!uid) throw "User not authenticated";
+          setTemp("updating-hapen.deliveryOptions", true);
           // Also delete all associated delivery prices
           await deleteDoc([
             "projects",
@@ -1108,6 +1163,17 @@ export const createApi = (cloud: ClientCloud) => {
           ]);
         },
         async getAll(storeId: string) {
+          const isUpdatingHapens = getTempFromStore<boolean>(
+            "updating-hapen.deliveryOptions"
+          );
+          if (!isUpdatingHapens) {
+            const deliveryOptions = getTempFromStore<
+              Biqpod.Snapbuy.DeliveryOptions[]
+            >("deliveryOptions." + storeId);
+            if (deliveryOptions) {
+              return deliveryOptions;
+            }
+          }
           const deliveryOptions = await getDocs<Biqpod.Snapbuy.DeliveryOptions>(
             [mainRef, "deliveryOptions"],
             {
@@ -1115,12 +1181,13 @@ export const createApi = (cloud: ClientCloud) => {
               orders: [orderBy("createdAt", "desc")],
             }
           );
-          return (
+          const result =
             deliveryOptions?.map((deliveryOption) => ({
               ...deliveryOption.data,
               id: deliveryOption.id,
-            })) || []
-          );
+            })) || [];
+          setTemp("deliveryOptions." + storeId, result);
+          return result;
         },
       },
     },
@@ -1190,12 +1257,14 @@ export const createApi = (cloud: ClientCloud) => {
     },
     packs: {
       async add(pack: Biqpod.Snapbuy.Pack) {
+        setTemp("updating-hapen.packs", true);
         const createPack = await getUserFunction<Biqpod.Snapbuy.Pack>(
           "create-pack"
         );
         return await createPack?.(pack);
       },
       async update(packId: string, pack: Biqpod.Snapbuy.Pack) {
+        setTemp("updating-hapen.packs", true);
         const createPack = await getUserFunction<Biqpod.Snapbuy.Pack>(
           "create-pack"
         );
@@ -1205,10 +1274,24 @@ export const createApi = (cloud: ClientCloud) => {
         });
       },
       async getAll(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.packs"
+        );
+        if (!isUpdatingHapens) {
+          const packs = getTempFromStore<Biqpod.Snapbuy.Pack[]>(
+            "packs." + storeId
+          );
+          if (packs) {
+            return packs;
+          }
+        }
         const packs = await getDocs<Biqpod.Snapbuy.Pack>([mainRef, "packs"], {
           where: and(where("storeId", "==", storeId)),
         });
-        return packs?.map((pack) => ({ ...pack.data, id: pack.id })) || [];
+        const result =
+          packs?.map((pack) => ({ ...pack.data, id: pack.id })) || [];
+        setTemp("packs." + storeId, result);
+        return result;
       },
       async get(packId: string) {
         const pack = getTempFromStore<Biqpod.Snapbuy.Pack>("packs." + packId);
@@ -1227,6 +1310,7 @@ export const createApi = (cloud: ClientCloud) => {
         return doc;
       },
       async delete(packId: string) {
+        setTemp("updating-hapen.packs", true);
         const deletePack = await getUserFunction("delete-pack");
         await deletePack?.({ packId });
       },
@@ -1245,6 +1329,7 @@ export const createApi = (cloud: ClientCloud) => {
       async create(customer: Omit<Biqpod.Snapbuy.Customer, "createdAt">) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.customers", true);
         const customerId = crypto.randomUUID();
         await createDoc([mainRef, "customers", customerId], {
           ...customer,
@@ -1267,6 +1352,17 @@ export const createApi = (cloud: ClientCloud) => {
       async getAll(storeId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.customers"
+        );
+        if (!isUpdatingHapens) {
+          const customers = getTempFromStore<Biqpod.Snapbuy.Customer[]>(
+            "customers." + storeId
+          );
+          if (customers) {
+            return customers;
+          }
+        }
         const customers = await getDocs<Biqpod.Snapbuy.Customer>(
           [mainRef, "customers"],
           {
@@ -1274,12 +1370,13 @@ export const createApi = (cloud: ClientCloud) => {
             orders: [orderBy("createdAt", "desc")],
           }
         );
-        return (
+        const result =
           customers?.map((customer) => ({
             ...customer.data,
             id: customer.id,
-          })) || []
-        );
+          })) || [];
+        setTemp("customers." + storeId, result);
+        return result;
       },
       async updateStatus(
         customerId: string,
@@ -1287,6 +1384,7 @@ export const createApi = (cloud: ClientCloud) => {
       ) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.customers", true);
         await updateDoc([mainRef, "customers", customerId], {
           status,
         });
@@ -1294,6 +1392,7 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(customerId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.customers", true);
         await deleteDoc([mainRef, "customers", customerId]);
       },
     },
@@ -1328,11 +1427,23 @@ export const createApi = (cloud: ClientCloud) => {
         return orders?.map((order) => order.data);
       },
       async upsert(coupon: Biqpod.Snapbuy.Coupon) {
+        setTemp("updating-hapen.coupons", true);
         const upsertCoupon = await getUserFunction<string>("create-coupon");
         const couponId = await upsertCoupon?.(coupon);
         return couponId;
       },
       async getAll(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.coupons"
+        );
+        if (!isUpdatingHapens) {
+          const coupons = getTempFromStore<Biqpod.Snapbuy.Coupon[]>(
+            "coupons." + storeId
+          );
+          if (coupons) {
+            return coupons;
+          }
+        }
         const coupons = await getDocs<Biqpod.Snapbuy.Coupon>(
           [mainRef, "coupons"],
           {
@@ -1340,9 +1451,10 @@ export const createApi = (cloud: ClientCloud) => {
             orders: [orderBy("createdAt", "desc")],
           }
         );
-        return (
-          coupons?.map((coupon) => ({ ...coupon.data, id: coupon.id })) || []
-        );
+        const result =
+          coupons?.map((coupon) => ({ ...coupon.data, id: coupon.id })) || [];
+        setTemp("coupons." + storeId, result);
+        return result;
       },
       async get(couponId: string) {
         const coupon = getTempFromStore<Biqpod.Snapbuy.Coupon>(
@@ -1365,6 +1477,7 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(couponId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.coupons", true);
         const deleteCoupon = await getUserFunction("delete-coupon");
         await deleteCoupon?.({ id: couponId });
         setTemp("coupons." + couponId, null);
@@ -1403,18 +1516,32 @@ export const createApi = (cloud: ClientCloud) => {
     // Vars Management Functions
     var: {
       async upsert(variable: Biqpod.Snapbuy.Var) {
+        setTemp("updating-hapen.vars", true);
         const createVar = await getUserFunction<string>("create-var");
         const varId = await createVar?.(variable);
         return varId;
       },
       async getAll(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.vars"
+        );
+        if (!isUpdatingHapens) {
+          const vars = getTempFromStore<Biqpod.Snapbuy.Var[]>(
+            "vars." + storeId
+          );
+          if (vars) {
+            return vars;
+          }
+        }
         const vars = await getDocs<Biqpod.Snapbuy.Var>([mainRef, "vars"], {
           where: and(where("storeId", "==", storeId)),
           orders: [orderBy("createdAt", "desc")],
         });
-        return (
-          vars?.map((variable) => ({ ...variable.data, id: variable.id })) || []
-        );
+        const result =
+          vars?.map((variable) => ({ ...variable.data, id: variable.id })) ||
+          [];
+        setTemp("vars." + storeId, result);
+        return result;
       },
       async get(varId: string) {
         const variable = getTempFromStore<Biqpod.Snapbuy.Var>("vars." + varId);
@@ -1435,6 +1562,7 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(varId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.vars", true);
         const deleteVar = await getUserFunction("delete-var");
         await deleteVar?.({ id: varId });
         setTemp("vars." + varId, null);
@@ -1455,7 +1583,7 @@ export const createApi = (cloud: ClientCloud) => {
         if (!uid) throw "User not authenticated";
         const accessId = crypto.randomUUID();
         const now = Date.now();
-        const accessData: Biqpod.Snapbuy.StoreUserAccess = {
+        const accessData: Biqpod.Snapbuy.Access = {
           id: accessId,
           storeId,
           uid: uid,
@@ -1478,14 +1606,14 @@ export const createApi = (cloud: ClientCloud) => {
       ) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const existingAccess = await getDoc<Biqpod.Snapbuy.StoreUserAccess>([
+        const existingAccess = await getDoc<Biqpod.Snapbuy.Access>([
           "projects",
           appProjectId,
           "store-access",
           accessId,
         ]);
         if (!existingAccess) throw "Access record not found";
-        const updatedAccess: Biqpod.Snapbuy.StoreUserAccess = {
+        const updatedAccess: Biqpod.Snapbuy.Access = {
           ...existingAccess,
           ...updates,
           updatedAt: Date.now(),
@@ -1497,7 +1625,7 @@ export const createApi = (cloud: ClientCloud) => {
       async getUsersAccess(storeId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const accessRecords = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
+        const accessRecords = await getDocs<Biqpod.Snapbuy.Access>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1520,7 +1648,7 @@ export const createApi = (cloud: ClientCloud) => {
       async getInvitedStores() {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const accessRecords = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
+        const accessRecords = await getDocs<Biqpod.Snapbuy.Access>(
           [mainRef, "store-access"],
           {
             where: and(where("relatedUid", "==", uid)),
@@ -1535,7 +1663,7 @@ export const createApi = (cloud: ClientCloud) => {
         // Get the stores for these accesses
         const stores = await Promise.all(
           result.map(async (access) => {
-            const store = await snapbuyApi.store.get(access.storeId);
+            const store = await snapbuyApi.store.get(access.storeId!);
             return store!;
           })
         );
@@ -1546,7 +1674,7 @@ export const createApi = (cloud: ClientCloud) => {
         if (!uid) {
           throw "User not authenticated";
         }
-        const docs = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
+        const docs = await getDocs<Biqpod.Snapbuy.Access>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1566,7 +1694,7 @@ export const createApi = (cloud: ClientCloud) => {
       async leave(storeId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
-        const docs = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
+        const docs = await getDocs<Biqpod.Snapbuy.Access>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1587,7 +1715,7 @@ export const createApi = (cloud: ClientCloud) => {
         type: "email" | "username" = "email"
       ) {
         const field = type === "email" ? "userEmail" : "username";
-        const accessRecords = await getDocs<Biqpod.Snapbuy.StoreUserAccess>(
+        const accessRecords = await getDocs<Biqpod.Snapbuy.Access>(
           [mainRef, "store-access"],
           {
             where: and(
@@ -1630,12 +1758,12 @@ export const createApi = (cloud: ClientCloud) => {
         if (!currentStore) {
           throw "NO STORE SELECTED";
         }
+        setTemp("updating-hapen.invoices", true);
         const id = invoice.id || crypto.randomUUID();
         const now = Date.now();
         // Calculate total from products
         const subtotal = Object.values(invoice.products || {}).reduce(
-          (sum: number, product: { count: number; price: number }) =>
-            sum + product.count * product.price,
+          (sum, product) => sum + (product?.count || 0) * (product?.price || 0),
           0
         );
         const tax = invoice.tax || 0;
@@ -1657,6 +1785,17 @@ export const createApi = (cloud: ClientCloud) => {
         return invoiceData;
       },
       async getAll(storeId: string) {
+        const isUpdatingHapens = getTempFromStore<boolean>(
+          "updating-hapen.invoices"
+        );
+        if (!isUpdatingHapens) {
+          const invoices = getTempFromStore<Biqpod.Snapbuy.Invoice[]>(
+            "invoices." + storeId
+          );
+          if (invoices) {
+            return invoices;
+          }
+        }
         const invoices = await getDocs<Biqpod.Snapbuy.Invoice>(
           [mainRef, "invoices"],
           {
@@ -1670,6 +1809,7 @@ export const createApi = (cloud: ClientCloud) => {
         result.forEach((invoice) => {
           setTemp("invoices." + invoice.id, invoice);
         });
+        setTemp("invoices." + storeId, result);
         return result;
       },
       async get(invoiceId: string) {
@@ -1693,6 +1833,7 @@ export const createApi = (cloud: ClientCloud) => {
       async delete(invoiceId: string) {
         const uid = await getCurrentAuth();
         if (!uid) throw "User not authenticated";
+        setTemp("updating-hapen.invoices", true);
         await deleteDoc([mainRef, "invoices", invoiceId]);
         setTemp("invoices." + invoiceId, null);
       },

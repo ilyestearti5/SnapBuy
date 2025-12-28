@@ -4,7 +4,6 @@ import { Brands } from "../../../Links/Brands";
 import { Collections } from "../../../Links/Collections";
 import { Packs } from "../../../Links/Packs";
 import { allIcons } from "@biqpod/app/ui/apis";
-
 export const ProductsAndBrands = () => {
   const tabs = [
     {
@@ -32,7 +31,6 @@ export const ProductsAndBrands = () => {
       content: <Packs />,
     },
   ];
-
   return (
     <TabsView
       id="products-and-brands"

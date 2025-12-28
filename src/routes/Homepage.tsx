@@ -1,4 +1,4 @@
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { Link, useHistory } from "react-router-dom";
 import {
   Button,
@@ -49,6 +49,60 @@ export const Homepage = () => {
   const user = useUser();
   const [recentStores, setRecentStores] = useState<Biqpod.Snapbuy.Store[]>([]);
   const [loadingRecent, setLoadingRecent] = useState(true);
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const followers = [
+    {
+      springX: useSpring(mouseX, { stiffness: 400, damping: 40 }),
+      springY: useSpring(mouseY, { stiffness: 400, damping: 40 }),
+      size: 16,
+      opacity: 0.9,
+      rotate: 0,
+    },
+    {
+      springX: useSpring(mouseX, { stiffness: 300, damping: 35 }),
+      springY: useSpring(mouseY, { stiffness: 300, damping: 35 }),
+      size: 14,
+      opacity: 0.7,
+      rotate: 45,
+    },
+    {
+      springX: useSpring(mouseX, { stiffness: 200, damping: 30 }),
+      springY: useSpring(mouseY, { stiffness: 200, damping: 30 }),
+      size: 12,
+      opacity: 0.5,
+      rotate: 90,
+    },
+    {
+      springX: useSpring(mouseX, { stiffness: 150, damping: 25 }),
+      springY: useSpring(mouseY, { stiffness: 150, damping: 25 }),
+      size: 10,
+      opacity: 0.3,
+      rotate: 135,
+    },
+    {
+      springX: useSpring(mouseX, { stiffness: 100, damping: 20 }),
+      springY: useSpring(mouseY, { stiffness: 100, damping: 20 }),
+      size: 8,
+      opacity: 0.2,
+      rotate: 180,
+    },
+    {
+      springX: useSpring(mouseX, { stiffness: 80, damping: 18 }),
+      springY: useSpring(mouseY, { stiffness: 80, damping: 18 }),
+      size: 6,
+      opacity: 0.1,
+      rotate: 225,
+    },
+    {
+      springX: useSpring(mouseX, { stiffness: 60, damping: 15 }),
+      springY: useSpring(mouseY, { stiffness: 60, damping: 15 }),
+      size: 4,
+      opacity: 0.05,
+      rotate: 270,
+    },
+  ];
   // Load recently visited stores from IndexedDB
   useEffect(() => {
     const loadRecentStores = async () => {
@@ -74,6 +128,19 @@ export const Homepage = () => {
     };
     loadRecentStores();
   }, [user]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      mouseX.set(e.clientX);
+      mouseY.set(e.clientY);
+    };
+
+    document.addEventListener("mousemove", handleMouseMove);
+
+    return () => {
+      document.removeEventListener("mousemove", handleMouseMove);
+    };
+  }, []);
   const features = [
     {
       icon: allIcons.solid.faStore,
@@ -1350,6 +1417,38 @@ export const Homepage = () => {
           </div>
         </div>
       </footer>
+      {/* Cursor Followers */}
+      {followers.map((follower, index) => (
+        <motion.div
+          key={index}
+          className="z-[9998] fixed -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          style={{ x: follower.springX, y: follower.springY }}
+          animate={{ rotate: follower.rotate }}
+          transition={{ rotate: { duration: 2, repeat: Infinity, ease: "linear" } }}
+        >
+          <div
+            className="bg-[--biqpod-primary] shadow-lg rounded-full"
+            style={{ width: follower.size, height: follower.size, opacity: follower.opacity }}
+          />
+        </motion.div>
+      ))}
+      {/* Main Cursor Follower */}
+      <motion.div
+        className="z-[9999] fixed -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+        style={{ x: mouseX, y: mouseY }}
+        animate={{
+          scale: [1, 1.2, 1],
+          rotate: [0, 10, -10, 0],
+        }}
+        transition={{
+          scale: { repeat: Infinity, duration: 2, ease: "easeInOut" },
+          rotate: { repeat: Infinity, duration: 3, ease: "easeInOut" },
+        }}
+      >
+        <div className="flex justify-center items-center bg-[--biqpod-primary] shadow-lg rounded-full w-12 h-12">
+          <Icon icon={allIcons.solid.faBolt} className="text-white text-xl" />
+        </div>
+      </motion.div>
     </div>
   );
 };

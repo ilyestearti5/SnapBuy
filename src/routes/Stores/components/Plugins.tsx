@@ -377,7 +377,16 @@ export const Plugins = () => {
     return <div>Loading plugins...</div>;
   }
   if (error) {
-    return <div>Error: {error}</div>;
+    return (
+      <div className="flex justify-center items-center h-full">
+        <Card className="p-4 text-center">
+          <h3 className="text-[--biqpod-gray-opacity-2] font-semibold text-lg">
+            Error Loading Plugins
+          </h3>
+          <p className="text-[--biqpod-gray-opacity-2] mt-2">{error}</p>
+        </Card>
+      </div>
+    );
   }
   const filteredPlugins = plugins.filter(
     (plugin) =>

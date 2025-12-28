@@ -13,6 +13,7 @@
     "formulahendry.auto-rename-tag",
     "github.copilot",
     "helixquar.randomeverything",
-    "dejmedus.tailwind-sorter"
+    "dejmedus.tailwind-sorter",
+    "kiui.mesh-viewer"
   ]
 }

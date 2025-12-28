@@ -67,7 +67,7 @@ export const UpsertInvoice = ({ invoice }: UpsertInvoiceProps) => {
           id: "test-1",
           name: "Test Product 1",
           description: "A test product",
-          photos: [],
+          files: [],
           single: { customer: 100 },
           brandId: "test-brand-1",
         },
@@ -75,7 +75,7 @@ export const UpsertInvoice = ({ invoice }: UpsertInvoiceProps) => {
           id: "test-2",
           name: "Test Product 2",
           description: "Another test product",
-          photos: [],
+          files: [],
           single: { customer: 200 },
           brandId: "test-brand-2",
         },
@@ -170,7 +170,7 @@ export const UpsertInvoice = ({ invoice }: UpsertInvoiceProps) => {
                     >
                       <div className="flex items-center gap-2">
                         <Image
-                          src={productInfo?.photos?.at(0)}
+                          src={productInfo?.files?.at(0)?.url}
                           alt={
                             <Icon
                               icon={allIcons.solid.faBoxOpen}

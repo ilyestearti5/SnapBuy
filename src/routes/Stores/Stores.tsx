@@ -35,7 +35,7 @@ import {
 import { snapbuyApi } from "../../apis";
 import { delay, range } from "@biqpod/app/ui/utils";
 import notFoundPhoto from "../../assets/nothing.png";
-import { Link } from "react-router-dom";
+import { useHistory } from "react-router-dom";
 import { UpsertStore } from "./UpsertStore";
 import { useStoreId } from "../../utils";
 import { motion } from "framer-motion";
@@ -116,7 +116,6 @@ const addButtonVariants = {
   hover: {
     scale: 1.1,
     rotate: 5,
-    backgroundColor: "var(--biqpod-primary-rgb)",
     transition: {
       type: "spring" as const,
       stiffness: 400,
@@ -312,7 +311,6 @@ export const Stores = () => {
     "fetch-my-stores",
     async () => {
       const stores = await snapbuyApi.store.getAll();
-      console.log(stores);
       storesState.set(stores);
     },
     []
@@ -391,6 +389,7 @@ export const Stores = () => {
   );
   const deletionStore = getTemp<string>("deletion-store");
   const exportingStore = getTemp<string>("exporting-store");
+  const hist = useHistory();
   return (
     <Scroll>
       <motion.div
@@ -410,7 +409,6 @@ export const Stores = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <EmptyComponent>
                     {storesState.get.map((store) => {
-                      const linkId = `store-${store.id}`;
                       const choosed = storeId === store.id;
                       const pixels = Object.entries(store.pixels || {}).filter(
                         ([_, value]) => value
@@ -492,7 +490,7 @@ export const Stores = () => {
                                       });
                                       if (!response) return;
                                     }
-                                    document.getElementById(linkId)?.click();
+                                    hist.push(`/store/${store.id}/dashboard`);
                                   }}
                                   className="text-2xl"
                                   iconClassName="text-2xl"
@@ -573,20 +571,17 @@ export const Stores = () => {
                                                         ...product,
                                                       };
                                                       if (
-                                                        product.photos &&
-                                                        product.photos.length >
-                                                          0
+                                                        product.files &&
+                                                        product.files.length > 0
                                                       ) {
-                                                        updatedProduct.photos =
+                                                        updatedProduct.files =
                                                           await Promise.all(
-                                                            product.photos.map(
-                                                              async (
-                                                                photoUrl
-                                                              ) => {
+                                                            product.files.map(
+                                                              async (file) => {
                                                                 try {
                                                                   const response =
                                                                     await fetch(
-                                                                      photoUrl
+                                                                      file.url!
                                                                     );
                                                                   const blob =
                                                                     await response.blob();
@@ -607,13 +602,19 @@ export const Stores = () => {
                                                                         );
                                                                       }
                                                                     );
-                                                                  return base64;
+                                                                  return {
+                                                                    url: base64,
+                                                                    type: blob.type,
+                                                                  };
                                                                 } catch (e) {
                                                                   console.error(
                                                                     "Failed to convert photo to base64:",
                                                                     e
                                                                   );
-                                                                  return photoUrl; // fallback to original URL
+                                                                  return {
+                                                                    url: file.url,
+                                                                    type: blob.type,
+                                                                  };
                                                                 }
                                                               }
                                                             )
@@ -678,7 +679,8 @@ export const Stores = () => {
                                               message:
                                                 "Are you sure you want to delete this store?",
                                               detail:
-                                                "All data related to this store will be removed (Products / Orders).",
+                                                "All data related to this store will be removed!",
+                                              type: "warning",
                                             });
                                             if (response) {
                                               execAction(
@@ -714,7 +716,7 @@ export const Stores = () => {
                                   <div className="flex justify-center">
                                     {pixels.map(([pixel, value]) => {
                                       const pixelId =
-                                        pixel as Biqpod.Snapbuy.PixelId;
+                                        pixel as Biqpod.Snapbuy.Basic.PixelId;
                                       const photo = pixelsPhoto[pixel];
                                       return (
                                         <motion.div
@@ -839,10 +841,6 @@ export const Stores = () => {
                                 </div>
                               </EmptyComponent>
                             )}
-                            <Link
-                              to={`/store/${store.id}/dashboard`}
-                              id={linkId}
-                            />
                             {deletionStore === store.id && (
                               <div className="absolute inset-0 flex justify-center items-center bg-[--biqpod-gray-opacity] backdrop-blur-md">
                                 <CircleLoading />
@@ -889,7 +887,6 @@ export const Stores = () => {
                 <div className="flex flex-wrap items-center gap-2">
                   <EmptyComponent>
                     {invitedStoresState.get.map((store) => {
-                      const linkId = `invited-store-${store.id}`;
                       const choosed = storeId === store.id;
                       const pixels = Object.entries(store.pixels || {}).filter(
                         ([_, value]) => value
@@ -969,7 +966,7 @@ export const Stores = () => {
                                       });
                                       if (!response) return;
                                     }
-                                    document.getElementById(linkId)?.click();
+                                    hist.push(`/store/${store.id}/dashboard`);
                                   }}
                                   className="text-2xl"
                                   iconClassName="text-2xl"
@@ -1129,10 +1126,6 @@ export const Stores = () => {
                                 </div>
                               </EmptyComponent>
                             )}
-                            <Link
-                              to={`/store/${store.id}/dashboard`}
-                              id={linkId}
-                            />
                           </Card>
                         </motion.div>
                       );

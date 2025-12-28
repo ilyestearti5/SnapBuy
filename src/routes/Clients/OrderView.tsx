@@ -25,10 +25,10 @@ export const OrderView = ({ order }: OrderView) => {
   const productsLengths = Object.keys(order.products || {}).length;
   const packsLengths = Object.keys(order.packs || {}).length;
   const productsList = useAsyncMemo(async () => {
-    return snapbuyApi.order.getProducts(order.id);
+    return snapbuyApi.order.getProducts(order.id!);
   }, []);
   const packsList = useAsyncMemo(async () => {
-    return snapbuyApi.getOrderPacks(order.id);
+    return snapbuyApi.getOrderPacks(order.id!);
   }, []);
   const total = useMemo(() => {
     const productsTotal =
@@ -80,8 +80,8 @@ export const OrderView = ({ order }: OrderView) => {
         <AnimatePresence>
           {expandedProducts &&
             productsList?.map((product) => {
-              const photos = product.photos || [];
-              const photo = photos.at(0);
+              const files = product.files || [];
+              const file = files.at(0);
               const total = (product.price || 0) * (product.count || 0);
               return (
                 <motion.div
@@ -95,7 +95,7 @@ export const OrderView = ({ order }: OrderView) => {
                   <div className="flex items-center gap-4 p-2">
                     <div>
                       <Image
-                        src={photo}
+                        src={file?.url}
                         className="bg-[--biqpod-gray-opacity] rounded-2xl w-[60px] h-[60px] cursor-pointer"
                         alt={<Icon icon={allIcons.solid.faImage} />}
                         onClick={() => {
