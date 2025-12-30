@@ -26,7 +26,6 @@ import paymentChecked from "../assets/payment-checked.png";
 import products from "../assets/products.png";
 import shopping from "../assets/shopping.png";
 import overview from "../assets/overview.png";
-import { pagesSrcs } from "./pages";
 const fadeInUp = {
   hidden: { opacity: 0, y: 30 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.6 } },
@@ -211,63 +210,6 @@ export const Homepage = () => {
         "Customer support is excellent and the platform is so user-friendly. Highly recommended!",
       rating: 5,
     },
-  ];
-  const exampleImages = [
-    {
-      name: "Cat & Dog",
-      photo: pagesSrcs[0],
-      web: "https://snapbuy.com/docs/dashboard",
-    },
-    {
-      name: "Cosmetics",
-      photo: pagesSrcs[1],
-      web: "https://snapbuy.com/docs/products",
-    },
-    {
-      name: "Car Filters",
-      photo: pagesSrcs[2],
-      web: "https://snapbuy.com/docs/orders",
-    },
-    {
-      name: "Car Accessories",
-      photo: pagesSrcs[3],
-      web: "https://snapbuy.com/docs/delivery",
-    },
-    {
-      name: "Car Auto",
-      photo: pagesSrcs[4],
-      web: "https://snapbuy.com/docs/payments",
-    },
-    {
-      name: "Learning",
-      photo: pagesSrcs[5],
-      web: "https://snapbuy.com/docs/analytics",
-    },
-    {
-      name: "University",
-      photo: pagesSrcs[6],
-      web: "https://snapbuy.com/docs/customers",
-    },
-    {
-      name: "Sport Equipment",
-      photo: pagesSrcs[7],
-      web: "https://snapbuy.com/docs/inventory",
-    },
-    {
-      name: "Car Parts",
-      photo: pagesSrcs[8],
-      web: "https://snapbuy.com/docs/api",
-    },
-    {
-      name: "Motocycle Gear",
-      photo: pagesSrcs[9],
-      web: "https://snapbuy.com/docs/mobile",
-    },
-    ...pagesSrcs.slice(10).map((_, index) => ({
-      name: `Example ${index}`,
-      photo: _,
-      web: "https://snapbuy.com/docs",
-    })),
   ];
   const hist = useHistory();
   return (
@@ -819,41 +761,6 @@ export const Homepage = () => {
                   />
                 </Card>
               </motion.div>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-      <Line />
-      {/* Examples Section */}
-      <section className="py-20">
-        <div className="mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3 }}
-            className="mt-4 w-full overflow-hidden"
-          >
-            <div className="flex flex-wrap justify-center gap-4 w-full">
-              {exampleImages.map((image, index) => (
-                <Card
-                  key={index}
-                  className="overflow-hidden cursor-pointer"
-                  onClick={() => window.open(image.web, "_blank")}
-                >
-                  <img
-                    src={image.photo}
-                    alt={image.name}
-                    className="w-full h-48 object-cover"
-                  />
-                  <Line />
-                  <div className="p-2">
-                    <p className="font-semibold text-[--biqpod-text-color] text-sm text-center">
-                      {image.name}
-                    </p>
-                  </div>
-                </Card>
-              ))}
             </div>
           </motion.div>
         </div>
@@ -1424,11 +1331,17 @@ export const Homepage = () => {
           className="z-[9998] fixed -translate-x-1/2 -translate-y-1/2 pointer-events-none"
           style={{ x: follower.springX, y: follower.springY }}
           animate={{ rotate: follower.rotate }}
-          transition={{ rotate: { duration: 2, repeat: Infinity, ease: "linear" } }}
+          transition={{
+            rotate: { duration: 2, repeat: Infinity, ease: "linear" },
+          }}
         >
           <div
             className="bg-[--biqpod-primary] shadow-lg rounded-full"
-            style={{ width: follower.size, height: follower.size, opacity: follower.opacity }}
+            style={{
+              width: follower.size,
+              height: follower.size,
+              opacity: follower.opacity,
+            }}
           />
         </motion.div>
       ))}

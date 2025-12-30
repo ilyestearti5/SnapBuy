@@ -397,7 +397,10 @@ export const Store = () => {
           {!showLoading && (
             <div className="flex flex-col justify-center items-center h-full">
               <AnimatePresence>
-                <div className="flex justify-center items-center h-full">
+                <div
+                  key="side-text"
+                  className="flex justify-center items-center h-full"
+                >
                   {sideText && (
                     <motion.div
                       initial={{
@@ -431,7 +434,10 @@ export const Store = () => {
                     </motion.div>
                   )}
                 </div>
-                <motion.div className="inline-flex flex-col gap-2 bg-[--biqpod-primary-background] p-2 border-[--biqpod-borders] border-y border-r border-solid rounded-se-3xl rounded-ee-3xl">
+                <motion.div
+                  key="user-tabs"
+                  className="inline-flex flex-col gap-2 bg-[--biqpod-primary-background] p-2 border-[--biqpod-borders] border-y border-r border-solid rounded-se-3xl rounded-ee-3xl"
+                >
                   {userTabs.map((item, index) => {
                     const link = item.link.replaceAll(`{storeId}`, storeId);
                     const isSelected = loc.pathname === link;
@@ -458,7 +464,7 @@ export const Store = () => {
           <div className="relative flex flex-col bg-[--biqpod-primary-background] border-[--biqpod-borders] border-y border-l border-solid rounded-ss-3xl rounded-es-3xl w-full h-full overflow-hidden">
             <AnimatePresence>
               {!showLoading && isWillExpired && !isPlans && (
-                <EmptyComponent>
+                <EmptyComponent key="expired-warning">
                   <motion.div
                     initial={{ opacity: 0, y: -20, height: 0 }}
                     animate={{ opacity: 1, y: 0, height: "auto" }}

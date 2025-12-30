@@ -1,4 +1,4 @@
-import { allIcons, and, getDoc, where } from "@biqpod/app/ui/apis";
+import { allIcons, and, getDoc, orderBy, where } from "@biqpod/app/ui/apis";
 import {
   AsyncComponent,
   BooleanField,
@@ -32,7 +32,7 @@ import { fuzzySearch, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useMemo } from "react";
 import { onCollectionSnapshot } from "../server";
 import { useLocation } from "react-router-dom";
-import { snapbuyApi } from "../apis";
+import { appProjectId, snapbuyApi } from "../apis";
 import {
   FilterOrders,
   FilterOrdersProps,
@@ -223,6 +223,9 @@ export const Orders = () => {
   const ordersState = useMemo(() => {
     const currentTime = new Date();
     var result = orders.get
+      ?.filter(
+        (order, index, arr) => arr.findIndex((o) => o.id === order.id) === index
+      )
       ?.filter((order) => {
         return fuzzySearch(
           `${order.id} @status ${order.status}`,
@@ -268,23 +271,26 @@ export const Orders = () => {
     return result;
   }, [searchOrder, orders.get]);
   const hasNews = useCopyState<Biqpod.Snapbuy.Order[]>([]);
+  const currentTime = useCopyState(Date.now());
   useEffect(() => {
-    if (user?.uid) {
+    if (selectedStoreId) {
       return onCollectionSnapshot<Biqpod.Snapbuy.Order>(
-        ["projects", import.meta.env.VITE_PROJECT_ID, "orders"],
+        ["projects", appProjectId, "orders"],
         (news) => {
+          if (news.length === 0) return;
           hasNews.set(news.map((order) => ({ ...order.data, id: order.id })));
         },
         {
           limit: 5,
           where: and(
-            where("uid", "==", user.uid),
-            where("createdAt", ">=", Date.now())
+            where("storeId", "==", selectedStoreId),
+            where("createdAt", ">=", currentTime.get)
           ),
+          orders: [orderBy("createdAt", "asc")],
         }
       );
     }
-  }, [user?.uid]);
+  }, [currentTime.get, selectedStoreId]);
   const toggleSelectionMode = () => {
     isSelectionMode.set(!isSelectionMode.get);
     selectedOrders.set([]);
@@ -510,10 +516,11 @@ export const Orders = () => {
                     icon={allIcons.solid.faArrowUp}
                     className="rounded-full w-fit"
                     onClick={() => {
+                      currentTime.set(Date.now());
+                      hasNews.set([]);
                       orders.set((prev) =>
                         prev ? [...hasNews.get, ...prev] : hasNews.get
                       );
-                      hasNews.set([]);
                     }}
                   >
                     {hasNews.get.length} <Translate content="news" />

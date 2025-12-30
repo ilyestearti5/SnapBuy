@@ -23,7 +23,7 @@
     "@babylonjs/core": "^6.49.0",
     "@babylonjs/loaders": "^6.49.0",
     "@babylonjs/materials": "^6.49.0",
-    "@biqpod/app": "file:../Core",
+    "@biqpod/app": "^0.4.2",
     "@biqpod/packing": "^1.0.0",
     "@capacitor-community/camera-preview": "^7.0.1",
     "@capacitor/android": "^7.2.0",
