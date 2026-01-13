@@ -92,7 +92,7 @@ export const roleColors: Record<
   franchise_partner: "#009688",
   merchant: "#FFEB3B",
 };
-export const DAYS_LEFT = 15;
+export const DAYS_LEFT = 7;
 export const tabServices = mergeArray(
   {
     name: "Stores",

@@ -335,7 +335,7 @@ export const Plans = () => {
                               return (
                                 <div
                                   key={index}
-                                  className="p-3 border border-[--biqpod-borders] rounded"
+                                  className="flex flex-col gap-2 p-3 border border-[--biqpod-borders] rounded"
                                 >
                                   <div className="flex justify-between items-center">
                                     <span className="font-medium text-sm capitalize">
@@ -347,49 +347,47 @@ export const Plans = () => {
                                       {new Date(endTime).toLocaleDateString()}
                                     </span>
                                   </div>
-                                  <div className="w-full">
+                                  <div
+                                    className={`w-full h-2 rounded-full ${bgColor}`}
+                                  >
                                     <div
-                                      className={`w-full h-2 rounded-full ${bgColor}`}
-                                    >
-                                      <div
-                                        className={`h-2 rounded-full duration-300 ${barColor}`}
-                                        style={{
-                                          width: `${Math.min(
-                                            progressPercentage,
-                                            100
-                                          )}%`,
-                                        }}
-                                      />
-                                    </div>
-                                    <div className="flex justify-between items-center">
-                                      <span className="opacity-70 text-[--biqpod-text-color] text-xs">
-                                        {remainingText === "Expired" ||
-                                        remainingText === "1 day remaining" ||
-                                        remainingText ===
-                                          "Less than 1 day remaining" ? (
-                                          <Translate content={remainingText} />
-                                        ) : (
-                                          remainingText
+                                      className={`h-2 rounded-full duration-300 ${barColor}`}
+                                      style={{
+                                        width: `${Math.min(
+                                          progressPercentage,
+                                          100
+                                        )}%`,
+                                      }}
+                                    />
+                                  </div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="opacity-70 text-[--biqpod-text-color] text-xs">
+                                      {remainingText === "Expired" ||
+                                      remainingText === "1 day remaining" ||
+                                      remainingText ===
+                                        "Less than 1 day remaining" ? (
+                                        <Translate content={remainingText} />
+                                      ) : (
+                                        remainingText
+                                      )}
+                                    </span>
+                                    <div className="flex items-center gap-2">
+                                      {daysRemaining <= DAYS_LEFT &&
+                                        !isExpired && (
+                                          <Button
+                                            onClick={handlePayment}
+                                            className="px-2 py-1"
+                                            disabled={isPaymentLoading}
+                                            icon={allIcons.solid.faRedo}
+                                          >
+                                            <Translate content="Renew" />
+                                          </Button>
                                         )}
+                                      <span
+                                        className={`text-xs font-medium ${textColor}`}
+                                      >
+                                        {progressPercentage.toFixed(1)}%
                                       </span>
-                                      <div className="flex items-center gap-2">
-                                        {daysRemaining <= DAYS_LEFT &&
-                                          !isExpired && (
-                                            <Button
-                                              onClick={handlePayment}
-                                              className="px-2 py-1"
-                                              disabled={isPaymentLoading}
-                                              icon={allIcons.solid.faRedo}
-                                            >
-                                              <Translate content="Renew" />
-                                            </Button>
-                                          )}
-                                        <span
-                                          className={`text-xs font-medium ${textColor}`}
-                                        >
-                                          {progressPercentage.toFixed(1)}%
-                                        </span>
-                                      </div>
                                     </div>
                                   </div>
                                 </div>
@@ -494,14 +492,14 @@ export const Plans = () => {
                                     </div>
                                     {freeLimit > 0 && paidLimit > 0 && (
                                       <div className="flex items-center gap-1">
-                                        <span className="bg-green-500/20 px-2 py-0.5 rounded-full text-green-600 text-xs">
+                                        <span className="inline-flex items-center gap-2 bg-green-500/20 px-2 py-0.5 rounded-full text-green-600 text-xs">
                                           <Icon icon={allIcons.solid.faGift} />
                                           {freeLimit}
                                         </span>
                                         <span className="opacity-60 text-xs">
                                           +
                                         </span>
-                                        <span className="bg-blue-500/20 px-2 py-0.5 rounded-full text-blue-600 text-xs">
+                                        <span className="inline-flex items-center gap-2 bg-blue-500/20 px-2 py-0.5 rounded-full text-blue-600 text-xs">
                                           <Icon
                                             icon={allIcons.solid.faCreditCard}
                                           />
@@ -565,7 +563,7 @@ export const Plans = () => {
                                   </div>
                                 )}
                                 {/* Segmented Progress Bar */}
-                                <div className="w-full">
+                                <div className="flex flex-col gap-3 w-full">
                                   <div className="relative bg-[--biqpod-primary-background] rounded-full w-full h-3 overflow-hidden">
                                     {/* Free zone background */}
                                     {freeLimit > 0 && (
@@ -763,6 +761,12 @@ export const Plans = () => {
                               <Anchor
                                 onClick={(e) => {
                                   e.preventDefault();
+                                  setExpandedStates({
+                                    payAsYouGo: true,
+                                    usage: false,
+                                    paymentHistory: false,
+                                    plan: false,
+                                  });
                                   allUsages.forEach((usage) => {
                                     const setter = usageStates[usage]?.set;
                                     const value = plan.usage[usage];
@@ -960,7 +964,12 @@ export const Plans = () => {
                                   <RangeField
                                     state={state}
                                     id={`${price.type.replace(/\s+/g, "-")}`}
-                                    config={range}
+                                    config={{
+                                      ...range,
+                                      marked: {
+                                        [current]: `Marked`,
+                                      },
+                                    }}
                                   />
                                 </div>
                                 <div className="w-20">
