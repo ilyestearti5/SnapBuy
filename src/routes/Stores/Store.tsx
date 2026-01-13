@@ -44,7 +44,6 @@ import { getTextSide, useCurrentPayments } from "../../hooks/usePayments";
 import { useAsyncMemo } from "@biqpod/app/ui/hooks";
 import { snapbuyApi } from "../../apis";
 import { allIcons } from "@biqpod/app/ui/apis";
-import type { DataTypes } from "../../apis";
 import { useStoreVisit } from "../../hooks/useStoreVisit";
 import { Agres } from "./Agres";
 import { Biqpod } from "@biqpod/app/ui/types";

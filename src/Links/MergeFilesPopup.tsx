@@ -99,7 +99,7 @@ export const MergeFilesPopup = ({
       URL.revokeObjectURL(objectURL);
       const mediaFile: SnapbuyBasicFile = {
         url: compressedDataURL,
-        size: file.size,
+        // size: file.size,
         type: file.type.split("/").at(0) || "",
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
@@ -112,7 +112,6 @@ export const MergeFilesPopup = ({
       // For URLs, we still use the original approach
       const mediaFile: SnapbuyBasicFile = {
         url: urlString,
-        size: 0,
         type: "image",
       };
       setMediaFiles((prev) => [...prev, mediaFile]);
@@ -121,7 +120,6 @@ export const MergeFilesPopup = ({
       // Fallback to original URL
       const mediaFile: SnapbuyBasicFile = {
         url: urlString,
-        size: 0,
         type: "image",
       };
       setMediaFiles((prev) => [...prev, mediaFile]);

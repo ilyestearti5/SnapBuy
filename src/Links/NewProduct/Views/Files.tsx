@@ -772,7 +772,7 @@ export const ProductFiles = () => {
                                   {mediaFile.type || "Unknown"}
                                 </span>
                               </div>
-                              <div className="flex justify-between items-center p-4">
+                              {/* <div className="flex justify-between items-center p-4">
                                 <span className="inline-block w-full font-semibold">
                                   Size:{" "}
                                 </span>
@@ -781,7 +781,7 @@ export const ProductFiles = () => {
                                     ? `${(mediaFile.size / 1024).toFixed(2)} KB`
                                     : "Unknown"}
                                 </span>
-                              </div>
+                              </div> */}
                             </div>
                           </Card>,
                           {

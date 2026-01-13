@@ -11,7 +11,7 @@
     "isolatedModules": true,
     "jsx": "react-jsx",
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "node",
     "noEmit": true,
     "noFallthroughCasesInSwitch": true,
     /* Linting */
@@ -19,8 +19,7 @@
     "noUnusedParameters": true,
     "resolveJsonModule": true,
     "target": "ESNext",
-    "useDefineForClassFields": true,
-    "ignoreDeprecations": "6.0"
+    "useDefineForClassFields": true
   },
   "include": ["src", "electron"],
   "references": [{ "path": "./tsconfig.node.json" }]
