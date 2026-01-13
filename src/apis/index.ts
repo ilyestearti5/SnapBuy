@@ -37,19 +37,6 @@ interface PackResult extends Biqpod.Snapbuy.Pack {
   price: number;
   count: number;
 }
-export interface PlanRecord {
-  duration: {
-    week: number;
-    month: number;
-    year: number;
-  };
-  features: string[];
-}
-export interface Plan {
-  basic: PlanRecord;
-  pro: PlanRecord;
-  company: PlanRecord;
-}
 export interface CreateOrderOptions {
   storeId?: string;
   products: Biqpod.Snapbuy.Order["products"];
@@ -89,15 +76,6 @@ export const isAccountLinkedWithDrive = async () => {
   const result = await isAccountLinkedCallback?.({ name: "google-drive" });
   return result?.linked || false;
 };
-export type DataTypes =
-  | "products"
-  | "customers"
-  | "orders"
-  | "packs"
-  | "collections"
-  | "brands"
-  | "coupons"
-  | "vars";
 const buildFunction = (name: string) => {
   return {
     getUserFunction: async <T, R = any>(fnId: string) => {
@@ -112,6 +90,16 @@ const buildFunction = (name: string) => {
     },
   };
 };
+export const allUsages: DataTypes[] = [
+  "brands",
+  "collections",
+  "coupons",
+  "customers",
+  "orders",
+  "packs",
+  "products",
+  "vars",
+];
 const { getUserFunction, getFunction } = buildFunction("snapbuy");
 export const createApi = (cloud: ClientCloud) => {
   const getCurrentAuth = () => {
@@ -190,6 +178,18 @@ export const createApi = (cloud: ClientCloud) => {
       const result = await fn?.({});
       if (result) {
         setTemp("free-data", result);
+      }
+      return result;
+    },
+    async getPlans() {
+      const savedData = getTempFromStore<Plan[]>("plan-data");
+      if (savedData) {
+        return savedData;
+      }
+      const fn = await getFunction<Plan[]>("get-plans");
+      const result = await fn?.({});
+      if (result) {
+        setTemp("plan-data", result);
       }
       return result;
     },

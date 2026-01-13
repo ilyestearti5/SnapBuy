@@ -27,3 +27,19 @@ declare interface All {
   name: string;
   file: import("@biqpod/app/ui/types").Biqpod.Snapbuy.Basic.File;
 }
+
+declare interface Plan {
+  id: string;
+  price: number;
+  usage: Record<DataTypes, number>;
+}
+
+declare type DataTypes =
+  | "products"
+  | "customers"
+  | "orders"
+  | "packs"
+  | "collections"
+  | "brands"
+  | "coupons"
+  | "vars";

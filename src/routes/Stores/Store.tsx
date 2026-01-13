@@ -243,7 +243,7 @@ export const Store = () => {
             active.push({
               daysLeft,
               endDate: new Date(endTime),
-              isExpiringSoon: daysLeft <= 30,
+              isExpiringSoon: daysLeft <= DAYS_LEFT,
             });
           }
         }
