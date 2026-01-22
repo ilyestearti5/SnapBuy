@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Container,
   Header,
@@ -7,7 +7,7 @@ import {
   RightSide,
   Window,
 } from "@biqpod/app/ui/layouts";
-import { Switch, Link, Redirect, Route } from "react-router-dom";
+import { Switch, Link, Redirect, Route, useLocation } from "react-router-dom";
 import { HeaderContent } from "./HeaderContent";
 import { isAndroid, isIos } from "@biqpod/app/ui/app";
 import { ProfileInside } from "./ProfileInside";
@@ -52,6 +52,17 @@ import { Preview } from "./Preview";
 export const App = () => {
   useUrlSettings();
   useProfileContent(<ProfileInside />);
+  const location = useLocation();
+  const [isLoading, setIsLoading] = useState(false);
+  const [width, setWidth] = useState("0%");
+
+  useEffect(() => {
+    setIsLoading(true);
+    setWidth("0%");
+    setTimeout(() => setWidth("100%"), 10);
+    const timer = setTimeout(() => setIsLoading(false), 500);
+    return () => clearTimeout(timer);
+  }, [location.pathname]);
   const serviceCards = useMemo(
     () =>
       tabServices.map(({ link, name, photo }, index) => (
@@ -103,6 +114,18 @@ export const App = () => {
       <Header>
         <HeaderContent />
       </Header>
+      {isLoading && (
+        <div
+          className="top-0 left-0 z-50 fixed bg-blue-200 shadow-sm h-1 transition-all duration-500 ease-out"
+          style={{ width }}
+        ></div>
+      )}{" "}
+      {isLoading && (
+        <div
+          className="z-40 fixed inset-0 bg-transparent"
+          onClick={() => {}}
+        ></div>
+      )}{" "}
       <Window>
         <LeftSide />
         <Container>
@@ -425,7 +448,7 @@ export const App = () => {
                     <Button
                       className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
                       onClick={() => {
-                        location.reload();
+                        window.location.reload();
                       }}
                       icon={allIcons.solid.faCheckCircle}
                     >
