@@ -366,6 +366,7 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
   );
 };
 export const ProductToolsBottomSheet = ({
+  index,
   product,
   usedBy,
 }: {

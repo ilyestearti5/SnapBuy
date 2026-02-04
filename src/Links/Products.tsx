@@ -26,11 +26,13 @@ import {
   useTemp,
   confirm,
   openMenu,
+  showBottomSheet,
 } from "@biqpod/app/ui/hooks";
 import { useEffect, useMemo, useRef, useState, useCallback } from "react";
 import { FixedSizeList as List } from "react-window";
 import { snapbuyApi } from "../apis";
 import { ProductRender } from "./ProductRender";
+import { ProductListItem } from "../components/ProductListItem";
 import { motion } from "framer-motion";
 import { useStoreId } from "../utils";
 import { useIndexedDBProducts } from "../hooks/useIndexedDBProducts";
@@ -47,6 +49,8 @@ import { ToolsCard } from "./ToolsCard";
 import { RemoveMetadataPopup } from "./RemoveMetadataPopup";
 import { RemoveAllMetadataPopup } from "./RemoveAllMetadataPopup";
 import { SetBrandPopup } from "./SetBrand";
+import { UpsertProduct } from "./NewProduct/NewProduct";
+import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
 export const Products = () => {
   const storeId = useStoreId();
   const usedBy = useUsedBy();
@@ -85,6 +89,7 @@ export const Products = () => {
   const showTools = useCopyState(false);
   const selectedProducts = useTemp<string[]>("selected-products");
   const isSelectionMode = useTemp<boolean>("is-selection-mode");
+  const viewMode = useCopyState<"grid" | "list">("grid");
   const bulkDeleteAction = useAction(
     "bulk-delete-products",
     async () => {
@@ -163,6 +168,102 @@ export const Products = () => {
   );
   const bulkDeleteLoading = isLoading(bulkDeleteAction);
   const bulkToggleLoading = isLoading(bulkToggleAvailabilityAction);
+
+  // Individual product action handlers
+  const handleEditProduct = useCallback(
+    (productId: string) => {
+      const product = products.find((p) => p.id === productId);
+      if (product) {
+        showPopup(<UpsertProduct product={product} />);
+      }
+    },
+    [products]
+  );
+
+  const handleDeleteProduct = useCallback(
+    async (productId: string) => {
+      const product = products.find((p) => p.id === productId);
+      if (!product) return;
+
+      const confirmed = await confirm({
+        title: "Delete Product",
+        message: `Are you sure you want to delete "${product.name}"?`,
+        detail: "This action cannot be undone.",
+        type: "warning",
+      });
+
+      if (confirmed) {
+        try {
+          await snapbuyApi.product.delete(productId);
+          showToast("Product deleted successfully", "success");
+          execAction("fetch-products", false);
+        } catch (error) {
+          console.error("Failed to delete product:", error);
+          showToast("Failed to delete product", "error");
+        }
+      }
+    },
+    [products]
+  );
+
+  const handleToggleAvailability = useCallback(
+    async (productId: string, available: boolean) => {
+      try {
+        const product = products.find((p) => p.id === productId);
+        if (!product) return;
+
+        await snapbuyApi.product.upsert(storeId!, [
+          {
+            ...product,
+            available,
+          },
+        ]);
+        showToast(
+          `Product ${available ? "enabled" : "disabled"} successfully`,
+          "success"
+        );
+        execAction("fetch-products", false);
+      } catch (error) {
+        console.error("Failed to toggle availability:", error);
+        showToast("Failed to update product availability", "error");
+      }
+    },
+    [products, storeId]
+  );
+
+  const handleDuplicateProduct = useCallback(
+    (productId: string) => {
+      const product = products.find((p) => p.id === productId);
+      if (product) {
+        const duplicatedProduct = {
+          ...product,
+          id: undefined, // This will generate a new ID when creating
+          name: `${product.name} (Copy)`,
+        };
+        showPopup(<UpsertProduct product={duplicatedProduct} />);
+      }
+    },
+    [products]
+  );
+
+  const handleViewProductDetails = useCallback(
+    (productId: string) => {
+      // Open the product tools bottom sheet for details
+      const product = products.find((p) => p.id === productId);
+      const index = products.findIndex((p) => p.id === productId);
+      if (product) {
+        showBottomSheet(
+          <ProductToolsBottomSheet
+            index={index}
+            product={product}
+            usedBy={usedBy}
+          />
+        );
+      }
+    },
+    [products, usedBy]
+  );
+
   const options = useTemp<FilterOptionsForProduct>("filter-products-options");
   const search = getFieldValue("producer-search-product");
   const [_, filterProducts] = useMemoDelay(
@@ -304,11 +405,12 @@ export const Products = () => {
   }, [filterProducts, products, loading, cacheLoading, search, options.get]);
   const { isMobile, isDesktop, isTablet } = useDeviceResolution();
   const columns = useMemo(() => {
+    if (viewMode.get === "list") return 1;
     if (isMobile) return 2;
     if (isTablet) return 3;
     if (isDesktop) return 4;
     return 2; // fallback
-  }, [isMobile, isTablet, isDesktop]);
+  }, [isMobile, isTablet, isDesktop, viewMode.get]);
   // Memoize the item count to prevent recalculation
   const itemCount = useMemo(() => {
     return Math.ceil((listItemData?.length || 0 + 1) / columns);
@@ -327,65 +429,117 @@ export const Products = () => {
       const itsNumber = data.some((item) => typeof item === "number");
       if (itsNumber) {
         // Loading placeholder card
-        return (
-          <div style={style} className="flex items-center gap-2 p-2">
-            {Array.from({ length: columns }, (_, colIndex) => (
+        if (viewMode.get === "list") {
+          // List view loading placeholder
+          return (
+            <div style={style} className="flex items-center gap-2 p-2">
               <motion.div
-                key={`loading-${index}-${colIndex}`}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
-                className="p-1 w-full h-[300px]"
+                className="w-full"
               >
-                <CardWait className="flex flex-col justify-between rounded-2xl w-full h-full overflow-hidden">
+                <CardWait className="flex items-center gap-4 p-4 rounded-2xl w-full h-[120px] overflow-hidden">
                   {/* Image placeholder */}
-                  <div className="relative flex justify-center items-center p-3 w-full h-[200px] overflow-hidden">
-                    <CardWait className="rounded-xl w-full h-full" />
+                  <div className="flex-shrink-0 rounded-xl w-20 h-20 overflow-hidden">
+                    <CardWait className="w-full h-full" />
                   </div>
-                  <Line />
-                  {/* Title placeholder */}
-                  <div className="p-2 max-md:p-1">
-                    <CardWait className="rounded-xl w-3/4 h-6" />
-                  </div>
-                  <Line />
-                  {/* Price placeholder */}
-                  <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
-                    <div className="flex flex-col gap-2">
-                      <CardWait className="rounded-2xl w-16 h-6" />
-                      <CardWait className="rounded-2xl w-16 h-6" />
+                  {/* Content placeholder */}
+                  <div className="flex flex-col flex-1 justify-between min-w-0">
+                    <div className="flex justify-between items-start">
+                      <div className="flex-1 min-w-0">
+                        <CardWait className="mb-2 rounded-xl w-3/4 h-5" />
+                        <CardWait className="rounded-xl w-1/2 h-4" />
+                      </div>
+                      <CardWait className="ml-2 rounded-full w-8 h-8" />
                     </div>
-                    <CardWait className="rounded-full w-8 h-8" />
+                    <div className="flex justify-between items-center">
+                      <div className="flex gap-2">
+                        <CardWait className="rounded-2xl w-16 h-6" />
+                        <CardWait className="rounded-2xl w-16 h-6" />
+                      </div>
+                      <CardWait className="rounded-full w-8 h-8" />
+                    </div>
                   </div>
                 </CardWait>
               </motion.div>
-            ))}
-          </div>
-        );
+            </div>
+          );
+        } else {
+          // Grid view loading placeholder
+          return (
+            <div style={style} className="flex items-center gap-2 p-2">
+              {Array.from({ length: columns }, (_, colIndex) => (
+                <motion.div
+                  key={`loading-${index}-${colIndex}`}
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                  className="p-1 w-full h-[300px]"
+                >
+                  <CardWait className="flex flex-col justify-between rounded-2xl w-full h-full overflow-hidden">
+                    {/* Image placeholder */}
+                    <div className="relative flex justify-center items-center p-3 w-full h-[200px] overflow-hidden">
+                      <CardWait className="rounded-xl w-full h-full" />
+                    </div>
+                    <Line />
+                    {/* Title placeholder */}
+                    <div className="p-2 max-md:p-1">
+                      <CardWait className="rounded-xl w-3/4 h-6" />
+                    </div>
+                    <Line />
+                    {/* Price placeholder */}
+                    <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
+                      <div className="flex flex-col gap-2">
+                        <CardWait className="rounded-2xl w-16 h-6" />
+                        <CardWait className="rounded-2xl w-16 h-6" />
+                      </div>
+                      <CardWait className="rounded-full w-8 h-8" />
+                    </div>
+                  </CardWait>
+                </motion.div>
+              ))}
+            </div>
+          );
+        }
       }
       return (
         <div style={style} className="flex items-center gap-2 p-2">
           {Array.from({ length: columns }, (_, colIndex) => {
             const product = data?.at(index * columns + colIndex);
             return (
-              typeof product === "object" && (
+              typeof product === "object" &&
+              (viewMode.get === "list" ? (
+                <div key={product.id} className="w-full">
+                  <ProductListItem
+                    product={product}
+                    onEdit={handleEditProduct}
+                    onDelete={handleDeleteProduct}
+                    onToggleAvailability={handleToggleAvailability}
+                    onViewDetails={handleViewProductDetails}
+                    onDuplicate={handleDuplicateProduct}
+                  />
+                </div>
+              ) : (
                 <ProductRender
                   index={index * columns + colIndex}
                   product={product}
                   key={product.id}
                 />
-              )
+              ))
             );
           })}
         </div>
       );
     },
-    [columns, isSelectionMode.get]
+    [columns, isSelectionMode.get, viewMode.get]
   );
   // Memoized main content section to prevent unnecessary re-renders
   const MainContent = useMemo(() => {
+    const loadingItemsCount = viewMode.get === "list" ? 8 : columns * 8;
     const data =
       loading || cacheLoading
-        ? [...listItemData, ...range(0, columns * 8)]
+        ? [...listItemData, ...range(0, loadingItemsCount)]
         : listItemData;
     if (data.length > 0) {
       return (
@@ -420,7 +574,7 @@ export const Products = () => {
             ref={listRef}
             height={listHeight}
             itemCount={itemCount}
-            itemSize={340}
+            itemSize={viewMode.get === "list" ? 120 : 250}
             width={"100%"}
             itemData={data}
             onScroll={(e) => {
@@ -450,6 +604,7 @@ export const Products = () => {
     itemCount,
     listItemData,
     RenderItem,
+    viewMode.get,
   ]);
   return (
     <motion.div
@@ -482,10 +637,20 @@ export const Products = () => {
             </span>
           </div>
           <motion.div
-            className="flex"
+            className="flex gap-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
+            <CircleTip
+              icon={
+                viewMode.get === "grid"
+                  ? allIcons.solid.faList
+                  : allIcons.solid.faTh
+              }
+              onClick={() =>
+                viewMode.set(viewMode.get === "grid" ? "list" : "grid")
+              }
+            />
             <CircleTip
               icon={allIcons.solid.faFilter}
               onClick={() => {

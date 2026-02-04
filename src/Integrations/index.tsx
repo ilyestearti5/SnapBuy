@@ -199,7 +199,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
     return examples[language as keyof typeof examples] || examples.javascript;
   };
   return (
-    <Card>
+    <Card className="max-w-[80vw] overflow-hidden">
       <CardHeaderForPopup title="Usage Instructions" />
       <Line />
       <AnimatePresence>
@@ -281,7 +281,7 @@ curl -X GET "https://api.biqpod.com/snapbuy/" \\
                   selectedLanguage.get || "javascript"
                 )}
                 style={isDarkMode ? vscDarkPlus : vs}
-                showLineNumbers={true}
+                showLineNumbers={false}
                 wrapLines={true}
                 customStyle={{
                   margin: 0,

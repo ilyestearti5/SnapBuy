@@ -5,7 +5,6 @@ import {
   Icon,
   Translate,
   Line,
-  Key,
   EmptyComponent,
   Button,
   Image,
@@ -14,18 +13,16 @@ import {
   showBottomSheet,
   getFieldValue,
   useAsyncMemo,
-  showPopup,
   setTemp,
   useDeviceResolution,
   getTemp,
 } from "@biqpod/app/ui/hooks";
-import { delay, tw } from "@biqpod/app/ui/utils";
+import { tw } from "@biqpod/app/ui/utils";
 import { FilesSlider } from "./FilesSlider";
 import { motion } from "framer-motion";
 import { highlightMatch } from "../routes/Clients/ClientProductRender";
 import { ProductToolsBottomSheet } from "./ProductToolsBottomSheet";
 import { snapbuyApi } from "../apis";
-import { UpsertProduct } from "./NewProduct/NewProduct";
 import { useUsedBy } from "../routes/Stores/Stores";
 import { Biqpod } from "@biqpod/app/ui/types";
 export interface ProductRenderProps {
@@ -38,9 +35,6 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
   const { isMobile, isTablet, isDesktop } = useDeviceResolution();
   const photos = product.files || [];
   const search = getFieldValue("producer-search-product");
-  const prices = Array.from(product.multiple?.prices || []);
-  const clientPrice = product.single?.client || 0;
-  const customerPrice = product.single?.customer || 0;
   const isPromotion = product.type === "multiple";
   // Determine width class based on device type
   const getWidthClass = () => {
@@ -70,7 +64,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       className={tw(
-        `h-[300px] p-1 ${getWidthClass()} transition-[width] duration-500`
+        `h-[250px] p-1 ${getWidthClass()} transition-[width] duration-500`
       )}
     >
       <Card
@@ -122,93 +116,12 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
           )}
         </div>
         <Line />
-        <div className="p-2 max-md:p-1">
+        <div className="flex justify-between items-center gap-2 p-2 max-md:p-1">
           <div className="flex justify-between items-center gap-2">
             <div className="flex-1">
               {highlightMatch(product.name!, search)}
             </div>
-            {Object.keys(product.metaData || {}).length > 0 && (
-              <div className="text-[--biqpod-gray-opacity] text-xs truncate">
-                {Object.keys(product.metaData || {}).join(", ")}
-              </div>
-            )}
           </div>
-        </div>
-        <Line />
-        <div className="flex justify-between items-center px-2 max-md:py-1 md:py-2">
-          {!isPromotion && (
-            <div className="flex flex-col gap-2">
-              {clientPrice ? (
-                <span className="font-bold text-[--biqpod-success] max-md:text-lg text-2xl">
-                  {clientPrice} DA
-                </span>
-              ) : (
-                <span
-                  onClick={
-                    usedBy === "read"
-                      ? undefined
-                      : async () => {
-                          showPopup(<UpsertProduct product={product} />);
-                          await delay(100);
-                          setTemp("post-focused", 3);
-                        }
-                  }
-                  className={
-                    usedBy === "read"
-                      ? "max-md:text-lg text-2xl"
-                      : "hover:text-[--biqpod-primary] max-md:text-lg text-2xl underline italic cursor-pointer"
-                  }
-                >
-                  <Translate content="no set" />
-                </span>
-              )}
-              {customerPrice ? (
-                <span className="font-bold text-[--biqpod-success] max-md:text-lg text-2xl">
-                  {customerPrice} DA
-                </span>
-              ) : (
-                <span
-                  onClick={
-                    usedBy === "read"
-                      ? undefined
-                      : async () => {
-                          showPopup(<UpsertProduct product={product} />);
-                          await delay(100);
-                          setTemp("post-focused", 3);
-                        }
-                  }
-                  className={
-                    usedBy === "read"
-                      ? "max-md:text-lg text-2xl"
-                      : "hover:text-[--biqpod-primary] max-md:text-lg text-2xl underline italic cursor-pointer"
-                  }
-                >
-                  <Translate content="no set" />
-                </span>
-              )}
-            </div>
-          )}
-          {isPromotion && (
-            <div className="flex flex-wrap gap-2">
-              {prices
-                ?.sort((price1, price2) => {
-                  return price1.quantity - price2.quantity;
-                })
-                .map((price, index) => {
-                  return (
-                    <Key key={index} className="max-md:text-md md:text-xl">
-                      <span className="text-[--biqpod-success]">
-                        {price.price} DA
-                      </span>{" "}
-                      <sub>
-                        {"<"}
-                        {price.quantity}
-                      </sub>
-                    </Key>
-                  );
-                })}
-            </div>
-          )}
           <CircleTip
             icon={allIcons.solid.faEllipsisVertical}
             onClick={() => {

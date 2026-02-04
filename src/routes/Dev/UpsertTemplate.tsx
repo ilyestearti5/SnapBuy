@@ -33,8 +33,7 @@ import { setFocused, tw } from "@biqpod/app/ui/utils";
 import { useEffect, useRef, useState, useMemo } from "react";
 import { isAccountLinked, snapbuyApi } from "../../apis";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
-import { isAndroidWeb } from "../../utils";
-import { isIosWeb } from "@biqpod/app/ui/app";
+import { useDebounce } from "../../hooks/useDebounce";
 const fuzzySearch = (
   query: string,
   target: string
@@ -127,6 +126,7 @@ interface SelectedItem {
 export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   const photoState = useCopyState<string | Nothing>(null);
   const searchQuery = useCopyState("");
+  const debouncedQuery = useDebounce(searchQuery.get, 300);
   const user = useUser();
   const [showDropdown, setShowDropdown] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -354,7 +354,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
   };
   // Get filtered items with highlighting
   const filteredItems = useMemo(() => {
-    const query = searchQuery.get;
+    const query = debouncedQuery;
     const filteredRepos = githubRepos
       .map((repo) => {
         const name = repo.name || "";
@@ -391,7 +391,7 @@ export const UpsertTemplate = ({ template }: UpsertTemplateProps) => {
       })
       .filter((item) => !query || item.matches);
     return { filteredRepos, filteredPackages, filteredGitlab };
-  }, [searchQuery.get, githubRepos, npmPackages, gitlabRepos]);
+  }, [debouncedQuery, githubRepos, npmPackages, gitlabRepos]);
   // Handle keyboard navigation
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
