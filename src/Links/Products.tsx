@@ -250,14 +250,9 @@ export const Products = () => {
     (productId: string) => {
       // Open the product tools bottom sheet for details
       const product = products.find((p) => p.id === productId);
-      const index = products.findIndex((p) => p.id === productId);
       if (product) {
         showBottomSheet(
-          <ProductToolsBottomSheet
-            index={index}
-            product={product}
-            usedBy={usedBy}
-          />
+          <ProductToolsBottomSheet product={product} usedBy={usedBy} />
         );
       }
     },
@@ -521,11 +516,7 @@ export const Products = () => {
                   />
                 </div>
               ) : (
-                <ProductRender
-                  index={index * columns + colIndex}
-                  product={product}
-                  key={product.id}
-                />
+                <ProductRender product={product} key={product.id} />
               ))
             );
           })}

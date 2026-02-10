@@ -4,9 +4,14 @@ import electron from "vite-plugin-electron";
 import { PluginOption, defineConfig } from "vite";
 import project from "./project.json";
 import { initVite } from "@biqpod/app/env";
+import path from "path";
+import { VitePWA } from "vite-plugin-pwa";
+
 export default defineConfig(async ({ mode }) => {
   await initVite();
   const isElectron = mode === "electron";
+  const isMobile = mode === "mobile";
+
   const plugins: PluginOption[] = [
     react({}),
     legacy(),
@@ -21,14 +26,8 @@ export default defineConfig(async ({ mode }) => {
         },
       }),
   ];
-  return {
-    build: {
-      rollupOptions: {
-        input: {
-          index: "index.html",
-        },
-      },
-    },
+
+  const baseConfig = {
     define: {
       global: "globalThis",
     },
@@ -36,9 +35,57 @@ export default defineConfig(async ({ mode }) => {
       include: ["react", "react-dom", "react/jsx-runtime"],
     },
     plugins,
-    server: {
-      port: project.development.port,
-    },
     clearScreen: false,
   };
+
+  if (isMobile) {
+    return {
+      ...baseConfig,
+      build: {
+        rollupOptions: {
+          input: {
+            index: "index.html",
+          },
+        },
+      },
+      server: {
+        host: true,
+        port: project.development.mobile.port,
+      },
+      plugins: [
+        ...baseConfig.plugins,
+        VitePWA({
+          registerType: "autoUpdate",
+          manifest: {
+            name: project.appName,
+            short_name: project.appName,
+            description: "SnapBuy - AI-powered e-commerce platform",
+            theme_color: "#ffffff",
+            background_color: "#ffffff",
+            display: "standalone",
+            orientation: "portrait",
+            start_url: "/",
+          },
+          workbox: {
+            globPatterns: ["**/*.{ico,png,svg,woff,woff2}"],
+            maximumFileSizeToCacheInBytes: 1048576 * 12,
+          },
+        }),
+      ],
+    };
+  } else {
+    return {
+      ...baseConfig,
+      build: {
+        rollupOptions: {
+          input: {
+            index: "index.html",
+          },
+        },
+      },
+      server: {
+        port: project.development.port,
+      },
+    };
+  }
 });

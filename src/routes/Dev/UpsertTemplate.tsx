@@ -34,6 +34,8 @@ import { useEffect, useRef, useState, useMemo } from "react";
 import { isAccountLinked, snapbuyApi } from "../../apis";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { useDebounce } from "../../hooks/useDebounce";
+import { isAndroidWeb } from "../../utils";
+import { isIosWeb } from "@biqpod/app/ui/app";
 const fuzzySearch = (
   query: string,
   target: string

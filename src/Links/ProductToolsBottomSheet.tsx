@@ -366,11 +366,9 @@ const CopyLinkPickColor = ({ product }: CopyLinkPickColorProps) => {
   );
 };
 export const ProductToolsBottomSheet = ({
-  index,
   product,
   usedBy,
 }: {
-  index: number;
   product: Biqpod.Snapbuy.Product;
   usedBy: "owned" | "random" | "read/edit" | "read" | null;
 }) => {

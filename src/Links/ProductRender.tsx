@@ -27,9 +27,8 @@ import { useUsedBy } from "../routes/Stores/Stores";
 import { Biqpod } from "@biqpod/app/ui/types";
 export interface ProductRenderProps {
   product: Biqpod.Snapbuy.Product;
-  index: number;
 }
-export const ProductRender = ({ product, index }: ProductRenderProps) => {
+export const ProductRender = ({ product }: ProductRenderProps) => {
   const isSelectionMode = getTemp<boolean>("is-selection-mode");
   const usedBy = useUsedBy();
   const { isMobile, isTablet, isDesktop } = useDeviceResolution();
@@ -126,11 +125,7 @@ export const ProductRender = ({ product, index }: ProductRenderProps) => {
             icon={allIcons.solid.faEllipsisVertical}
             onClick={() => {
               showBottomSheet(
-                <ProductToolsBottomSheet
-                  index={index}
-                  product={product}
-                  usedBy={usedBy}
-                />
+                <ProductToolsBottomSheet product={product} usedBy={usedBy} />
               );
             }}
           />

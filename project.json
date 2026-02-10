@@ -3,7 +3,10 @@
   "appId": "snapbuy",
   "appName": "snapbuy",
   "development": {
-    "port": 4593
+    "port": 4593,
+    "mobile": {
+      "port": 4594
+    }
   },
   "production": {
     "url": "https://snapbuy.biqpod.com"
