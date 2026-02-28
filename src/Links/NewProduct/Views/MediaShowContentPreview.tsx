@@ -34,7 +34,7 @@ export const MediaShowContentPreview: React.FC<Props> = ({
   // video player controls (space toggles play/pause)
   if (isImage) {
     return (
-      <div className="flex justify-center">
+      <div className="flex justify-center w-full">
         <img
           draggable={false}
           src={mediaFile.url}
@@ -52,7 +52,7 @@ export const MediaShowContentPreview: React.FC<Props> = ({
   }
   if (isVideo) {
     return (
-      <div className={tw("w-full p-2 ", className)}>
+      <div className={tw("w-full p-2", className)}>
         <MediaVideoPlayer src={mediaFile.url} poster={undefined} />
       </div>
     );

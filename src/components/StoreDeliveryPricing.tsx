@@ -11,6 +11,7 @@ import {
   Field,
   Icon,
   Image,
+  Key,
   Line,
   NumberField,
   Scroll,
@@ -27,11 +28,12 @@ import {
   showPopup,
   showToast,
   useAction,
+  useAsyncMemo,
   useCopyState,
 } from "@biqpod/app/ui/hooks";
 import { allIcons } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
-import { snapbuyApi } from "../apis";
+import { DeliveryCompany, snapbuyApi } from "../apis";
 import { useStoreId } from "../utils";
 import { delay, tw, fuzzySearch } from "@biqpod/app/ui/utils";
 import dz from "../../public/places/dz.json";
@@ -45,7 +47,6 @@ import es from "../../public/places/es.json";
 import it from "../../public/places/it.json";
 import { Biqpod, Nothing } from "@biqpod/app/ui/types";
 import { CreateFirstUI } from "./CreateFirstUI";
-import { populareDeliveryCompanies } from "./populareDeliveryCompanies";
 // Custom Checkbox Component
 interface CustomCheckboxProps {
   checked: boolean;
@@ -130,30 +131,41 @@ const HighlightText: React.FC<HighlightTextProps> = ({ text, query }) => {
   );
 };
 const ImportDeliveryPricesDirect = () => {
-  const selectedPlace = useCopyState<string | Nothing>(null);
-  const selected = useMemo(() => {
-    return selectedPlace.get
-      ? populareDeliveryCompanies?.[selectedPlace.get]
+  const selectedCountrie = useCopyState<string | Nothing>(null);
+  const countries = useAsyncMemo(() => {
+    return snapbuyApi.getCountries();
+  }, []);
+  const selected = useAsyncMemo(async () => {
+    return selectedCountrie.get
+      ? snapbuyApi.getCountrieDeliveryCompanys(selectedCountrie.get)
       : undefined;
-  }, [selectedPlace.get]);
+  }, [selectedCountrie.get]);
   const searchPlace = getFieldValue("import-search-place");
   const filteredPlaces = useMemo(() => {
-    return Object.entries(populareDeliveryCompanies)?.filter(([key]) =>
+    return Object.entries(countries || [])?.filter(([key]) =>
       fuzzySearch(key, searchPlace || "")
     );
-  }, [searchPlace]);
+  }, [searchPlace, countries]);
   const searchCompany = getFieldValue("import-search-company");
   const filteredCompanies = useMemo(() => {
     return selected?.filter((p) => fuzzySearch(p.name, searchCompany || ""));
   }, [searchCompany, selected]);
+  const selectedCompany = useCopyState<Nothing | DeliveryCompany>(null);
+  const selectStoreLocation = useCopyState<string | null>(null);
   return (
-    <Card className="w-2/3 max-h-[90vh] overflow-hidden">
+    <Card className="top-10 absolute w-2/3 max-h-[90vh] overflow-hidden">
       <CardHeaderForPopup title="Import Delivery Prices" />
       <Line />
       <div className="p-2">
         <Field
           className="rounded-xl"
-          inputName={selected ? "import-search-company" : "import-search-place"}
+          inputName={
+            selectStoreLocation.get
+              ? "import-search-store-location"
+              : selected
+              ? "import-search-company"
+              : "import-search-place"
+          }
           placeholder={
             selected ? "Search delivery companies..." : "Search places..."
           }
@@ -162,58 +174,68 @@ const ImportDeliveryPricesDirect = () => {
       <Line />
       {!selected && (
         <Scroll>
-          {filteredPlaces.map(([placeCode]) => {
+          {filteredPlaces.map(([placeCode, { name, photo }]) => {
             return (
               <div
-                className="hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity-2] p-3 capitalize cursor-pointer"
+                className="flex items-center gap-3 hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity-2] p-3 capitalize cursor-pointer"
                 onClick={() => {
-                  selectedPlace.set(placeCode);
+                  selectedCountrie.set(placeCode);
                 }}
               >
-                {placeCode}
+                <Image src={photo} className="w-10 h-10" />
+                <span>
+                  <span>{name}</span>
+                  <sub>
+                    <Key className="px-1 py-2">{placeCode}</Key>
+                  </sub>
+                </span>
               </div>
             );
           })}
+          {!filteredPlaces.length && (
+            <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center capitalize">
+              <Translate content="no places found" />
+            </div>
+          )}
         </Scroll>
       )}
-      {selected && (
+      {!selectedCompany.get && selected && (
         <Scroll>
           {filteredCompanies?.map((s, index) => {
             return (
               <div
-                className="flex justify-between items-center hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity-2] p-2 cursor-pointer"
+                className="flex items-center gap-2 hover:bg-[--biqpod-gray-opacity] odd:bg-[--biqpod-primary-background] active:bg-[--biqpod-gray-opacity-2] p-2 cursor-pointer"
                 key={index}
                 onClick={async () => {
-                  const isYs = await confirm({
-                    type: "warning",
-                    title: "Import Delivery Company",
-                    message: `Are you sure you want to import delivery company "${s.name}" with default price 0 DA?`,
-                  });
-                  if (isYs) {
-                    //
-                  }
+                  selectedCompany.set(s);
                 }}
               >
-                <div className="flex items-center gap-2">
+                <div>
                   <Image
                     src={s.photo}
                     alt={s.name}
-                    className="bg-[--biqpod-gray-opacity] rounded-md w-[40px] h-[40px]"
+                    className="bg-[--biqpod-gray-opacity] rounded-md w-10 h-10"
                   />
-                  <div>
-                    <span>{s.name}</span>
-                    {s.description && (
-                      <p className="text-[--biqpod-gray-opacity-2]">
-                        {s.description}
-                      </p>
-                    )}
-                  </div>
                 </div>
+                <span>
+                  <span>{s.name}</span>
+                  {s.description && (
+                    <p className="text-[--biqpod-gray-opacity-2]">
+                      {s.description}
+                    </p>
+                  )}
+                </span>
               </div>
             );
           })}
+          {!filteredCompanies?.length && (
+            <div className="text-[--biqpod-gray-opacity-2] py-4 text-sm text-center capitalize">
+              <Translate content="no delivery companies found" />
+            </div>
+          )}
         </Scroll>
       )}
+      {selectedCompany.get && <Scroll></Scroll>}
       <Line />
       {selected && (
         <div className="flex items-center gap-2 p-2">
@@ -221,7 +243,7 @@ const ImportDeliveryPricesDirect = () => {
             icon={allIcons.solid.faChevronLeft}
             className="bg-[--biqpod-gray-opacity] text-[--biqpod-text-color]"
             onClick={() => {
-              selectedPlace.set(null);
+              selectedCountrie.set(null);
             }}
           >
             <Translate content="back" />

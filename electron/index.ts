@@ -1,3 +1,4 @@
+import {} from "electron";
 import {
   createMainWindow,
   setUpAppEnv,

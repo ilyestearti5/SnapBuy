@@ -233,10 +233,10 @@ export const FilesSlider: React.FC<SliderProps> = ({
                 key={index}
                 className="flex flex-shrink-0 w-full h-full overflow-hidden cursor-pointer"
               >
-                {!viewContent ? (
-                  <MediaPreview mediaFile={file} />
-                ) : (
+                {viewContent ? (
                   <MediaShowContentPreview mediaFile={file} />
+                ) : (
+                  <MediaPreview mediaFile={file} />
                 )}
               </div>
             );

@@ -143,7 +143,7 @@ export const ProductRoute = () => {
                 resolve(true);
               },
               (error) => {
-                showToast("Geolocation error: " + error.message, "error");
+                showToast("geolocation error" + ": " + error.message, "error");
                 reject(new Error("Geolocation error: " + error.message));
               }
             );
@@ -153,7 +153,7 @@ export const ProductRoute = () => {
             if (permStatus.location !== "granted") {
               permStatus = await Geolocation.requestPermissions();
               if (permStatus.location !== "granted") {
-                showToast("Location permission denied", "error");
+                showToast("location permission denied", "error");
                 return reject(new Error("Location permission denied"));
               }
             }
@@ -199,22 +199,22 @@ export const ProductRoute = () => {
     "create-order-in-product",
     async () => {
       if (!product) {
-        showToast("Product not found", "error");
+        showToast("product not found", "error");
         return;
       }
       if (!firstname) {
         setFocused("client-firstname");
-        showToast("Enter Your First Name", "info");
+        showToast("enter your first name", "info");
         return;
       }
       if (!lastname) {
         setFocused("client-lastname");
-        showToast("Enter Your Last Name", "info");
+        showToast("enter your last name", "info");
         return;
       }
       if (!phone) {
         setFocused("client-phone");
-        showToast("Enter Your Phone Number", "info");
+        showToast("enter your phone number", "info");
         return;
       }
       const { controls } = checkFormByFeilds(["client-phone"]);
@@ -223,19 +223,19 @@ export const ProductRoute = () => {
       if (founded) {
         switch (founded.fieldName) {
           case "client-phone": {
-            showToast("Enter Valid Phone Number", "info");
+            showToast("enter valid phone number", "info");
             break;
           }
           case "client-firstname": {
-            showToast("Enter Valid Name", "info");
+            showToast("enter valid name", "info");
             break;
           }
           case "client-address": {
-            showToast("Enter Valid Address", "info");
+            showToast("enter valid address", "info");
             break;
           }
           case "client-wilaya": {
-            showToast("Enter Valid Wilaya", "info");
+            showToast("enter valid wilaya", "info");
             break;
           }
         }
@@ -277,7 +277,7 @@ export const ProductRoute = () => {
       pixels?.purchase(orderInfo.order);
       orderId.set(orderInfo.order.id);
       orderSuccess.set(true);
-      showToast("Order Created", "success");
+      showToast("order created", "success");
     },
     [
       product,
@@ -329,7 +329,7 @@ export const ProductRoute = () => {
         {metadata.length > 0 && (
           <EmptyComponent>
             <Line />
-            <FormSection title="Metadata" />
+            <FormSection title="metadata" />
             <Line />
             <div className="p-4">
               <Card>
@@ -378,11 +378,11 @@ export const ProductRoute = () => {
           </EmptyComponent>
         )}
         <Line />
-        <FormSection title="description : " />
+        <FormSection title="description" />
         <Line />
         <div className="p-4">
           <Card className="p-3">
-            <MarkDown value={product?.description || "No Description Found"} />
+            <MarkDown value={product?.description || "no description found"} />
           </Card>
         </div>
       </EmptyComponent>
@@ -392,7 +392,7 @@ export const ProductRoute = () => {
     if (!store) return null;
     return (
       <EmptyComponent>
-        <FormSection title="Store Information" />
+        <FormSection title="store information" />
         <Line />
         <div className="p-4">
           <Card>
@@ -406,10 +406,15 @@ export const ProductRoute = () => {
               )}
               <div>
                 <h3 className="font-bold text-lg">{store.name}</h3>
-                {store.phone && <p className="text-sm">Phone: {store.phone}</p>}
+                {store.phone && (
+                  <p className="text-sm">
+                    <Translate content="phone label" />
+                    {store.phone}
+                  </p>
+                )}
                 {store.email && (
                   <p className="text-sm">
-                    Email:{" "}
+                    <Translate content="email label" />
                     <a href={`mailto:${store.email}`} className="text-blue-500">
                       {store.email}
                     </a>
@@ -421,7 +426,8 @@ export const ProductRoute = () => {
               <EmptyComponent>
                 <Line />
                 <p className="p-2 text-sm">
-                  Location: {store.address.latitude.toFixed(4)},{" "}
+                  <Translate content="location label" />
+                  {store.address.latitude.toFixed(4)},{" "}
                   {store.address.longitude.toFixed(4)}
                 </p>
               </EmptyComponent>
@@ -484,30 +490,34 @@ export const ProductRoute = () => {
             <div className="w-full">
               <motion.div variants={itemVariants}>
                 <Line />
+                <h1 className="p-4 text-5xl capitalize">
+                  {product.name || <Translate content="unnamed product" />}
+                </h1>
+                <Line />
                 <FormSection title="form : " />
                 <Line />
                 <div className="p-4">
                   <Card className="bg-[--biqpod-gray-secondary-background]">
                     <div className="flex flex-col gap-2 p-2">
                       <label className="capitalize">
-                        <Translate content="firstname" /> :
+                        <Translate content="first name" /> :
                       </label>
                       <Field
                         className="rounded-xl"
                         inputName="client-firstname"
                         maxLength={40}
-                        placeholder="Enter Your Firstname"
+                        placeholder="enter your firstname"
                       />
                     </div>
                     <div className="flex flex-col gap-2 p-2">
                       <label className="capitalize">
-                        <Translate content="lastname" /> :
+                        <Translate content="last name" /> :
                       </label>
                       <Field
                         className="rounded-xl"
                         inputName="client-lastname"
                         maxLength={40}
-                        placeholder="Enter Your Lastname"
+                        placeholder="enter your lastname"
                       />
                     </div>
                     <div className="flex flex-col gap-2 p-2">
@@ -525,7 +535,7 @@ export const ProductRoute = () => {
                         }}
                         inputMode="numeric"
                         inputName="client-phone"
-                        placeholder="Enter Your Phone Number"
+                        placeholder="enter your phone number"
                       />
                     </div>
                     <div className="flex flex-col gap-2 p-2">
@@ -538,7 +548,7 @@ export const ProductRoute = () => {
                         multiLines
                         maxRows={3}
                         rows={3}
-                        placeholder="Enter Your Note (optional)"
+                        placeholder="enter your note optional"
                       />
                     </div>
                   </Card>
@@ -573,7 +583,7 @@ export const ProductRoute = () => {
                               count.set(1);
                             }
                           }}
-                          placeholder="Quantity"
+                          placeholder="quantity"
                           className="bg-[--biqpod-primary-background] focus:border-[--biqpod-primary] rounded-full outline-none text-3xl text-center"
                           style={{ background: "transparent" }}
                         />
@@ -614,7 +624,7 @@ export const ProductRoute = () => {
                 <Line />
                 {!!deliveryOptions?.length && (
                   <EmptyComponent>
-                    <FormSection title="Delivery" />
+                    <FormSection title="delivery" />
                     <Line />
                     <div className="p-4">
                       <Card>
@@ -761,10 +771,10 @@ export const ProductRoute = () => {
               className="mb-4 text-green-500 text-6xl"
             />
             <h2 className="mb-4 font-bold text-2xl">
-              <Translate content="Congratulations!" />
+              <Translate content="congratulations" />
             </h2>
             <p className="mb-6">
-              <Translate content="Your order has been created successfully!" />
+              <Translate content="order created successfully" />
             </p>
             <div className="flex flex-col gap-4">
               <motion.div
@@ -781,7 +791,7 @@ export const ProductRoute = () => {
                   }}
                   icon={allIcons.solid.faTruck}
                 >
-                  <Translate content="Track Order" />
+                  <Translate content="track order" />
                 </Button>
               </motion.div>
               <motion.div
@@ -797,7 +807,7 @@ export const ProductRoute = () => {
                   }}
                   icon={allIcons.solid.faArrowLeft}
                 >
-                  <Translate content="Back to Product" />
+                  <Translate content="back to product" />
                 </Button>
               </motion.div>
             </div>

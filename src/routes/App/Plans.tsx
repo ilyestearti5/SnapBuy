@@ -12,7 +12,7 @@ import {
   EmptyComponent,
   Anchor,
 } from "@biqpod/app/ui/components";
-import { allIcons } from "@biqpod/app/ui/apis";
+import { allIcons, getUserFunction } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { tw } from "@biqpod/app/ui/utils";
@@ -22,6 +22,7 @@ import { confirm, useAsyncMemo, useCopyState } from "@biqpod/app/ui/hooks";
 import { Nothing, State } from "@biqpod/app/ui/types";
 import { notificationSettingsData } from "../../components/NotificationSettings";
 import { openNotificationSettings } from "../../components/NotificationSettingsExamples";
+const EXTRA_INFO = ["storeId", "endAt", "notifay"];
 export const Plans = () => {
   const [isPaymentLoading, setIsPaymentLoading] = useState(false);
   const [expandedPayments, setExpandedPayments] = useState<Set<string>>(
@@ -180,11 +181,19 @@ export const Plans = () => {
     }
   };
   const planPayment = async (plan: string) => {
-    // Call plan-payment function with plan
-    console.log("Calling plan-payment with", plan);
-    // Assuming plan-payment is a function, perhaps defined elsewhere
-    // For now, alert as placeholder
-    alert(`Subscribing to ${plan} plan`);
+    setIsPaymentLoading(true);
+    const fn = await getUserFunction<{
+      url: string;
+    }>("snapbuy-pay-plan");
+    if (!fn) {
+      throw "FUNCTION NOT FOUND";
+    }
+    const response = await fn({
+      storeId,
+      plan,
+    });
+    setIsPaymentLoading(false);
+    window.open(response.url);
   };
   const totalDetected = () => {
     var total = 0;
@@ -1141,8 +1150,7 @@ export const Plans = () => {
                           const now = Date.now();
                           const endTime = Number(payment?.meta?.endAt);
                           const wasExpired = now >= endTime;
-                          const notifayArray = payment?.meta
-                            ?.notifay as string[];
+                          const notifayArray = payment?.meta?.notifay;
                           return (
                             <div
                               key={paymentId}
@@ -1225,9 +1233,9 @@ export const Plans = () => {
                                       animate={{ height: "auto", opacity: 1 }}
                                       exit={{ height: 0, opacity: 0 }}
                                       transition={{ duration: 0.3 }}
-                                      className="p-3 overflow-hidden"
+                                      className="overflow-hidden"
                                     >
-                                      <div className="pt-3 border-[--biqpod-borders] border-t">
+                                      <div className="p-3">
                                         {/* Payment ID */}
                                         {payment.payoutId && (
                                           <p className="opacity-60 text-[--biqpod-text-color] text-xs">
@@ -1314,13 +1322,8 @@ export const Plans = () => {
                                                   payment.meta
                                                 ).map(([type, value]) => {
                                                   if (
-                                                    [
-                                                      "storeId",
-                                                      "endAt",
-                                                      "notifay",
-                                                    ].includes(type)
+                                                    EXTRA_INFO.includes(type)
                                                   ) {
-                                                    console.log(type, value);
                                                     return null;
                                                   }
                                                   return (
@@ -1342,14 +1345,21 @@ export const Plans = () => {
                                                 <Translate content="Activated notifications:" />
                                               </p>
                                               <div className="flex flex-wrap gap-2">
-                                                {notifayArray &&
+                                                {Array.isArray(notifayArray) &&
                                                   notifayArray.map((s) => {
                                                     const data =
                                                       notificationSettingsData.find(
                                                         (setting) =>
                                                           setting.key === s
                                                       );
-                                                    if (!data) return null;
+                                                    if (typeof s !== "string")
+                                                      return null;
+                                                    if (!data) {
+                                                      console.warn(
+                                                        `Notification setting with key "${s}" not found`
+                                                      );
+                                                      return null;
+                                                    }
                                                     return (
                                                       <span
                                                         key={s}
@@ -1371,6 +1381,41 @@ export const Plans = () => {
                                               </div>
                                             </div>
                                           )}
+                                      </div>
+                                      <Line />
+                                      <div className="flex justify-end p-1">
+                                        <Button
+                                          className="px-2 py-1 w-fit"
+                                          onClick={async () => {
+                                            const isOk = await confirm({
+                                              title: "Use this subscription",
+                                              message:
+                                                "This will apply the subscription benefits to your current usage. Are you sure you want to proceed?",
+                                            });
+                                            if (!isOk) {
+                                              return;
+                                            }
+                                            setExpandedStates({
+                                              payAsYouGo: true,
+                                              paymentHistory: false,
+                                              plan: false,
+                                              usage: false,
+                                            });
+                                            Object.entries(
+                                              payment.meta || {}
+                                            ).forEach(([key, value]) => {
+                                              if (EXTRA_INFO.includes(key)) {
+                                                return;
+                                              }
+                                              const keyType = key as DataTypes;
+                                              usageStates[keyType]?.set(
+                                                Number(value || 0)
+                                              );
+                                            });
+                                          }}
+                                        >
+                                          <Translate content="use plansage" />
+                                        </Button>
                                       </div>
                                     </motion.div>
                                   </EmptyComponent>

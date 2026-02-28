@@ -29,13 +29,18 @@ export interface OverviewProps {
   customers: number;
   totalSales: number;
 }
-interface ProductsResult extends Biqpod.Snapbuy.Product {
+export interface ProductsResult extends Biqpod.Snapbuy.Product {
   price: number;
   count: number;
 }
-interface PackResult extends Biqpod.Snapbuy.Pack {
+export interface PackResult extends Biqpod.Snapbuy.Pack {
   price: number;
   count: number;
+}
+export interface DeliveryPricePlaceCountrie
+  extends Biqpod.Snapbuy.DeliveryPrice {
+  placeId: string;
+  companyId: string;
 }
 export interface CreateOrderOptions {
   storeId?: string;
@@ -100,6 +105,22 @@ export const allUsages: DataTypes[] = [
   "products",
   "vars",
 ];
+export interface Countrie {
+  id?: string;
+  name: string;
+  photo?: string;
+}
+export interface DeliveryCompany {
+  id: string;
+  name: string;
+  description: string;
+  photo?: string;
+  countrieId: string;
+}
+export interface Place {
+  id?: string;
+  name: string;
+}
 const { getUserFunction, getFunction } = buildFunction("snapbuy");
 export const createApi = (cloud: ClientCloud) => {
   const getCurrentAuth = () => {
@@ -2231,6 +2252,65 @@ export const createApi = (cloud: ClientCloud) => {
           );
         return notifications?.[0]?.data || null;
       },
+    },
+    async getCountries() {
+      const savedItem = getTempFromStore<Countrie[]>("countries");
+      if (savedItem) {
+        return savedItem;
+      }
+      const list = await getDocs<Countrie>([mainRef, "countries"]);
+      const newData = list?.map((doc) => doc.data) || [];
+      setTemp("countries", newData);
+      return newData;
+    },
+    async getCountrieDeliveryCompanys(countrieId: string) {
+      const savedItem = getTempFromStore<DeliveryCompany[]>(
+        "delivery-companys-" + countrieId
+      );
+      if (savedItem) {
+        return savedItem;
+      }
+      const list = await getDocs<DeliveryCompany>(
+        [mainRef, "delivery-companys"],
+        {
+          where: and(where("countrieId", "==", countrieId)),
+        }
+      );
+      const newData = list?.map((doc) => doc.data) || [];
+      setTemp("delivery-companys-" + countrieId, newData);
+      return newData;
+    },
+    async getCountriePlaces(countrieId: string) {
+      const savedItem = getTempFromStore<Place[]>(`places-${countrieId}`);
+      if (savedItem) {
+        return savedItem;
+      }
+      const list = await getDocs<Place>([mainRef, "places"], {
+        where: and(where("countrieId", "==", countrieId)),
+      });
+      const newData = list?.map((doc) => doc.data) || [];
+      setTemp(`places-${countrieId}`, newData);
+      return newData;
+    },
+    async getPricesCompanyForCountriePlace(placeId: string, companyId: string) {
+      const savedItem = getTempFromStore<DeliveryPricePlaceCountrie[]>(
+        `price-${companyId}-${placeId}`
+      );
+      if (savedItem) {
+        return savedItem;
+      }
+      const list = await getDocs<DeliveryPricePlaceCountrie>(
+        [mainRef, "prices-company-place"],
+        {
+          where: and(
+            where("placeId", "==", placeId),
+            where("companyId", "==", companyId)
+          ),
+        }
+      );
+      const newData = list?.map((doc) => doc.data) || [];
+      setTemp(`price-${companyId}-${placeId}`, newData);
+      return newData;
     },
   };
   return snapbuyApi;

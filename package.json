@@ -6,7 +6,7 @@
     "dev": "vite",
     "mobile": "vite --mode mobile",
     "compile": "tsc --noEmit",
-    "build": "tsc && vite build",
+    "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build",
     "build.mobile": "cross-env NODE_OPTIONS=--max-old-space-size=8192 tsc && cross-env NODE_OPTIONS=--max-old-space-size=8192 vite build --mode mobile",
     "desktop": "vite --mode electron",
     "electron.build": "vite build --mode electron",
@@ -82,6 +82,17 @@
     "vite-plugin-pwa": "^1.2.0",
     "xlsx": "^0.18.5"
   },
+  "electronRebuildConfig": {
+    "runtime": "electron",
+    "target": "34.0.0",
+    "arch": "x64",
+    "target_platform": "win32",
+    "target_arch": "x64",
+    "build_from_source": false,
+    "fallback_to_build": false,
+    "python": "python3",
+    "msvs_version": "2019"
+  },
   "devDependencies": {
     "@capacitor/assets": "^3.0.5",
     "@testing-library/dom": ">=7.21.4",
@@ -98,7 +109,7 @@
     "@vitejs/plugin-react": "^4.0.1",
     "autoprefixer": "^10.4.20",
     "cross-env": "^10.1.0",
-    "electron": "^36.2.0",
+    "electron": "^34.5.8",
     "eslint": "^8.35.0",
     "eslint-plugin-react": "^7.32.2",
     "eslint-plugin-react-hooks": "^5.0.0",

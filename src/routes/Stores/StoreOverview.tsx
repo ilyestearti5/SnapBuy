@@ -58,7 +58,6 @@ export function StoreOverview() {
     if (!storeId) return null;
     return snapbuyApi.getOverview(storeId);
   }, [storeId]);
-
   const hist = useHistory();
   return (
     <Scroll>

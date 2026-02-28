@@ -149,6 +149,8 @@ export const App = () => {
         : [],
     []
   );
+
+  const isProductRoute = location.pathname.startsWith("/product/");
   return (
     <div className="flex flex-col h-full">
       {isAndroid && (
@@ -157,9 +159,11 @@ export const App = () => {
       {isIos && (
         <div className="z-[100000000000000000000000000000000000000000000000] h-[40px]" />
       )}
-      <Header>
-        <HeaderContent />
-      </Header>
+      {!isProductRoute && (
+        <Header>
+          <HeaderContent />
+        </Header>
+      )}
       {isLoading && (
         <div
           className="top-0 left-0 z-50 fixed bg-blue-200 shadow-sm h-1 transition-all duration-500 ease-out"

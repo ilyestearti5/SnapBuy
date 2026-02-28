@@ -6,12 +6,10 @@ import project from "./project.json";
 import { initVite } from "@biqpod/app/env";
 import path from "path";
 import { VitePWA } from "vite-plugin-pwa";
-
 export default defineConfig(async ({ mode }) => {
   await initVite();
   const isElectron = mode === "electron";
   const isMobile = mode === "mobile";
-
   const plugins: PluginOption[] = [
     react({}),
     legacy(),
@@ -26,7 +24,6 @@ export default defineConfig(async ({ mode }) => {
         },
       }),
   ];
-
   const baseConfig = {
     define: {
       global: "globalThis",
@@ -37,7 +34,6 @@ export default defineConfig(async ({ mode }) => {
     plugins,
     clearScreen: false,
   };
-
   if (isMobile) {
     return {
       ...baseConfig,
