@@ -490,7 +490,7 @@ export const ProductRoute = () => {
             <div className="w-full">
               <motion.div variants={itemVariants}>
                 <Line />
-                <h1 className="p-4 text-5xl capitalize">
+                <h1 className="p-4 text-3xl capitalize">
                   {product.name || <Translate content="unnamed product" />}
                 </h1>
                 <Line />
@@ -502,41 +502,56 @@ export const ProductRoute = () => {
                       <label className="capitalize">
                         <Translate content="first name" /> :
                       </label>
-                      <Field
-                        className="rounded-xl"
-                        inputName="client-firstname"
-                        maxLength={40}
-                        placeholder="enter your firstname"
-                      />
+                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] px-3 border border-[--biqpod-borders] border-solid rounded-xl">
+                        <span className="inline-flex justify-center items-center w-[18px]">
+                          <Icon icon={allIcons.solid.faPersonBurst} />
+                        </span>
+                        <Field
+                          className="bg-transparent border-none rounded-none"
+                          inputName="client-firstname"
+                          maxLength={40}
+                          placeholder="enter your firstname"
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2 p-2">
                       <label className="capitalize">
                         <Translate content="last name" /> :
                       </label>
-                      <Field
-                        className="rounded-xl"
-                        inputName="client-lastname"
-                        maxLength={40}
-                        placeholder="enter your lastname"
-                      />
+                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] px-3 border border-[--biqpod-borders] border-solid rounded-xl">
+                        <span className="inline-flex justify-center items-center w-[18px]">
+                          <Icon icon={allIcons.solid.faPerson} />
+                        </span>
+                        <Field
+                          className="bg-transparent border-none rounded-none"
+                          inputName="client-lastname"
+                          maxLength={40}
+                          placeholder="enter your lastname"
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2 p-2">
                       <label className="capitalize">
                         <Translate content="phone" /> :
                       </label>
-                      <Field
-                        className="rounded-xl"
-                        maxLength={10}
-                        controls={{
-                          "[0-9]{10}": {
-                            succ: "valid",
-                            err: "invalid",
-                          },
-                        }}
-                        inputMode="numeric"
-                        inputName="client-phone"
-                        placeholder="enter your phone number"
-                      />
+                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] px-3 border border-[--biqpod-borders] border-solid rounded-xl">
+                        <span className="inline-flex justify-center items-center w-[18px]">
+                          <Icon icon={allIcons.solid.faPhone} />
+                        </span>
+                        <Field
+                          className="bg-transparent border-none rounded-none"
+                          maxLength={10}
+                          controls={{
+                            "[0-9]{10}": {
+                              succ: "valid",
+                              err: "invalid",
+                            },
+                          }}
+                          inputMode="numeric"
+                          inputName="client-phone"
+                          placeholder="enter your phone number"
+                        />
+                      </div>
                     </div>
                     <div className="flex flex-col gap-2 p-2">
                       <label className="capitalize">
@@ -625,7 +640,6 @@ export const ProductRoute = () => {
                 {!!deliveryOptions?.length && (
                   <EmptyComponent>
                     <FormSection title="delivery" />
-                    <Line />
                     <div className="p-4">
                       <Card>
                         <div className="flex gap-2 p-4">
@@ -720,9 +734,9 @@ export const ProductRoute = () => {
                         </div>
                       </Card>
                     </div>
+                    <Line />
                   </EmptyComponent>
                 )}
-                <Line />
                 <div className="md:hidden">
                   <DescriptionPart />
                   <Line />

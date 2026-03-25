@@ -180,6 +180,12 @@ export const userTabs = [
       "https://cdn3d.iconscout.com/3d/premium/thumb/template-3d-icon-png-download-8316799.png",
   },
   {
+    name: "order-profiles",
+    link: `/store/{storeId}/order-profiles`,
+    photo:
+      "https://cdn3d.iconscout.com/3d/premium/thumb/form-3d-icon-png-download-3927997.png",
+  },
+  {
     name: "configuration",
     link: `/store/{storeId}/configuration`,
     photo: settingsPhoto,

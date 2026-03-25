@@ -35,6 +35,7 @@ import { Integrations } from "../../Integrations";
 import { ProductsAndBrands } from "./components/ProductsAndBrands";
 import { OrdersAndCustomers } from "./components/OrdersAndCustomers";
 import { StoreConfiguration } from "./components/StoreConfiguration";
+import { OrderFormProfilesList } from "./OrderFormProfilesList";
 import { motion, AnimatePresence } from "framer-motion";
 import { Plans } from "../App/Plans";
 import { useUsedBy } from "./Stores";
@@ -532,6 +533,9 @@ export const Store = () => {
                       </Route>
                       <Route path={createRoute("templates")}>
                         <Templates />
+                      </Route>
+                      <Route path={createRoute("order-profiles")}>
+                        <OrderFormProfilesList />
                       </Route>
                       <Route path={createRoute("configuration")}>
                         <StoreConfiguration />
