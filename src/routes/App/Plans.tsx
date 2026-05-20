@@ -16,9 +16,14 @@ import { allIcons, getUserFunction } from "@biqpod/app/ui/apis";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useMemo, useState } from "react";
 import { tw } from "@biqpod/app/ui/utils";
-import { DAYS_LEFT, useStoreId } from "../../utils";
+import { DAYS_LEFT, FORCE_PAY_SERVICE, useStoreId } from "../../utils";
 import { allUsages, snapbuyApi } from "../../apis";
-import { confirm, useAsyncMemo, useCopyState } from "@biqpod/app/ui/hooks";
+import {
+  confirm,
+  showToast,
+  useAsyncMemo,
+  useCopyState,
+} from "@biqpod/app/ui/hooks";
 import { Nothing, State } from "@biqpod/app/ui/types";
 import { notificationSettingsData } from "../../components/NotificationSettings";
 import { openNotificationSettings } from "../../components/NotificationSettingsExamples";
@@ -193,7 +198,10 @@ export const Plans = () => {
       plan,
     });
     setIsPaymentLoading(false);
-    window.open(response.url);
+    const url =
+      response.url + (FORCE_PAY_SERVICE ? `&force=${FORCE_PAY_SERVICE}` : "");
+    import.meta.env.DEV && showToast(url, "info");
+    window.open(url, "_blank");
   };
   const totalDetected = () => {
     var total = 0;

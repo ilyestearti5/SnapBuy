@@ -191,9 +191,7 @@ export const App = () => {
                 <Preview />
               </Route>
               <Route path="/news/:newsId">
-                <Profile>
-                  <News />
-                </Profile>
+                <News />
               </Route>
               <Route path="/link">
                 <div className="flex justify-center items-center h-full">

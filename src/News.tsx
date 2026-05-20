@@ -19,14 +19,19 @@ export const News = () => {
             <img
               src={newData.photo}
               alt={newData.title}
+              draggable={false}
               className="rounded-xl max-w-full h-[250px] overflow-hidden"
             />
           </div>
           <Line />
-          <h1 className="p-2 font-bold text-2xl">{newData.title}</h1>
-          <Line />
+          {newData.title && (
+            <EmptyComponent>
+              <h1 className="p-2 font-bold text-2xl">{newData.title}</h1>
+              <Line />
+            </EmptyComponent>
+          )}
           <div className="p-2">
-            <MarkDown value={newData.description} />
+            <MarkDown value={newData?.content || newData.description} />
           </div>
         </div>
       ) : (

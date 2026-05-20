@@ -21,7 +21,7 @@ import {
 import { delay, mapAsync, mergeArray } from "@biqpod/app/ui/utils";
 import { cloud, functions } from "../server";
 import { FilterOrdersProps } from "../Links/FilterOrders";
-import { getStoreId } from "../utils";
+import { FORCE_PAY_SERVICE, getStoreId } from "../utils";
 export const appProjectId: string = import.meta.env.VITE_PROJECT_ID!;
 const mainRef = ["projects", appProjectId];
 export interface OverviewProps {
@@ -121,6 +121,7 @@ export interface Place {
   id?: string;
   name: string;
 }
+
 const { getUserFunction, getFunction } = buildFunction("snapbuy");
 export const createApi = (cloud: ClientCloud) => {
   const getCurrentAuth = () => {
@@ -152,6 +153,7 @@ export const createApi = (cloud: ClientCloud) => {
     photo: string;
     description: string;
     createdAt: number;
+    content?: string;
   }
   const snapbuyApi = {
     async getNews() {
@@ -2108,7 +2110,8 @@ export const createApi = (cloud: ClientCloud) => {
         });
         if (data?.url) {
           const a = document.createElement("a");
-          a.href = data.url;
+          a.href =
+            data.url + (FORCE_PAY_SERVICE ? `&force=${FORCE_PAY_SERVICE}` : "");
           a.click();
         }
       },

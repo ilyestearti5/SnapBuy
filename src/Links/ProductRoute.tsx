@@ -69,13 +69,12 @@ export const ProductRoute = () => {
   }, [getColor]);
   const latitude = useCopyState<Nothing | number>(null);
   const longitude = useCopyState<Nothing | number>(null);
-  const store = useAsyncMemo(async () => {
-    if (!product?.storeId) return undefined;
-    return snapbuyApi.store.get(product?.storeId!);
-  }, [product]);
-  const price = useMemo(() => {
-    return getPrice(product, 1).total;
-  }, [product]);
+  const store = useAsyncMemo(
+    async () =>
+      !product?.storeId ? undefined : snapbuyApi.store.get(product?.storeId!),
+    [product]
+  );
+  const price = useMemo(() => getPrice(product, 1).total, [product]);
   const pixels = initPixels(store);
   const deliveryOptions = useAsyncMemo(async () => {
     if (product?.storeId) {
@@ -195,6 +194,18 @@ export const ProductRoute = () => {
   const phone = getFieldValue("client-phone");
   const note = getFieldValue("client-note");
   const magic = getTemp<Record<string, any>>("magic-fields");
+  const showMomentStyle = useCopyState(false);
+  useEffect(() => {
+    if (!showMomentStyle.get) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      showMomentStyle.set(false);
+    }, 1000);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [showMomentStyle.get]);
   const createOrderAction = useAction(
     "create-order-in-product",
     async () => {
@@ -204,16 +215,19 @@ export const ProductRoute = () => {
       }
       if (!firstname) {
         setFocused("client-firstname");
+        showMomentStyle.set(true);
         showToast("enter your first name", "info");
         return;
       }
       if (!lastname) {
         setFocused("client-lastname");
+        showMomentStyle.set(true);
         showToast("enter your last name", "info");
         return;
       }
       if (!phone) {
         setFocused("client-phone");
+        showMomentStyle.set(true);
         showToast("enter your phone number", "info");
         return;
       }
@@ -377,14 +391,19 @@ export const ProductRoute = () => {
             </div>
           </EmptyComponent>
         )}
-        <Line />
-        <FormSection title="description" />
-        <Line />
-        <div className="p-4">
-          <Card className="p-3">
-            <MarkDown value={product?.description || "no description found"} />
-          </Card>
-        </div>
+        {!!product?.description && (
+          <EmptyComponent>
+            <Line />
+            <FormSection title="description" />
+            <Line />
+            <div className="p-4">
+              <Card className="p-3">
+                <MarkDown value={product.description} />
+              </Card>
+            </div>
+            <Line />
+          </EmptyComponent>
+        )}
       </EmptyComponent>
     );
   };
@@ -392,30 +411,47 @@ export const ProductRoute = () => {
     if (!store) return null;
     return (
       <EmptyComponent>
-        <FormSection title="store information" />
+        <FormSection title="information" />
         <Line />
         <div className="p-4">
           <Card>
-            <div className="flex items-center gap-4 p-2">
-              {store.photo && (
-                <img
-                  src={store.photo}
-                  alt={store.name}
-                  className="rounded-full w-16 h-16 object-cover"
-                />
-              )}
-              <div>
+            <div>
+              <div className="flex items-center gap-3 p-3">
+                {store.photo && (
+                  <img
+                    src={store.photo}
+                    alt={store.name}
+                    className="rounded-full w-16 h-16 object-cover"
+                  />
+                )}
                 <h3 className="font-bold text-lg">{store.name}</h3>
+              </div>
+              <Line />
+              <div className="p-3">
                 {store.phone && (
                   <p className="text-sm">
-                    <Translate content="phone label" />
-                    {store.phone}
+                    <span className="capitalize">
+                      <Translate content="phone" />
+                    </span>{" "}
+                    :{" "}
+                    <a
+                      href={`tel:${store.phone}`}
+                      className="text-[--biqpod-primary]"
+                    >
+                      {store.phone}
+                    </a>
                   </p>
                 )}
                 {store.email && (
                   <p className="text-sm">
-                    <Translate content="email label" />
-                    <a href={`mailto:${store.email}`} className="text-blue-500">
+                    <span className="capitalize">
+                      <Translate content="email" />
+                    </span>{" "}
+                    :{" "}
+                    <a
+                      href={`mailto:${store.email}`}
+                      className="text-[--biqpod-primary]"
+                    >
                       {store.email}
                     </a>
                   </p>
@@ -497,12 +533,12 @@ export const ProductRoute = () => {
                 <FormSection title="form : " />
                 <Line />
                 <div className="p-4">
-                  <Card className="bg-[--biqpod-gray-secondary-background]">
+                  <Card className="bg-[--biqpod-primary-background]">
                     <div className="flex flex-col gap-2 p-2">
                       <label className="capitalize">
                         <Translate content="first name" /> :
                       </label>
-                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] px-3 border border-[--biqpod-borders] border-solid rounded-xl">
+                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] has-[:focus]:bg-[--biqpod-primary-background] px-3 border border-[--biqpod-borders] has-[:focus]:border-[--biqpod-primary] border-solid rounded-xl">
                         <span className="inline-flex justify-center items-center w-[18px]">
                           <Icon icon={allIcons.solid.faPersonBurst} />
                         </span>
@@ -510,7 +546,7 @@ export const ProductRoute = () => {
                           className="bg-transparent border-none rounded-none"
                           inputName="client-firstname"
                           maxLength={40}
-                          placeholder="enter your firstname"
+                          placeholder="Enter Your Firstname"
                         />
                       </div>
                     </div>
@@ -518,7 +554,7 @@ export const ProductRoute = () => {
                       <label className="capitalize">
                         <Translate content="last name" /> :
                       </label>
-                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] px-3 border border-[--biqpod-borders] border-solid rounded-xl">
+                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] has-[:focus]:bg-[--biqpod-primary-background] px-3 border border-[--biqpod-borders] has-[:focus]:border-[--biqpod-primary] border-solid rounded-xl">
                         <span className="inline-flex justify-center items-center w-[18px]">
                           <Icon icon={allIcons.solid.faPerson} />
                         </span>
@@ -526,7 +562,7 @@ export const ProductRoute = () => {
                           className="bg-transparent border-none rounded-none"
                           inputName="client-lastname"
                           maxLength={40}
-                          placeholder="enter your lastname"
+                          placeholder="Enter Your Lastname"
                         />
                       </div>
                     </div>
@@ -534,7 +570,7 @@ export const ProductRoute = () => {
                       <label className="capitalize">
                         <Translate content="phone" /> :
                       </label>
-                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] px-3 border border-[--biqpod-borders] border-solid rounded-xl">
+                      <div className="flex items-center gap-2 bg-[--biqpod-field-background] has-[:focus]:bg-[--biqpod-primary-background] px-3 border border-[--biqpod-borders] has-[:focus]:border-[--biqpod-primary] border-solid rounded-xl">
                         <span className="inline-flex justify-center items-center w-[18px]">
                           <Icon icon={allIcons.solid.faPhone} />
                         </span>
@@ -549,13 +585,16 @@ export const ProductRoute = () => {
                           }}
                           inputMode="numeric"
                           inputName="client-phone"
-                          placeholder="enter your phone number"
+                          placeholder="Enter Your Phone Number"
                         />
                       </div>
                     </div>
                     <div className="flex flex-col gap-2 p-2">
                       <label className="capitalize">
-                        <Translate content="note" /> :
+                        <Translate content="note" /> :{" "}
+                        <span className="text-[--biqpod-primary] text-xs">
+                          <Translate content="optional" />
+                        </span>
                       </label>
                       <Field
                         className="rounded-xl"
@@ -563,16 +602,29 @@ export const ProductRoute = () => {
                         multiLines
                         maxRows={3}
                         rows={3}
-                        placeholder="enter your note optional"
+                        placeholder="Enter Your Note"
                       />
                     </div>
                   </Card>
                 </div>
                 <Line />
                 <div className="p-4">
-                  <Card>
+                  <Card className="bg-[--biqpod-primary-background]">
                     <div className="flex justify-center items-center gap-2 p-4">
-                      <div className="w-full">
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <CircleTip
+                          className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
+                          onClick={() =>
+                            count.set(Math.max(1, (count.get || 1) - 1))
+                          }
+                          icon={allIcons.solid.faMinus}
+                        />
+                      </motion.div>
+                      <div>
                         <Field
                           inputName="product-quantity"
                           inputMode="numeric"
@@ -598,41 +650,23 @@ export const ProductRoute = () => {
                               count.set(1);
                             }
                           }}
-                          placeholder="quantity"
-                          className="bg-[--biqpod-primary-background] focus:border-[--biqpod-primary] rounded-full outline-none text-3xl text-center"
-                          style={{ background: "transparent" }}
+                          placeholder="Q"
+                          className="focus:border-[--biqpod-primary] rounded-full outline-none w-[100px] text-3xl text-center"
                         />
                       </div>
-                      <div>
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          transition={{ type: "spring", stiffness: 400 }}
-                        >
-                          <CircleTip
-                            className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
-                            onClick={() =>
-                              count.set(Math.max(1, (count.get || 1) - 1))
-                            }
-                            icon={allIcons.solid.faMinus}
-                          />
-                        </motion.div>
-                      </div>
-                      <div>
-                        <motion.div
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                          transition={{ type: "spring", stiffness: 400 }}
-                        >
-                          <CircleTip
-                            className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
-                            onClick={() =>
-                              count.set(Math.min(500, (count.get || 0) + 1))
-                            }
-                            icon={allIcons.solid.faPlus}
-                          />
-                        </motion.div>
-                      </div>
+                      <motion.div
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <CircleTip
+                          className="inline-flex justify-center items-center rounded-full w-[40px] h-[40px] bg-[--biqpod-text-color] text-[--biqpod-primary-background] hover:bg-[--biqpod-text-color] active:hover:bg-[--biqpod-text-color] cursor-pointer"
+                          onClick={() =>
+                            count.set(Math.min(500, (count.get || 0) + 1))
+                          }
+                          icon={allIcons.solid.faPlus}
+                        />
+                      </motion.div>
                     </div>
                   </Card>
                 </div>
@@ -640,9 +674,10 @@ export const ProductRoute = () => {
                 {!!deliveryOptions?.length && (
                   <EmptyComponent>
                     <FormSection title="delivery" />
+                    <Line />
                     <div className="p-4">
-                      <Card>
-                        <div className="flex gap-2 p-4">
+                      <Card className="bg-[--biqpod-primary-background]">
+                        <div className="flex justify-evenly items-center gap-2 p-4 w-full">
                           {deliveryOptions?.map((data) => {
                             const isSelected =
                               selectDeliveryOption.get &&
@@ -658,27 +693,23 @@ export const ProductRoute = () => {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                                 transition={{ type: "spring", stiffness: 300 }}
+                                className="w-fit"
                               >
                                 <Card
                                   onClick={() => {
                                     selectDeliveryOption.set(data);
                                   }}
                                   className={tw(
-                                    "w-full capitalize cursor-pointer",
+                                    "w-fit capitalize cursor-pointer",
                                     isSelected &&
                                       "border-[--biqpod-primary] bg-[--biqpod-secondary] text-[--biqpod-secondary-content]"
                                   )}
                                 >
-                                  <div className="flex justify-between items-center gap-2 p-5">
-                                    <div className="flex items-center gap-2">
-                                      {data.type && (
-                                        <Icon icon={icons[data.type]} />
-                                      )}
-                                      <span>{data.type}</span>
-                                    </div>
-                                    {isSelected && (
-                                      <Icon icon={allIcons.solid.faCheck} />
+                                  <div className="flex justify-center items-center gap-2 p-2">
+                                    {data.type && (
+                                      <Icon icon={icons[data.type]} />
                                     )}
+                                    <span>{data.type}</span>
                                   </div>
                                 </Card>
                               </motion.div>
@@ -699,7 +730,7 @@ export const ProductRoute = () => {
                                     };
                                   }),
                                   search: true,
-                                  placeholder: "Choos Wilaya On Click On Auto",
+                                  placeholder: "Choose Address",
                                 }}
                                 id="delivery-pricing"
                               />
@@ -739,7 +770,6 @@ export const ProductRoute = () => {
                 )}
                 <div className="md:hidden">
                   <DescriptionPart />
-                  <Line />
                   <StoreInfo />
                 </div>
               </motion.div>

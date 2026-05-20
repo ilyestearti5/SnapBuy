@@ -417,3 +417,5 @@ export const errorVariants = {
     },
   },
 };
+
+export const FORCE_PAY_SERVICE = "chargily";
